@@ -351,6 +351,12 @@ double ph, pl;                                        \
   *pzl = (ph - (*pzh)) + pl;                          \
 }
 
+#define  Div22(zh,zl,xh,xl,yh,yl)\
+{double ch,cl,uh,ul;  \
+           ch=(xh)/(yh);   Mul12(&uh,&ul,ch,yh);  \
+           cl=(((((xh)-uh)-ul)+(xl))-ch*(yl))/(yh);   zh=ch+cl;   zl=(ch-zh)+cl;\
+} 
+
 
 /* besides we don't care anymore about overflows in the mult  */
 #define Mul12Cond Mul12    
@@ -364,6 +370,7 @@ double ph, pl;                                        \
 extern void Mul12(double *rh, double *rl, double u, double v);
 extern void Mul12Cond(double *rh, double *rl, double a, double b);
 extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl);
+extern void Div22(double *z, double *zz, double x, double xx, double y, double yy);
 #else /* if DEKKER_AS_FUNCTIONS  */
 /*
  * computes rh and rl such that rh + rl = a * b with rh = a @* b exactly
@@ -432,6 +439,15 @@ double mh, ml;                                        \
   *zh = mh+ml;					      \
   *zl = mh - (*zh) + ml;                              \
 }
+
+/* Compute the double-double division of (x+xx) over (y+yy) */
+#define  Div22(z,zz,x,xx,y,yy)\
+{double c,cc,u,uu;  \
+           c=(x)/(y);   Mul12(&u,&uu,c,y);  \
+           cc=(((((x)-u)-uu)+(xx))-c*(yy))/(y);   z=c+cc;   zz=(c-z)+cc;\
+} 
+
+
 
 #endif /* DEKKER_AS_FUNCTIONS */
 
