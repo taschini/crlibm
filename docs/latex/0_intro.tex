@@ -40,8 +40,8 @@ arithmetic, and has other drawbacks that we analyze in the sequel.
 
 The  goal of the \crlibm\ project is to build on a combination of several
 recent advances to design a correctly rounded mathematical
-library which is fast enough to replace the existing libraries, at a
-minor cost in terms of performance and resources.
+library which is fast enough to replace the existing libraries, at acceptable
+ cost in terms of performance and resources.
 
 
 
@@ -165,38 +165,12 @@ The library \texttt{crlibm} \emph{(correctly rounded mathematical
 logarithm in radix $2$, $10$ and $e$, sine, cosine, tangent,
 arctangent, plus trigonometric argument reduction. The  quick
 part and its proof have only been written for the exponential and the logarithm thus
-far. The difficulty is to prove both the algorithm and the C program.
-The proof relies heavily on several shared lemmas, assuming the good
+far. 
+
+The difficulty is to prove both the algorithm and the C program.
+The proofs rely heavily on several shared lemmas, assuming the good
 behavior of the system composed of the compiler and the processor.
-Another difficulty is that performance is important. Therefore many
-parts of this proof could be done only by hand.
-
-
-\subsection{Organization of the source code of the library}
-
-For each function, the file containing the source code for the
-accurate phase is named after the function itself (for instance
-\texttt{exp.c}, \texttt{log.c}), and the quick phase, when available,
-is named with the \texttt{\_fast} suffix (for instance
-\texttt{exp\_fast.c}). The names of auxiliary files \texttt{.c} or
-\texttt{.h} files relative to a function are also prefixed with the
-name of the function.
-
-The accurate phase relies on \texttt{scslib}, the \emph{software
-  carry-save} multiple-precision library written for this purpose.
-This library is contained in a subdirectory called \texttt{scs\_lib}.
-
-The common C routines that are detailed in Part~\ref{sec:common} of
-this document are defined in \texttt{crlibm\_private.c} and
-\texttt{crlibm\_private.h}.
-
-Many of the constants used in the C code have been computed thanks to
-Maple procedures which are contained in the \texttt{maple}
-subdirectory. Some of these procedures are explained in
-Part~\ref{sec:common}. For some functions, a Maple procedure mimicking
-the C code, and used for debugging or optimization purpose, is also
-available.
-
+Another difficulty is that performance is important.
 
 
 
@@ -208,8 +182,7 @@ been a source of inspiration for this work.
 Most mathematical libraries do not offer correct rounding. They can be classified as 
 \begin{itemize}
 \item portable libraries  assuming IEEE-754
-  arithmetic, like \emph{fdlibm}, written by Sun\cite{FDLIBMweb} and \emph{libultim}
-  written by IBM\cite{IBMlibultimweb};
+  arithmetic, like \emph{fdlibm}, written by Sun\cite{FDLIBMweb};
 \item  Processor-specific libraries, by
   Intel\cite{HarKubStoTan99,IntelOpenSource} and
   HP\cite{Markstein2000,Markstein2001} among other.
@@ -220,7 +193,7 @@ of the previous.
 
 Two libraries offering correct correct rounding are specially relevant to this work:
 \begin{itemize}
-\item The\emph{libultim} library also called MathLib, is developed at
+\item The \emph{libultim} library, also called MathLib, is developed at
   IBM by Ziv and others \cite{IBMlibultimweb}. It provides correct rounding,
   under the assumption that 800 bits are enough in all case. This
   approach suffers two weaknesses. The first is the absence of proof
@@ -254,7 +227,35 @@ Two libraries offering correct correct rounding are specially relevant to this w
   package.
 \end{itemize}
 
-The \texttt{crlibm} code includes programs to test the \texttt{crlibm}
-functions against MPFR and \texttt{libultim}. They are located in the
-\texttt{tests} directory.
+
+
+\section{Organization of the source code of the library}
+
+For each function, the file containing the source code for the
+accurate phase is named after the function itself (for instance
+\texttt{exp.c}, \texttt{log.c}), and the quick phase, when available,
+is named with the \texttt{\_fast} suffix (for instance
+\texttt{exp\_fast.c}). The names of auxiliary files \texttt{.c} or
+\texttt{.h} files relative to a function are also prefixed with the
+name of the function.
+
+The accurate phase relies on \texttt{scslib}, the \emph{software
+  carry-save} multiple-precision library written for this purpose.
+This library is contained in a subdirectory called \texttt{scs\_lib}.
+
+The common C routines that are detailed in Chapter~\ref{chap:common} of
+this document are defined in \texttt{crlibm\_private.c} and
+\texttt{crlibm\_private.h}.
+
+Many of the constants used in the C code have been computed thanks to
+Maple procedures which are contained in the \texttt{maple}
+subdirectory. Some of these procedures are explained in
+Chapter~\ref{chap:common}. For some functions, a Maple procedure
+mimicking the C code, and used for debugging or optimization purpose,
+is also available.
+
+
+The code also includes programs to test the \texttt{crlibm} functions
+against MPFR and \texttt{libultim}, in terms of correctness and
+performance. They are located in the \texttt{tests} directory.
 
