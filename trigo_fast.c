@@ -9,12 +9,15 @@
 extern double scs_sin_rn(double);
 extern double scs_sin_ru(double);
 extern double scs_sin_rd(double);
+extern double scs_sin_rz(double);
 extern double scs_cos_rn(double);
 extern double scs_cos_ru(double);
 extern double scs_cos_rd(double);
-extern double scs_tan_rn(double); /* to nearest  */
-extern double scs_tan_rd(double); /* toward -inf */ 
-extern double scs_tan_ru(double); /* toward +inf */ 
+extern double scs_cos_rz(double);
+extern double scs_tan_rn(double); 
+extern double scs_tan_rd(double);  
+extern double scs_tan_ru(double);  
+extern double scs_tan_rz(double);  
 
 #define DEBUG 0
 
@@ -24,13 +27,13 @@ extern double scs_tan_ru(double); /* toward +inf */
 
 #if INLINE_SINCOS
 
-#define DO_SIN  {\
-  double thi, tlo, cahyh_h, cahyh_l, yh2, tc;\
+#define DO_SIN(sh,sl)  {\
+  double thi, tlo, cahyh_h, cahyh_l, yh2;\
   yh2 = yh*yh;\
   if(sah==0.0)\
     { \
       ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));\
-      Add12(reshi,reslo,   yh, yl+ ts*yh);\
+      Add12(sh,sl,   yh, yl+ ts*yh);\
     }\
   else {\
     Mul12(&cahyh_h,&cahyh_l, cah, yh);\
@@ -38,21 +41,25 @@ extern double scs_tan_ru(double); /* toward +inf */
     ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));\
     tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));\
     tlo = tc*sah + (ts*cahyh_h  +(sal + (tlo + (cahyh_l  + (cal*yh + cah*yl))))) ; \
-    Add12(*reshi,*reslo,  thi, tlo );  \
+    Add12(sh,sl,  thi, tlo );  \
   }\
 }
 
-#define DO_COS {\
-  double yh2, tc;\
-  double thi, tlo, sahyh_h,sahyh_l; \
+#define DO_COS(ch,cl) {\
+  double thi, tlo, sahyh_h,sahyh_l, yh2; \
   yh2 = yh*yh ;\
+  if(sah==0.0) { \
+    tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));\
+      Add12(*ch,*cl, 1., tc);\
+    }\
+  else {\
   Mul12(&sahyh_h,&sahyh_l, sah, yh);\
   ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));\
   tc = yh2 * (c2.d + yh2*(c4.d + yh2*(c6.d)));\
   Add12(thi, tlo,  cah, -sahyh_h);\
   tlo = tc*cah - (ts*sahyh_h -  (cal + (tlo  - (sahyh_l + (sal*yh + sah*yl)) ))) ; \
-  Add12(*reshi, *reslo,    thi, tlo ); \
-}
+  Add12(ch, cl,    thi, tlo ); \
+}}
 
 
 #else /* INLINE_SINCOS */
@@ -60,7 +67,7 @@ extern double scs_tan_ru(double); /* toward +inf */
 static double sah,sal,cah,cal;
 
 
-static void do_sin(double* reshi, double* reslo, double yh, double yl) {
+static void do_sin(double* sh, double* sl, double yh, double yl) {
   double thi, tlo, cahyh_h, cahyh_l, yh2, ts, tc;
 
   /* Add optimizations for small yh / k  here */
@@ -72,7 +79,7 @@ static void do_sin(double* reshi, double* reslo, double yh, double yl) {
       ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
       /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */
       /* Now we need to compute (1+ts)*(yh+yl) */
-      Add12(*reshi,*reslo,   yh, yl+ ts*yh);
+      Add12(*sh,*sl,   yh, yl+ ts*yh);
     }
   else {
    
@@ -87,12 +94,12 @@ static void do_sin(double* reshi, double* reslo, double yh, double yl) {
 
     /* now we compute an approximation to cos(a)sin(x) + sin(a)cos(x)   */
     tlo = tc*sah + (ts*cahyh_h  +(sal + (tlo + (cahyh_l  + (cal*yh + cah*yl))))) ;
-    Add12(*reshi,*reslo,  thi, tlo );
+    Add12(*sh,*sl,  thi, tlo );
   }
 }
 
 
-static void do_cos(double* reshi, double* reslo, double yh, double yl) {
+static void do_cos(double* ch, double* cl, double yh, double yl) {
   double yh2, ts, tc, thi, tlo, sahyh_h,sahyh_l; 
 
   yh2 = yh*yh ;
@@ -103,7 +110,7 @@ static void do_cos(double* reshi, double* reslo, double yh, double yl) {
     /* 1+ tc is an approx to cos(yh+yl) */
 
       /* Now we need to compute 1+tc */
-      Add12(*reshi,*reslo, 1., tc);
+      Add12(*ch,*cl, 1., tc);
     }
   else {
   
@@ -119,7 +126,7 @@ static void do_cos(double* reshi, double* reslo, double yh, double yl) {
   
   Add12(thi, tlo,  cah, -sahyh_h);
   tlo = tc*cah - (ts*sahyh_h -  (cal + (tlo  - (sahyh_l + (sal*yh + sah*yl)) ))) ;
-  Add12(*reshi, *reslo,    thi, tlo );
+  Add12(*ch, *cl,    thi, tlo );
   }
 }
 
@@ -229,14 +236,14 @@ int static trig_range_reduction(double* pyh, double* pyl,
  *************************************************************/ 
 
 double sin_rn(double x){ 
-  double reshi, reslo, yh, yl, ts;
+  double sh, sl, yh, yl, ts;
   int quadrant;
   int k;
   int absxhi;
   db_number xx;
 
 #if INLINE_SINCOS
-  double sah,sal,cah,cal;
+  double sah,sal,cah,cal,tc;
 #endif
 
   xx.d=x;
@@ -248,9 +255,9 @@ double sin_rn(double x){
     /* Fast Taylor series */
     yh=x*x;
     ts = yh * (s3.d + yh*(s5.d + yh*(s7.d + yh*(s9.d))));
-    Add12(reshi,reslo, x, ts*x);
-    if(reshi == (reshi + (reslo * RN_CST_SINFAST))){	
-      return reshi;
+    Add12(sh,sl, x, ts*x);
+    if(sh == (sh + (sl * RN_CST_SINFAST))){	
+      return sh;
     }else{ 
       return scs_sin_rn(x); 
     } 
@@ -285,39 +292,42 @@ double sin_rn(double x){
 
 #if INLINE_SINCOS
   if (quadrant&1){   /*compute the cos  */
-    DO_COS;
+    DO_COS(sh,sl);
   }
   else {/* compute the sine */
-    DO_SIN;
+    DO_SIN(sh,sl);
   }
 #else
   if (quadrant&1)   /*compute the cos  */
-    do_cos(&reshi, &reslo,  yh,yl);
+    do_cos(&sh, &sl,  yh,yl);
   else /* compute the sine */
-    do_sin(&reshi, &reslo,  yh,yl);
+    do_sin(&sh, &sl,  yh,yl);
 #endif
   
   if(quadrant>=2) { 
-    reshi = -reshi;
-    reslo = -reslo;
+    sh = -sh;
+    sl = -sl;
   }
   
-  if(reshi == (reshi + (reslo * 1.0004))){	
-     return reshi;
+  if(sh == (sh + (sl * 1.0004))){	
+     return sh;
   }else{
     return scs_sin_rn(x); 
   } 
 
 }
 
+/* TODO */
 double sin_rd(double x){
 return scs_sin_rd(x);
 }
 
+/* TODO */
 double sin_ru(double x){ 
 return scs_sin_ru(x);
 }
 
+/* TODO */
 double sin_rz(double x){ 
 return scs_sin_rz(x);
 }
@@ -328,14 +338,14 @@ return scs_sin_rz(x);
  *************************************************************
  *************************************************************/
 double cos_rn(double x){ 
-  double reshi, reslo, yh, yl, ts, tc;
+  double ch, cl, yh, yl,  tc;
   int quadrant;
   int k;
   int absxhi;
   db_number xx;
 
 #if INLINE_SINCOS
-  double sah,sal,cah,cal;
+  double sah,sal,cah,cal,ts;
 #endif
 
   xx.d=x;
@@ -347,9 +357,9 @@ double cos_rn(double x){
     /* Fast Taylor series */
     yh=x*x;
     tc = yh * (c2.d + yh*(c4.d + yh*(c6.d + yh*(c8.d))));
-    Add12(reshi,reslo, 1, tc);
-    if(reshi == (reshi + (reslo * RN_CST_COSFAST))){	
-      return reshi;
+    Add12(ch,cl, 1, tc);
+    if(ch == (ch + (cl * RN_CST_COSFAST))){	
+      return ch;
     }else{ 
       return scs_cos_rn(x); 
     } 
@@ -364,10 +374,6 @@ double cos_rn(double x){
   quadrant = (k>>7)&3;
   k=(k&127)<<2;
   
-#if DEBUG
-    printf("k = %d\nquadrant = %d\n", k>>2, quadrant);
-#endif
-  
   if(k<=(64<<2)) {
     sah=sincosTable[k+0].d; /* sin(a), high part */
     sal=sincosTable[k+1].d; /* sin(a), low part */
@@ -381,47 +387,46 @@ double cos_rn(double x){
     sal=sincosTable[k1+3].d; /* sin(a), low part  */
   }
 
-#if DEBUG
-	printf("sah=%1.30e sal=%1.30e  \n", sah,sal);
-	printf("cah=%1.30e cal=%1.30e  \n", cah,cal);
-	printf("yh = %1.30e yl = %1.30e\n", yh, yl);
-#endif
 
 #if INLINE_SINCOS
   if (quadrant&1){   /*compute the cos  */
-    DO_SIN;
+    DO_SIN(ch,cl);
   }
   else {/* compute the sine */
-    DO_COS;
+    DO_COS(ch,cl);
   }
 #else
   if (quadrant&1)   /*compute the cos  */
-    do_sin(&reshi, &reslo,  yh,yl);
+    do_sin(&ch, &cl,  yh,yl);
   else /* compute the sine */
-    do_cos(&reshi, &reslo,  yh,yl);
+    do_cos(&ch, &cl,  yh,yl);
 #endif
   
   if((quadrant == 1)||(quadrant == 2)) { 
-    reshi = -reshi;
-    reslo = -reslo;
+    ch = -ch;
+    cl = -cl;
   }
   
-  if(reshi == (reshi + (reslo * 1.0004))){	
-     return reshi;
+  if(ch == (ch + (cl * 1.0004))){	
+     return ch;
   }else{
     return scs_cos_rn(x); 
   } 
 
 }
 
+
+/* TODO */
 double cos_rd(double x){
 return scs_cos_rd(x);
 }
 
+/* TODO */
 double cos_ru(double x){ 
 return scs_cos_ru(x);
 }
 
+/* TODO */
 double cos_rz(double x){ 
 return scs_cos_rz(x);
 }
@@ -434,7 +439,6 @@ return scs_cos_rz(x);
 double tan_rn(double x){  
   double reshi, reslo, sh, sl, ch, cl, kd, yh, yl;
   db_number y;
-  double rnconstant = 1.00552;
   int k, quadrant;
 
 
@@ -442,7 +446,7 @@ double tan_rn(double x){
   db_number xx;
 
 #if INLINE_SINCOS
-  double sah,sal,cah,cal;
+  double sah,sal,cah,cal,ts,tc;
 #endif
 
   xx.d=x;
@@ -457,6 +461,7 @@ double tan_rn(double x){
       return x;
     }
 
+    /*TODO Add polynomial for small values here */ 
   
   /* Otherwise : Range reduction then standard evaluation */
   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
@@ -501,21 +506,12 @@ double tan_rn(double x){
   }    
      break;
    case(2):
-#if DEBUG
-   printf("Case 2\n");
-#endif
       if(k<=(64<<2)) {  /* sah <= cah */
-#if DEBUG
-printf("k = %d\n", k);
-#endif
     sah=-sincosTable[k].d; /* sin(a), high part */
     sal=-sincosTable[k+1].d; /* sin(a), low part */
     cah=-sincosTable[k+2].d; /* cos(a), high part */
     cal=-sincosTable[k+3].d; /* cos(a), low part */
   } else { /* cah <= sah */
-#if DEBUG
-printf("64 < k < 128\n");
-#endif
     int k1=(128<<2) - k;
     cah=-sincosTable[k1].d; 
     cal=-sincosTable[k1+1].d;
@@ -524,9 +520,6 @@ printf("64 < k < 128\n");
   }    
    break;
       case(3):
-    #if DEBUG
-      printf("Case 3\n");
-    #endif
      if(k<=(64<<2)) {  /* sah <= cah */
     cah=sincosTable[k].d ; /* sin(a), high part */
     cal=sincosTable[k+1].d; /* sin(a), low part */
@@ -546,8 +539,8 @@ printf("64 < k < 128\n");
   }
 
 #if INLINE_SINCOS
-DO_SIN;
-DO_COS;
+DO_SIN(sh,sl);
+DO_COS(ch,cl);
 #else  
   do_sin(&sh, &sl, yh, yl);
   do_cos(&ch, &cl, yh, yl);
@@ -557,15 +550,9 @@ DO_COS;
 
   /* ROUNDING TO NEAREST */
  
-  if(reshi == (reshi + (reslo * rnconstant))){
-#if DEBUG
-  printf("1ere etape\n");
-#endif   
+  if(reshi == (reshi + (reslo * 1.0004))){
     return reshi;
   }else{ 
-#if DEBUG
-   printf("SCS! 2eme etape\n");    
-#endif
     return scs_tan_rn(x); 
   } 
 
@@ -577,6 +564,7 @@ DO_COS;
  *               ROUNDED  TOWARD  -INFINITY
  *************************************************************
  *************************************************************/
+/* TODO */
 double tan_rd(double x){  
 return scs_tan_rd(x);
  }
@@ -586,6 +574,7 @@ return scs_tan_rd(x);
  *               ROUNDED  TOWARD  +INFINITY
  *************************************************************
  *************************************************************/
+/* TODO */
 double tan_ru(double x){  
 return scs_tan_ru(x);
  }
@@ -595,6 +584,7 @@ return scs_tan_ru(x);
  *               ROUNDED  TOWARD  ZERO
  *************************************************************
  *************************************************************/
+/* TODO */
 double tan_rz(double x){  
 return scs_tan_rz(x);
  }
