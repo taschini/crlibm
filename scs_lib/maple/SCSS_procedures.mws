@@ -1,0 +1,74 @@
+{VERSION 5 0 "IBM INTEL LINUX" "5.0" }
+{USTYLETAB {CSTYLE "Maple Input" -1 0 "Courier" 0 1 255 0 0 1 0 1 0 0 
+1 0 0 0 0 1 }{CSTYLE "" -1 256 "" 1 12 0 0 0 0 0 2 0 0 0 0 0 0 0 0 }
+{CSTYLE "" -1 257 "" 1 12 0 0 0 0 0 2 0 0 0 0 0 0 0 0 }{PSTYLE "Normal
+" -1 0 1 {CSTYLE "" -1 -1 "" 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }0 0 0 
+-1 -1 -1 0 0 0 0 0 0 -1 0 }{PSTYLE "Heading 1" 0 3 1 {CSTYLE "" -1 -1 
+"" 1 18 0 0 0 0 0 1 0 0 0 0 0 0 0 0 }1 0 0 0 8 4 0 0 0 0 0 0 -1 0 }}
+{SECT 0 {PARA 0 "" 0 "" {TEXT -1 0 "" }}{SECT 0 {PARA 3 "" 0 "" {TEXT 
+-1 11 "PARAMETERS:" }}{PARA 0 "" 0 "" {TEXT -1 43 "Don\264t forget to \+
+set all the parameters here" }}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 
+30 "NB_WORDS := 8:\nNB_BITS  := 30:" }}}}{SECT 1 {PARA 3 "" 0 "" 
+{TEXT -1 11 "GetSCS_real" }}{PARA 3 "" 0 "" {TEXT 256 67 "This procedu
+re convert a decimal number into it SCS representation." }}{PARA 3 "" 
+0 "" {TEXT 257 61 "       x : input number to convert into it SCS repr
+esentation" }}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 883 "GetSCS_real :
+= proc(x)\nlocal exception, index, sign, mantissa, nb, i;\n\nif x <> 0
+ then\n  exception := 1;\n  if x > 0 then\n    sign  := 1;\n    nb    \+
+:= x;\n  elif x < 0 then\n    sign := -1;\n    nb   := -x;\n  end if;
+\n  \n  index := 0;\n\n  if nb >= 1 then\n    for i from 0 while nb > \+
+(2^(NB_BITS+1)-1) do\n      index := index+1;\n      nb    := nb * 2^(
+-NB_BITS);\n    end do; \n  else\n    for i from 0 while nb < 1 do\n  \+
+    index := index-1;\n      nb    := nb * 2^(NB_BITS);\n    end do; \+
+\n  end if;\n\n  for i from 0 by 1 to (NB_WORDS-1) do\n    mantissa[i]
+ := trunc(nb);\n    nb          := (nb - mantissa[i]) * 2^(NB_BITS);\n
+  end do;\nelse\n  for i from 0 by 1 to (NB_WORDS-1) do\n    mantissa[
+i] := 0;\n  end do;\n\n  index     := 1;\n  exception := x;\n  sign   \+
+   := 1;\nend if;\nmantissa[NB_WORDS]   := exception;\nmantissa[NB_WOR
+DS+1] := index;\nmantissa[NB_WORDS+2] := sign;\n\nreturn mantissa;\nen
+d proc:" }}}}{SECT 1 {PARA 3 "" 0 "" {TEXT -1 11 "SetSCS_real" }}
+{PARA 0 "" 0 "" {TEXT -1 44 "Convert an SCS number into a rational num
+ber" }}{PARA 0 "" 0 "" {TEXT -1 0 "" }}{EXCHG {PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 306 "SetSCS_real := proc(tab)\n  local res, i;\n\n  if (t
+ab[NB_WORDS] <> 1) then\n    return tab[NB_WORDS];\n  end if;\n\n  res
+ := 0;\n  for i from (NB_WORDS-1) by -1 while i>=0 do\n    res := 2^(-
+NB_BITS)*res + tab[i] \n  end do;\n  \nres := tab[NB_WORDS+2]*(res * 2
+.^(NB_BITS * tab[NB_WORDS+1]));\n\nreturn res;\n\nend proc:\n" }}}
+{PARA 0 "" 0 "" {TEXT -1 0 "" }}}{SECT 1 {PARA 3 "" 0 "" {TEXT -1 8 "W
+riteSCS" }}{EXCHG {PARA 0 "" 0 "" {TEXT -1 204 "Write Into file fd the
+ SCSS number stored into the table tab where\ntab[0..(NB_WORDS-1)] sto
+re the mantissa\ntab[NB_WORDS] store the exception\ntab[NB_WORDS+1] st
+ore the index\ntab[NB_WORDS+2] store the sign\n" }}{PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 541 "WriteSCS := proc(fd, tab)\n local i;\n\nfprintf(fd,
+\"\{\{\");\n\nfprintf(fd,\"0x%+0.8x, \", tab[0]);\nfor i from 1 by 1 t
+o (NB_WORDS-2) do\n  fprintf(fd,\"0x%+0.8x, \", tab[i]);\n  if (i mod \+
+4 = 3) then\n    fprintf(fd,\"\\n\"); \n  fi;\nend do;\nfprintf(fd,\"0
+x%+0.8x\},\\n\", tab[NB_WORDS-1]);\nif (tab[NB_WORDS]=1) then\n  fprin
+tf(fd,\"DB_ONE, %3d, %3d \", tab[NB_WORDS+1], tab[NB_WORDS+2]);\nelse
+\n  # the only other possible value is 0 so....\n  fprintf(fd,\"\{0x00
+000000, 0x00000000\}, %3d, %3d \", tab[NB_WORDS+1], tab[NB_WORDS+2]);
+\nend if;\n\nfprintf(fd, \"\} \\n\");\nend proc:" }}}}{SECT 1 {PARA 3 
+"" 0 "" {TEXT -1 11 "GetSCS_poly" }}{PARA 0 "" 0 "" {TEXT -1 0 "" }}
+{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 220 "get_nb_terms := proc(poly)
+\n local i, deg_poly;\n\n deg_poly := degree(poly);\n for i from deg_p
+oly by -1 while i>=0 do\n  if coeff(poly, x, i)=0 then\n   deg_poly :=
+ deg_poly-1;\n  end if;\n end do;\n\n return deg_poly;\nend proc:" }}
+{PARA 0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}{EXCHG {PARA 0 "" 0 "" {TEXT 
+-1 67 "Convert each coefficient of a polynom into it SCSS representati
+on\n\n" }}{PARA 0 "" 0 "" {TEXT -1 72 "poly : input polynom \n  file :
+ name of the file where to put the result\n" }{MPLTEXT 1 0 687 "GetSCS
+_poly := proc(poly, file)\n  local i, fd, mantissa, deg;\n  #fclose(fd
+);\n\n  try\n    fd := fopen(file, WRITE,TEXT);\n  finally\n    fprint
+f(fd,\"static const SCS constant_poly[%d]=\\n\",get_nb_terms(poly)+1);
+\n    deg := degree(poly); \n\n    fprintf(fd,\"/* ~%e */ \\n\{\", coe
+ff(poly, x, deg));   \n    mantissa := GetSCS_real(coeff(poly, x, deg)
+);\n    WriteSCS(fd, mantissa); \n    for i from (deg-1) by (-1) while
+ i>=0 do\n      if (coeff(poly, x, i)<>0) then \n        fprintf(fd,\"
+,\\n/* ~%e */ \\n\", coeff(poly, x, i));\n        mantissa := GetSCS_r
+eal(coeff(poly, x, i));\n        WriteSCS(fd, mantissa, 0);\n      end
+ if; \n    end do;\n    fprintf(fd,\"\};\\n\");\n   \n  fclose(fd);\n \+
+ end try;\nend proc:" }}}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 51 "Ge
+tSCS_poly(Poly_Res, \"/home/ddefour/coef_ln10.h\");" }}}{EXCHG {PARA 
+0 "> " 0 "" {MPLTEXT 1 0 14 "Digits := 100:" }}}{EXCHG {PARA 0 "> " 0 
+"" {MPLTEXT 1 0 0 "" }}}}{MARK "8 0 0" 0 }{VIEWOPTS 1 1 0 1 1 1803 1 
+1 1 1 }{PAGENUMBERS 0 1 2 33 1 1 }

@@ -1,0 +1,38 @@
+Toute la doc est dans les pages info.
+
+Les seuls fichiers que j'ai écrits moi-même sont configure.in et Makefile.am
+
+Les commandes à taper la première fois après le cvs checkout sont
+(dans l'ordre)
+
+aclocal
+autoheader
+autoconf
+automake --add-missing
+./configure 
+
+
+
+Pour faire la doc:
+doxygen Doxyfile.user
+doxygen Doxyfile.dev
+puis aller dans le répertoires latex de Docs et faire 
+cd Docs/latex/
+pdflatex  refman.tex 
+(deux fois pour les références)
+
+Pour enlever un peu du bordel d'autoconf:
+make distclean
+
+Pour exporter : 
+
+make dist
+
+Remarque : sur mon debian woody l'autoconf de service est trop vieux,
+il faut utiliser la commande autoconf2.50 ...
+
+Remarque du meme genre: si on fait make dist sous solaris le truc
+marche sous linux, mais l'inverse n'est pas vrai (--add-missing ajoute
+plus de trucs sous solaris).
+Super portable tout cela.
+

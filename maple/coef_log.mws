@@ -1,0 +1,58 @@
+{VERSION 5 0 "IBM INTEL LINUX" "5.0" }
+{USTYLETAB {CSTYLE "Maple Input" -1 0 "Courier" 0 1 255 0 0 1 0 1 0 0 
+1 0 0 0 0 1 }{CSTYLE "2D Math" -1 2 "Times" 0 1 0 0 0 0 0 0 2 0 0 0 0 
+0 0 1 }{CSTYLE "2D Output" 2 20 "" 0 1 0 0 255 1 0 0 0 0 0 0 0 0 0 1 }
+{PSTYLE "Normal" -1 0 1 {CSTYLE "" -1 -1 "" 0 1 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 }0 0 0 -1 -1 -1 0 0 0 0 0 0 -1 0 }{PSTYLE "Text Output" -1 2 1 
+{CSTYLE "" -1 -1 "Courier" 1 10 0 0 255 1 0 0 0 0 0 1 3 0 3 0 }1 0 0 
+-1 -1 -1 0 0 0 0 0 0 -1 0 }{PSTYLE "Warning" 2 7 1 {CSTYLE "" -1 -1 "
+" 0 1 0 0 255 1 0 0 0 0 0 0 1 0 0 0 }0 0 0 -1 -1 -1 0 0 0 0 0 0 -1 0 }
+{PSTYLE "Error" 7 8 1 {CSTYLE "" -1 -1 "" 0 1 255 0 255 1 0 0 0 0 0 0 
+0 0 0 0 }0 0 0 -1 -1 -1 0 0 0 0 0 0 -1 0 }{PSTYLE "Maple Output" 0 11 
+1 {CSTYLE "" -1 -1 "" 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }3 3 0 -1 -1 -1 
+0 0 0 0 0 0 -1 0 }{PSTYLE "" 11 12 1 {CSTYLE "" -1 -1 "" 0 1 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 }1 0 0 -1 -1 -1 0 0 0 0 0 0 -1 0 }}
+{SECT 0 {EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 23 "restart:\nDigits := \+
+100:" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 16 "with(numapprox);" }
+}{PARA 12 "" 1 "" {XPPMATH 20 "6#7/%(chebdegG%)chebmultG%)chebpadeG%)c
+hebsortG%*chebyshevG%,confracformG%-hermite_padeG%+hornerformG%(infnor
+mG%(laurentG%(minimaxG%%padeG%&remezG" }}}{EXCHG {PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 16 "with(orthopoly):" }}}{EXCHG {PARA 0 "" 0 "" {TEXT -1 
+242 "First Approach:\n x=2^e (1+f)\n log(x) = e.log(2) + log(1+f)\ndef
+ine s=f/(2+f) \nthen log(1+f)=log(1+s) - log(1-s) ~ 2*s + s^3*Poly_che
+b(s^2)\n\nWe can add tabular approximation that reduce the input range
+.\n log(1+f) = log(w) + log((1+f-w)/(1+f+w))" }}{PARA 0 "" 0 "" {TEXT 
+-1 0 "" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 9 "W := 2^5:" }}}
+{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 104 "Poly_P := series(ln((1+sqrt
+(x))/(1-sqrt(x)))/(x^(3/2))-2/x, x=0, 45):\nPoly_Q := convert(Poly_P,p
+olynom):" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 75 "Poly_cheb := ch
+ebpade(Poly_Q, x=0..((sqrt(2.)-1)/(sqrt(2.)+1.))/W, [13,0]):" }}}
+{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 104 "Poly_Res1 := sort(expand(2*
+x + x^3 * subs(x=x^2, Poly_cheb))):\nPoly_Res  := subs(x = x/(2+x),Pol
+y_Res1):" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 101 "log(infnorm(( \+
+1 - (expand(Poly_Res))/ln(1+x)), x=(1/sqrt(2.)-1)/W..(sqrt(2.)-1)/W, '
+err12'))/log(2.);" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#$!_q'4jI#>h*y(eI@
+<aXoFRj0p/A()R!*4Rl9'f`bKH&fFX,f7&H*>QS>HC:!#(*" }}}{EXCHG {PARA 0 "> \+
+" 0 "" {MPLTEXT 1 0 0 "" }}}{EXCHG {PARA 0 "" 0 "" {TEXT -1 101 "Secon
+d Approach:\n  x=2^e (1+f)\n log(x) = e.log(2) + log(1+f)\n\n  log(1+f
+) = log(w) + log(1+(1+f-w)/w)\n" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 
+1 0 9 "W := 2^5:" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 81 "Poly_P \+
+:= series((ln(1+x)/ln(2.))/x, x=0, 45):\nPoly_Q := convert(Poly_P,poly
+nom):" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 51 "Poly_cheb := chebp
+ade(Poly_Q, x=-1/W..1/W, [19,0]):" }}}{EXCHG {PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 41 "Poly_Res  := sort(expand(x * Poly_cheb)):" }}}{EXCHG 
+{PARA 0 "> " 0 "" {MPLTEXT 1 0 87 "log(infnorm(( 1 - (expand(Poly_Res)
+)/(ln(1+x)/ln(2.))), x=-1/W..1/W, 'err12'))/log(2.);" }}{PARA 8 "" 1 "
+" {TEXT -1 58 "Error, (in infnorm) function does not evaluate to numer
+ic\n" }}}{EXCHG {PARA 0 "" 0 "" {TEXT -1 129 "\n\nThis procedure give \+
+under a polynom form value needed by tabular range reduction for the l
+ogarithm.\nDON'T forget the zero !!!!\n" }{MPLTEXT 1 0 0 "" }}}{EXCHG 
+{PARA 0 "> " 0 "" {MPLTEXT 1 0 378 "Digits       := 50:  \ntable_ti   \+
+  := 0:\ntable_inv_wi := 0:\nN            := -4:   \nbreak_point  := s
+qrt(2.):\nstart_nb     := round((break_point/2) * 2.^(-N))*2.^(N):\nnb
+_turn      := round((break_point/2) * 2.^(-N)): \n\nfor i from 0 to nb
+_turn do\n   table_ti := table_ti * x + log(start_nb):\n   table_inv_w
+i := table_inv_wi *x + 1./ start_nb:\n   start_nb := start_nb + 2.^(N)
+:\nod:" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}{EXCHG {PARA 
+0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}}{MARK "16 0 0" 44 }{VIEWOPTS 1 1 0 
+1 1 1803 1 1 1 1 }{PAGENUMBERS 0 1 2 33 1 1 }

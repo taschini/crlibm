@@ -1,0 +1,144 @@
+\documentclass[a4paper]{book} 
+
+\usepackage{fullpage}
+\usepackage{isolatin1} 
+\usepackage{graphicx}
+\usepackage{palatino}
+\usepackage{listings}
+\usepackage{longtable} %pour les preuves des programmes
+\usepackage{lscape}    % pour le mode landscape
+\usepackage{makeidx}
+\usepackage{color}
+\usepackage{amstext,url,latexsym,amsfonts,amssymb,amsmath}
+
+
+\newtheorem{example}{Example}
+\newtheorem{theorem}{Theorem}
+\newtheorem{algorithm}{Algorithm}
+\newtheorem{proof}{Proof}
+\newtheorem{propriete}{Property}
+
+\newcommand{\pref}[1]{<\ref{#1}>}
+\newcommand{\quick}{\textbf{Quick}}
+\newcommand{\accurate}{\textbf{Accurate}}
+\newcommand{\ulp}{\mbox{ulp}}
+\newcommand{\round}{\circ}
+\newcommand{\crlibm}{\texttt{cr-libm}}
+\renewcommand{\epsilon}{\varepsilon}
+
+\newcommand{\maxx}{{\widehat{|x|}}}
+\newcommand{\maxz}{{\widehat{|z|}}}
+\newcommand{\maxs}[1]{\widehat{|s_{#1}|}}
+\newcommand{\infnorm}[1]{||{#1}||^{\infty}}
+
+
+
+
+% Environnement pour disposer de propriété ``à la leslie lamport''
+\newcounter{propexp} % reset propexp à chaque chapitre
+\newenvironment{prop}
+{\begin{trivlist}\refstepcounter{propexp}\item[\hbox to 0pt{\spring {\bf <\arabic{propexp}>}}]}
+{\ifvmode\smallskip\fi$\bullet$\end{trivlist}}
+
+% Définition de l'environnement proof
+\def\spring{\hskip 0pt minus 1fil}
+\def\@yproof[#1]{\@proof{ #1}}
+\def\@proof#1{\begin{trivlist}\item[\hbox to 0pt{\spring $\diamond$}]
+\emph{Proof#1. }}
+%\newenvironment{preuve}
+%{\@ifnextchar[{\@yproof}{\@proof{}}}{\hfill\null\hfill$\square$\end{trivlist}}
+\newenvironment{preuve}
+{\@proof{}}{\hfill\null\hfill$\square$\end{trivlist}}
+
+
+
+% Definition des options pour le packages listings
+\lstset{numbers=left,
+  numberstyle=\tiny,
+  stepnumber=1,
+  numbersep=5pt,
+  lineskip=-1pt,
+  extendedchars=true,
+  basicstyle=\footnotesize,
+  breaklines,
+  showstringspaces=false,
+  frame=single,
+  language={[ANSI]C},
+  firstnumber=last,
+  escapeinside={(*@}{@*)}
+}
+
+
+
+
+\title{CR-LIBM\\A library of correctly rounded elementary functions in double-precision}
+\author{\mbox{Catherine Daramy}, \mbox{David Defour}, \mbox{Florent~de~Dinechin}}
+
+%% \abstract{
+%%   CRLibm is a mathematical library with correct rounding in
+%%   double-precision in the four IEEE-754 rounding modes. This report
+%%   explains the code and proves the correct rounding property.
+%% }
+
+%% \RRIresume{%
+%%   CRLibm est une bibliothèque mathématique offrant l'arrondi correct
+%%   en double précision selon les quatre modes d'arrondi. Ce rapport
+%%   détaille les algorithmes utilisés et prouve fonction par fonction la
+%%   propriété d'arrondi correct.
+%% }%
+
+%% \RRIkeywords{elementary functions, correct rounding, IEEE-754, double precision}
+
+%% \RRImotscles{fonctions élémentaires, arrondi correct, IEEE-754, double précision}
+
+%% \RRItheme{2}
+
+%% \RRIprojet{Arénaire}
+
+%% \RRIinria{\RRnote{%
+%%     This  text  is  also  available   as  a  research  report  of  the
+%%     Laboratoire    de     l'Informatique    du    Parallélisme    {\tt
+%%       http://www.ens-lyon.fr/LIP}.
+%% }}%
+
+
+
+
+\begin{document}
+\maketitle
+
+
+\section*{Important warning}
+
+This report describes and proves the initial version of the
+\texttt{crlibm}  library. It may not correspond to the current
+code. However, an up-to-date version will always be distributed along
+with the code.
+
+
+\tableofcontents
+
+
+\chapter{Introduction: Goals and methods}
+\input{0_intro.tex}
+
+\chapter{Common notations, theorems and procedures}
+\input{1_common.tex}
+
+\chapter{The exponential}
+\input{2_exp.tex}
+
+\chapter{The natural logarithm}
+\input{3_log.tex}
+
+
+\appendix
+
+
+
+\bibliographystyle{plain} 
+\bibliography{elem-fun}
+
+\end{document}
+
+

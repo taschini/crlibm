@@ -1,0 +1,12 @@
+Les commandes à taper la première fois après le cvs checkout sont
+(dans l'ordre)
+
+aclocal
+autoheader
+autoconf
+automake --add-missing
+./configure 
+
+Remarque : sur mon debian woody l'autoconf de service est trop vieux,
+il faut utiliser la commande autoconf2.50 ...
+

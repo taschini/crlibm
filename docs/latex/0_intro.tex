@@ -1,0 +1,257 @@
+
+
+
+\section{Correct rounding and elementary functions}
+\label{sect:intro}
+
+The need for accurate elementary functions is important in many
+critical programs.  Methods for computing these functions include
+table-based methods\cite{Far81,Tan91}, polynomial approximations and
+mixed methods\cite{DauMor2k}. See the books by Muller\cite{Muller97} or
+Markstein\cite{Markstein2000} for recent surveys on the subject.
+
+The IEEE-754 standard for floating-point arithmetic\cite{IEEE754}
+defines the usual floating-point formats (single and double
+precision). It also specifies the behavior of the four basic operators
+($+,-,\times,\div$) and the square root in four rounding modes (to the
+nearest, towards $+\infty$, towards $-\infty$ and towards $0$). Its
+adoption and widespread use have increased the numerical quality of,
+and confidence in floating-point code. In particular, it has improved
+\emph{portability} of such code and allowed construction of
+\emph{proofs} on its numerical behavior. Directed rounding modes
+(towards $+\infty$, $-\infty$ and $0$) also enabled efficient
+\emph{interval arithmetic}\cite{Moore66,KKLRW93}.
+
+However, the IEEE-754 standard specifies nothing about elementary
+functions, which limits these advances to code excluding such
+functions.  Currently, several options exist: on one hand, one can use
+today's mathematical libraries that are efficient but without any
+warranty on the correctness of the results. When strict guarantees are
+needed, some multiple-precision packages like MPFR \cite{MPFRweb}
+offer correct rounding in all rounding modes, but are several orders
+of magnitude slower than the usual mathematical libraries for the same
+precision. The recently released IBM Ultimate Math
+Library\cite{IBMlibultimweb} claims to offer correct rounding to the nearest,
+and this library is both portable and fast, if bulky. However, for
+reasons detailed below, this claim is not proven. Besides, this
+library still lacks directed rounding modes needed for interval
+arithmetic, and has other drawbacks that we analyze in the sequel.
+
+
+The  goal of the \crlibm\ project is to build on a combination of several
+recent advances to design a correctly rounded mathematical
+library which is fast enough to replace the existing libraries, at a
+minor cost in terms of performance and resources.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{A methodology for efficient correctly-rounded functions}
+\label{section:methodology}
+
+
+\subsection{The Table Maker's Dilemma}
+
+With a few exceptions, the image $y$ of a floating-point number $x$ by
+a transcendental function $f$ is a transcendental number, and can
+therefore not be represented exactly in standard numeration systems.
+The only hope is to compute the floating-point number that is closest
+to (resp.  immediately above or immediately below) the mathematical
+value, which we call the result \emph{correctly rounded} to the
+nearest (resp.  towards $+\infty$ or towards $-\infty$).
+
+It is only possible to compute an approximation $\hat{y}$ to the real
+number $y$ with precision $\epsilon$. This ensures that the real value
+$y$ belongs to the interval $[\hat{y}-\epsilon , \hat{y}+\epsilon]$.
+Sometimes however, this information is not enough to decide correct
+rounding. For example, if $[\hat{y}-\epsilon , \hat{y}+\epsilon]$
+contains the middle of two consecutive floating-point numbers, it is
+impossible to decide which of these two numbers is the correctly
+rounded to the nearest of $y$. This is known as the Table Maker's
+Dilemma (TMD).
+
+\subsection{The onion peeling strategy}
+
+A method described by Ziv \cite{Ziv91} is to increase the precision
+$\epsilon$ of the approximation until the correctly rounded value can
+be decided.  Given a function $f$ and an argument $x$, the value of
+$f(x)$ is first evaluated using a quick approximation of precision
+$\epsilon_1$.  Knowing $\epsilon_1$, it is possible to decide if
+rounding is possible, or if more precision is required, in which case
+the computation is restarted using a slower approximation of precision
+$\epsilon_2$ greater than $\epsilon_1$, and so on. This approach makes
+sense even in terms of average performance, as the slower steps are
+rarely taken.
+
+However there was until recently no practical bound on the termination
+time of such an algorithm. This iteration has been proven to
+terminate, but the actual maximal precision required in the worst case
+is unknown.  This might prevent using this method in critical
+application.
+
+
+
+
+\section{The Correctly Rounded Mathematical Library}
+\label{section:crlibm}
+
+We have designed our own library called \emph{crlibm} (correctly
+rounded mathematical library). It is based on the work of
+Lef\`evre\cite{LMT98,Lef2000} who computed the worst-case $\epsilon$
+required for correctly rounding several functions in double-precision
+over selected intervals in the four IEEE-754 rounding modes. For
+example, he proved that 157 bits are enough to ensure correct rounding
+of the exponential function on all of its domain for the four IEEE-754
+rounding modes.
+
+\subsection{Two steps are enough}
+Thanks to such results, we are able to guarantee correct rounding in
+two iterations only, which we may then optimize separately. The first
+of these iterations is relatively fast and provides between 60 and 80
+bits of accuracy (depending on the function), which is sufficient in
+most cases. It will be referred throughout this document as the \quick\ 
+phase of the algorithm. The second phase, referred to as the
+\accurate\ phase, is dedicated to challenging cases. It is slower but
+has a reasonably bounded execution time, tightly targeted at
+Lef\`evre's worst cases.
+
+Having a proven worst-case execution time lifts the last obstacle to a
+generalization of correctly rounded transcendentals. Besides, having
+only two steps allows us to publish, along with each function, a proof
+of its correctly rounding behavior.
+
+
+\subsection{Portable IEEE-754 FP for fast first step}
+The computation of a tight bound on the approximation error of the
+first step ($\epsilon_1$) is crucial for the efficiency of the onion
+peeling strategy: overestimating $\epsilon_1$ means going more often
+than needed through the second step. As we want the proof to be
+portable as well as the code, our first steps are written in strict
+IEEE-754 arithmetic. On some systems, this means preventing the
+compiler/processor combination to use advanced floating-point features
+such as fused multiply-and-add or extended double precision. It also
+means that the performance of our portable library will be lower than
+optimized libraries using these features.
+
+To ease these proofs, our first steps make wide use of classical, well
+proven techniques. In particular, when a result is needed in a
+precision higher than double precision (as is the case of $\hat{y_1}$,
+the result of the first step), it is represented as as the sum of two
+floating-point numbers. There are well-known algorithms for computing
+on such sums (for instance Sterbenz' lemma, the Fast2Sum algorithm,
+the Dekker algorithm\cite{Knu73}) with mechanically checked proofs.
+
+A sequence of simple tests on $\hat{y_1}$ allows to decide whether to
+go for the second step. The sequence corresponding to each rounding
+mode is shared by most functions and has also been carefully proven.
+
+
+\subsection{Software Carry-Save for an accurate second step}
+For the second step, we designed an ad-hoc multiple-precision library
+called Software Carry-Save library \emph{(scslib)} which is lighter
+and faster than other available libraries for this specific
+application \cite{DefDin2002,DinDef2003}. This choice is motivated by
+considerations of code size and performance, but also by the need to
+be independent of other libraries: Again, we need a library on which
+we may rely at the proof level. This library is independent from the
+mathematical library and distributed separately \cite{SCSweb}.
+
+
+\subsection{Current state of \emph{crlibm}}
+
+The library \texttt{crlibm} \emph{(correctly rounded mathematical
+  library)} currently offers accurate parts for the exponential,
+logarithm in radix $2$, $10$ and $e$, sine, cosine, tangent,
+arctangent, plus trigonometric argument reduction. The first quick
+part and its proof have only been written for the exponential thus
+far. The difficulty is to prove both the algorithm and the C program.
+The proof relies heavily on several shared lemmas, assuming the good
+behavior of the system composed of the compiler and the processor.
+Another difficulty is that performance is important. Therefore many
+parts of this proof could be done only by hand.
+
+
+\subsection{Organization of the source code of the library}
+
+For each function, the file containing the source code for the
+accurate phase is named after the function itself (for instance
+\texttt{exp.c}, \texttt{log.c}), and the quick phase, when available,
+is named with the \texttt{\_fast} suffix (for instance
+\texttt{exp\_fast.c}). The names of auxiliary files \texttt{.c} or
+\texttt{.h} files relative to a function are also prefixed with the
+name of the function.
+
+The accurate phase relies on \texttt{scslib}, the \emph{software
+  carry-save} multiple-precision library written for this purpose.
+This library is contained in a subdirectory called \texttt{scs\_lib}.
+
+The common C routines that are detailed in Part~\ref{sec:common} of
+this document are defined in \texttt{crlibm\_private.c} and
+\texttt{crlibm\_private.h}.
+
+Many of the constants used in the C code have been computed thanks to
+Maple procedures which are contained in the \texttt{maple}
+subdirectory. Some of these procedures are explained in
+Part~\ref{sec:common}. For some functions, a Maple procedure mimicking
+the C code, and used for debugging or optimization purpose, is also
+available.
+
+
+
+
+\section{An overview of other  available mathematical libraries\label{section:lib-overview}}
+
+Many high-quality mathematical libraries are freely available and have
+been a source of inspiration for this work.
+
+Most mathematical libraries do not offer correct rounding. They can be classified as 
+\begin{itemize}
+\item portable libraries  assuming IEEE-754
+  arithmetic, like \emph{fdlibm}, written by Sun\cite{FDLIBMweb} and \emph{libultim}
+  written by IBM\cite{IBMlibultimweb};
+\item  Processor-specific libraries, by
+  Intel\cite{HarKubStoTan99,IntelOpenSource} and
+  HP\cite{Markstein2000,Markstein2001} among other.
+\end{itemize}
+
+Operating systems often include several mathematical libraries, some of which are derivatives of one
+of the previous.
+
+Two libraries offering correct correct rounding are specially relevant to this work:
+\begin{itemize}
+\item The\emph{libultim} library also called MathLib, is developed at
+  IBM by Ziv and others \cite{IBMlibultimweb}. It provides correct rounding,
+  under the assumption that 800 bits are enough in all case. This
+  approach suffers two weaknesses. The first is the absence of proof
+  that 800 bits are enough: all there is is a very high probability.
+  The second is that, as we will see in the sequel, for challenging
+  cases, 800 bits are much of an overkill, which can increase the
+  execution time up to 20,000 times a normal execution. This will
+  prevent such a library from being used in real-time applications.
+  Besides, to prevent this worst case from degrading average
+  performance, there is usually some intermediate levels of precision
+  in MathLib's elementary functions, which makes the code larger, more
+  complex, and more difficult to prove.
+  
+  In addition this library provides correct rounding only to nearest.
+  This is the most used rounding mode, but it might not be the most
+  important as far as correct rounding is concerned: correct rounding
+  provides a precision improvement over current mathematical libraries
+  of only a fraction of a {unit in the last place} \emph{(ulp)}.
+  Conversely, the three other rounding modes are needed to guarantee
+  intervals in interval arithmetic.  Without correct rounding in these
+  directed rounding modes, interval arithmetic looses up to one
+  \emph{ulp} of precision in each computation.
+  
+\item \emph{MPFR} is a multiprecision package safer than
+  \emph{libultilm} as it uses arbitrary multiprecision. It provides
+  most of elementary functions for the four rounding modes defined by
+  the IEEE-754 standard. However this library is not optimized for
+  double precision arithmetic. In addition, as its exponent range is
+  much wider than that of IEEE-754, the subtleties of denormal numbers
+  are difficult to handle properly using such a multiprecision
+  package.
+\end{itemize}
+
+

@@ -1,0 +1,117 @@
+{VERSION 4 0 "IBM INTEL LINUX" "4.0" }
+{USTYLETAB {CSTYLE "Maple Input" -1 0 "Courier" 0 1 255 0 0 1 0 1 0 0 
+1 0 0 0 0 1 }{CSTYLE "2D Math" -1 2 "Times" 0 1 0 0 0 0 0 0 2 0 0 0 0 
+0 0 1 }{CSTYLE "2D Output" 2 20 "" 0 1 0 0 255 1 0 0 0 0 0 0 0 0 0 1 }
+{PSTYLE "Normal" -1 0 1 {CSTYLE "" -1 -1 "" 0 1 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 }0 0 0 -1 -1 -1 0 0 0 0 0 0 -1 0 }{PSTYLE "Text Output" -1 2 1 
+{CSTYLE "" -1 -1 "Courier" 1 10 0 0 255 1 0 0 0 0 0 1 3 0 3 0 }1 0 0 
+-1 -1 -1 0 0 0 0 0 0 -1 0 }{PSTYLE "Warning" 2 7 1 {CSTYLE "" -1 -1 "
+" 0 1 0 0 255 1 0 0 0 0 0 0 1 0 0 0 }0 0 0 -1 -1 -1 0 0 0 0 0 0 -1 0 }
+{PSTYLE "Error" 7 8 1 {CSTYLE "" -1 -1 "" 0 1 255 0 255 1 0 0 0 0 0 0 
+0 0 0 0 }0 0 0 -1 -1 -1 0 0 0 0 0 0 -1 0 }{PSTYLE "Maple Output" 0 11 
+1 {CSTYLE "" -1 -1 "" 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }3 3 0 -1 -1 -1 
+0 0 0 0 0 0 -1 0 }{PSTYLE "" 11 12 1 {CSTYLE "" -1 -1 "" 0 1 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 }1 0 0 -1 -1 -1 0 0 0 0 0 0 -1 0 }}
+{SECT 0 {EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 20 "restart;\nDigits:=80
+:" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 15 "with(difforms);" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "6#7*%#&^G%\"dG%(defformG%)formpartG%'par
+ityG%+scalarpartG%)simpformG%(wdegreeG" }}}{EXCHG {PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 18 "with (numapprox);\n" }}{PARA 12 "" 1 "" {XPPMATH 20 "
+6#7/%(chebdegG%)chebmultG%)chebpadeG%)chebsortG%*chebyshevG%,confracfo
+rmG%-hermite_padeG%+hornerformG%(infnormG%(laurentG%(minimaxG%%padeG%&
+remezG" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 16 "with(orthopoly);
+" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#7(%\"GG%\"HG%\"LG%\"PG%\"TG%\"UG" 
+}}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 72 "Poly_P := series(arctan(x
+), x=0, 22):\nPoly_Q := convert(Poly_P,polynom):" }}}{EXCHG {PARA 0 ">
+ " 0 "" {MPLTEXT 1 0 44 "Poly_Res := chebpade(Poly_Q, x=0..1, [4,0]);
+" }}{PARA 12 "" 1 "" {XPPMATH 20 "6#>%)Poly_ResG,,-%\"TG6$\"\"!,&%\"xG
+\"\"#\"\"\"!\"\"$\"[pr?r?9)>vsb$Q7]\\!3\")>K&z\"zuW<kl[)>$)ftlKl*[lyH%
+!#!)*&$\"[p++++++++++++++++++++]Pf3jY!z'=6[)4YsD?!=**RF1F--F'6$F-F*F-F
+-*&$\"[p++++++++++++++++++++++v$f$=)QNyv_Wd_j8i=4$!#\")F--F'6$F,F*F-F.
+*&$\"[pnmmmmmmmmmmmmmmmmmmmm\"H#=XY4uG'4FzTO)p')*>p\"!##)F--F'6$\"\"$F
+*F-F-*&$\"[p+++++++++++++++++++++]7.2ZK&RA=L%Q_b`p@`PF@F--F'6$\"\"%F*F
+-F-" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 17 "expand(Poly_Res);" }
+}{PARA 12 "" 1 "" {XPPMATH 20 "6#,,$\"joVSXSv9`31*orX$GQT9`lG,+b$o&4&y
+w3d4^NFGc765!#\")\"\"\"*&$\"[p++++++++++++++++++++](o/[#zupl(3g/')f'\\
+/Qv&*!#!)F'%\"xGF'F'*&$\"[p++++++++++++++++++++++D\"Gj[)p4zeKT[3b!)\\>
+FF+F')F,\"\"#F'F'*&$\"[pnmmmmmmmmmmmmmmmmmmmmm;aj4K7svAlcPvEezm!*F+F')
+F,\"\"$F'!\"\"*&$\"[p++++++++++++++++++++++++Dc,mEtW>02b+x6/[F+F')F,\"
+\"%F'F'" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 82 "log(infnorm( 1-(
+expand(Poly_Res)/arctan(x)), x=2**(-1022)..0.8, 'err12'))/log(2.);" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "6#$\"[p#[.Xzps?`UFsG2d3w+-cU\\*\\&>Ydc`t
+LFWusz<]?,\"!#w" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 7 " err12;" 
+}}{PARA 11 "" 1 "" {XPPMATH 20 "6#$\"[p#=R\"[V/s)oTFLbI=Li/)f@>U1/CL<F
+B!4$Q,s]eQ2DA!$(Q" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 704 "calcu
+l_intervalle:=proc(precision,nbintervalles)\n   local i,segment,y,suit
+e,opone1,opone2,optwo1,optwo2,b1,b2;\n   global b,Suite_b;\n   Suite_b
+:=[];\n   b:=precision;\n   for i from 1 by 1 to nbintervalles do\n   \+
+   suite:=Suite_b: \n      Suite_b:=[op(suite),b]:\n      y:=b:\n  seg
+ment:=solve(\{(x-y)/(1+x*y)<precision,(x-y)/(1+x*y)>-precision\},x):\n
+      print(segment);\n      opone1:=op(1,op(1,segment));\n      opone
+2:=op(1,op(2,segment));\n      optwo1:=op(2,op(1,segment));\n      opt
+wo2:=op(2,op(2,segment));\n         if (opone1=x) then b1:=opone2 else
+ b1:=opone1 end if;\n         if (optwo1=x) then b2:=optwo2 else b2:=o
+ptwo1 end if;\n      b:=max(b1,b2);\n      print(b);\n   end do;\nretu
+rn Suite_b;\nend proc;" }}{PARA 12 "" 1 "" {XPPMATH 20 "6#>%2calcul_in
+tervalleGR6$%*precisionG%.nbintervallesG6,%\"iG%(segmentG%\"yG%&suiteG
+%'opone1G%'opone2G%'optwo1G%'optwo2G%#b1G%#b2G6\"F4C&>%(Suite_bG7\">%
+\"bG9$?(8$\"\"\"F>9%%%trueGC/>8'F7>F77$-%#opG6#FCF:>8&F:>8%-%&solveG6$
+<$2*&,&%\"xGF>FJ!\"\"F>,&F>F>*&FTF>FJF>F>FUF;2,$F;FUFRFT-%&printG6#FL>
+8(-FG6$F>-FG6$F>FL>8)-FG6$F>-FG6$\"\"#FL>8*-FG6$FcoF[o>8+-FG6$FcoFao@%
+/FhnFT>8,F^o>F_pFhn@%/FeoFT>8-Fio>FdpFeo>F:-%$maxG6$F_pFdp-Fen6#F:OF7F
+46$F:F7F4" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 26 "calcul_interva
+lle(0.1,32);" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#<$2$\"\"!F&%\"xG2F'$\"
+[p????????????????????????????????????????!#!)" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "6#$\"[p????????????????????????????????????????!#!)" }}
+{PARA 12 "" 1 "" {XPPMATH 20 "6#<$2$\"[p)*****************************
+**************************************************!#\")%\"xG2F($\"[pIV
+9Qzf')Gwe>td_<RY:0Ny#4.,nb=1-M6P7/oAuC3$!#!)" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "6#$\"[pIV9Qzf')Gwe>td_<RY:0Ny#4.,nb=1-M6P7/oAuC3$!#!)" }}
+{PARA 12 "" 1 "" {XPPMATH 20 "6#<$2%\"xG$\"[pg\")H(Rl_]]_kMVD4Ir(\\@z`
+V2,*H*eg/n(*=;y_QyJ7U!#!)2$\"[p???????????????????????????????????????
+?F(F%" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#$\"[pg\")H(Rl_]]_kMVD4Ir(\\@z
+`V2,*H*eg/n(*=;y_QyJ7U!#!)" }}{PARA 12 "" 1 "" {XPPMATH 20 "6#<$2$\"[p
+IV9Qzf')Gwe>td_<RY:0Ny#4.,nb=1-M6P7/oAuC3$!#!)%\"xG2F($\"[paJK=qOR\"\\
+:@>aCe^r7r>X'Q/@@=s+(Q.R(pW&>[K:W&F'" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+6#$\"[paJK=qOR\"\\:@>aCe^r7r>X'Q/@@=s+(Q.R(pW&>[K:W&!#!)" }}{PARA 12 "
+" 1 "" {XPPMATH 20 "6#<$2$\"[pg\")H(Rl_]]_kMVD4Ir(\\@z`V2,*H*eg/n(*=;y
+_QyJ7U!#!)%\"xG2F($\"[p\"[a1H#\\&o'pFP8pt\")*[zb$f9k-#\\g*e[SP-:F%=2u@
+A\"oF'" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#$\"[p\"[a1H#\\&o'pFP8pt\")*[
+zb$f9k-#\\g*e[SP-:F%=2u@A\"o!#!)" }}{PARA 12 "" 1 "" {XPPMATH 20 "6#<$
+2%\"xG$\"[pFbO\\;o7/yO]&f/&*pOW2&z)pF%on5g\\$e+!4<W**4:J$Q)!#!)2$\"[pa
+JK=qOR\"\\:@>aCe^r7r>X'Q/@@=s+(Q.R(pW&>[K:W&F(F%" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "6#$\"[pFbO\\;o7/yO]&f/&*pOW2&z)pF%on5g\\$e+!4<W**4:J$Q)!#
+!)" }}{PARA 12 "" 1 "" {XPPMATH 20 "6#<$2%\"xG$\"[p>W!*o;KrV:P7M9Afvw$
+*4))>uUrli63-`al+/Z*Q#>C5!#z2$\"[p\"[a1H#\\&o'pFP8pt\")*[zb$f9k-#\\g*e
+[SP-:F%=2u@A\"o!#!)F%" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#$\"[p>W!*o;Kr
+V:P7M9Afvw$*4))>uUrli63-`al+/Z*Q#>C5!#z" }}{PARA 12 "" 1 "" {XPPMATH 
+20 "6#<$2$\"[pFbO\\;o7/yO]&f/&*pOW2&z)pF%on5g\\$e+!4<W**4:J$Q)!#!)%\"x
+G2F($\"[pd&QPCjF5P]m^[XL>Wf)fR?*4)**pYzc'*Hov.7xY$pCD\"!#z" }}{PARA 
+11 "" 1 "" {XPPMATH 20 "6#$\"[pd&QPCjF5P]m^[XL>Wf)fR?*4)**pYzc'*Hov.7x
+Y$pCD\"!#z" }}{PARA 12 "" 1 "" {XPPMATH 20 "6#<$2$\"[p>W!*o;KrV:P7M9Af
+vw$*4))>uUrli63-`al+/Z*Q#>C5!#z%\"xG2F($\"[pp,&z^&f(3^jYrp:ROX&[6D7f$*
+\\#=8uunX,63qVe:ha\"F'" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#$\"[pp,&z^&f
+(3^jYrp:ROX&[6D7f$*\\#=8uunX,63qVe:ha\"!#z" }}{PARA 12 "" 1 "" 
+{XPPMATH 20 "6#<$2$\"[pd&QPCjF5P]m^[XL>Wf)fR?*4)**pYzc'*Hov.7xY$pCD\"!
+#z%\"xG2F($\"[pWdl\"3%Re1fJ6pT+%y:`xUEVRgPy0hKk]Jj\"eLx1<Z>F'" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "6#$\"[pWdl\"3%Re1fJ6pT+%y:`xUEVRgPy0hKk]
+Jj\"eLx1<Z>!#z" }}{PARA 12 "" 1 "" {XPPMATH 20 "6#<$2$\"[pp,&z^&f(3^jY
+rp:ROX&[6D7f$*\\#=8uunX,63qVe:ha\"!#z%\"xG2F($\"[p^2$fK^&3D?zuMx=W\\o`
+6+;ccpg!p+tZe,*\\<Lpc<UDF'" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#$\"[p^2$
+fK^&3D?zuMx=W\\o`6+;ccpg!p+tZe,*\\<Lpc<UD!#z" }}{PARA 12 "" 1 "" 
+{XPPMATH 20 "6#<$2$\"[pWdl\"3%Re1fJ6pT+%y:`xUEVRgPy0hKk]Jj\"eLx1<Z>!#z
+%\"xG2F($\"[p\"HHe9GT1hp$3r[(4K*>NK)[sU*4Ei#=Os;it+`roBGa$F'" }}{PARA 
+11 "" 1 "" {XPPMATH 20 "6#$\"[p\"HHe9GT1hp$3r[(4K*>NK)[sU*4Ei#=Os;it+`
+roBGa$!#z" }}{PARA 12 "" 1 "" {XPPMATH 20 "6#<$2%\"xG$\"[p\\*emR=$HYwn
+H-%yA-!p\"Q:UTq+@1ScL*=qKw-my=^Tc!#z2$\"[p^2$fK^&3D?zuMx=W\\o`6+;ccpg!
+p+tZe,*\\<Lpc<UDF(F%" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#$\"[p\\*emR=$H
+YwnH-%yA-!p\"Q:UTq+@1ScL*=qKw-my=^Tc!#z" }}{PARA 12 "" 1 "" {XPPMATH 
+20 "6#<$2%\"xG$\"[p58sy))y9\"z5E$))4.bk_6K8\\xPx&*H9.IV7h\"G5rJ<tJ\"!#
+y2$\"[p\"HHe9GT1hp$3r[(4K*>NK)[sU*4Ei#=Os;it+`roBGa$!#zF%" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "6#$\"[p58sy))y9\"z5E$))4.bk_6K8\\xPx&*H9.IV7h\"G5
+rJ<tJ\"!#y" }}{PARA 12 "" 1 "" {XPPMATH 20 "6$<#2%\"xG$![p$zZVhF5!Q'fT
+3zs;fL1\"\\(*oxc;M[I,zT33V*>gvLH=%!#y<#2$\"[p]*emR=$HYwnH-%yA-!p\"Q:UT
+q+@1ScL*=qKw-my=^Tc!#zF%" }}{PARA 8 "" 1 "" {TEXT -1 82 "Error, (in ca
+lcul_intervalle) wrong number (or type) of parameters in function op\n
+" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}}{MARK "10 23 0" 0 
+}{VIEWOPTS 1 1 0 1 1 1803 1 1 1 1 }{PAGENUMBERS 0 1 2 33 1 1 }
