@@ -76,6 +76,8 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
    double z, res, P_hi, P_lo;
    int k, i;
    
+    P_hi=(double)E;
+
     /* find the interval including y.d */
     i = ((((*py).i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;
     if (i < 10)
@@ -87,8 +89,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
     
 
     /* Compute ln2_times_E = E*log(2)   in double-double */
-    Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, (double)E, 0.);
-
+    Add12( ln2_times_E_HI, ln2_times_E_LO, P_hi*ln2hi.d, P_hi*ln2lo.d); 
 
     /* Now begin the polynomial evaluation of log(1 + z)      */
 
