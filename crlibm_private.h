@@ -39,8 +39,8 @@ Optimal values for Pentium 4:
 
 */
 
-#define ADD22_AS_FUNCTIONS 0
-#define DEKKER_AS_FUNCTIONS 0
+#define ADD22_AS_FUNCTIONS 1
+#define DEKKER_AS_FUNCTIONS 1
 
 
 
@@ -354,14 +354,14 @@ double mh, ml;                                        \
   const double c = 134217729.;			      \
   double up, u1, u2, vp, v1, v2;		      \
 						      \
-  up = xh*c;        vp = yh*c;			      \
-  u1 = (xh-up)+up;  v1 = (yh-vp)+vp;		      \
-  u2 = xh-u1;       v2 = yh-v1;                       \
+  up = (xh)*c;        vp = (yh)*c;			      \
+  u1 = ((xh)-up)+up;  v1 = ((yh)-vp)+vp;		      \
+  u2 = (xh)-u1;       v2 = (yh)-v1;                       \
   						      \
-  mh = xh*yh;					      \
+  mh = (xh)*(yh);					      \
   ml = (((u1*v1-mh)+(u1*v2))+(u2*v1))+(u2*v2);	      \
 						      \
-  ml += xh*yl + xl*yh;				      \
+  ml += (xh)*(yl) + (xl)*(yh);				      \
   *zh = mh+ml;					      \
   *zl = mh - (*zh) + ml;                              \
 }
