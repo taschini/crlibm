@@ -57,8 +57,6 @@ evalf((EminMedPath+1)*log(2)-0.4); # just checking
 Xmax:=[2**(-5), 2**(-5), 2**(-5), 2**(-5), 2**(-4), 2**(-4), 2**(-4), 2**(-4)]:
 Ilist:=[[11/16,12/16],[12/16,13/16],[13/16,14/16],[14/16,15/16],[15/16,17/16],[17/16,19/16],[19/16,21/16],[21/16,23/16]]:
 midI:=[23/32,25/32,27/32,29/32,1,18/16,20/16,22/16]:
-save Xmax, Ilist, midI, "TEMPLOG/parameterlog.m";
-
 
 
 # Computation of the polynomials
@@ -68,12 +66,12 @@ save Xmax, Ilist, midI, "TEMPLOG/parameterlog.m";
 poly_log_2 := proc(i,deg) 
  local p, pe, e, pt, delta_approx, epsilon_approx, delta_rounding, minptr, err,
        maxptr, maxpt, delta, miny, deltaZero, deltaEgtMed, ptFastPath,deltaFastPath,
-       minptrFastPath, maxptrFastPath, errlist, epsilon_lastmult, maxEln2_lo;
+       minptrFastPath, maxptrFastPath, errlist, epsilon_lastmult, maxEln2_lo,
+	s1, p1, maxres, c0h, c0l, maxP_hi, maxP_lo,delta_rounding_s1,maxp1,delta_rounding_p1;
 
   printf("Interval %d  : ", i);
   if(i=5) # special case around 1, we impose that coeff0 = 0
   then
-printf("Oh, i=5\n");
     pe:=x * numapprox[minimax](  (log(1+x)/x),  x=-Xmax[i]..Xmax[i],  [deg-1,0], 1 ,  'delta_approx'):
     pt := poly_exact2(pe, 2):
     delta_approx := numapprox[infnorm](pt-log(1+x), x=-Xmax[i]..Xmax[i]):
@@ -117,25 +115,25 @@ printf("Oh, i=5\n");
   #delta for the fast path : in this case the polynomial is rounded to double, and evaluated only in double
   ptFastPath := poly_exact2(pt,1); # only coeff of degree 0 in double-double
   delta_approx :=  numapprox[infnorm](ptFastPath-log(x+midI[i]), x=-Xmax[i]..Xmax[i]); 
-  s1 := expand((ptFastPath - coeff(ptFastPath,x,0)) / x); # the polynomial computed in double, 'res' in the code
-  errlist := errlist_quickphase_horner(deg-1, 1, 0, 0,0); # no dd adds, no dd mul, no error on x 
-  epsilon_lastmult, delta_rounding, minptr, maxptrFastPath := compute_horner_rounding_error(s1, x, Xmax[i], errlist, true):
+  s1 := expand((ptFastPath - coeff(ptFastPath,x,0)) / x); # the polynomial computed in double
+  errlist := errlist_quickphase_horner(deg-1, 0, 0, 0,0); # no dd adds, no dd mul, no error on x 
+  epsilon_lastmult, delta_rounding_s1, minptr, maxptrFastPath := compute_horner_rounding_error(s1, x, Xmax[i], errlist, true):
   p1 := s1*x ;
-  maxres:=numapprox[infnorm](p1, x=-Xmax[i]..Xmax[i]);
-  delta_rounding :=  delta_rounding*Xmax[i] + 0.5*ulp(maxres);
+  maxp1:=numapprox[infnorm](p1, x=-Xmax[i]..Xmax[i]);
+  delta_rounding_p1 := delta_rounding_s1*Xmax[i] + 0.5*ulp(maxp1);   # the last mult by z
   c0h,c0l := hi_lo(coeff(ptFastPath, x, 0));
   maxP_hi := 1075*log(2) + c0h;
   maxP_lo := maxP_hi*2^(-53); 
   maxEln2_lo := maxP_lo;
   # the delta is that of the second argument of the last Add12.
-  delta_rounding := delta_rounding 
-                     +  0.5*ulp(maxres + c0l + maxEln2_lo + maxP_lo) 
-                     +  0.5*ulp(c0l + maxEln2_lo + maxP_lo) 
-                     +  0.5*ulp(maxEln2_lo + maxP_lo);
-  miny := (EminFastPath+1)*log(2.) - maxptrFastPath ;
+  delta_rounding := delta_rounding_p1 
+                      +  0.5*ulp(maxp1 + c0l + maxEln2_lo + maxP_lo) 
+                      +  0.5*ulp(c0l + maxEln2_lo + maxP_lo)     # these two last terms are zero in the case i=5
+                      +  0.5*ulp(maxEln2_lo + maxP_lo);          #  but it doesn't change much
+  miny := (EminFastPath+1)*log(2.) - maxp1 ;
   deltaFastPath := (delta_approx + delta_rounding + 2**(-90) ) / miny ;
   printf(" deltaFastPath = %3.2f\n", -log2(deltaFastPath) );
-  [pt, epsilon_approx, max(maxpt,maxptr,maxptrFastPath), deltaZero, delta, deltaEgtMed, deltaFastPath]
+  [pt, epsilon_approx, max(maxpt,maxptr), deltaZero, delta, deltaEgtMed, deltaFastPath]
 end proc:
 
 
@@ -164,7 +162,7 @@ save PolyList, "TEMPLOG/PolyList.m";
 
 # Computation of constants for RN test
 # We have in PolyList delta the total error for polynomial approximation, build tabrndcst[] the table of "e" needed for round to nearest
-read "TEMPLOG/PolyList.m"; read "TEMPLOG/parameterlog.m";
+
 maxdeltaEZero:=0:
 maxdelta:=0:
 maxdeltaEgtMed:=0:
@@ -317,14 +315,14 @@ fclose(fd):
 printf("Polynomial & Relative Approximation Error \\\\\n"):
    for k from 1 to 8 do
      P:=PolyList[k]:
-     printf("%d &  %2.2f \\\\ \n",k, -log2(P[2])):
+     printf("P[%d] &  %2.2f \\\\ \n", k, -log2(P[2])):
     od:
 
 
    printf("Polynomial & Maxp  & Delta0 & Delta & DeltaMed & DeltaFast \\\\\n"):
    for k from 1 to 8 do
      P:=PolyList[k]:
-     printf("%d & %2.3f & %2.2f & %2.2f& %2.2f  %2.2f\\\\ \n",k, P[3]+0.0005, -log2(P[4]), -log2(P[5]), -log2(P[6]), -log2(P[7])):
+     printf("P[%d] & %2.3f & %2.2f & %2.2f& %2.2f  %2.2f\\\\ \n",k, P[3]+0.0005, -log2(P[4]), -log2(P[5]), -log2(P[6]), -log2(P[7])):
     od:
 
 
@@ -370,7 +368,17 @@ od:
 # Tests and scratch
 
 
-
+discard:=
+"
+1 & 1.423 & 61.44 & 60.43& 66.10  63.73\\ 
+2 & 1.307 & 60.81 & 60.83& 66.16  63.80\\ 
+3 & 1.208 & 60.02 & 61.11& 66.19  63.59\\ 
+4 & 1.123 & 58.96 & 61.39& 66.27  63.87\\ 
+5 & 1.033 & 57.63 & 60.04& 64.76  62.95\\ 
+6 & 0.915 & 57.94 & 60.15& 65.13  63.42\\ 
+7 & 0.821 & 59.89 & 60.23& 65.51  63.47\\ 
+8 & 0.745 & 60.58 & 60.02& 65.65  63.71\\ 
+";
 
 
 
