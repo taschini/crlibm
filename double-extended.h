@@ -1,20 +1,25 @@
 
-#ifndef __DOUBLE_EXT_H
-#define __DOUBLE_EXT_H
+#ifndef __DOUBLE_EXTENDED_H
+#define __DOUBLE_EXTENDED_H
 
-#ifdef CRLIBM_TYPECPU_X86
+/* For debugging */
+typedef union {
+  int i[3];                 
+  long double d;
+} db_ext_number;
+
+
+/**************************************************************************************/
+/*********************************Rounding tests***************************************/
+/**************************************************************************************/
+
+#if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
 
 static const unsigned short RN_Double=(_FPU_DEFAULT & ~_FPU_EXTENDED)|_FPU_DOUBLE;
 static const unsigned short RN_DoubleExt =_FPU_DEFAULT;
 
 #define DOUBLE_EXTENDED_MODE  _FPU_SETCW(RN_DoubleExt)
 #define BACK_TO_DOUBLE_MODE   _FPU_SETCW(RN_Double)
-
-
-typedef union {
-  int i[3];                 
-  long double d;
-} db_ext_number;
 
 #define DE_EXP 2
 #define DE_MANTISSA_HI 1
@@ -76,31 +81,108 @@ case). However it uses a coarser error estimation.
     return _y_return_d;                                      \
   }                                                          \
 }
-#endif /* CRLIBM_TYPECPU_X86*/
 
 
 
-#ifdef ITANIUMICC
-typedef          __int64  INT64;
-typedef   signed __int64 SINT64;
-typedef unsigned __int64 UINT64;
 
-/* FP register type */
-typedef __fpreg L_FLOAT_TYPE;
+#else /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
 
-/* Almost the same as the previous, except exponent field smaller, and morally in memory */
-typedef long double LC_FLOAT_TYPE;
 
-/* The double-double-ext type, using registers */
-typedef struct __X_FLOAT_TYPE_TAG {
-    L_FLOAT_TYPE hi,lo; /* order is critical! */
-} X_FLOAT_TYPE;
 
-/* The double-double-ext type, in memory */
-typedef struct __XC_FLOAT_TYPE_TAG {
-    LC_FLOAT_TYPE hi,lo; /* order is critical! */
-} XC_FLOAT_TYPE;
 
+
+#if !defined(CRLIBM_TYPECPU_ITANIUM)
+#error "This file should be compiled only for IA32 or IA64 architecture "
+#endif
+#if !defined(__ICC__)
+#error "Use icc, version 8.1 or higher to compile for IA64 architecture"
+#endif
+
+
+#define DOUBLE_EXTENDED_MODE {}
+#define BACK_TO_DOUBLE_MODE {}
+
+
+#define TEST_AND_RETURN_RN(_y, _mask)                                                \
+{   unsigned long int _i1, _m;                                                              \
+    _i1 = _Asm_getf(4/*_FR_SIG*/, _y);                                                    \
+    _m =  _i1 & (0x7ff&(_mask));                                                      \
+    if(__builtin_expect((_m!=(0x3ff&(_mask))) && (_m != (0x400&(_mask))), 1+1==2))    \
+      return (double)_y;                                                             \
+}
+
+
+/* Use this one if you want a final computation step to overlap with
+   the rounding test. Examples: multiplication by a sign or by a power of 2 */
+
+#define TEST_AND_RETURN_RN2(_ytest, _yreturn, _mask)         \
+{                                                            \
+printf("Rounding test not yet implemented\n\n");             \
+}
+
+
+#endif /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
+
+
+
+
+/**************************************************************************************/
+/************************Double double-extended arithmetic*****************************/
+/**************************************************************************************/
+
+
+
+#define Add12_ext(prh, prl, a, b)       \
+{                                       \
+  long double _z, _a, _b;               \
+  _a = a;   _b = b;                     \
+  *prh = _a + _b;                       \
+  _z = *prh - _a;                       \
+  *prl = _b - _z;                       \
+}
+
+
+
+
+#if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
+#define Mul12_ext(prh,prl,u,v)                         \
+{                                                      \
+  const long double c  = 4294967297.L; /* 2^32 +1 */   \
+  long double up, u1, u2, vp, v1, v2;                  \
+  long double _u =u, _v=v;                             \
+                                                       \
+  up = _u*c;        vp = _v*c;                         \
+  u1 = (_u-up)+up;  v1 = (_v-vp)+vp;                   \
+  u2 = _u-u1;       v2 = _v-v1;                        \
+                                                       \
+  *prh = _u*_v;                                        \
+  *prl = u1*v1 - *prh;                                 \
+  *prl = *prl + u1*v2;                                 \
+  *prl = *prl + u2*v1;                                 \
+  *prl = *prl + u2*v2;                                 \
+}
+
+#define Mul22_ext(prh,prl, ah,al, bh,bl)               \
+{                                                      \
+  long double mh, ml;                                  \
+  Mul12_ext(&mh,&ml,(ah),(bh));		               \
+  ml += (ah)*(bl) + (al)*(bh);			       \
+  Add12_ext(prh,prl, mh,ml);                           \
+}
+
+#define FMA22_ext(prh,prl, ah,al, bh,bl, ch,cl)        \
+{                                                      \
+  Mul22_ext(prh,prl, (ah),(al), (bh),(bl));            \
+  Add22_ext(prh,prl, ch,cl, *prh, *prl);               \
+}
+
+
+
+#else  /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
+
+
+
+#if 0 /* shouldn't be here */ 
 /* Table 1-17: legal floating-point precision completers (.pc) */
 typedef enum {
     _PC_S        = 1        /* single .s */
@@ -123,36 +205,15 @@ typedef enum {
    ,_SF2         = 2        /* FPSR status field 2 .s2 */
    ,_SF3         = 3        /* FPSR status field 3 .s3 */
 } _Asm_sf;
-
+#endif
 
 
 
 #define ULL(bits) 0x##bits##uLL
 
-#if (!defined(EM64T) && defined(__linux__) && defined(IA32))
-# define LDOUBLE_ALIGN 12   /* IA32 Linux: 12-byte alignment */
-#else
-# define LDOUBLE_ALIGN 16   /* EM64T, IA32 Win or IPF Win/Linux: 16-byte alignm\
-			       ent */
-#endif
 
-#if (LDOUBLE_ALIGN == 16)
-#define _XPD_ ,0x0000,0x0000,0x0000
-#else /*12*/
-#define _XPD_ ,0x0000
-#endif
+/* The following is macros by Alexey Ershov in a more readable form */
 
-#define LDOUBLE_HEX(w4,w3,w2,w1,w0) 0x##w0,0x##w1,0x##w2,0x##w3,0x##w4 _XPD_ /*LITTLE_ENDIAN*/
-
-
-
-/* Load XC constant data and convert to X format */
-#define __X_CONVERT_XC2X( __x__, __xc__ ) \
-    (((__x__).hi = (__xc__).hi), ((__x__).lo = (__xc__).lo))
-
-/* res = a*a
- *   res and a in X format
- */
 #define __X_SQR_X( __resx__, __x_a__ ) \
     {                                                                                               \
         L_FLOAT_TYPE __xsqrx_r_hi__,__xsqrx_r_lo__,__xsqrx_t__,__xsqrx_two__;                       \
@@ -191,6 +252,36 @@ typedef enum {
         (__resx__).hi = __xmulxx_r_hi__; (__resx__).lo = __xmulxx_r_lo__;                           \
     }
 
+
+
+#define Mul12_ext( prh,prl, a, b )                              \
+    {                                                           \
+      *prh = (a) * (b);                                         \
+      *prl = _Asm_fms( 3/*_PC_NONE*/, (a), (b), *prh, 1 );      \
+    }
+
+
+#if 0 /* transcription of Alexey's */
+#define Mul22_ext( prh,prl, ah,al, bh,bl ) \
+    {                                                            \
+        long double _t1,_t2,_t3;                                 \
+        *prh = (ah) * (bh);                                      \
+        _t1 = (ah)*(bl);                                         \
+        _t2 = _Asm_fms( 3/*_PC_NONE*/, (ah), (bh), *prh, 1 );    \
+        _t3 = (al) * (bh) + _t1;                                 \
+        *prl = (_t2 + _t3);                                      \
+    }
+#else
+#define Mul22_ext( prh,prl, ah,al, bh,bl ) \
+{                                                     \
+  __fpreg ph, pl;                                   \
+  ph = (ah)*(bh);                                         \
+  pl = _Asm_fms( 3/*_PC_NONE*/, ah, bh, ph, 1/*_SF1*/ );;  \
+  pl = (ah)*(bl) + pl;                                    \
+  pl = (al)*(bh) + pl;                                    \
+  Add12_ext(prh,prl, ph,pl); \
+}
+#endif
 
 /* res = a*b + c, assume |a*b| <= |c|
  *   res, a, b and c in X format
@@ -244,89 +335,64 @@ typedef enum {
         (__resx__).hi = __xfmagxxl_r_hi__; (__resx__).lo = __xfmagxxl_r_lo__;                       \
     }
 
+#if 0
+#define FMA22_ext(prh,prl, ah,al, bh,bl, ch,cl)        \
+{                                                      \
+  Mul22_ext(prh,prl, (ah),(al), (bh),(bl));            \
+  Add22_ext(prh,prl, ch,cl, *prh, *prl);               \
+}
+#else
+#define FMA22_ext( prh,prl, ah,al,  bh,bl, ch,cl) \
+    {                                                                                               \
+        __fpreg __xfmagxxx_r_hi__,__xfmagxxx_r_lo__,                                            \
+                __xfmagxxx_t1__,__xfmagxxx_t2__,                                               \
+                __xfmagxxx_t3__,__xfmagxxx_t4__;                                               \
+        __xfmagxxx_r_hi__ = ah * bh + ch;                             \
+        __xfmagxxx_t1__ = al * bh + cl;                               \
+        __xfmagxxx_t2__ = __xfmagxxx_r_hi__ - ch;                                       \
+        __xfmagxxx_t3__ = ah * bl + __xfmagxxx_t1__;                            \
+        __xfmagxxx_t4__ = _Asm_fms( 3/*_PC_NONE*/, ah, bh, __xfmagxxx_t2__, 1/*_SF1*/ );  \
+        __xfmagxxx_r_lo__ = (__xfmagxxx_t3__ + __xfmagxxx_t4__);                                    \
+        *prh = __xfmagxxx_r_hi__; *prl = __xfmagxxx_r_lo__;                       \
+    }
+#endif
 
-#define Mul12_ext(_prh,_prl,_u,_v)                    \
-{                                               \
-  *_prh = _u*_v;                                  \
-  *_prl = *_prh - _u*_v;                             \
+#endif    /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
+
+
+
+
+
+/* Computes a*b+c under the condition that a*b << c  
+   and under the condition there will be no overflow
+   which is easy to ensure as the inputs of crlibm functions are doubles */
+
+
+
+
+#define  Div22_ext(prh,prl,xh,xl,yh,yl)             \
+{                                                   \
+  long double ch,cl,uh,ul;                          \
+  ch = (xh)/(yh);                                   \
+  Mul12_ext(&uh,&ul,ch,(yh));                       \
+  cl = (xh)-uh;                                     \
+  cl = cl - ul;                                     \
+  cl = cl + (xl);                                   \
+  cl = cl - ch*(yl);                                \
+  cl = cl / (yh);                                   \
+  Add12(prh,prl, ch, cl) ;                          \
 }
 
 
-#define Mul22_ext(pzh,pzl, xh,xl, yh,yl)              \
-{                                                     \
-long double ph, pl;                                   \
-  ph = xh*yh;                                         \
-  pl = xh*yh - ph;                                    \
-  pl = xh*yl + pl;                                    \
-  pl = xl*yh + pl;                                    \
-  *pzh = ph+pl;					      \
-  *pzl = ph - (*pzh);                                 \
-  *pzl += pl;                                         \
-}
-
-
-
-
-#else /*ITANIUMICC*/
-#define Mul12_ext(rh,rl,u,v)                        \
-{                                               \
-  const long double c  = 4294967297.L; /* 2^32 +1 */   \
-  long double up, u1, u2, vp, v1, v2;                \
-  long double _u =u, _v=v;                           \
-                                                \
-  up = _u*c;        vp = _v*c;                  \
-  u1 = (_u-up)+up;  v1 = (_v-vp)+vp;            \
-  u2 = _u-u1;       v2 = _v-v1;                 \
-                                                \
-  *rh = _u*_v;                                  \
-  *rl = (((u1*v1-*rh)+(u1*v2))+(u2*v1))+(u2*v2);\
-}
-
-#define Mul22_ext(zh,zl,xh,xl,yh,yl)                  \
-{                                                     \
-long double mh, ml;                                   \
-						      \
-  const long double c = 4294967297.L /*2^32+1*/;      \
-  long double up, u1, u2, vp, v1, v2;		      \
-						      \
-  up = (xh)*c;        vp = (yh)*c;		      \
-  u1 = ((xh)-up)+up;  v1 = ((yh)-vp)+vp;	      \
-  u2 = (xh)-u1;       v2 = (yh)-v1;                   \
-  						      \
-  mh = (xh)*(yh);				      \
-  ml = (((u1*v1-mh)+(u1*v2))+(u2*v1))+(u2*v2);	      \
-						      \
-  ml += (xh)*(yl) + (xl)*(yh);			      \
-  *zh = mh+ml;					      \
-  *zl = mh - (*zh) + ml;                              \
-}
-
-
-#endif /*ITANIUMICC*/
-
-#define  Div22_ext(zh,zl,xh,xl,yh,yl)\
-{long double ch,cl,uh,ul;  \
-           ch=(xh)/(yh);   Mul12_ext(&uh,&ul,ch,(yh));  \
-           cl=(((((xh)-uh)-ul)+(xl))-ch*(yl))/(yh);   zh=ch+cl;   zl=(ch-zh)+cl;\
-}
-
-
-
-#define Add12_ext(s, r, a, b)         \
-        { long double _z, _a=a, _b=b;    \
-         s = _a + _b;             \
-         _z = s - _a;              \
-         r = _b - _z; }            
-
-
-#define Add22_ext(zh,zl,xh,xl,yh,yl) \
-do {\
-long double r,s;\
-r = (xh)+(yh);\
-s = (xh)-r+(yh)+(yl)+(xl);\
-*zh = r+s;\
-*zl = r - (*zh) + s;\
+#define Add22_ext(prh,prl,xh,xl,yh,yl)   \
+do {                                     \
+  long double _r,_s;                     \
+  _r = (xh)+(yh);                        \
+  _s = (xh)-_r;                          \
+  _s = _s + (yh);                        \
+  _s = _s + (yl);                        \
+  _s = _s + (xl);                        \
+  Add12_ext(prh,prl,_r,_s);              \
 } while(0)
 
-
-#endif // ifndef __DOUBLE_EXT_H
+#endif /* ifndef __DOUBLE_EXTENDED_H*/

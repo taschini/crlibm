@@ -12,6 +12,17 @@
 #include "scs_lib/scs_private.h"
 
 
+#ifdef CRLIBM_TYPECPU_X86
+#include <fpu_control.h>
+/* don't remember why it's here, but it doesn't hurt to keep it (2004) */
+#ifndef _FPU_SETCW
+#define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
+#endif
+#ifndef _FPU_GETCW
+#define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
+#endif 
+#endif
+
  /* undef all the variables that might have been defined in
     scs_lib/scs_private.h */
 #undef VERSION 
@@ -21,11 +32,6 @@
 #undef HAVE_MATHLIB_H
 /* then include the proper definitions  */
 #include "crlibm_config.h"
-
-
-#if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) 
-#include <fpu_control.h>
-#endif /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
 
 
 
@@ -218,8 +224,9 @@ double. See the chapter about the log for an example
 
 
 
-/* On the Itanium 1 / gcc we lose 10 cycles when using the FMA !?! 
+/* On the Itanium 1 / gcc3.2 we lose 10 cycles when using the FMA !?! 
    It probably breaks the scheduling algorithms somehow... 
+   To test again with higher gcc versions
 */ 
 
 /* __ICC__ is set by Makefile.am, there must be a cleaner way to detect icc compiler.
@@ -254,6 +261,10 @@ double. See the chapter about the log for an example
 /* __ICC__ is set by Makefile.am, there must be a cleaner way to detect icc compiler.*/
 #if defined(CRLIBM_TYPECPU_ITANIUM) && defined(__ICC__) 
 #define PROCESSOR_HAS_FMA 1
+
+#if 0 /* Commented out because it shouldn't be there (some day I'll
+	 find the #include that shall replace it). Leave it as documentation, though
+*/
 /* Table 1-17: legal floating-point precision completers (.pc) */
 typedef enum {
     _PC_S        = 1        /* single .s */
@@ -276,13 +287,14 @@ typedef enum {
    ,_SF2         = 2        /* FPSR status field 2 .s2 */
    ,_SF3         = 3        /* FPSR status field 3 .s3 */
 } _Asm_sf;
+#endif
 
 #define FMA(a,b,c)  /* r = a*b + c*/                 \
-   _Asm_fma( _PC_D, a, b, c, _SF0 );              
+   _Asm_fma( 2/*_PC_D*/, a, b, c, 0/*_SF0*/ );              
 
 
 #define FMS(a,b,c)  /* r = a*b - c*/                 \
-   _Asm_fms( _PC_D, a, b, c, _SF0 );              
+   _Asm_fms( 2/*_PC_D*/, a, b, c, 0/*_SF0*/);              
 
 #endif /*defined(CRLIBM_TYPECPU_ITANIUM) && defined(__ICC)*/
 
@@ -325,6 +337,18 @@ extern const scs scs_zer, scs_half, scs_one, scs_two, scs_sixinv;
 
 
 
+
+/* This sets round to the nearest and disables extended precision on
+   the x86s. For the Itanii on Linux there is nothing to do.
+
+   This probably doesn't work on all unix systems...
+ */
+#ifdef SCS_TYPECPU_X86
+#include <fpu_control.h>
+#ifndef __setfpucw
+#define __setfpucw(cw) __asm__ ("fldcw %0" : : "m" (cw))
+#endif 
+#endif /*SCS_TYPECPU_X86*/
 
 
 
