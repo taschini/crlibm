@@ -58,7 +58,7 @@ db_number const middle[8] =
 {{0x3FF60000,0x00000000}} /* +1.3750000000e+00 */
 };
 
-db_number const poly_log_fast_h[8][13] =
+db_number const Poly_h[8][13] =
 {
  /* polynomial 1 */
 {
@@ -190,7 +190,7 @@ db_number const poly_log_fast_h[8][13] =
 }
 };
 
-db_number const poly_log_fast_l[8][2] =
+db_number const Poly_l[8][2] =
 {
  /* polynomial 1 */
 {
@@ -255,7 +255,7 @@ db_number const middle[8] =
 {{0x00000000,0x3FF60000}} /* +1.3750000000e+00 */
 };
 
-db_number const poly_log_fast_h[8][13] =
+db_number const Poly_h[8][13] =
 {
  /* polynomial 1 */
 {
@@ -387,7 +387,7 @@ db_number const poly_log_fast_h[8][13] =
 }
 };
 
-db_number const poly_log_fast_l[8][2] =
+db_number const Poly_l[8][2] =
 {
  /* polynomial 1 */
 {

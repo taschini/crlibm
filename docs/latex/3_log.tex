@@ -195,278 +195,163 @@ input values around $1$ requires a specific rounding error analysis.
 
 
 
-
-
-
 \subsection{Details of computer program}
 
+A procedure \texttt{log\_quick} contains the computation shared by the
+three functions \texttt{log\_rn}, \texttt{log\_ru} and
+\texttt{log\_rd} (the function \texttt{log\_rz} calls either
+\texttt{log\_ru} or \texttt{log\_rd}).  This procedures returns an
+approximation to the log as two double-precision numbers, and an index
+in an array of constants for testing if correct rounding is possible.
+This array contains the relative error for directed rounding modes
+(see~ref{th:roundingDirected} p.~\pageref{th:roundingDirected}) , and
+the rounding constant computed as per Theorem~\ref{th:roundingRN1}
+p.~\pageref{th:roundingRN1} for round-to nearest.
 
-\subsubsection{Exceptional cases, subnormal numbers}
 
+\subsubsection{Exceptional cases and argument reduction}
+
+This part  is shown for \texttt{log\_rn}, but it is identical for the three functions.
+
+\newpage
 \begin{lstlisting}[caption={Exceptional cases},firstnumber=1]
-  E=0; y.d = x;
-  /* Filter cases */
-  if (y.i[HI_ENDIAN] < 0x00100000){       
-    if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
-      return -1.0/0.0;     
-    }                                     
-    if (y.i[HI_ENDIAN] < 0){ 
-      return (x-x)/0;                    
-    }
-    /* Subnormal number */
-    E = -52;            
-    y.d *= two52.d;     
-    }
+ double log_rn(double x) { 
+   db_number y;
+   double res_hi,res_lo,roundcst;
+   int E,rndcstindex;
+
+   E=0;
+   y.d=x;
+
+   /* Filter cases */
+   if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
+     if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
+       return -1.0/0.0;     
+     }                                     /* log(+/-0) = -Inf */
+     if (y.i[HI_ENDIAN] < 0){ 
+       return (x-x)/0;                      /* log(-x) = Nan    */
+     }
+     /* Subnormal number */
+     E = -52;           
+     y.d *= two52.d;      /* make x a normal number    */ 
+   }
     
-  if (y.i[HI_ENDIAN] >= 0x7ff00000){
-    return  x+x;                                 
-  }
+   if (y.i[HI_ENDIAN] >= 0x7ff00000){
+     return  x+x;                                /* Inf or Nan       */
+   }
+   
+   /* reduce to  y.d such that sqrt(2)/2 < y.d < sqrt(2) */
+   E += (y.i[HI_ENDIAN]>>20)-1023;                              /* extract the exponent */
+   y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;        /* do exponent = 0 */
+   if (y.d > SQRT_2){
+     y.d *= 0.5;
+     E++;
+   }
+
+   /* Call the actual computation */
+   log_quick(&res_hi, &res_lo, &rndcstindex, &y, E);
 \end{lstlisting}
 
 
 \begin{tabular}{ll}
-Line  1 &  initialize E and y\\
-Line 3 & Test if x is null, negative or a subnormal number.\\
-Line 4 & Test if x is a NaN or $\infty$ \\
-Line 7 & If x is negative, we should return NaN and raise an exception.\\
-Line 11 & If $x$ is subnormal, compute:\\
-& $log(x) = -52\times log(2) + log(\frac{x}{2^{-52}})$ \\ 
-Line 15 & If $x$ is $\infty$ or NaN, return $\infty$ or NaN.\\
+Lines  6,7 &  Initialize E and y\\
+Line 10 & Test if x is null, negative or a subnormal number.\\
+Line 11,12 & Test if x is $\pm 0$ and return  $-\infty$ \\
+Line 14,15 & If x is negative,  return NaN and raise an exception.\\
+Line 18,19 & else $x$ is subnormal, then compute:\\
+& $log(x) = -52\times log(2) + log(\frac{x}{2^{-52}})$ \\
+& (this computation is exact) \\ 
+Line 22,23 & If $x$ is $\infty$ or NaN, return $\infty$ or NaN.\\
+Line 27 & E contains x 's exponent. \\
+Line 28 & y.d is reduced to $\frac{x}{2^E}$. Correct because $y$ was a normal number.\\
+Line 29-31 & Now, we have: $ 1 \leq y.d < 2$ and we want $ \frac{1}{\sqrt2} \leq y.d < \sqrt2$.\\
+& So, if it's not the case, we update E and y.\\
 \end{tabular}
 
-~\\
 
-At the end of this part, either a result has been returned, or
-\texttt{y.d} is a normal number.
+\newpage
+\begin{lstlisting}[caption={Procedure \texttt{log\_quick}},firstnumber=1]
+static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_number * py, int E) {
+   double ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo;
+   double z, res, P_hi, P_lo;
+   int k, i;
+   
+    /* find the interval including y.d */
+    i = ((((*py).i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;
+    if (i < 10)
+      i = i>>1;
+    else
+      i = ((i-1)>>1);
+    
+    z = (*py).d - (middle[i]).d;  /* (exact thanks to Sterbenz Lemma) */
+    
 
-
-
-\subsubsection{Argument reduction}
-
-There are two argument reductions. The first one consists in finding
-$y$ from equation~(\ref{eq:argred}).
-
-\begin{lstlisting}[caption={Exponent computation},firstnumber=1]
-/* find y.d such that sqrt(2)/2 < y.d < sqrt(2) */
-  E += (y.i[HI_ENDIAN]>>20)-1023;                       
-  y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000; 
-  if (y.d > SQRT_2){
-    y.d *= 0.5;
-    E++;
-  }
- \end{lstlisting}
-
-\begin{tabular}{ll}Line 2 & E contains x 's exponent.\\
-Line 3 & y.d is reduced to $\frac{x}{2^E}$.\\
-Line4 & Now, we have: $ 1 \leq y.d < 2$ and we want $ \frac{1}{\sqrt2} \leq y.d < \sqrt2$.\\
-& So, if it's not the case, we correct E and y in order to find y in the correct interval.\\
-\end{tabular}
-
-~\\
+    /* Compute ln2_times_E = E*log(2)   in double-double */
+    Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, (double)E, 0.);
 
 
+    /* Now begin the polynomial evaluation of log(1 + z)      */
 
-The second argument reduction consists in finding the interval $X_i$
-including y.d, and then calculating z.d, according to equation (3).
+    res = (Poly_h[i][DEGREE]).d;
 
-\begin{lstlisting}[caption={x second reduction},firstnumber=1]
-  /* find the interval including y.d */
-  i = (((y.i[HI_ENDIAN] & 0x001F0000)>>16)-6) ; /* 11<= i <= 21*/
-  if (i < 10) {
-    i = i>>1;
-  }
-  else{
-    i = ((i-1)>>1);
-  }
- 
-  z.d = y.d - (middle[i]).d;    
+    for(k=DEGREE-1; k>1; k--){
+      res *= z;
+      res += (Poly_h[i][k]).d;
+    }
+
+    if((ln2_times_E_HI*ln2_times_E_HI < MIN_FASTPATH*MIN_FASTPATH)) {
+      /* Slow path */
+      if(E==0) {
+        *prndcstindex = 0 ;
+        /* In this case we start with a double-double multiplication to get enough relative accuracy */ 
+        Mul12(&P_hi, &P_lo, res, z); 
+        Add22(&res_hi, &res_lo, (Poly_h[i][1]).d,  (Poly_l[i][1]).d, P_hi, P_lo);
+        Mul22(&P_hi, &P_lo, res_hi, res_lo, z, 0.); 
+        Add22(pres_hi, pres_lo, (Poly_h[i][0]).d, (Poly_l[i][0]).d, P_hi, P_lo);
+      } 
+      else
+        {
+          if((ln2_times_E_HI*ln2_times_E_HI > 16.5*16.5))
+            *prndcstindex = 2; 
+          else 
+            *prndcstindex =1;
+          P_hi=res*z;  P_lo=0.; 
+          Add22(&res_hi, &res_lo, (Poly_h[i][1]).d,  (Poly_l[i][1]).d, P_hi, P_lo);
+          Mul22(&P_hi, &P_lo, res_hi, res_lo, z, 0.); 
+          Add22(&res_hi, &res_lo, (Poly_h[i][0]).d, (Poly_l[i][0]).d, P_hi, P_lo);
+      
+        /* Add E*log(2)  */
+          Add22(pres_hi, pres_lo, ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo);
+        }
+    }
+    else { /* Fast path */
+      
+      *prndcstindex = 3 ;
+      res =   z*((Poly_h[i][1]).d + z*res);
+      Add22(&res_hi, &res_lo, (Poly_h[i][0]).d , (Poly_l[i][0]).d, res, 0.);
+
+        /* Add E*log(2)  */
+      Add22(pres_hi, pres_lo, ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo);
+    }
+}
 \end{lstlisting}
 
 \begin{tabular}{ll}
-Line 2  & To find the interval $X_i$ containing $y$, 
-         we just need to look upon a few bits:\\
-        & the last one of exponent and the 4th first of mantissa.\\
-Line 3  & Reduction over $i$ in order to have a number $i$ between 0 and 7\\
-        & and being able to call the right polynomial among our 8 intervals.\\
-Line 10 & Let us prove that z.d is computed exactly, without rounding error. \\
+Line 7  & To find the interval $X_i$ containing $y$, we  look upon\\ 
+        &   the last bit of the exponent and the 4 first bits of the mantissa.\\
+Lines 8-11  & Reduction over $i$ in order to have an index $i$ between 0 and 7\\
+        & corresponding to the 8 intervals of Table~\ref{table:TablePolysLog1}.\\
+Line 13 & Let us prove that z.d is computed exactly, without rounding error: \\
 & \vspace{1ex}To use Sterbenz Lemma, we need to prove that  ${\middlei}/{2} <  y.d < \middlei \times 2$.\\ 
 & \vspace{1ex}For every i in $[0;7]$, we have $\middlei-\frac{1}{16} \leq y.d \leq \middlei+\frac{1}{16}$.\\
-& \vspace{1ex}Table~\ref{TablePolys} gives: $\frac{25}{32} \leq {\middlei} \leq \frac{22}{16}$\\ 
+& \vspace{1ex}Table~\ref{table:TablePolysLog1} gives: $\frac{25}{32} \leq {\middlei} \leq \frac{22}{16}$\\ 
 & \vspace{1ex}Therefore ${\middlei}/{2} \leq \frac{22}{32} < \frac{23}{32} \leq \middlei - \frac{1}{16} \leq y.d$\\
 & and $y.d \leq \middlei + \frac{1}{16} \leq \frac{23}{16} < \frac{25}{16} \leq \middlei\times 2$\\
 \end{tabular}
 
 
 
-\subsubsection{Polynomial evaluation}
-
-\begin{lstlisting}[caption={Exponent computation\label{lst:poly}},firstnumber=1]
-  res = (poly_log_fast[dicho][13][HI_ENDIAN]).d;
-  for(i=12; i>2; i--){
-    res *= z.d;
-    res += (poly_log_fast[dicho][i][HI_ENDIAN]).d;
-  }
- \end{lstlisting}
- 
- A bound on the accumulated rounding errors in this computation is
- computed by a Maple procedure detailed in \ref{section:commonMaple},
- and appears in Table~\ref{TablePolys}. For every polynomial, we will
- note $S_2 = (c_{2} + P_{3}) + \epsilon_{-a}+ \epsilon_{-b}$
- 
- The end of computation is performed with precise addition and
- multiplication operators, in order not to loose to much precision.
-
-\begin{lstlisting}[caption={End of polynomial computation},firstnumber=1]
-   /* P2 = S2 times z  exactly */
- Dekker(&P_hi, &P_lo, res, z.d);
- 
-  /*add S1 = a1_hi + a1_lo to P2 */ 
-  ADD2((poly_log_fast[i][1][HI_ENDIAN]).d,  (poly_log_fast[i][1][LO_ENDIAN]).d, P_hi, P_lo, &reshi.d, &reslo.d);
- 
-  /* multiply S1 by x = P1 */ 
-  Dekker2(reshi.d, reslo.d, z.d, 0., &P_hi, &P_lo);
-       
-  /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
-  ADD2((poly_log_fast[i][0][HI_ENDIAN]).d, (poly_log_fast[i][0][LO_ENDIAN]).d, P_hi, P_lo, &reshi.d, &reslo.d);
-\end{lstlisting}
-
-\begin{tabular}{ll}
-& Procedures Add22, Mul12 and Mul22 are detailed in \ref{section:commonCdoubledouble}\\
-Line 2 & $P\_hi + P\_lo$  is exactly the result of the multiplication of "res" by "z.d".\\    
-Line 5 & ADD2 does the addition of $P\_hi + P\_lo$ with $c_1hi + c_1lo$ and returns a result over\\ & two IEEE-double precision numbers, with an error less than $2^{-103}$.\\
-Line 8 & Dekker2 does the multiplication of $reshi.d + reslo.d$ by $z.d$ and returns a result over\\ & two IEEE-double precision numbers, with an error less than $2^{-103}$.\\
-Line 11 & ADD2 does the addition of $P\_hi + P\_lo$ with $c_0hi + c_0lo$ and returns a result over \\
-& two IEEE-double precision numbers, with an error less than $2^{-103}$.\\
-\end{tabular}
-
-~\\
-
-At the end of the polynomial evaluation, we have :\\
-\begin{equation}
-  P(z.d) = reshi + reslo + \epsilon_{-a-2\times \maxz} + \epsilon_{-b-2\times \maxz} + 3\times \epsilon_{-103} 
-\end{equation}
-
-The approximation error (Cf Table~\ref{TablePolys}) is noted $\epsilon_{-Th}$, so:\\
-\begin{equation}
-P(z.d) = reshi + reslo +\epsilon_{-a-2\times \maxz} + \epsilon_{-b-2\times \maxz} + 3\times  \epsilon_{-103} + \epsilon_{-Th}
-\end{equation}
-
-Now, we give the result of this computation, provided by maple, for each polynomial:\\
-
-$P[0]$ defined over $[\frac{11}{16}; \frac{12}{16}]$:\\
-Assume $|y| \leq 2^{-5}$, so $\maxz = 5$\\
-
-$S_2 = (P_3 \oplus c_2) +  \epsilon_{-54} + 2\times \epsilon_{-59} + 2\times \epsilon_{-64} +  2\times \epsilon_{-68} + 2\times \epsilon_{-73} + 2\times \epsilon_{-78} + 2\times \epsilon_{-83} + 2\times \epsilon_{-87} + 2\times \epsilon_{-92} +  2\times \epsilon_{-96} + 2\times \epsilon_{-100} + \epsilon_{-101}$\\
-This gives:\\
-$P[0](z.d) = reshi + reslo + \epsilon_{-62} + \epsilon_{66} + 3\times \epsilon_{-103} + \epsilon{-63}$\\
-
-$P[1]$ defined over $[\frac{12}{16}; \frac{13}{16}]$:\\
-Assume $|y| \leq 2^{-5}$, so $\maxz = 5$\\
-
-$S_2 = (P_3 \oplus c_2) +  \epsilon_{-54} + 2\times \epsilon_{-59} + 2\times \epsilon_{-64} +  2\times \epsilon_{-69} + 2\times \epsilon_{-74} + 2\times \epsilon_{-79} + 2\times \epsilon_{-84} + 2\times \epsilon_{-88} + 2\times \epsilon_{-93} +  2\times \epsilon_{-98} + 2\times \epsilon_{-101} + \epsilon_{-102}$\\
-This gives:\\
-$P[1](z.d) = reshi + reslo + \epsilon_{-62} + \epsilon_{66} + 3\times \epsilon_{-103} + \epsilon{-62}$\\
-
-$P[2]$ defined over $[\frac{13}{16}; \frac{14}{16}]$:\\
-Assume $|y| \leq 2^{-5}$, so $\maxz = 5$\\
-
-$S_2 = (P_3 \oplus c_2) +  \epsilon_{-54} + 2\times \epsilon_{-59} + 2\times \epsilon_{-64} +  2\times \epsilon_{-70} + 2\times \epsilon_{-75} + 2\times \epsilon_{-80} + 2\times \epsilon_{-84} + 2\times \epsilon_{-89} + 2\times \epsilon_{-94} +  2\times \epsilon_{-99} + 2\times \epsilon_{-103} + \epsilon_{-104}$\\
-This gives:\\
-$P[2](z.d) = reshi + reslo + \epsilon_{-62} + \epsilon_{66} + 3\times \epsilon_{-103} + \epsilon{-61}$\\
-
-$P[3]$ defined over $[\frac{14}{16}; \frac{15}{16}]$:\\
-Assume $|y| \leq 2^{-5}$, so $\maxz = 5$\\
-
-$S_2 = (P_3 \oplus c_2) +  \epsilon_{-54} + 2\times \epsilon_{-60} + 2\times \epsilon_{-65} +  2\times \epsilon_{-70} + 2\times \epsilon_{-75} + 2\times \epsilon_{-80} + 2\times \epsilon_{-85} + 2\times \epsilon_{-90} + 2\times \epsilon_{-95} +  2\times \epsilon_{-99} + 2\times \epsilon_{-100} + \epsilon_{-103}$\\
-This gives:\\
-$P[3](z.d) = reshi + reslo + \epsilon_{-62} + \epsilon_{67} + 3\times \epsilon_{-103} + \epsilon{-60.4}$\\
-
-
-
-$P[4]$ defined over $[\frac{15}{16}; \frac{17}{16}]$:\\
-Assume $|y| \leq 2^{-4}$, so $\maxz = 4$\\
-
-$S_2 = (P_3 \oplus c_2) +  \epsilon_{-54} + 2\times \epsilon_{-59} + 2\times \epsilon_{-63} +  2\times \epsilon_{-68} + 2\times \epsilon_{-72} + 2\times \epsilon_{-76} + 2\times \epsilon_{-80} + 2\times \epsilon_{-85} + 2\times \epsilon_{-89} +  2\times \epsilon_{-93} + 2\times \epsilon_{-97} + \epsilon_{-101}$\\
-This gives:\\
-$P[4](z.d) = reshi + reslo + \epsilon_{-62} + \epsilon_{66} + 3\times \epsilon_{-103} + \epsilon{-62}$\\
-
-
-$P[5]$ defined over $[\frac{17}{16}; \frac{19}{16}]$:\\
-Assume $|y| \leq 2^{-4}$, so $\maxz = 4$\\
-
-$S_2 = (P_3 \oplus c_2) +  \epsilon_{-55} + 2\times \epsilon_{-60} + 2\times \epsilon_{-64} +  2\times \epsilon_{-69} + 2\times \epsilon_{-73} + 2\times \epsilon_{-77} + 2\times \epsilon_{-82} + 2\times \epsilon_{-86} + 2\times \epsilon_{-90} +  2\times \epsilon_{-94} + 3\times \epsilon_{-98}$\\
-This gives:\\
-$P[5](z.d) = reshi + reslo + \epsilon_{-63} + \epsilon_{67} + 3\times \epsilon_{-103} + \epsilon{-60.2}$\\
-
-
-$P[6]$ defined over $[\frac{19}{16}; \frac{21}{16}]$:\\
-Assume $|y| \leq 2^{-4}$, so $\maxz = 4$\\
-
-$S_2 = (P_3 \oplus c_2) +  \epsilon_{-55} + 2\times \epsilon_{-60} + 2\times \epsilon_{-65} +  2\times \epsilon_{-69} + 2\times \epsilon_{-74} + 2\times \epsilon_{-78} + 2\times \epsilon_{-83} + 2\times \epsilon_{-88} + 2\times \epsilon_{-92} +  2\times \epsilon_{-96} + 2\times \epsilon_{-99} + \epsilon_{-100}$\\
-This gives:\\
-$P[6](z.d) = reshi + reslo + \epsilon_{-63} + \epsilon_{67} + 3\times \epsilon_{-103} + \epsilon{-61}$\\
-
-
-$P[7]$ defined over $[\frac{21}{16}; \frac{23}{16}]$:\\
-Assume $|y| \leq 2^{-4}$, so $\maxz = 4$\\
-
-$S_2 = (P_3 \oplus c_2) +  \epsilon_{-55} + 2\times \epsilon_{-60} + 2\times \epsilon_{-65} +  2\times \epsilon_{-70} + 2\times \epsilon_{-75} + 2\times \epsilon_{-79} + 2\times \epsilon_{-84} + 2\times \epsilon_{-89} + 3\times \epsilon_{-93} +  2\times \epsilon_{-98} + 2\times \epsilon_{-103}$\\
-This gives:\\
-$P[7](z.d) = reshi + reslo + \epsilon_{-63} + \epsilon_{67} + 3\times \epsilon_{-103} + \epsilon{-63}$\\
-
-
-
-\subsubsection{Rebuilding}
-\begin{lstlisting}[caption={Round test},firstnumber=1]
-  if (!(E==0)){
-  
-  /*  sc_ln2_times_E = E*log(2)  */
-  Dekker2(ln2hi.d, ln2lo.d, E * 1., 0., &ln2_times_E_HI, &ln2_times_E_LO);
-   
-   /* REBUILDING */
-   ADD2(ln2_times_E_HI, ln2_times_E_LO, reshi, reslo, &reshi, &reslo);
-}
-\end{lstlisting}
-
-\begin{tabular}{ll}
-Line 1 & Test if E is different from 0, ie test if we need to compute $ E\times log(2)$\\
-Line 4 & Dekker2 multiply log(2) by E with an error less than $2^{-103}$. Result is written over\\
-& two IEEE-double numbers.\\
-Line 7 & ADD2 realize the addition of terms from equation (4) and put the result in $reshi + reslo$.\\ 
-& The error is again less than $2^{-103}$.\\
-\end{tabular}
-
-~\\
-
-Finally, in the worst case, we have:\\
-\begin{equation}\log(x) = reshi + reslo + \epsilon_{-63} + \epsilon_{67} + 5\times \epsilon_{-103} + \epsilon{-60}\\\end{equation}
-That is to say:\\
-\begin{equation}\log(x) = (reshi + reslo) \times  (1+ \epsilon_{-59})\\\end{equation}
-
-\newpage
-\subsection{Rounding test}
-
-For more details ( round toward $\pm \infty$), see RR2003-37.pdf, paragraph 3.3.\\
-\begin{lstlisting}[caption={Code},firstnumber=1]
-   /*  ROUNDING TO NEAREST */
-   
-  if(reshi == (reshi + (reslo * (1.0078125)))){ /*  2^-7 = 0.0078125 */
-     return reshi;
-  }else{
-     return scs_log_rn(y, E);
-  }
-
-\end{lstlisting}
-
-\begin{tabular}{ll}
-Line 3 & Assuming that reshi is the rounded to nearest result from $reshi + reslo$,\\
-& test to detect if a small disruption does not change the rounded result\\
-Line 4 & then reshi is the correct rounded result.\\
-Line 5 & else, it means that we must compute with more accuracy log(x).\\
-Line 6 & This is the reason why we call scs\_log\_rn.\\
-\end{tabular}
-
-
+\subsection{Rounding}
 
 
 
@@ -573,14 +458,15 @@ processors/OS/compiler combinations are welcome.
  \hline
                          & min time      & max time      & avg time \\ 
  \hline
- \texttt{libm}           & 728          & 33196         &        892 \\ 
+ \texttt{libm}           & 724          & 7088          &        732 \\ 
  \hline
-  \texttt{mpfr}          & 748          & 242592        &      22604 \\ 
+  \texttt{mpfr}          & 568          & 290924        &      83827 \\ 
  \hline
-  \texttt{libultim}      & 968          & 419528        &       1289 \\ 
+  \texttt{libultim}      & 784          & 485320        &       1062 \\ 
  \hline\hline
- \texttt{crlibm}         & 1472         & 52828         &       1837 \\ 
- \hline\hline
+ \texttt{crlibm}         & 968          & 51392         &       1147 \\ 
+ \hline
+ \hline
 \end{tabular}
 \end{center}
 \caption{Absolute timings for the logarithm
@@ -588,12 +474,14 @@ processors/OS/compiler combinations are welcome.
 \end{table}
 
 
-In average, the second step is taken in 0.4\% of the calls, which
+In average, the second step is taken in 0.23\% of the calls, which
 seems a rather good balance considering the respective costs of the
 first and second steps (seen in the table as the min and max times,
 respectively).
 
-
+Table size is $8\times 15\times8=960$ bytes for the eight polynomials,
+plus another $64$ bytes for the rounding constants, or a total of
+exactly 1kB.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -602,9 +490,10 @@ respectively).
 
 In the log we have a fairly good balance between both evaluation
 phases. The IBM library has specific code for the cases when $x$ is
-close to $1$. By following this approach we can hope for a further
+close to $1$. By following this approach we could hope for a further
 50\% performance improvement in average, at the cost of a more
 complicated proof.
+
 
 
 

@@ -75,8 +75,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
    double ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo;
    double z, res, P_hi, P_lo;
    int k, i;
-
-    
+   
     /* find the interval including y.d */
     i = ((((*py).i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;
     if (i < 10)
@@ -93,11 +92,11 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
 
     /* Now begin the polynomial evaluation of log(1 + z)      */
 
-    res = (poly_log_fast_h[i][DEGREE]).d;
+    res = (Poly_h[i][DEGREE]).d;
 
     for(k=DEGREE-1; k>1; k--){
       res *= z;
-      res += (poly_log_fast_h[i][k]).d;
+      res += (Poly_h[i][k]).d;
     }
 
     if((ln2_times_E_HI*ln2_times_E_HI < MIN_FASTPATH*MIN_FASTPATH)) {
@@ -106,9 +105,9 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
 	*prndcstindex = 0 ;
 	/* In this case we start with a double-double multiplication to get enough relative accuracy */ 
 	Mul12(&P_hi, &P_lo, res, z); 
-	Add22(&res_hi, &res_lo, (poly_log_fast_h[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
+	Add22(&res_hi, &res_lo, (Poly_h[i][1]).d,  (Poly_l[i][1]).d, P_hi, P_lo);
 	Mul22(&P_hi, &P_lo, res_hi, res_lo, z, 0.); 
-	Add22(pres_hi, pres_lo, (poly_log_fast_h[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
+	Add22(pres_hi, pres_lo, (Poly_h[i][0]).d, (Poly_l[i][0]).d, P_hi, P_lo);
       } 
       else
 	{
@@ -117,9 +116,9 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
 	  else 
 	    *prndcstindex =1;
 	  P_hi=res*z;  P_lo=0.; 
-	  Add22(&res_hi, &res_lo, (poly_log_fast_h[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
+	  Add22(&res_hi, &res_lo, (Poly_h[i][1]).d,  (Poly_l[i][1]).d, P_hi, P_lo);
 	  Mul22(&P_hi, &P_lo, res_hi, res_lo, z, 0.); 
-	  Add22(&res_hi, &res_lo, (poly_log_fast_h[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
+	  Add22(&res_hi, &res_lo, (Poly_h[i][0]).d, (Poly_l[i][0]).d, P_hi, P_lo);
       
 	/* Add E*log(2)  */
 	  Add22(pres_hi, pres_lo, ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo);
@@ -128,8 +127,8 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
     else { /* Fast path */
       
       *prndcstindex = 3 ;
-      res =   z*((poly_log_fast_h[i][1]).d + z*res);
-      Add22(&res_hi, &res_lo, (poly_log_fast_h[i][0]).d , (poly_log_fast_l[i][0]).d, res, 0.);
+      res =   z*((Poly_h[i][1]).d + z*res);
+      Add22(&res_hi, &res_lo, (Poly_h[i][0]).d , (Poly_l[i][0]).d, res, 0.);
 
 	/* Add E*log(2)  */
       Add22(pres_hi, pres_lo, ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo);
