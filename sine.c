@@ -33,8 +33,7 @@ void sine(scs_ptr x){
   scs_t x2;
   int i;
  
-  
-   /* x < 2^-75  => cos(x)~1 (with accuracy 2^-150,999), when rounding to nearest, here we consider x< 2^-90 */
+  /* x < 2^-75  => cos(x)~1 (with accuracy 2^-150,999), when rounding to nearest, here we consider x< 2^-90 */
   if(X_IND < -3){
     return; 
     }  
@@ -66,6 +65,12 @@ double scs_sin_rn(double x){
   scs_t sc1, sc2;
   double resd;
   int N;
+
+
+#if EVAL_PERF
+	crlibm_second_step_taken++;
+#endif
+
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1);

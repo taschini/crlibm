@@ -117,6 +117,23 @@ double rand_for_log(){
 }
 
 
+/* For exp we will soaktest with a random sign, a random mantissa, and
+   a random exponent between -5 and 15 */
+double rand_for_sin(){
+  db_number result;
+  int e;
+
+  /*first the low bits of the mantissa*/
+  result.i[LO_ENDIAN]=rand_int();
+  /* then the high bits of the mantissa, and the sign bit */
+  result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
+  /* Now set the exponent between -10 and 10, enough to cover the useful range  */
+  e =  (int) ( (rand_double_normal()-1) * 50 );
+  result.i[HI_ENDIAN] += (1023 + e -30)<<20;
+  return result.d;
+}
+
+
 /* a number in the range which never produces over/underflow for the
    exp function */
 double rand_for_exp_normal(){
@@ -218,7 +235,7 @@ void test_init(/* pointers to returned value */
 
   else  if (strcmp (func_name, "sin") == 0)
     {
-      *randfun        = rand_for_exp; /* exponent between -16 and 16 */
+      *randfun        = rand_for_sin; 
       /* *worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
       */ 
       *testfun_libm   = sin;
