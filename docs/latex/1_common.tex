@@ -13,6 +13,9 @@ mathematical operations.
 corresponding floating-point operations in IEEE-754 double precision,
 in the IEEE-754 \emph{round to nearest} mode.
 
+\item $\round(x)$, $\roundup(x)$ and $\rounddown(x)$ denote the value
+  of $x$ rounded to the nearest, resp. rounded up and down.
+
 \item $\epsilon$ (usually with some index) denotes an error and
   $\delta$ (with the same index) denotes a bound on this error.
 
@@ -333,7 +336,7 @@ $y_h$ is the correctly rounded value of $y$.
 \begin{theorem}[Correct rounding of a double-double to the nearest double, avoiding denormals]
 \label{th:roundingRN1}
 ~\\
-      Let $y$ and $\delta$ be real numbers, and $e$, $y_h$ and $y_l$ be
+Let $y$ be a real number, and  $\delta$, $e$, $y_h$ and $y_l$ be
   floating-point numbers such that 
   \begin{itemize}
   \item $y_h=y_h\oplus y_l$,
@@ -347,7 +350,7 @@ $y_h$ is the correctly rounded value of $y$.
 The following test determines whether $y_h$ is the
   correctly rounded value of $y$ in  round to nearest mode.
 
-\begin{lstlisting}[
+\begin{lstlisting}[caption={Test for rounding to the nearest},
   firstnumber=1]
 if( (*@$y_h$@*) == ((*@$y_h$@*) + ((*@$y_l$@*)*e)) )
   return (*@$y_h$@*);
@@ -424,7 +427,7 @@ else /* more accuracy is needed, lauch accurate phase */
 The following test determines whether $y_h$ is the
   correctly rounded value of $y$ in  round to nearest mode.
 
-\begin{lstlisting}[firstnumber=1]
+\begin{lstlisting}[firstnumber=1,caption={Test for rounding to the nearest}]
 if( (*@$y_h$@*) == ((*@$y_h$@*) + ((*@$y_l$@*)*e)) )
   return (*@$y_h$@*);
 else /* more accuracy is needed, lauch accurate phase */
@@ -453,34 +456,102 @@ else /* more accuracy is needed, lauch accurate phase */
 
 
 
-\subsection{Rounding up}
+\subsection{Directed rounding modes}
 
-\begin{theorem}[Correct rounding of a double-double to a double]
-  Let $y$ and $\delta$ be real numbers, and $e$, $y_h$ and $y_l$ be
-  floating-point numbers such that 
+Directed rounding is much easier to achieve than round to the nearest:
+the difficult cases are the cases when the exact value $y$ is very
+close to a machine number, and we have in $y_h+y_l$ an approximation to
+$y$ with a relative error smaller than the half-ulp of $y_h$.
+Therefore we have in $|y_l|$ an approximation to the the distance of
+$y_h$ to the closest machine number, with a known approximation error.
+
+We first give a test, then the correction to bring to $y_h$ in the
+three directed rounding modes.
+\begin{theorem}[Test for correct directed rounding of a double-double to a double]
+\label{th:roundingDirected}
+~\\
+Let $y$ be a real number, and $y_h$, $y_l$ and $\delta$ be
+floating-point numbers such that
   \begin{itemize}
   \item $y_h=y_h\oplus y_l$,
-  \item none of $y_h$ and $y_l$ is a  NaN.
+  \item $y_h$ is neither a NaN, a denormal, or $\pm \infty$.
+  \item $y_l$ is neither a NaN or $\pm \infty$.
   \item $|y_h+y_l - y| < \delta.|y|$
-  \item $0< \delta \le 2^{-53-k}$ with $k\ge 2$ integer
-  \item $e\ge 1+  \dfrac{2^{53+k+1}\delta}{(2^{k}-1)(1-2^{-53})}$
 \end{itemize}
 
 The following test determines whether $y_h$ is the
-  correctly rounded value of $y$ in  round to nearest mode.
+  correctly rounded value of $y$ in round up mode.
 
-\begin{lstlisting}[label={roundingtonearest},
-  caption={Test for correct rounding to nearest},
+\begin{lstlisting}[caption={Test for directed rounding},
   firstnumber=1]
-if( (*@$y_h$@*) == ((*@$y_h$@*) + ((*@$y_l$@*)*e)) )
-  return (*@$y_h$@*);
-else /* more accuracy is needed, lauch accurate phase */
+  union {long long int lli; double d} absyh, absyl, u, u53;
+  absyh.d = (*@$y_h$@*);
+  absyl.d = (*@$y_l$@*);
+  /* 64-bit arithmetic */
+  absyh.lli = absyh.lli & 0x(*@\texttt{7fffffffffffffff}@*)LL;
+  absyl.lli = absyl.lli & 0x(*@\texttt{7fffffffffffffff}@*)LL;
+  u53.lli  = (absyh.lli & 0x(*@\texttt{7fff000000000000}@*)LL) + 0x0001000000000000LL;
+  u.lli    = (absyh.lli & 0x(*@\texttt{7fff000000000000}@*)LL) - (52LL<<52);
+  /* back to double arithmetic */
+  if (absyl.d > (*@$\delta$@*)*u53.d ) {
+    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
+    ...
+  }
+  else /* more accuracy is needed, lauch accurate phase */
+    ...
 \end{lstlisting}
 \end{theorem}
 
-\subsection{Rounding down}
+\begin{proof}
+  The first lines compute $|y_h|$, $u_{53}=2^{53}\ulp(y_h)$, and
+  $u=\ulp(y_h)$. Here we use 64-bit arithmetic for readability, but
+  any other implementation will do. Note that this computation doesn't
+  work for infinities or denormals.
+  
+  As previously, by definition of the \ulp, we have  $y<2^{53}u$.
+  
+  If the test is true, then $y_l>(2^{53}u)\otimes \delta = 
+  2^{53} \delta u $ (the multiplication by $u_{53}$, a power of
+  two, is exact), hence $y_l>\delta y$ so we are in an easy case for directed rounding.
 
-TODO
+\end{proof}
+
+
+The following three listings show how to round up, down and towards
+zero. Once the value of the $\ulp(x_h)$ is available, they are fairly
+straightforward. Again, this doesn't work if $y_h$ is a denormal. If
+one cannot prove statically that this case doesn't appear, a sensible solution
+is to test for denormals and lauch the accurate phase.
+
+
+\begin{lstlisting}[caption={Rounding up},
+  firstnumber=1]    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
+    if ( (*@$y_l$@*) > 0.)
+       (*@$y_h$@*) += u.d;
+    return (*@$y_h$@*);
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Rounding down},
+  firstnumber=1]    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
+    if ( (*@$y_l$@*) < 0.)
+       (*@$y_h$@*) -= u.d;
+    return (*@$y_h$@*);
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption={Rounding towards zero},
+  firstnumber=1]    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
+    if ( (*@$y_h$@*) < 0.) {
+      if ( (*@$y_l$@*) > 0.)
+         (*@$y_h$@*) += u.d;
+    }
+    else{
+      if ( (*@$y_l$@*) < 0.)
+        (*@$y_h$@*) -= u.d;
+    }
+    return (*@$y_h$@*);
+\end{lstlisting}
+
 
 
 
