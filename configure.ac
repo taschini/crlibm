@@ -78,7 +78,7 @@ AC_DEFUN(AC_ADD_PATH_LIBS,
 if ` test "$1" `
 then  
   AC_MSG_CHECKING($2 library)
-	if  test -r "$1/lib$2.a"
+	if  test -r "$1/lib$2.a" -o -r "$1/lib$2.so"
 	then
 	  LDFLAGS="$LDFLAGS -L$1"
           LIBS   ="$LIBS -l$2" 	
@@ -152,30 +152,6 @@ dnl end of test for gmp
 fi
 
 
-dnl ... for IBM
-if test "$enable_ultim" = "yes"; then
-
-AC_ARG_WITH(ultim_include, [ --with-ultim-include=DIR   ULTIM include directory ],
- with_ultim_include=$withval)
-AC_ARG_WITH(_lib,     [ --with-ultim-lib=DIR       ULTIM lib directory ],
- with_ultim_lib=$withval)
-AC_ARG_WITH(ultim,         [ --with-ultim=DIR           ULTIM directory ],
- with_ultim_include=$withval/include with_ultim_lib=$withval/lib)
-
-if test -d "$with_ultim_include"; then
-  CPPFLAGS="$CPPFLAGS -I$with_ultim_include"
-else
-  with_ultim_include=
-fi
-AC_ADD_PATH_LIBS($with_ultim_lib, ultim)
-
-AC_CHECK_HEADERS([MathLib.h])
-
-AC_CHECK_LIB([ultim], [main])
-
-dnl end of test for ibmlib
-fi
-
 
 dnl  and for MPFR 
 
@@ -210,6 +186,30 @@ dnl end of test for mpfr
 fi
 
 
+
+dnl ... for IBM
+if test "$enable_ultim" = "yes"; then
+
+AC_ARG_WITH(ultim_include, [ --with-ultim-include=DIR   ULTIM include directory ],
+ with_ultim_include=$withval)
+AC_ARG_WITH(ultim_lib,     [ --with-ultim-lib=DIR       ULTIM lib directory ],
+ with_ultim_lib=$withval)
+AC_ARG_WITH(ultim,         [ --with-ultim=DIR           ULTIM directory ],
+ with_ultim_include=$withval/include with_ultim_lib=$withval/lib)
+
+if test -d "$with_ultim_include"; then
+  CPPFLAGS="$CPPFLAGS -I$with_ultim_include"
+else
+  with_ultim_include=
+fi
+AC_ADD_PATH_LIBS($with_ultim_lib, ultim)
+
+AC_CHECK_HEADERS([MathLib.h])
+
+AC_CHECK_LIB([ultim], [main])
+
+dnl end of test for IBM libultim
+fi
 
 
 AC_CONFIG_SUBDIRS([scs_lib])
