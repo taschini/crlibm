@@ -365,12 +365,13 @@ double exp_rn( double xd )
 
     /* filter out special cases */
 
-    if (__builtin_expect( x_exp < 0x3f0, 0 )) { /* |x| < 2^(-15) */
+    if (__builtin_expect( x_exp < 0x3eb, 0 )) { /* |x| < 2^(-20) */
         if (__builtin_expect( x_exp < 0x3c8, 0 )) { /* |x| < 2^(-55) */
             return _Asm_fma( _PC_D, xd, 1, 1, _SF0 );
         }
-        /* 2^(-55) <= |x| < 2^(-15) */
-        tmp = p5*xd + p4;
+        /* 2^(-55) <= |x| < 2^(-20) */
+	//	printf("\nToto %1.30e\n", xd);
+         tmp = p5*xd + p4;
         __X_SQR_L( r2x, xd );
         tmp = p6*r2x.hi + tmp;
         tp1x.hi = p2;
@@ -533,6 +534,9 @@ double exp_rn( double xd )
       return (double)( resx.hi + resx.lo );
     }
 }
+
+
+
 
 
 /* Just to compile OK within crlibm */

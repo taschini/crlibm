@@ -13,53 +13,53 @@ log2:=proc(x) evalf( log[2](x)) end proc:
 # returns sign (-1 or 1), exponent between -1022 and 1023, mantissa as a fraction between 0.5 and 1.
 # Digits should be at least 30.
 ieeedouble:=proc(xx)
-local x, sign, logabsx, exponent, mantissa, infmantissa,powermin,powermax,expmin,expmax,expmiddle,powermiddle;
-Digits := 100;
-x := evalf(xx);
+local x, sign, logabsx, exponent, mantissa, infmantissa,powermin,powermax,expmin,expmax,expmiddle,powermiddle:
+Digits := 100:
+x := evalf(xx):
 if (x=0) then sign, exponent, mantissa := 1, -1022, 0
 else
   if (x < 0) then sign := -1
   else sign := 1
   fi:
-  x := abs(x);
-  if x >=  2^(1023)*(2-2^(-53)) then mantissa := infinity; exponent := 1023 
-  else if x <= 2^(-1075) then mantissa := 0; exponent := -1022
+  x := abs(x):
+  if x >=  2^(1023)*(2-2^(-53)) then mantissa := infinity: exponent := 1023
+  else if x <= 2^(-1075) then mantissa := 0: exponent := -1022
       else
          if x <= 2^(-1022) then exponent := -1022
-         else 
+         else
 # x is between 2^(-1022) and 2^(1024)
-         powermin := 2^(-1022); expmin := -1022;
-         powermax := 2^1024; expmax := 1024;
+         powermin := 2^(-1022): expmin := -1022:
+         powermax := 2^1024: expmax := 1024:
          while (expmax-expmin > 1) do
-            expmiddle := round((expmax+expmin)/2);
-            powermiddle := 2^expmiddle;
+            expmiddle := round((expmax+expmin)/2):
+            powermiddle := 2^expmiddle:
             if x >= powermiddle then
-                powermin := powermiddle;
+                powermin := powermiddle:
                 expmin := expmiddle
             else
-                powermax := powermiddle;
+                powermax := powermiddle:
                 expmax := expmiddle
             fi
-          od;
+          od:
 # now, expmax - expmin = 1
 # and powermin <= x < powermax
 # powermin = 2^expmin
 # and powermax = 2^expmax
 # so expmin is the exponent of x
-         exponent := expmin;
-         fi;
-         infmantissa := x*2^(52-exponent);         
+         exponent := expmin:
+         fi:
+         infmantissa := x*2^(52-exponent):
 	 if frac(infmantissa) <> 0.5 then mantissa := round(infmantissa)
-            else 
-              mantissa := floor(infmantissa);
+            else
+              mantissa := floor(infmantissa):
                if type(mantissa,odd) then mantissa := mantissa+1 fi
-            fi;
-         mantissa := mantissa*2^(-52);
-      fi;
-  fi;
-fi;
-sign,exponent,mantissa;
-end;
+            fi:
+         mantissa := mantissa*2^(-52):
+      fi:
+  fi:
+fi:
+sign,exponent,mantissa:
+end:
 
 
 #---------------------------------------------------------------------

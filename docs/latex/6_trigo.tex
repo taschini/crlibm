@@ -685,7 +685,7 @@ We find that $\maxdelta_{\mathrm{argred}}\approx 2^{-71}$
 
 Here we directly need the relative error $\epsilon_{\mathrm{argred}}$
 on range reduction, which will be used below in Section
-\ref{dosinzero}. Looking back at Listing~\ref{trigo:structargred}, we
+\ref{sec:dosinzero}. Looking back at Listing~\ref{trigo:structargred}, we
 see that in this case we compute range reduction either in
 double-double, or in SCS. The following Maple code computes
 $\maxeps_{\mathrm{argred}}$.
@@ -992,219 +992,9 @@ have to be substituted in the code using the Unix utility
 
 The input to Gappa is as follows:
 
-\begin{lstlisting}[caption={Gappa input to compute the error of DoSineNotZero},
-  language={sh}, numbers=none]
-# Usage: You need to set the constants cah, cal, sah, sal. Running the trigo.mpl Maple script
-# should create 64 files in TEMPTRIG, which can be tested independently as 
-#    sed -f    TEMPTRIG/SinACosA_1.sed  trigoSinCosCase3.gappa | ~/gappa/src/gappa > /dev/null
+\lstinputlisting[caption={Gappa input to compute the error of DoSineNotZero},
+  language={sh}, numbers=none]{../../maple/trigoSinCosCase3.gappa}
 
-# NOTATION CONVENTION 
-# Variables that correspond to double-precision variables in the code begin with a small letter
-# Other variables begin with a capital letter.
-# Variables that will be replaced with Maple-computed constants begin with an underscore
-# Otherwise avoid underscores as they are painful to carry on to LaTeX :)
-
-# polynomial coefficients, computed by Maple
-s3 = _s3;
-s5 = _s5;
-s7 = _s7;
-c2 = _c2;
-c4 = _c4;
-c6 = _c6;
-
-# Table values, computed by Maple
-cah = _cah;
-cal = _cal;
-sah = _sah;
-sal = _sal;
-
-# The variables used here:
-# x input
-# Y perfect reduced argument
-# Ydd = yh+yl, his distance to Y is specified as an hypothesis 
-# TsHat perfect ts
-# TcHat perfect tc
-# SinX exact result for sin(x)
-# SinA, CosA perfect sin(kPi/256) and cos(kPi/256)
-
-
-yh = <float64ne>(Ydd);
-yl = Ydd - yh;
-
-#######################################################################
-
-# First, a transcription of the actual computation, which could (and
-# should eventually) be generated automatically from the actual code
-
-# ---------------------Code shared by sin and cos, cut from ComputeTrigWithArgRed : 
-#yh2 = yh * yh; 
-yh2 = <float64ne>(yh * yh);
-
-# ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
-ts = <float64ne>(yh2 * <float64ne>(s3 + <float64ne>(yh2 * <float64ne>(s5 + <float64ne>(yh2 * s7)))));
-
-# tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d));
-tc = <float64ne>(yh2 * <float64ne>(c2 + <float64ne>(yh2 * <float64ne>(c4 + <float64ne>(yh2 * c6)))));
-
-
-# ---------------------Code for the sine, cut from DosinNotZero: 
-# Mul12(&cahyh_h,&cahyh_l, cah, yh);
-cahyh = cah * yh;
-cahyh_h = <float64ne>(cahyh);
-cahyh_l = cahyh - cahyh_h;    # Exact equation because Mul12 is exact
-
-# Add12(thi, tlo, sah, cahyh_h);
-TSin = sah + cahyh_h;
-thiSin = <float64ne>(TSin);
-tloSin1 = TSin - thiSin;          # Exact equation because Add12 is exact
-
-# Rem: need to Rename tlo to tloSin1, and its second use to tloSin2.
-# It would be safer to translate code to single-assignment before
-# using Gappa, modern compilers won't make any difference.
-
-#  tlo = tc*sah+(ts*cahyh_h+(sal+(tlo+(cahyh_l+(cal*yh + cah*yl))))) ;
-tloSin2 = <float64ne>(<float64ne>(tc * sah) + <float64ne>(<float64ne>(ts * cahyh_h)
- + <float64ne>(sal + <float64ne>(tloSin1 + <float64ne>(cahyh_l
- + <float64ne>(<float64ne>(cal * yh) + <float64ne>(cah * yl)))))));
-
-# Add12(*reshi, *reslo, thi, tlo);
-ResultSin = thiSin + tloSin2; # we don't need to split it for the proof.
-
-
-# ---------------------Code for the cos, cut from DoCosNotZero: 
-#  Mul12(&sahyh_h,&sahyh_l, sah, yh);			            
-sahyh = sah * yh;
-sahyh_h = <float64ne>(sahyh);
-sahyh_l = sahyh - sahyh_h;    # Exact equation because Mul12 is exact
-
-#  Add12(thi, tlo,  cah, -sahyh_h);			            
-TCos = cah - sahyh_h;
-thiCos = <float64ne>(TCos);
-tloCos1 = TCos - thiCos; # Exact equation because Add12 is exact
-
-#  tlo = tc*cah-(ts*sahyh_h-(cal+(tlo-(sahyh_l+(sal*yh+sah*yl))))) ; 
-tloCos2 = <float64ne>(<float64ne>(tc * cah) - <float64ne>(<float64ne>(ts * sahyh_h)
- - <float64ne>(cal + <float64ne>(tloCos1 - <float64ne>(sahyh_l
- + <float64ne>(<float64ne>(sal * yh) + <float64ne>(sah * yl)))))));
-
-#  Add12(*pch, *pcl,    thi, tlo);                                   
-ResultCos = thiCos + tloCos2;   # No need to split it for the proof.
-
-
-#######################################################################
-
-# Now let us pile up layers of approximations
-
-#------------------------------------- 
-#With these notations, the exact sine and cosine are given by these
-#exact mathematical formulae
-
-SinX =  SinY * CosA  +  CosY * SinA;
-CosX =  CosY * CosA  -  SinY * SinA;
-
-#-------------------------------------
-# yh2 is an approximation to :
-Y2 = Y*Y;
-# through three layers: 
-# 1/    Ydd=yh+hl = Y +/- delta_ArgRed  : in the hypotheses below
-# 2/    yh = Ydd - yl                       : already written
-# 3/    rounding error in the mult          : already written       
-
-#-------------------------------------
-# ts is an approximation to :
-TsHat = Y2 * (s3 + Y2*(s5 + Y2*s7));
-# through two layers: 
-# 1/ the approximation y2 of Y2        : done just above
-# 2/ the rounding errors in Horner         : already written
-
-#-------------------------------------
-PolySinY = Y * (1 + TsHat);
-# PolySinY is an approximation to sin(Y) as expressed in the hypotheses below :
-#  PolySinY - SinY in [-0.24126e-23, 0.24126e-23]     # delta_approx_Sin_Case3
-
-#-------------------------------------
-# Same for PolyCosY
-TcHat = Y2 * (c2 +(Y2 * (c4 + (Y2 * c6))));
-PolyCosY = 1 + TcHat;
-
-#------------------------------------- 
-#tc is an approximation to TcHat through the rounding errors, defined
-#in the definition of tc. Same for ts
-
-#-------------------------------------
-# SinReconstrExact is an approximation to ResultSin 
-SinReconstrExact = PolySinY * CosA  +  PolyCosY * SinA ;
-# The delta between ResultSin and SinReconstrExact is due to the two
-# mathematical poly approx, and has been defined just above
-CosReconstrExact = PolyCosY * CosA  -  PolySinY * SinA ;
-
-#-------------------------------------
-# The reconstruction approximates the following
-SinReconstrNoRound = (Ydd * (1 + ts)  * (cah+cal)   +  (1 + tc) * (sah+sal) );
-# where Ydd is an approximation to Y
-#       ts is an approximation to TsHat
-#       tc is an approximation to TcHat : all already described
-# All what we still need to express is that the actual computation will neglect some terms
-CosReconstrNoRound = ( (1 + tc) * (cah+cal)   -  Ydd * (1 + ts)  * (sah+sal) );
-
-#-------------------------------------
-# tloSin2 is an approximation to TloSin2NoRound (because of rounding error in the operations, already described) 
-TloSin2NoRound = tc*sah+(ts*cahyh_h+(sal+(tloSin1+(cahyh_l+(cal*yh+cah*yl))))) ;
-TloCos2NoRound = tc*cah-(ts*sahyh_h-(cal+(tloCos1-(sahyh_l+(sal*yh+sah*yl)))));
-
-#  tloSinNoRound is an approximation to SinReconstrNoRound - tSinhi, the
-#  difference being the neglected terms. This error will be given as an hint
-
-NeglectedSinTerms = SinReconstrNoRound - (thiSin + TloSin2NoRound);
-NeglectedCosTerms = CosReconstrNoRound - (thiCos + TloCos2NoRound);
-
-# And finally, ResultSin is an approximation to SinX through many layers which are given in the hints.
-
-###########################################################################################
-#  The theorem to prove
-{
-    Ydd in             [-_ymaxCase3,     _ymaxCase3]                            # computed by Maple
- /\ Ydd - Y in         [-_delta_ArgRed,  _delta_ArgRed]                         # computed by Maple
- /\ PolySinY - SinY in [-_delta_approx_Sin_Case3,  _delta_approx_Sin_Case3]     # computed by Maple
- /\ PolyCosY - CosY in [-_delta_approx_Cos_Case3,  _delta_approx_Cos_Case3]     # computed by Maple
- /\ SinA-sah-sal in [-1b-104, 1b-104] 
- /\ CosA-cah-cal in [-1b-104, 1b-104] # double-double absolute rounding error, with margin
-
- -> 
-
-(ResultSin - SinX)/SinX in ?   #[-1b-62,1b-62]
-/\ 
-(ResultCos - CosX)/CosX in ?   #[-1b-62,1b-62]
-}
-
-###########################################################################################
-# Hints to the reduction engine: Gappa is not supposed to be clever, it's an assistant 
-
-# To get bounds on SinX, try ResultSin
-SinX -> ResultSin - (ResultSin - SinX);
-CosX -> ResultCos - (ResultCos - CosX);
-
-# To get bounds on SinA, try sah+sal
-SinA -> sah + sal + (SinA - sah - sal);
-CosA -> cah + cal + (CosA - cah - cal);
-
-# To get bounds on Y, try Ydd
-Y ->  Ydd - (Ydd - Y); 
-
-# One layer of approx error, and one layer of rounding error for SinY and CosY
-1 + tc - CosY   ->   (1 + tc - PolyCosY) + (PolyCosY - CosY);
-(Y + Y * ts) - SinY ->   ((Y + Y * ts) - PolySinY) + (PolySinY - SinY);
-
-# Layers of approximations
-ResultSin - SinX ->  (ResultSin - SinReconstrNoRound) + (SinReconstrNoRound - SinReconstrExact) + (SinReconstrExact - SinX);
-ResultCos - CosX ->  (ResultCos - CosReconstrNoRound) + (CosReconstrNoRound - CosReconstrExact) + (CosReconstrExact - CosX);
-
-NeglectedSinTerms ->  sal*tc + cal*yl + ts*(cahyh_l + cah*yl + cal*yh + cal*yl); # Should be machine-checked
-ResultSin - SinReconstrNoRound -> (ResultSin - (thiSin + TloSin2NoRound)) - (SinReconstrNoRound    -  (thiSin + TloSin2NoRound)) ;
-
-NeglectedCosTerms ->  cal*tc - sal*yl - ts*(sahyh_l + sah*yl + sal*yh + sal*yl); # Should be machine-checked
-ResultCos - CosReconstrNoRound -> (ResultCos - (thiCos + TloCos2NoRound)) - (CosReconstrNoRound    -  (thiCos + TloCos2NoRound)) ;
-\end{lstlisting}
 
 
 The max of the bounds computed by Gappa for all the
@@ -1614,11 +1404,12 @@ in the neighborhood of zero, both $tan$ and its approximation are
 equivalent to $x$ with no order-2 term, therefore the relative error
 $\maxeps$ is equivalent to $x^2$ and therefore $\maxeps/x$ will vanish
 as $x\rightarrow 0$ (of course, in the presence of rounding error this
-has to be proven more rigorously - we will use Gappa).  As the error constant is computed
-out of $\maxeps$ (see Theorem~\ref{th:roundingRN1}
-page~\pageref{th:roundingRN1}), for $x$ sufficiently small we can
-compute $e$ out of $x$ and get a finer rounding constant, hence a
-lower probability of going through the accurate phase.
+has to be proven more rigorously - we will use Gappa below).  As the
+error constant is computed out of $\maxeps$ (see
+Theorem~\ref{th:roundingRN1} page~\pageref{th:roundingRN1}), for $x$
+sufficiently small we can compute $e$ out of $x$ and get a finer
+rounding constant, hence a lower probability of going through the
+accurate phase.
 
 The lines 19-20 implement $$\mathtt{rndcst} \approx 1 + 2^{-2}|x|$$ 
 with  
@@ -1628,7 +1419,7 @@ To prove that that this rounding constant is correct, we just have to
 check that it fulills the requirements of Theorem \ref{th:roundingRN1}.
 
 Let us note $\maxeps_{TanCase2}$ simply $\maxeps$ in this section.
-First, we compute in Gappa (file\\ \texttt{maple/trigoTanCase2.gappa}),
+First, we compute in Gappa (file\\ \texttt{maple/trigoTanCase2.gappa} below),
 using the same constants (produced by the same Maple) as in the C
 code, a bound $M$ on $\dfrac{\maxeps}{|x|}$. We find that, for
 $x<2^{-4}$, we have 
@@ -1644,11 +1435,20 @@ It is now trivial to check that $2^{-2}/M >
 the value of $\mathtt{rndcst}$ thus computed allows to determine
 correct rounding according to Theorem \ref{th:roundingRN1}. 
 
-
-
 Note that the computation of the rounding constant, although complex, is performed in
 integer arithmetic and independently of the evaluation of the polynomial.
 Therefore both computations may be carried out in parallel in a superscalar processor.
+
+The input to Gappa is as follows. Note that it needs a bound on
+$\dfrac{p(x)-\tan(x)}{x \tan(x)}$ which has been computed as an infinite
+norm in Maple.
+
+
+\lstinputlisting[caption={Gappa input file to prove the previous bounds on $\maxeps_{TanCase2}$ and $\maxeps_{TanCase2}/x$},
+  language={sh}, numbers=none]{../../maple/trigoTanCase2.gappa}
+
+
+
 
 \subsection{RU mode}
 \begin{lstlisting}[caption={Exceptional cases for tangent RU},firstnumber=1]

@@ -45,17 +45,7 @@ Poly = x+x*Tt;
 epsilon=(rdd - TanX)/TanX;
 
 {
-# Je veux au final:    x in [1b-30, _xmax]
-
-# HELP: essaye toi-meme les trois lignes suivantes; Les deux premieres
-# passent, la troisieme pas, alors que sauf ivrognerie de ma part
-# c'est l'union des intervalles. voir HINT LOUCHE ci-dessous
-
-#    x in [1b-6, 1b-5]
-#    x in [1b-7, 1b-6]
-#
-    x in [1b-7, 1b-5]
-
+    x in [1b-30, _xmax]
  /\ (Poly - TanX)/TanX in [-_maxEpsApprox, _maxEpsApprox]
  /\ ((Poly - TanX)/TanX)/x in [-_maxEpsApproxOverX, _maxEpsApproxOverX]
 
@@ -63,36 +53,21 @@ epsilon=(rdd - TanX)/TanX;
 
 epsilon in ?
 /\
-epsilon/x in  [-1b-56,1b-56] # c'est vraiment cela que je veux prouver. Je m'en fous d'un encadrement plus fin
+epsilon/x in  [-1b-56,1b-56] 
  
-
-#/\
-#(rdd - Poly)/Poly in ?
-#/\
-#(Poly - TanX)/TanX in ?
-#/\
-#(rdd-x)/x in ?
-#/\
-#(<float64ne>(x*tt) - x*Tt) / x in ?
-#/\
-# ((<float64ne>(x*tt) - x*tt)/(x*tt)) * tt in ?
-#/\
-#(tt - Tt) in ?
 }
 
-# HELP : sur quelle requete faut-il mettre le $ au juste ? 
+# Use a dichotomy on x to get an interval of epsilon/x
 epsilon/x $ x;
 
-# Hint louche: c'est le tien mais j'ai ajoute /x*x   pour qu'il utilise l'encadrement fait par Maple
+# The usual hint for relative errors, with an additional /x*x so that Gappa uses the Maple-computed mathematical bound
 (rdd - TanX)/TanX -> (rdd - Poly)/Poly  + (((Poly - TanX)/TanX)/x)*x + ((rdd - Poly)/Poly) * ((Poly - TanX)/TanX) ; 
 
 (rdd - Poly)/Poly  ->  ((<float64ne>(x*tt) - x*Tt) / x) * (x/Poly);
 
-# "a verifier soigneusement" -- ameliore un peu le resultat mais bon...
+# I'm not sure I understand why this one improves the result
 (<float64ne>(x*tt) - x*Tt)/x -> ((<float64ne>(x*tt) - x*tt)/(x*tt)) * tt   +  (tt - Tt);  
 
-# C'est un peu etrange d'avoir a donner ceux-ci, non ?
+# Easy hints
 x/Poly -> 1/(Poly/x);
 Poly/x -> 1+Tt;
-
-

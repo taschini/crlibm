@@ -2,6 +2,68 @@
 #ifndef __DOUBLE_EXT_H
 #define __DOUBLE_EXT_H
 
+#ifdef CRLIBM_TYPECPU_X86
+
+static const unsigned short RN_Double=(_FPU_DEFAULT & ~_FPU_EXTENDED)|_FPU_DOUBLE;
+static const unsigned short RN_DoubleExt =_FPU_DEFAULT;
+
+#define DOUBLE_EXTENDED_MODE  _FPU_SETCW(RN_DoubleExt)
+#define BACK_TO_DOUBLE_MODE   _FPU_SETCW(RN_Double)
+
+
+typedef union {
+  int i[3];                 
+  long double d;
+} db_ext_number;
+
+#define DE_EXP 2
+#define DE_MANTISSA_HI 1
+#define DE_MANTISSA_LO 0
+
+
+/*  
+Two rounding tests to the nearest.  On Pentium 3, gcc3.3, the second
+is faster by 12 cycles (and also improves the worst-case time by 60
+cycles since it doesn't switch processor rounding mode in this
+case). However it uses a coarser error estimation.
+*/
+
+#define TEST_AND_RETURN_RN_ZIV(y,rncst)  \
+{ double yh, yl;                         \
+  yh = (double) y;                       \
+  yl = y-yh;                             \
+  BACK_TO_DOUBLE_MODE;                   \
+  if(yh==yh + yl*rncst)   return yh;     \
+  DOUBLE_EXTENDED_MODE;                  \
+}
+
+
+/* This test works by observing the bits of your double-extended after the 53rd.
+
+   mask should be  7ff   if you trust your 64 bits (hum)
+                   7fe   if you trust 63 (if you have proven that maxepsilon<2^(-63) )
+                   7fc                62
+                   7f8                61
+                   7f0                60   etc
+ */
+
+#define TEST_AND_RETURN_RN(y, mask)                       \
+{                                                         \
+  db_ext_number z;   double yh;                           \
+  int lo;                                                 \
+  z.d = y;                                                \
+  yh = (double) y;                                        \
+  lo = z.i[DE_MANTISSA_LO] &(mask);                       \
+  if( (lo!=(0x3ff&(mask))) && (lo!= (0x400&(mask)))  ) {  \
+    BACK_TO_DOUBLE_MODE;                                  \
+    return yh;                                            \
+  }                                                       \
+}
+#endif /* CRLIBM_TYPECPU_X86*/
+
+
+
+
 #define Add12_ext(s, r, a, b)         \
         { long double _z, _a=a, _b=b;    \
          s = _a + _b;             \

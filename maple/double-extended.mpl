@@ -3,6 +3,7 @@
 # ieeedouble converts a number to IEEE double extended format.
 # returns sign (-1 or 1), exponent between -16383 and 16383, mantissa as a fraction between 0.5 and 1.
 
+# TODO : use JMM procedure; check subnormals etc
 ieeedoubleExt:=proc(xx)
 local x, sign, logabsx, exponent, mantissa, infmantissa;
     x:=evalf(xx):
@@ -13,7 +14,7 @@ local x, sign, logabsx, exponent, mantissa, infmantissa;
         else sign:=1:
         fi:
         exponent := floor(log2(sign*x));
-        if (exponent>16383) then mantissa:=infinity: exponent=16383:
+        if (exponent>16383) then mantissa:=infinity: exponent:=16383:
         elif (exponent< -16382) then
             # denorm
             exponent := -16383
@@ -24,7 +25,6 @@ local x, sign, logabsx, exponent, mantissa, infmantissa;
             mantissa := floor(infmantissa);
             if type(mantissa,odd) then mantissa := mantissa+1 fi;
         fi;
-        Digits := 63;
         mantissa := mantissa*2^(-63);
     fi;
     sign,exponent,mantissa;
