@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout leftmargin="0.0" name="_pstyle7" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle6" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle5" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle4" rightmargin="0.0"/><Layout alignment="left" firstindent="0.0" leftmargin="0.0" name="_pstyle2" rightmargin="0.0" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="_pstyle1" rightmargin="0.0"/><Layout alignment="left" bullet="none" name="Heading 2" spaceabove="8.0" spacebelow="2.0"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="Normal" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle14" rightmargin="0.0"/><Layout alignment="left" firstindent="0.0" leftmargin="0.0" name="_pstyle13" rightmargin="0.0" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="_pstyle11" rightmargin="0.0"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" readonly="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_cstyle57" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle55" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" executable="false" name="_pstyle6" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle4" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="false" family="Monospaced" foreground="[255,0,0]" name="_cstyle7" readonly="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_cstyle6" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle5" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_pstyle1" readonly="false"/><Font background="[0,0,0]" bold="true" executable="false" family="Lucida Bright" name="_cstyle1" readonly="false" size="18"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 2" opaque="false" size="16"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" executable="false" name="ParagraphStyle2" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" name="_cstyle63" readonly="false" size="12"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="Page Number" readonly="false" underline="false"/><Font background="[0,0,0]" executable="false" name="_pstyle14" readonly="false"/></Styles><Page-Numbers enabled="false" first-number="1" first-numbered-page="1" horizontal-location="right" style="Page Number" vertical-location="bottom"/><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">restart:
+<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout leftmargin="0.0" name="_pstyle7" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle6" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle5" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle4" rightmargin="0.0"/><Layout alignment="left" firstindent="0.0" leftmargin="0.0" name="_pstyle2" rightmargin="0.0" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="_pstyle1" rightmargin="0.0"/><Layout alignment="left" bullet="none" name="Heading 2" spaceabove="8.0" spacebelow="2.0"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="Normal" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle14" rightmargin="0.0"/><Layout alignment="left" firstindent="0.0" leftmargin="0.0" name="_pstyle13" rightmargin="0.0" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="_pstyle11" rightmargin="0.0"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" readonly="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_cstyle57" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle55" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" executable="false" name="_pstyle6" readonly="false"/><Font background="[0,0,0]" bold="true" executable="false" family="Monospaced" foreground="[255,0,0]" name="_cstyle7" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle4" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_cstyle6" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle5" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_pstyle1" readonly="false"/><Font background="[0,0,0]" bold="true" executable="false" family="Lucida Bright" name="_cstyle1" readonly="false" size="18"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 2" opaque="false" size="16"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" executable="false" name="ParagraphStyle2" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" name="_cstyle63" readonly="false" size="12"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="Page Number" readonly="false" underline="false"/><Font background="[0,0,0]" executable="false" name="_pstyle14" readonly="false"/></Styles><Page-Numbers enabled="false" first-number="1" first-numbered-page="1" horizontal-location="right" style="Page Number" vertical-location="bottom"/><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">restart:
 Digits:=150:
 with(numapprox):
 with(orthopoly):</Text-field></Input></Group><Section><Title><Text-field layout="_pstyle2" style="_cstyle1">Useful procedures for IEEE doubles</Text-field></Title><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Stuff for IEEE double conversions and manipulation</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log2:=proc(x) evalf( log(x)/log(2) ) end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">ieeedouble converts a number to IEEE double format. 
 returns sign (-1 or 1), exponent between -1022 and 1023, mantissa as a fraction between 0.5 and 1.
 Handles denorms well, infinities more or less
-</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">ieeedouble:=proc(x) 
-local sign, logabsx, exponent, mantissa, infmantissa; 
-if (x=0) then [0,0,0]; 
+</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">ieeedouble:=proc(xx) 
+local x, sign, logabsx, exponent, mantissa, infmantissa; 
+x:=evalf(xx):
+if (x=0) then 
+  sign,exponent,mantissa := 0,0,0; 
 else 
  if (x&lt;0) then sign:=-1:
  else sign:=1:
@@ -25,20 +27,18 @@ else
     if type(mantissa,odd) then mantissa := mantissa+1 fi;
  fi;
  Digits := 53;
-[sign,exponent,mantissa*2^(-52)];
-fi;
+ mantissa := mantissa*2^(-52);
+fi;<Font opaque="false">
+sign,exponent,mantissa;</Font>
 end:</Text-field></Input><Input><Text-field prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="_pstyle7" style="_cstyle57">
 p<Font family="Lucida Bright" style="_pstyle6">ulp returns the precision of the ulp of x</Font></Text-field><Text-field layout="_pstyle7" style="_cstyle57"/></Input></Group><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">pulp:=proc(x)
 local flt, ulpy;
 flt:=ieeedouble(x);
 ulpy:=-53+flt[2];
 end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Returns nearest IEEE double:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">nearest := proc(x)
-  local xieee,sign, exponent, mantissa;
+  local sign, exponent, mantissa;
 
-  xieee := ieeedouble(x);
-  sign := xieee[1];
-  exponent := xieee[2];
-  mantissa := xieee[3];
+  sign,exponent,mantissa := ieeedouble(x);
   sign*mantissa*2^(exponent);
 end:</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle4" style="_pstyle4"/><Text-field layout="_pstyle4" style="Text">returns a string containing the hexadecimal representation of the double nearest to input x.</Text-field><Text-field layout="_pstyle4" style="_pstyle4"/></Input></Group><Group><Input><Text-field layout="_pstyle5" prompt="&gt; " style="Maple Input">ieeehexa:= proc(x)
   local signe, hex1, hex2, ma, manti, expo, expos, bina, bin1, bin2, dec1, dec2, resultat;
@@ -82,7 +82,7 @@ local xhl:
 xhl:=ieeehexa(x):
 
 if(isbig=0 or isbig=1) then
-  fprintf(fd,"{{0x%+0.8s,0x%+0.8s}} /* %+0.10f */", xhl[2-isbig], xhl[isbig+1], x):
+  fprintf(fd,"{{0x%+0.8s,0x%+0.8s}} /* %+0.10e */", xhl[2-isbig], xhl[isbig+1], x):
 else
   print("ERROR, isbig must be equal to 0 or 1");
 end if:
@@ -95,7 +95,7 @@ if (res = 0) then
 else
   x_lo:=nearest(evalf(res)):
 end if;
-[x_hi,x_lo];
+x_hi,x_lo;
 end:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">
 same as hi_lo, but returns hexadecimal strings</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle5" prompt="&gt; " style="Maple Input">ieeehexa2:=proc(x)
 local reshi, reslo, hexhi, hexlo;
@@ -103,7 +103,7 @@ reshi:=nearest(x);
 hexhi:=ieee2hexa(reshi);
 reslo:= nearest(res-reshi);
 hexlo:=ieee2hexa(reslo);
-[reshi, reslo];
+reshi, reslo;
 end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/><Text-field layout="Normal" style="Text">Computes the constant for the round-to-nearest test. 
 delta is the overall relative error of the approximation scheme</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compute_rn_constant := proc(delta)
   local k;
@@ -123,50 +123,44 @@ deg:=degree(P,x):
 return(Q);
 end:</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle6" style="_pstyle6"/><Text-field layout="_pstyle7" style="_cstyle57">Like poly_exact, but the n first coefficients are exactly representable as the sum of two doubles.</Text-field><Text-field layout="_pstyle7" style="_cstyle57">(to actually get the two doubles, use procedure hi_lo)
 </Text-field></Input></Group><Group><Input><Text-field layout="_pstyle5" prompt="&gt; " style="Maple Input">poly_exact2:=proc(P,n)
-local i, coef, coef_t, deg, Q, psup, pinf, pfull:
-psup:=0: pinf:=0:
-Q:=[];
-convert(psup, polynom): convert(pinf, polynom):
+local deg,i, coef, coef_hi, coef_lo, Q:
+Q:= 0:
+convert(Q, polynom):
 deg:=degree(P,x):
   for i from 0 to deg do
-    coef:=coeff(P,x,i):
-    if (coef=0) then
-      Q:= (Q,[0,0]):
-    elif(coef=1) then
-        Q:= (Q,[1,0]):
-        psup:=psup+x^i:
-    else        
-      coef_t:=hi_lo(coef):
-      Q:= (Q,coef_t):
-      psup:=psup + coef_t[1]*x^i:
-        if(i&lt;n) then
-        pinf:=pinf + coef_t[2]*x^i:
-        fi;
-    end if;
+    coef :=coeff(P,x,i):
+    coef_hi<Font opaque="false">, coef_lo</Font>:=hi_lo(coef):
+    Q:= Q + coef_hi*x^i:
+    if(i&lt;n) then
+        Q := Q + coef_lo*x^i:
+    fi:
   od:
-Q:=Q[2..deg+2];
-pfull:=expand(psup+pinf):
-end:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/><Text-field layout="Normal" style="Text">Computes the accumulated rounding error during the polynomial evaluation.
+  return(Q);
+end:
+</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/><Text-field layout="Normal" style="Text">Computes the accumulated rounding error during the polynomial evaluation.
 P is the polynomial.
 xmax is the max value of |x|.
 n is the degree when P is computed in double double.</Text-field><Text-field layout="Normal" style="Text">
 returns [max absolute error, max of the function]. 
-</Text-field><Text-field layout="Normal" style="Text">This procedure also checks on the fly that the fast (test-free) versions of the double-double addition can be used, i.e. that for all x, at each Horner step i computing ci+x*Si, we have |ci|&gt;|x*Si|. It prints warnings if it not the case. </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compute_rounding_error:=proc(poly,xmax, n)
-local deg, delta, deltap, i, S, P, Smax:
+</Text-field><Text-field layout="Normal" style="Text">This procedure also checks on the fly that the fast (test-free) versions of the double-double addition can be used, i.e. that for all x, at each Horner step i computing ci+x*Si, we have |ci|&gt;|x*Si|. It prints warnings if it not the case. </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compute_abs_rounding_error:=proc(poly,xmax, n)
+local deg, delta, deltap, i, S, P, Snorm, Smin, Smax:
 deltap:=0:
 delta:=0:
 deg:=degree(poly):
 
 S:=coeff(poly, x, deg):
 Smax:=abs(S):
+Smin:=Smax:
 
 for i from (deg-1) to n by -1 do
   P:= convert(S*x, polynom):
   delta:= evalf(xmax*deltap + 2**(-53)*xmax*Smax):
-      
+  Smin := abs(coeff(poly,x,i)) - xmax*Smax : 
+  if(Smin&lt;=0) then printf("Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration %d, consider decreasing xmax\n",i); fi:
   S:=convert(P+coeff(poly,x,i), polynom):
-  Smax:=evalf(infnorm(S, x=-xmax..xmax)):
-  deltap:= evalf(delta + 2**(-53)*(delta + Smax)):  
+  Snorm:=evalf(infnorm(S, x=-xmax..xmax)):
+  deltap:= evalf(delta + 2**(-53)*(delta + Snorm)):
+  Smax := Snorm + deltap:  
 od:
 for i from n-1 to 0 by -1 do
   # fast Add22 ?    
@@ -176,27 +170,42 @@ for i from n-1 to 0 by -1 do
   fi:
 
   P:= convert(S*x, polynom):
+  Smin := abs(coeff(poly,x,i)) - xmax*Smax : 
   delta:= evalf(xmax*deltap + 2**(-100)*xmax*Smax):
+  if(Smin&lt;=0) then printf("Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration %d, consider decreasing xmax\n",i); fi:
   S:=convert(P+coeff(poly,x,i), polynom):
-  Smax:=evalf(infnorm(S, x=-xmax..xmax)):
-  deltap:= evalf(delta + 2**(-100)*(delta + Smax)): 
+  Snorm:=evalf(infnorm(S, x=-xmax..xmax)):
+  deltap:= evalf(delta + 2**(-100)*(delta + Snorm)): 
+  Smax := Snorm + deltap:  
 od:
-[deltap, Smax];
-end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes an approximation to a function of x f, as a truncated polynomial of deegree deg with the n first coefficients exactly representable as double-double.
+deltap, Smin, Smax;
+end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/><Text-field layout="Normal" style="Text">Computes the total relative rounding error</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"><Font opaque="false">compute_rel_rounding_error:=proc(poly,xmax, n)
+local deg, p, rho, deltap, Smin, Smax:
+
+deg:=degree(poly):
+if(n&gt;0) then p:=100: else p:=53: fi: 
+
+if coeff(poly,x, 0) = 0 then
+   deltap, Smin, Smax := compute_abs_rounding_error(poly/x,xmax, n):
+   rho := xmax*( 2^(-p)*(Smax+deltap) +deltap ) / Smin :
+else
+   deltap, Smin, Smax := compute_abs_rounding_error(poly,xmax, n):
+   rho := deltap /  Smin:
+fi:
+rho;
+end proc:</Font></Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes an approximation to a function of x f, as a truncated polynomial of deegree deg with the n first coefficients exactly representable as double-double.
 The function f(x) must have as input interval -xmax..xmax
-returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_classic:=proc(f,deg,xmax,n) 
+returns [ truncated polynomial, relative approx error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_classic:=proc(f,deg,xmax,n) 
   local pe, repe, pt, ppe, rept, maxpt;
   pe:=minimax(log(x+midI[i]),  x=-xmax..xmax,  [deg,0],  1,  'err'):
-  repe := infnorm( 1-pe/f, x=-xmax..xmax) :
   pt := poly_exact2(pe,n):
   rept := infnorm( 1-pt/f, x=-xmax..xmax) :
   maxpt := infnorm( pt, x=-xmax..xmax) :
-  [pt,rept,maxpt,pe,repe]:
+  pt,rept, maxpt:
 end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes a truncated polynomial of degree deg with the two first coefficients stored as double-doubles. 
 The function f(x) must have as input interval -xmax..xmax</Text-field><Text-field layout="Normal" style="Text">returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_f2d_2:=proc(f,deg,xmax) 
   local pe, repe, pt, c0, c1, c2, ppe, rept, maxpt, err;
   pe:=minimax(  f,  x=-xmax..xmax,  [deg,0],  1,  'err'):
-  repe := infnorm( 1-pe/f, x=-xmax..xmax) :
   pt := poly_exact2(pe,2):
   c0:=coeff(pt,x,0):
   c1:=coeff(pt,x,1):
@@ -206,12 +215,11 @@ The function f(x) must have as input interval -xmax..xmax</Text-field><Text-fiel
   pt := poly_exact2(ppe,2) + c0 + c1*x + c2*x*x:
   rept := infnorm( 1-pt/f, x=-xmax..xmax) :
   maxpt := infnorm( pt, x=-xmax..xmax) :
-  [pt,rept,maxpt,pe,repe]:
+  pt,rept,maxpt:
 end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes a truncated polynomial of degree deg with the first coefficient stored as double-double.</Text-field><Text-field layout="Normal" style="Text"> The function f(x) must have as input interval -xmax..xmax
 returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_f2d_1:=proc(f,deg,xmax) 
   local pe, repe, pt, c0, c1, ppe, rept, maxpt, err;
   pe:=minimax(  f ,  x=-xmax..xmax,  [deg,0],  1,  'err'):
-  repe := infnorm( 1-pe/f, x=-xmax..xmax) :
   pt := poly_exact2(pe,1):
   c0:=coeff(pt,x,0):
   c1:=coeff(pt,x,1):
@@ -220,8 +228,8 @@ returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite prec
   pt := poly_exact2(ppe,1) + c0 + c1*x:
   rept := infnorm( 1-pt/f, x=-xmax..xmax) :
   maxpt := infnorm( pt, x=-xmax..xmax) :
-  [pt,rept,maxpt,pe,repe]:
-end proc:</Text-field></Input></Group></Section></Section><Group><Input><Text-field layout="_pstyle5" prompt="&gt; " style="Maple Input">save log2, pulp, nearest,ieeedouble, hi_lo, ieeehexa, printendian, hexa2ieee, ieeehexa2, poly_exact, poly_exact2,  compute_rounding_error, <Font opaque="false">compute_rn_constant,</Font> poly_trunc_f2d_1, poly_trunc_f2d_2, poly_trunc_classic, "Common_maple_procedures.m"; </Text-field></Input></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">Stuff for SCS</Text-field></Title><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">Global parameters</Font></Text-field></Title><Text-field layout="_pstyle7" style="_cstyle57"><Font encoding="ISO8859-1">Don\264t forget to set all the parameters here</Font></Text-field><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">NB_WORDS := 2:
+  pt,rept,maxpt:
+end proc:</Text-field></Input></Group></Section></Section><Group><Input><Text-field layout="_pstyle5" prompt="&gt; " style="Maple Input">save log2, pulp, nearest,ieeedouble, hi_lo, ieeehexa, printendian, hexa2ieee, ieeehexa2, poly_exact, poly_exact2<Font opaque="false">,  compute_rel_rounding_error,</Font>  compute_abs_rounding_error, compute_rn_constant, poly_trunc_f2d_1, poly_trunc_f2d_2, poly_trunc_classic, "Common_maple_procedures.m"; </Text-field></Input></Group><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Stuff for SCS</Text-field></Title><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">Global parameters</Font></Text-field></Title><Text-field layout="_pstyle7" style="_cstyle57"><Font encoding="ISO8859-1">Don\264t forget to set all the parameters here</Font></Text-field><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">NB_WORDS := 2:
 NB_BITS  := 30:</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">GetSCS_real</Font></Text-field></Title><Text-field layout="_pstyle13" style="_cstyle63">This procedure convert a decimal number into it SCS representation.</Text-field><Text-field layout="_pstyle13" style="_cstyle63">       x : input number to convert into it SCS representation</Text-field><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">GetSCS_real := proc(x)
 local exception, index, sign, mantissa, nb, i;
 
@@ -284,7 +292,7 @@ res := tab[NB_WORDS+2]*(res * 2.^(NB_BITS * tab[NB_WORDS+1]));
 return res;
 
 end proc:
-</Text-field></Input></Group><Text-field layout="_pstyle6" style="_pstyle6"/></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">WriteSCS</Font></Text-field></Title><Group><Input><Text-field layout="_pstyle7" style="_cstyle57">Write Into file fd the SCSS number stored into the table tab where
+</Text-field></Input></Group><Text-field layout="_pstyle6" style="_pstyle6"/></Section><Section><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">WriteSCS</Font></Text-field></Title><Group><Input><Text-field layout="_pstyle7" style="_cstyle57">Write Into file fd the SCSS number stored into the table tab where
 tab[0..(NB_WORDS-1)] store the mantissa
 tab[NB_WORDS] store the exception
 tab[NB_WORDS+1] store the index
@@ -310,7 +318,7 @@ else
 end if;
 
 fprintf(fd, "} \n");
-end proc:</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">GetSCS_poly</Font></Text-field></Title><Text-field layout="_pstyle6" style="_pstyle6"/><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">get_nb_terms := proc(poly)
+end proc:</Text-field></Input></Group></Section><Section><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">GetSCS_poly</Font></Text-field></Title><Text-field layout="_pstyle6" style="_pstyle6"/><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">get_nb_terms := proc(poly)
  local i, deg_poly;
 
  deg_poly := degree(poly);
@@ -348,7 +356,7 @@ GetSCS_poly := proc(poly, file)
    
   fclose(fd);
   end try;
-end proc:</Font></Text-field></Input></Group><Group><Input><Text-field layout="_pstyle5" prompt="&gt; " style="Maple Input">GetSCS_poly(Poly_Re, "/home/cdaramy/polyhex_log.h");</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">hexa_scs</Text-field></Title><Group><Input><Text-field layout="_pstyle6" style="_pstyle6"/><Text-field layout="_pstyle7" style="_cstyle57"><Font encoding="ISO8859-1">Une derni\350re proc\351dure pour \351crire les nombres SCS (floatant exacts) en hexad\351cimal dans un fichier ".h"</Font></Text-field><Text-field layout="_pstyle6" style="_pstyle6"/></Input></Group><Group><Input><Text-field layout="_pstyle11" prompt="&gt; " style="ParagraphStyle2"><Font style="_cstyle5">hexa_scs := proc (x) 
+end proc:</Font></Text-field></Input></Group><Group><Input><Text-field layout="_pstyle5" prompt="&gt; " style="Maple Input">GetSCS_poly(Poly_Re, "/home/cdaramy/polyhex_log.h");</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section><Title><Text-field layout="Heading 2" style="Heading 2">hexa_scs</Text-field></Title><Group><Input><Text-field layout="_pstyle6" style="_pstyle6"/><Text-field layout="_pstyle7" style="_cstyle57"><Font encoding="ISO8859-1">Une derni\350re proc\351dure pour \351crire les nombres SCS (floatant exacts) en hexad\351cimal dans un fichier ".h"</Font></Text-field><Text-field layout="_pstyle6" style="_pstyle6"/></Input></Group><Group><Input><Text-field layout="_pstyle11" prompt="&gt; " style="ParagraphStyle2"><Font style="_cstyle5">hexa_scs := proc (x) 
   local i, elem, mantisse, exposant, resultat; 
   global ulp, ulp_inv;
   if (x :: list) then
@@ -366,4 +374,4 @@ end proc:</Font></Text-field></Input></Group><Group><Input><Text-field layout="_
   fi;
   convert(resultat, hex);
 end:</Font><Font family="Lucida Bright">
-</Font></Text-field></Input></Group><Text-field layout="_pstyle14" style="_pstyle14"/></Section></Section><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Tests and scratch</Text-field></Title><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_pstyle1"/></Input></Group></Section><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
+</Font></Text-field></Input></Group><Text-field layout="_pstyle14" style="_pstyle14"/></Section></Section><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Tests and scratch</Text-field></Title><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_pstyle1">ieeedouble(ln(2));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_exact2(1/3+x, 0);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
