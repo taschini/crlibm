@@ -185,7 +185,7 @@ mp_rnd_t mpfr_rnd_mode;
     dt = TBX_TICK_RAW_DIFF(t1, t2);
     if(dt<tbx_time) tbx_time = dt;
   }
-
+  printf("tbx_time=%d\n", tbx_time);
 
 #if TEST_CACHE
   /************  TESTS WITH CACHES  *********************/
@@ -353,10 +353,13 @@ mp_rnd_t mpfr_rnd_mode;
 #endif
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-      if (dt<dtmin)  dtmin=dt;
+      if (dt<dtmin)  dtmin=dt;  
     }
     mpfr_dtsum+=dtmin;
-    if (dtmin<mpfr_dtmin)  mpfr_dtmin=dtmin;
+    if (dtmin<mpfr_dtmin)  {
+      mpfr_dtmin=dtmin; 
+      /*printf("j=%d  dt=%lld   %1.20e\n",j,dtmin, input);*/
+    }
     if (dtmin>mpfr_dtmax)  mpfr_dtmax=dtmin;
 #if DETAILED_REPORT
     printf("\tTmpfr=%lld",dtmin);
@@ -517,14 +520,14 @@ mp_rnd_t mpfr_rnd_mode;
     /*************Normal output*************************/
 
     printf("\nLIBM\n");
-    printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n ",  
+    printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n ",  
 	   libm_dtmin, libm_dtmax,
 	   (((double)libm_dtsum) / ((double) n)),
 	   libm_dtwc
 	   );
     
 #ifdef HAVE_MPFR_H
-    printf("\nMPFR\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
+    printf("\nMPFR\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n",
 	   mpfr_dtmin, mpfr_dtmax,
 	   ((double)mpfr_dtsum) / ((double) n),
 	   mpfr_dtwc
@@ -534,7 +537,7 @@ mp_rnd_t mpfr_rnd_mode;
 
 #ifdef HAVE_MATHLIB_H
     if(testfun_libultim!=NULL) { /* some functions are missing in libultim (cosh, ...  */
-      printf("\nIBM\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
+      printf("\nIBM\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n",
 	     libultim_dtmin, libultim_dtmax,
 	     ((double)libultim_dtsum) / ((double) n),
 	     libultim_dtwc
@@ -545,7 +548,7 @@ mp_rnd_t mpfr_rnd_mode;
 
 #ifdef HAVE_LIBMCR_H
     if(testfun_libmcr!=NULL) { /*   */
-      printf("\nSun\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
+      printf("\nSun\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n",
 	     libmcr_dtmin, libmcr_dtmax,
 	     ((double)libmcr_dtsum) / ((double) n),
 	     libmcr_dtwc
@@ -554,7 +557,7 @@ mp_rnd_t mpfr_rnd_mode;
 #endif /*HAVE_LIBMCR_H*/
     
     printf("\nCRLIBM\n");
-    printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n ",  
+    printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n ",  
 	   crlibm_dtmin, 
 	   crlibm_dtmax,
 	   ((double)crlibm_dtsum) / ((double) n),
@@ -572,7 +575,7 @@ mp_rnd_t mpfr_rnd_mode;
 	   );
 #ifdef HAVE_MPFR_H
     if (mpfr_dtwc > mpfr_dtmax) mpfr_dtmax=mpfr_dtwc;
-    printf(" \\texttt{mpfr}     \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
+    printf("\\texttt{mpfr}     \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
 	   mpfr_dtmin,
 	   ((double)mpfr_dtsum) / ((double) n),
 	   mpfr_dtmax
