@@ -12,7 +12,7 @@ libcrlibm_a_SOURCES =  \
 	log10.h	log10.c\
 	log2.h  log2.c \
 	coefpi2.h rem_pio2.c\
-	sine.h sine.c\
+	sine.h sine.c sine_fast.c sine_fast.h\
 	cosine.h cosine.c\
 	tan.h tan.c cotan.c\
 	atan.h atan.c 

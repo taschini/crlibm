@@ -27,17 +27,7 @@ extern double scs_sin_rd(double);
 /* by Cody & Waite algorithm */
 
 int rempio2_fast(double y){
-double y1hi, y1lo, vhi, vlo, yhi, ylo, varhi, varlo;
 int k;
-
-varhi = y * twotopihi;
-varlo = y * twotopilo;
-k = round(vhi + vlo);
- 
-Mul12Cond(&vhi, &vlo, k, piotwohi);
-Mul12Cond(&yhi, &ylo, k, piotwolo);
-Add22Cond(vhi, vlo, yhi, ylo, &y1hi, &y1lo);
-Add22Cond(y, 0, -y1hi, -y1lo, &y, &vlo);
 
 return k;
 }
@@ -48,12 +38,18 @@ return k;
  *************************************************************
  *************************************************************/
 double sin_rn(double x){ 
-double y, reshi = 0, reslo = 0;
-int N;
+  double y, reshi = 0, reslo = 0;
+  double  varhi, varlo;
+  int k;
+  
+  y = x;
+  varhi = y * twoopihi.d;
+  varlo = y * twoopilo.d;
+  k = (int)(varhi + varlo);
 
-y = x;
-N = rempio2_fast(y);
-switch (N){
+  y= ( x - ((double)k)*pio2hi.d )    -  ((double)k)*pio2lo.d ;
+ 
+  switch (k&3){
   case 0:
     sin_fast(y, reshi, reslo);
   case 1:

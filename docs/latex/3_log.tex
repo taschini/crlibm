@@ -35,8 +35,8 @@ $\displaystyle \frac{x}{2^{-52}}$ is now a normalized number.
 
 As $\log(1+\epsilon) \approx \epsilon$ when $\epsilon\rightarrow 0$,
 the smallest exponent of a logarithm for a double-precision input
-number will be for the input values $\log(1+2^{-52}$ and
-$\log(1-2^{-52}$. This ensures that the output will never be a
+number will be for the input values $\log(1+2^{-52})$ and
+$\log(1-2^{-52})$. This ensures that the output will never be a
 denormal. This will allow us to ensure that no denormal ever appears
 in the computation of the logarithm of a double-precision input
 number.
@@ -97,7 +97,7 @@ P[2] & $[\frac{13}{16},\frac{14}{16}]$ &  $\frac{27}{32}$ & $2^{-5}$  \\
 \hline 
 P[3] & $[\frac{14}{16},\frac{15}{16}]$ &  $\frac{29}{32}$ & $2^{-5}$  \\ 
 \hline
-P[4] & $[\frac{15}{16},\frac{17}{16}]$ &  $\frac{31}{32}$ & $2^{-4}$ \\ 
+P[4] & $[\frac{15}{16},\frac{17}{16}]$ &  $1$             & $2^{-4}$ \\ 
 \hline 
 P[5] & $[\frac{17}{16},\frac{19}{16}]$ &  $\frac{18}{16}$ & $2^{-4}$  \\ 
 \hline 
@@ -209,7 +209,7 @@ three functions \texttt{log\_rn}, \texttt{log\_ru} and
 approximation to the log as two double-precision numbers, and an index
 in an array of constants for testing if correct rounding is possible.
 This array contains the relative error for directed rounding modes
-(see~ref{th:roundingDirected} p.~\pageref{th:roundingDirected}) , and
+(see~\ref{th:roundingDirected} p.~\pageref{th:roundingDirected}) , and
 the rounding constant computed as per Theorem~\ref{th:roundingRN1}
 p.~\pageref{th:roundingRN1} for round-to nearest.
 
