@@ -344,7 +344,7 @@ double sin_rn(double x){
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (absxhi>=0x7ff00000) return x-x;    
    
-  else if (absxhi < XMAX_SIN_FAST){
+  else if (absxhi < XMAX_SIN_CASE2){
     /* CASE 1 : x small enough sin(x)=x */
     if (absxhi <XMAX_RETURN_X_FOR_SIN)
       return x;
@@ -394,7 +394,7 @@ double sin_ru(double x){
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (absxhi>=0x7ff00000) return x-x;    
   
-  if (absxhi < XMAX_SIN_FAST){
+  if (absxhi < XMAX_SIN_CASE2){
 
     /* CASE 1 : x small enough, return x suitably rounded */
     if (absxhi <XMAX_RETURN_X_FOR_SIN) {
@@ -468,7 +468,7 @@ double sin_rd(double x){
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (absxhi>=0x7ff00000) return x-x;    
   
-  if (absxhi < XMAX_SIN_FAST){
+  if (absxhi < XMAX_SIN_CASE2){
 
     /* CASE 1 : x small enough, return x suitably rounded */
     if (absxhi <XMAX_RETURN_X_FOR_SIN) {
@@ -542,7 +542,7 @@ double sin_rz(double x){
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (absxhi>=0x7ff00000) return x-x;    
   
-  if (absxhi < XMAX_SIN_FAST){
+  if (absxhi < XMAX_SIN_CASE2){
 
     /* CASE 1 : x small enough, return x suitably rounded */
     if (absxhi <XMAX_RETURN_X_FOR_SIN) {
@@ -628,7 +628,7 @@ double cos_rn(double x){
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (absxhi>=0x7ff00000) return x-x;   
 
-  if (absxhi < XMAX_COS_FAST){
+  if (absxhi < XMAX_COS_CASE2){
     /* CASE 1 : x small enough cos(x)=1. */
     if (absxhi <XMAX_RETURN_1_FOR_COS)
       return 1.;
@@ -704,7 +704,7 @@ double tan_rn(double x){
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (absxhi>=0x7ff00000) return x-x;   
 
-  if (absxhi < XMAX_TAN_FAST){ /* |x|<2^-3 */
+  if (absxhi < XMAX_TAN_CASE2){ /* |x|<2^-3 */
     if (absxhi < XMAX_RETURN_X_FOR_TAN) /* |x|<2^-26 */
       return x;
 
@@ -716,7 +716,7 @@ double tan_rn(double x){
     /* First Fast approximation */
     sh = x*(xx*t3h.d + t);
     Add12(th, tl, x, sh);   
-    if (th == (th + (tl * RN_CST_TANFAST2)))
+    if (th == (th + (tl * RN_CST_TAN_CASE22)))
       return th;
 
     Mul12(&sh, &sl, xx, t3h.d);
@@ -725,14 +725,14 @@ double tan_rn(double x){
     Add22(&th, &tl, x, 0, sh, sl);
 
     /* Second more precise approximation */
-    if (th == (th + (tl * RN_CST_TANFAST1)))
+    if (th == (th + (tl * RN_CST_TAN_CASE21)))
       return th;
     else
       scs_tan_rn(x);
   }
   
   /* Otherwise : Range reduction then standard evaluation */
-  return scs_cos_rn(x); 
+  return scs_tan_rn(x); 
 #if 0
   /* Otherwise : Range reduction then standard evaluation */
   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
