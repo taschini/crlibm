@@ -204,7 +204,7 @@ void test_init(/* pointers to returned value */
 	       double (**randfun)(), 
 	       double (**testfun_crlibm)(), 
 	       int    (**testfun_mpfr)  (),
-	       double (**testfun_ultim)   (),
+	       double (**testfun_libultim)   (),
 	       double (**testfun_libmcr)  (),
 	       double (**testfun_libm)  (),
 	       double* worst_case,
@@ -240,7 +240,7 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = exp_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ultim    = uexp;
+      *testfun_libultim    = uexp;
 #endif
 #ifdef HAVE_LIBMCR_H
       *testfun_libmcr    = __libmcr_exp;
@@ -267,7 +267,7 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = log_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ultim    = ulog;
+      *testfun_libultim    = ulog;
 #endif
 #ifdef HAVE_LIBMCR_H
       *testfun_libmcr    = __libmcr_log;
@@ -294,7 +294,7 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = sin_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ultim    = usin;
+      *testfun_libultim    = usin;
 #endif
 #ifdef HAVE_LIBMCR_H
       *testfun_libmcr    = __libmcr_sin;
@@ -320,7 +320,7 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = cos_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ultim    = ucos;
+      *testfun_libultim    = ucos;
 #endif
 #ifdef HAVE_LIBMCR_H
       *testfun_libmcr    = __libmcr_cos;
@@ -346,7 +346,7 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = tan_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ultim    = utan;
+      *testfun_libultim    = utan;
 #endif
 #ifdef HAVE_LIBMCR_H
       *testfun_libmcr    = __libmcr_tan;
@@ -373,7 +373,7 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = cotan_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ultim    = ucotan;
+      *testfun_libultim    = ucotan;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_cotan;
@@ -397,7 +397,7 @@ void test_init(/* pointers to returned value */
         *testfun_crlibm = atan_rn ;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ultim    = uatan;
+      *testfun_libultim    = uatan;
 #endif
 #ifdef HAVE_LIBMCR_H
       *testfun_libmcr    = __libmcr_atan;
@@ -426,7 +426,7 @@ void test_init(/* pointers to returned value */
       }
 #ifdef HAVE_MATHLIB_H
       /* No hyperbolic function in Ziv library */ 
-      *testfun_ultim    = NULL;
+      *testfun_libultim    = NULL;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_cosh;
@@ -450,7 +450,7 @@ void test_init(/* pointers to returned value */
       }
 #ifdef HAVE_MATHLIB_H
       /* No hyperbolic function in Ziv library */ 
-      *testfun_ultim    = NULL;
+      *testfun_libultim    = NULL;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_sinh;

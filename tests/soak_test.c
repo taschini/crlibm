@@ -33,7 +33,7 @@
    tested exhaustively by the other programs of this directory. */ 
 
 /* Basic-like programming with global variables: */
-db_number input, res_crlibm, res_mpfr, res_ibm, res_libmcr, res_libm;
+db_number input, res_crlibm, res_mpfr, res_libultim, res_libmcr, res_libm;
 mpfr_t mp_res, mp_inpt; 
 
 /* The random number generator*/
@@ -45,7 +45,7 @@ int    (*testfun_mpfr)  () = NULL;
 /* The function to show off against for accuracy  */
 double (*testfun_libm)  () = NULL;
 /* The function to show off against for performance */
-double (*testfun_ibm)   () = NULL;
+double (*testfun_libultim)   () = NULL;
 /*  */
 double (*testfun_libmcr)   () = NULL;
 
@@ -62,14 +62,15 @@ mp_rnd_t mpfr_rnd_mode;
 
 
 /*
- * Give the number of missrounded results for 
- * crlibm, libmultim and libm.
+ * Give the number of missrounded results 
  */
+
 void test_all() {
   int counter=0;
-  long long int failures_crlibm=0,
+  long long int 
+    failures_crlibm=0,
     failures_libm=0,
-    failures_ibm=0,
+    failures_libultim=0,
     failures_libmcr=0;
   long long int i;
 
@@ -80,8 +81,8 @@ void test_all() {
     res_libm.d = testfun_libm(input.d);
 
 #ifdef HAVE_MATHLIB_H
-    if(mpfr_rnd_mode==GMP_RNDN && testfun_ibm != NULL) /* not all the functions are in libultim */
-      res_ibm.d = testfun_ibm(input.d);
+    if(mpfr_rnd_mode==GMP_RNDN && testfun_libultim != NULL) /* not all the functions are in libultim */
+      res_libultim.d = testfun_libultim(input.d);
 #endif
 #ifdef HAVE_LIBMCR_H
     if(mpfr_rnd_mode==GMP_RNDN && testfun_libmcr != NULL) /* not all the functions are in libultim */
@@ -121,9 +122,9 @@ void test_all() {
 	    || (res_libm.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) ) failures_libm++;
 	  
 #ifdef HAVE_MATHLIB_H
-	if(mpfr_rnd_mode==0  && testfun_ibm != NULL 
-	   && ((res_ibm.i[LO_ENDIAN] != res_mpfr.i[LO_ENDIAN]) 
-	       || (res_ibm.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) )) 
+	if(mpfr_rnd_mode==0  && testfun_libultim != NULL 
+	   && ((res_libultim.i[LO_ENDIAN] != res_mpfr.i[LO_ENDIAN]) 
+	       || (res_libultim.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) )) 
 	  {
 #if DETAILED_REPORT
 	      printf("IBM ULTIM ERROR  x=%.50e \n            (%8x %8x) \n", 
@@ -131,15 +132,15 @@ void test_all() {
 		     input.i[HI_ENDIAN], 
 		     input.i[LO_ENDIAN]);
 	      printf("libultim gives    %.50e \n         (%8x %8x) \n", 
-		     res_ibm.d, 
-		     res_ibm.i[HI_ENDIAN], 
-		     res_ibm.i[LO_ENDIAN]);
+		     res_libultim.d, 
+		     res_libultim.i[HI_ENDIAN], 
+		     res_libultim.i[LO_ENDIAN]);
 	      printf("MPFR gives %.50e \n         (%8x %8x) \n\n", 
 		     res_mpfr.d, 
 	       res_mpfr.i[HI_ENDIAN], 
 		     res_mpfr.i[LO_ENDIAN]);
 #endif
-	      failures_ibm++;
+	      failures_libultim++;
 	  }
 #endif
 #ifdef HAVE_LIBMCR_H
@@ -172,13 +173,15 @@ void test_all() {
 	printf(" LIBM         : %lld failures out of %lld (ratio %e) \n",failures_libm, i,
 	       ((double)failures_libm)/(double)i);
 #ifdef HAVE_MATHLIB_H
-	printf(" IBM LIBULTIM : %lld failures out of %lld (ratio %e) \n \n",failures_ibm, i,
-	       ((double)failures_ibm)/(double)i);
+	printf(" IBM LIBULTIM : %lld failures out of %lld (ratio %e) \n",failures_libultim, i,
+	       ((double)failures_libultim)/(double)i);
 #endif
 #ifdef HAVE_LIBMCR_H
-	printf(" SUN LIBMCR   : %lld failures out of %lld (ratio %e) \n \n",failures_libmcr, i,
-	       ((double)failures_ibm)/(double)i);
+	printf(" SUN LIBMCR   : %lld failures out of %lld (ratio %e) \n",failures_libmcr, i,
+	       ((double)failures_libmcr)/(double)i);
 #endif
+	printf("\n");
+	
       }
   }
 }
@@ -202,7 +205,7 @@ void test_random_gen() {
 
 
 void usage(char *fct_name){
-  fprintf (stderr, "\n\n Soak-test for crlibm \n");
+  fprintf (stderr, "\n\n Soak-test for crlibm and several other libraries \n");
   fprintf (stderr, "Usage: %s name seed [RN/RU/RD/RZ] \n", fct_name);
   fprintf (stderr, " name          : name of function to test \n");
   fprintf (stderr, " seed          : integer, seed for the random number generator \n");
@@ -235,7 +238,7 @@ int main (int argc, char *argv[])
 	       &randfun, 
 	       &testfun_crlibm, 
 	       &testfun_mpfr,
-	       &testfun_ibm,
+	       &testfun_libultim,
 	       &testfun_libmcr,
 	       &testfun_libm,
 	       &worstcase,

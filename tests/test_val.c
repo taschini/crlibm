@@ -26,7 +26,7 @@
 
 
 void usage(char *fct_name){
-  fprintf (stderr, "\nCompares results between different library (mpfr, Ziv, libm, cr_libm) \n");
+  fprintf (stderr, "\nCompares results between different library (crlibm, mpfr, Ziv, libm,  libmcr) \n");
   fprintf (stderr, "Usage: %s fun mode val \n", fct_name);
   fprintf (stderr, " fun : name of function to test \n");
   fprintf (stderr, " mode : rounding mode [RN, RD, RU, RZ] \n");
@@ -45,7 +45,7 @@ int main (int argc, char *argv[])
   double worstcase;
 
   
-  db_number res_crlibm, res_mpfr, res_ibm, res_libm;
+  db_number res_crlibm, res_mpfr, res_ibm, res_libmcr, res_libm;
 #ifdef HAVE_MPFR_H
   mp_rnd_t mpfr_rnd_mode;
   mpfr_t mp_res, mp_input; 
@@ -61,7 +61,7 @@ int    (*testfun_mpfr)  () = NULL;
 /* The function to show off against for accuracy  */
 double (*testfun_libm)  () = NULL;
 /* The function to show off against for performance */
-double (*testfun_ibm)   () = NULL;
+double (*testfun_libultim)   () = NULL;
 /*  */
 double (*testfun_libmcr)   () = NULL;
 
@@ -81,7 +81,7 @@ double (*testfun_libmcr)   () = NULL;
 	       &randfun, 
 	       &testfun_crlibm, 
 	       &testfun_mpfr,
-	       &testfun_ibm,
+	       &testfun_libultim,
 	       &testfun_libmcr,
 	       &testfun_libm,
 	       &worstcase,
@@ -137,14 +137,29 @@ double (*testfun_libmcr)   () = NULL;
 
 
 #ifdef HAVE_MATHLIB_H
-  printf("ibm_libm   : ");
+  printf("libultim   : ");
   fflush(stdout);
-  if(testfun_ibm != NULL)  {
-    res_ibm.d = testfun_ibm(input);
+  if(testfun_libultim != NULL)  {
+    res_ibm.d = testfun_libultim(input);
     printf("%.50e  %8x %8x \n", 
 	   res_ibm.d, 
 	   res_ibm.i[HI_ENDIAN], 
 	   res_ibm.i[LO_ENDIAN] );
+  }
+  else 
+    printf("Not available\n");
+  fflush(stdout);
+#endif
+
+#ifdef HAVE_LIBMCR_H
+  printf("libmcr     : ");
+  fflush(stdout);
+  if(testfun_libmcr != NULL)  {
+    res_libmcr.d = testfun_libmcr(input);
+    printf("%.50e  %8x %8x \n", 
+	   res_libmcr.d, 
+	   res_libmcr.i[HI_ENDIAN], 
+	   res_libmcr.i[LO_ENDIAN] );
   }
   else 
     printf("Not available\n");

@@ -393,7 +393,6 @@ mp_rnd_t mpfr_rnd_mode;
 
 #ifdef HAVE_LIBMCR_H
     if(testfun_libmcr!=NULL) { /* */
-      Original_Mode = Init_Lib(); /* TODO this belongs to Ziv's lib, check how it should be done */
       dtmin=1<<30;
       /* take the min of N1 consecutive calls */
       for(j=0; j<N1; j++) {
@@ -406,7 +405,6 @@ mp_rnd_t mpfr_rnd_mode;
 	dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
 	if (dt<dtmin)  dtmin=dt;
       }
-      Exit_Lib(Original_Mode);
       libmcr_dtsum+=dtmin;
       if (dtmin<libmcr_dtmin)  libmcr_dtmin=dtmin;
       if (dtmin>libmcr_dtmax)  libmcr_dtmax=dtmin;
@@ -500,7 +498,6 @@ mp_rnd_t mpfr_rnd_mode;
 #ifdef HAVE_LIBMCR_H
     if(testfun_libmcr!=NULL) { /* some functions are missing in libultim (cosh, ...  */
       
-      Original_Mode = Init_Lib(); 
       dtmin=1<<30;
       for(j=0; j<N1; j++) {
 	TBX_GET_TICK(t1);
@@ -512,7 +509,6 @@ mp_rnd_t mpfr_rnd_mode;
 	dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
 	if (dt<dtmin)  dtmin=dt;
       }
-      Exit_Lib(Original_Mode);
       libmcr_dtwc = dtmin;
     }
 #endif /*HAVE_LIBMCR_H*/
