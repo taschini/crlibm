@@ -75,25 +75,29 @@ end:
 # ieehexa returns a string containing the hexadecimal representation of the double nearest to input x.
 
 ieeehexa:= proc(x)
-  local signe, hex1, hex2, ma, manti, expo, expos, bina, bin1, bin2, dec1, dec2, resultat;
-  if(x=0) then resultat:=["00000000","00000000"];
-  elif(x=-0) then resultat:=["80000000","00000000"];
-  elif(x=2) then resultat:=["40000000","00000000"];
-  elif(x=-2) then resultat:=["C0000000","00000000"];
-  else
-   ma:=ieeedouble(x);
-   expo:=ma[2]:
-   if (ma[1]=-1) then
-    manti:=2**64 + 2**63+(ma[3]-1)*2**52+(expo+1023)*2**52;
-   else
-     manti:=2**64 + (ma[3]-1)*2**52+(expo+1023)*2**52;
-   fi:
-   hex2:=convert(manti, hex);
-   hex2:=convert(hex2, string):
+local  hex2, xx, longint, expo, sgn, frac, resultat;
+    if(x=0) then resultat:=["00000000","00000000"];
+    elif(x=-0) then resultat:=["80000000","00000000"];   # nice try
+    else
+        xx:=ieeedouble(x);
+        sgn:=xx[1]:
+        expo:=xx[2]:
+        frac:=xx[3]:
+        if (expo = -1023) then
+            longint := (frac)*2^51 ;   # subnormal
+        else
+            longint := (frac-1)*2^52 +   (expo+1023)*2^52;
+        fi:
+        if (sgn=-1) then
+            longint := longint + 2^63;
+        fi:
+        longint := longint + 2^64:  # to get all the hexadecimal digits when we'll convert to string
+        hex2:=convert(longint, hex);
+        hex2:=convert(hex2, string):
 
-   resultat:=[substring(hex2,2..9), substring(hex2,10..18)];
-  end if;
-  resultat;
+        resultat:=[substring(hex2,2..9), substring(hex2,10..18)]:
+    fi:
+    resultat;
 end proc:
 
 
@@ -101,23 +105,33 @@ end proc:
 #---------------------------------------------------------------------
 # reciprocal of the previous
 hexa2ieee:= proc(hexa)
-local dec, bin, expobin, expo, mantis, sign, hex1, hex2, hexcat;
-global res;
+local dec, bin, expo, mantis, sgn, hex1, hex2, hexcat, res;
 
-hex1:= op(1, hexa):
-hex2:= op(2, hexa):
-hexcat:= cat(hex1, hex2);
-dec:= convert(hexcat, decimal, hex):
+    hex1:= op(1, hexa):
+    hex2:= op(2, hexa):
+    hexcat:= cat(hex1, hex2);
+    dec:= convert(hexcat, decimal, hex):
 
-if(dec >= 2**63) then
-  dec = dec - 2**63:
-  sign:= -1:else
-  sign:= 1:
-fi;
-expo:= trunc(dec/(2**52))-1023:
-mantis:= 1+frac(dec/(2**52));
-res:= evalf(sign*2**(expo)*mantis);
+    if(dec >= 2^63) then
+        dec := dec - 2^63:
+        sgn:= -1:
+    else
+        sgn:= 1:
+    fi;
+    expo:= trunc(dec/(2^52)) - 1023:
+    if(expo=-1023) then
+        mantis:= frac(dec/(2^51)): # denormal
+    else
+        mantis:= 1+frac(dec/(2^52)):
+    fi:
+    res:= evalf(sgn*2^(expo)*mantis):
+    res;
 end proc:
+
+#---------------------------------------------------------------------
+
+
+
 # Print a number x in Low or Big Endian representation in opened file "fd":
 printendian:=proc(fd,x,isbig)
 local xhl:
@@ -177,7 +191,7 @@ end proc:
 #---------------------------------------------------------------------
 # Takes a real number, and prints the bits after the 53th of its nearest IEEE floating-point number
 
-testWorstCaseRN:=proc(x)
+showHowDifficultToRound:=proc(x)
   local xh,xl,s,e,m:
   xh:=nearest(x):
   xl:=x-xh;

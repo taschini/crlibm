@@ -254,10 +254,16 @@ void test_init(/* pointers to returned value */
 	       char *rnd_mode)  {
 
   int crlibm_rnd_mode;
-  if      (strcmp(rnd_mode,"RU")==0) crlibm_rnd_mode = RU;
-  else if (strcmp(rnd_mode,"RD")==0) crlibm_rnd_mode = RD;
-  else if (strcmp(rnd_mode,"RZ")==0) crlibm_rnd_mode = RZ;
-  else crlibm_rnd_mode = RN;
+
+  /* We have added the rounding mode designation used in libmcr's test files */
+  if      ((strcmp(rnd_mode,"RU")==0) || (strcmp(rnd_mode,"P")==0)) crlibm_rnd_mode = RU;
+  else if ((strcmp(rnd_mode,"RD")==0) || (strcmp(rnd_mode,"M")==0)) crlibm_rnd_mode = RD;
+  else if ((strcmp(rnd_mode,"RZ")==0) || (strcmp(rnd_mode,"Z")==0)) crlibm_rnd_mode = RZ;
+  else if ((strcmp(rnd_mode,"RN")==0) || (strcmp(rnd_mode,"N")==0)) crlibm_rnd_mode = RN;
+  else {
+    fprintf(stderr, "Unknown rounding mode: %s, exiting\n", rnd_mode);
+    exit(EXIT_FAILURE);
+  }
 
 
   *randfun_perf     = rand_generic; /* the default random function */

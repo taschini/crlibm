@@ -2,7 +2,7 @@
  * Function to compute atan with fully exact rounding
  *
  * Author : Gast Nicolas
- * nicolas.gast@ens.fr
+ * nicolas.gast, address in domain ens.fr
  *
  * Date : 24/06/2004
  */
@@ -133,49 +133,44 @@ static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x)
  *************************************************************
  *************************************************************/
 
-/*
-  static double atan_rn2(double x);
-  extern double atan_rn (double x) {  
-  if(x>0)
-  return atan_rn2(x);
-  else
-  return -atan_rn2(-x);
-  }
-*/
+
 extern double atan_rn(double x) {
  
   double atanhi,atanlo;
   int index_of_e;
-  double sign;
+  double sign,absx;
   db_number x_db;
+  unsigned int hx;
+
   x_db.d = x;
-  unsigned int hx = x_db.i[HI_ENDIAN] & 0x7fffffff; 
-  if(x>=0)
-    {sign=1;}
-  else
-    {x=-x;
-    sign =-1;}
+  hx = x_db.i[HI_ENDIAN] & 0x7fffffff; 
+
+  if(x_db.i[HI_ENDIAN] & 0x80000000){
+    x_db.i[HI_ENDIAN] = hx;
+    sign =-1;
+  }
+  else 
+    sign=1;
   
   /* Filter cases */
   if ( hx >= 0x43500000)           /* x >= 2^54 */
     {
-      if ( (hx & 0x000fffff) == 0x00080000 && x_db.i[LO_ENDIAN] == 0)
-        return 0.0/0.0;                /* NaN */
-      else
-        return sign*HALFPI.d;           /* atan(x) = Pi/2 */
+      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+        return x+x;                /* NaN */
+      else 
+        return sign*HALFPI.d;           /* atan(+/-infty) = +/- Pi/2 */
     }
-  else
-    if ( hx < 0x3E400000 )
-      {return sign*x;}                   /* x<2^-27 then atan(x) =~ x */
-
-  atan_quick(&atanhi, &atanlo,&index_of_e ,x);
+  if ( hx < 0x3E400000 )
+      return x;                   /* x<2^-27 then atan(x) =~ x */
+  
+  atan_quick(&atanhi, &atanlo,&index_of_e , x_db.d);
   
   if (atanhi == (atanhi + (atanlo*rncst[index_of_e]))) 
     return sign*atanhi;
   else
     {
       /* more accuracy is needed , lauch accurate phase */ 
-      return sign*scs_atan_rn(x);
+      return sign*scs_atan_rn(x_db.d);
     }
 }
 
@@ -190,41 +185,45 @@ extern double atan_rd(double x) {
   int index_of_e;
   double roundcst;
   db_number x_db;
-  x_db.d = x;
-  unsigned int hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
-
+  unsigned int hx;
   int sign;
-  if (x<0)
-    {sign = -1;
-    x = -x;}
-  else sign = 1;
-  
+
+  x_db.d = x;
+  hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
+
+  if(x_db.i[HI_ENDIAN] & 0x80000000){
+    x_db.i[HI_ENDIAN] = hx;
+    sign =-1;
+  }
+  else 
+    sign=1;
+
   /* Filter cases */
   if ( hx >= 0x43500000)           /* x >= 2^54 */
     {
-      if (  (hx & 0x000fffff) == 0x00080000 && x_db.i[LO_ENDIAN] == 0 )
-        return 0.0/0.0;                /* NaN */
-      else
-        if (sign>0)
-          return HALFPI.d;
-        else
-          return -HALFPI_TO_PLUS_INFINITY.d;           /* atan(x) = Pi/2 */
+      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+        return x+x;                /* NaN */
+      else{
+	if (sign>0)
+	  return HALFPI.d;
+	else
+	  return -HALFPI_TO_PLUS_INFINITY.d;           /* atan(x) = Pi/2 */
+      }
     }
   else
     if ( hx < 0x3E400000 )
       {if (sign>0)
         {if(x==0)
-          {x_db.i[HI_ENDIAN]  = 0x80000000;
-          x_db.i[LO_ENDIAN] = 0;}
+	  return x;
         else
           x_db.l--;
         return x_db.d;
         }
       else
-        return -x;
+        return x;
       }
   
-  atan_quick(&atanhi, &atanlo,&index_of_e, x);
+  atan_quick(&atanhi, &atanlo,&index_of_e, x_db.d);
   roundcst = epsilon[index_of_e];
   atanhi = sign*atanhi;
   atanlo = sign*atanlo;
@@ -245,7 +244,7 @@ extern double atan_rd(double x) {
     return atanhi;
   }
   else {
-    return scs_atan_rd(sign*x);
+    return scs_atan_rd(sign*x_db.d);
   }
 }
 
@@ -261,22 +260,25 @@ extern double atan_ru(double x) {
   int index_of_e;
   int sign;
   double roundcst;
+  db_number x_db;
+  unsigned int hx;
 
-  if (x<0)
-    {sign = -1;
-    x = -x;}
+  x_db.d = x;
+  hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
+
+  if (x_db.i[HI_ENDIAN] & 0x80000000){
+    sign = -1;
+    x_db.i[HI_ENDIAN] = hx;
+  }
   else 
     sign = 1;
   
-  db_number x_db;
-  x_db.d = x;
-  unsigned int hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
   
   /* Filter cases */
   if ( hx >= 0x43500000)           /* x >= 2^54 */
     {
-      if (  (hx & 0x000fffff) == 0x00080000 && x_db.i[LO_ENDIAN] == 0 )
-        return 0.0/0.0;                /* NaN */
+      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+        return x+x;                /* NaN */
       else
         {
           if (sign>0)
@@ -285,20 +287,20 @@ extern double atan_ru(double x) {
           return -HALFPI.d;           /* atan(x) = Pi/2 */
         }
     }
-  else
     
-    if ( hx < 0x3E400000 )
-      {if (sign<0)
-        {x_db.l--;
-        return -x_db.d;
-        }
-      else
-        if(x==0)
-          return 0;
+  if ( hx < 0x3E400000 ){
+    if(x==0)
       return x;
-      }                   /* x<2^-27 then atan(x) =~ x */
+    
+    if (sign<0) {
+      x_db.l--;
+      return -x_db.d;
+    }
+    else
+      return x;
+  }                   /* x<2^-27 then atan(x) =~ x */
   
-  atan_quick(&atanhi, &atanlo, &index_of_e, x);
+  atan_quick(&atanhi, &atanlo, &index_of_e, x_db.d);
   roundcst = epsilon[index_of_e];
   atanhi = sign*atanhi;
   atanlo = sign*atanlo;
@@ -319,7 +321,7 @@ extern double atan_ru(double x) {
     return atanhi;
   }
   else {
-    return scs_atan_ru(sign*x);
+    return scs_atan_ru(x);
   }
 }
 

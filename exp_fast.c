@@ -367,7 +367,7 @@ double exp_rd(double x){
     if (hx >= 0x7ff00000){
       if (((hx&0x000fffff)|db.i[LO_ENDIAN])!=0)
 	return x+x;                                      /* Nan */ 
-      else return ((hx&0x80000000)==0)? x:0.0;           /* exp(+/-inf) = inf,0 */
+      else return ((db.i[HI_ENDIAN]&0x80000000)==0)? x:0.0;           /* exp(+/-inf) = inf,0 */
     }
     if (x > o_bound) return scs_huge.d*(1.+scs_small.d); /* (1-2^-53).2^1024  */ 
     if (x < u_bound) return scs_small.d * scs_small.d;   /* underflow */ 
@@ -401,7 +401,7 @@ double exp_rd(double x){
                     /* Which is the case for exp(x) !! */
       return R11.d;
     }else {                                                       
-      /* On est dans les dénormalisés */     
+      /* Subnormal here */     
       
       R11.i[HI_ENDIAN] += ((k+1000)<<20);                         
       db.d = R11.d * twom1000;
@@ -423,7 +423,7 @@ double exp_rd(double x){
       return db.d;                                      
     }
   }else {
-    /* Cas difficile */
+    /* Difficult to round */
     return scs_exp_rd(x);
   }
 }
@@ -442,11 +442,4 @@ double exp_rd(double x){
  * In crlibm.h we have :
  *
  *#define exp_rz(x)  exp_rd(x);
- */
-
-/*
- * probleme en arrondi au plus près 
- *-7.084061284577078367874491959810256958007812500000000000000000e+02
- *-7.100496760636764292939915321767330169677734375000000000000000e+02
- *
  */

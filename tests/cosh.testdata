@@ -1,0 +1,42 @@
+
+cosh     # Name of the function to test
+
+# The following lines are either comments (beginning with a #)
+# or give 
+#   1/ a rounding mode : RN|RU|RD|RZ (crlibm syntax) or  N|P|M|Z (libmcr syntax)
+#   2/ The high and low hexadecimal halves of an input
+#   3/ The high and low hexadecimal halves of the expected corresponding output
+
+
+# Special cases
+N 00000000 00000000 3ff00000 00000000 # zero
+N 80000000 00000000 3ff00000 00000000 # -zero
+P 00000000 00000000 3ff00000 00000000 # zero
+P 80000000 00000000 3ff00000 00000000 # -zero
+M 00000000 00000000 3ff00000 00000000 # zero
+M 80000000 00000000 3ff00000 00000000 # -zero
+Z 00000000 00000000 3ff00000 00000000 # zero
+Z 80000000 00000000 3ff00000 00000000 # -zero
+
+N 00000000 00000001 3ff00000 00000000 # smallest denorm positive
+N 80000000 00000001 3ff00000 00000000 # smallest denorm negative
+P 00000000 00000001 3ff00000 00000001 # smallest denorm positive
+P 80000000 00000001 3ff00000 00000001 # smallest denorm negative
+M 00000000 00000001 3ff00000 00000000 # smallest denorm positive
+M 80000000 00000001 3ff00000 00000000 # smallest denorm negative
+Z 00000000 00000001 3ff00000 00000000 # smallest denorm positive
+Z 80000000 00000001 3ff00000 00000000 # smallest denorm negative
+
+N 7ff00000 00000000 7ff00000 00000000 # +inf
+N fff00000 00000000 7ff00000 00000000 # -inf
+P 7ff00000 00000000 7ff00000 00000000 # +inf
+P fff00000 00000000 7ff00000 00000000 # -inf
+M 7ff00000 00000000 7ff00000 00000000 # +inf
+M fff00000 00000000 7ff00000 00000000 # -inf
+Z 7ff00000 00000000 7ff00000 00000000 # +inf
+Z fff00000 00000000 7ff00000 00000000 # -inf
+
+N fff80000 00000000 fff80000 00000000 # NaN
+P fff80000 00000000 fff80000 00000000 # NaN
+M fff80000 00000000 fff80000 00000000 # NaN
+Z fff80000 00000000 fff80000 00000000 # NaN

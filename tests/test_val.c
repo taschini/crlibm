@@ -17,24 +17,14 @@
 
 
 
-
-
-
-
-
-
-
-
 void usage(char *fct_name){
   /*fprintf (stderr, "\n%s: single-value test for crlibm and other mathematical libraries\n", fct_name);*/
   fprintf (stderr, "\nUsage: %s [-x] function (RN|RU|RD|RZ) value\n", fct_name);
   fprintf (stderr, " function      : name of function to test \n");
   fprintf (stderr, " (RN|RU|RD|RZ) : rounding mode, \n");
-  fprintf (stderr, " iterations    : number of iterations, also seed for the random number generator \n");
-  fprintf (stderr, " value         : double precision input number (in hexa option -x is given) \n");
+  fprintf (stderr, " value         : double precision input number (in hexadecimal if option -x is given) \n");
   exit (1);
 }
-
 
 
 
@@ -114,12 +104,12 @@ int main (int argc, char *argv[])
 
 
 
-  printf("Input      : %.50e  %8x %8x\n", input.d, input.i[HI_ENDIAN], input.i[LO_ENDIAN] ); 
+  printf("Input      : %.50e  %08x %08x\n", input.d, input.i[HI_ENDIAN], input.i[LO_ENDIAN] ); 
   printf("cr_libm    : "); 
   fflush(stdout); /* To help debugging */
   if(testfun_crlibm != NULL)   {
     res_crlibm.d = testfun_crlibm(input.d);
-    printf("%.50e  %8x %8x\n", 
+    printf("%.50e  %08x %08x\n", 
 	   res_crlibm.d, 
 	   res_crlibm.i[HI_ENDIAN], 
 	   res_crlibm.i[LO_ENDIAN] );
@@ -135,7 +125,7 @@ int main (int argc, char *argv[])
     mpfr_set_d(mp_input, input.d,  GMP_RNDN);
     testfun_mpfr(mp_res, mp_input, mpfr_rnd_mode);
     res_mpfr.d = mpfr_get_d(mp_res, mpfr_rnd_mode);
-    printf("%.50e  %8x %8x \n", 
+    printf("%.50e  %08x %08x \n", 
 	   res_mpfr.d, 
 	   res_mpfr.i[HI_ENDIAN], 
 	   res_mpfr.i[LO_ENDIAN] );
@@ -151,7 +141,7 @@ int main (int argc, char *argv[])
   fflush(stdout);
   if(testfun_libultim != NULL)  {
     res_ibm.d = testfun_libultim(input.d);
-    printf("%.50e  %8x %8x \n", 
+    printf("%.50e  %08x %08x \n", 
 	   res_ibm.d, 
 	   res_ibm.i[HI_ENDIAN], 
 	   res_ibm.i[LO_ENDIAN] );
@@ -166,7 +156,7 @@ int main (int argc, char *argv[])
   fflush(stdout);
   if(testfun_libmcr != NULL)  {
     res_libmcr.d = testfun_libmcr(input.d);
-    printf("%.50e  %8x %8x \n", 
+    printf("%.50e  %08x %08x \n", 
 	   res_libmcr.d, 
 	   res_libmcr.i[HI_ENDIAN], 
 	   res_libmcr.i[LO_ENDIAN] );
@@ -185,7 +175,7 @@ int main (int argc, char *argv[])
   if(testfun_libm != NULL) 
     {
       res_libm.d = testfun_libm(input.d);
-      printf("%.50e  %8x %8x \n", 
+      printf("%.50e  %08x %08x \n", 
 	     res_libm.d, 
 	     res_libm.i[HI_ENDIAN], 
 	     res_libm.i[LO_ENDIAN]) ;

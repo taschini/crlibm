@@ -1,1 +1,12 @@
 cr-libm, a portable, efficient, correctly rounded mathematical library.
+
+To compile: 
+./configure; make;
+
+(for options see ./configure --help)
+
+To run the selftest:
+make check;
+
+
+

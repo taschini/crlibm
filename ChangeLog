@@ -1,9 +1,18 @@
-Summary of changes between version 0.8 and version 0.8beta
+Summary of changes between version 0.8beta3 and version 0.8beta2
+==========================================================
+       
+<Florent de Dinechin>
+        Added crlibm_blindtest and automatic testsuite
+	Consequently corrected quite a few bugs in extreme cases
+	Cleant up cosh and sinh
+
+Summary of changes between version 0.8beta2 and version 0.8beta
 ==========================================================
        
 <David Defour and Florent de Dinechin>
 	Rewritten faster trigonometric functions
 <Florent de Dinechin>
+        Added crlibm_blindtest and automatic testsuite 
         Added crlibm_exit()
 	crlibm_init() now returns the old processor status flag
 	Proof for the trigonometric functions

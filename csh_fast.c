@@ -6,8 +6,8 @@
  *
  * Licence: LGPL
  *
- * Author : Matthieu Gallet
- * E-Mail : mgallet@ens-lyon.fr
+ * Author : Matthieu Gallet, Florent de Dinechin
+ * E-Mail : Matthieu.Gallet, ens-lyon.fr
  * Date of creation : 16/06/2004   
  */
 
@@ -24,17 +24,11 @@
 
 
 
-
-
-enum {RN, RZ, RD, RU};
-
-
-static double do_cosh(double x, int rounding_mode){
-
-  /*some variable declarations */
+enum{RN,RD,RU,RZ};
+ 
+static void do_cosh(double x, double* preshi, double* preslo){
   int k;
   db_number y;
-  double res_hi, res_lo;
   double ch_hi, ch_lo, sh_hi, sh_lo;/* cosh(x) = (ch_hi + ch_lo)*(cosh(k*ln(2)) + (sh_hi + sh_lo)*(sinh(k*ln(2))) */
   db_number  table_index_float;
   int table_index;
@@ -45,13 +39,9 @@ static double do_cosh(double x, int rounding_mode){
   double square_b_hi;
   double ch_2_pk_hi, ch_2_pk_lo, ch_2_mk_hi, ch_2_mk_lo;
   double sh_2_pk_hi, sh_2_pk_lo, sh_2_mk_hi, sh_2_mk_lo;
-  double delta_cst_cosh;
   db_number two_p_plus_k, two_p_minus_k; /* 2^(k-1) + 2^(-k-1) */
-  db_number absyh, absyl, u53, u;
 
-
-
-  /* Now we can do the first range reduction*/
+  /* First range reduction*/
   DOUBLE2INT(k, x * inv_ln_2.d)
     if (k != 0){ /* b_hi+b_lo =  x - (ln2_hi + ln2_lo) * k */
       temp_hi = x - ln2_hi.d * k;                                         
@@ -77,7 +67,6 @@ static double do_cosh(double x, int rounding_mode){
   table_index += bias; /* to have only positive values */
   b_hi -= table_index_float.d;/* to remove the 8 leading bits*/
   /* since b_hi was between -2^-1 and 2^1, we now have b_hi between -2^-9 and 2^-9 */
-
 
   
   y.d = b_hi;
@@ -113,7 +102,7 @@ static double do_cosh(double x, int rounding_mode){
   else {
     Add12Cond(ch_hi, ch_lo, (double) 1, tcb_hi);
   }
-  
+
   
   if(k != 0) {
     if( table_index != bias) {
@@ -137,9 +126,9 @@ static double do_cosh(double x, int rounding_mode){
 	sh_2_mk_hi = - sh_hi * two_p_minus_k.d;
 	sh_2_mk_lo = - sh_lo * two_p_minus_k.d;
 	
-	Add22Cond(&res_hi, &res_lo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
-	Add22Cond(&ch_2_mk_hi, &ch_2_mk_lo , sh_2_pk_hi, sh_2_pk_lo, res_hi, res_lo);
-	Add22Cond(&res_hi, &res_lo, ch_2_pk_hi, ch_2_pk_lo, ch_2_mk_hi, ch_2_mk_lo);
+	Add22Cond(preshi, preslo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
+	Add22Cond(&ch_2_mk_hi, &ch_2_mk_lo , sh_2_pk_hi, sh_2_pk_lo, *preshi, *preslo);
+	Add22Cond(preshi, preslo, ch_2_pk_hi, ch_2_pk_lo, ch_2_mk_hi, ch_2_mk_lo);
       } 
     else if (k >= 35) 
       {
@@ -147,7 +136,7 @@ static double do_cosh(double x, int rounding_mode){
 	ch_2_pk_lo = ch_lo * two_p_plus_k.d;
 	sh_2_pk_hi = sh_hi * two_p_plus_k.d;
 	sh_2_pk_lo = sh_lo * two_p_plus_k.d;
-	Add22Cond(&res_hi, &res_lo, ch_2_pk_hi, ch_2_pk_lo, sh_2_pk_hi, sh_2_pk_lo);
+	Add22Cond(preshi, preslo, ch_2_pk_hi, ch_2_pk_lo, sh_2_pk_hi, sh_2_pk_lo);
       }
     else /* if (k <= -35) */ 
       {
@@ -155,62 +144,28 @@ static double do_cosh(double x, int rounding_mode){
 	ch_2_mk_lo = ch_lo * two_p_minus_k.d;
 	sh_2_mk_hi = - sh_hi * two_p_minus_k.d;
 	sh_2_mk_lo = - sh_lo * two_p_minus_k.d;
-	Add22Cond(&res_hi, &res_lo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
+	Add22Cond(preshi, preslo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
       }
   }
   else {
-    res_hi = ch_hi;
-    res_lo = ch_lo;
+    *preshi = ch_hi;
+    *preslo = ch_lo;
   }
 
-  switch(rounding_mode) {
-  case RN:
-    {  /* Test for rounding to the nearest */
-      if (res_hi == (res_hi + (res_lo * round_cst_cosh.d))) return res_hi;
-      break;
-    }
-  case RU:
-    {
-      /* Rounding test to + infinity */
-      absyh.d = res_hi;
-      absyl.d = res_lo;
-      absyh.i[HI_ENDIAN] = absyh.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
-      absyl.i[HI_ENDIAN] = absyl.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
-      /*      absyl.l = absyl.l & 0x7fffffffffffffffLL;*/
-      u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-      u.l = u53.l - 0x0350000000000000LL;
-      delta_cst_cosh = 1e-19;
-      if(absyl.d > delta_cst_cosh * u53.d){ 
-	if(res_lo > 0.)  res_hi += u.d;
-	return res_hi;
-      }
-      break;
-    }
-  case RD:
-    {
-      /* Rounding test to - infinity (or to zero) */
-      absyh.d = res_hi;
-      absyl.d = res_lo;
-      absyh.l = absyh.l & 0x7fffffffffffffffLL;
-      absyl.l = absyl.l & 0x7fffffffffffffffLL;
-      u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-      u.l = u53.l - 0x0350000000000000LL;
-      delta_cst_cosh = 1e-19;
-      if(absyl.d >  delta_cst_cosh * u53.d){ 
-	if(res_lo < 0.)  res_hi -= u.d;
-	return res_hi;
-      }
-       break;
-    }
-  }
+  return;
+}
 
-  /* Now, the slow pass ! */
-  scs_t res_scs, exp_scs, exp_minus_scs;
+
+
+static void do_cosh_accurate(double x, scs_ptr res_scs){
+  int k;
+  scs_t exp_scs, exp_minus_scs;
+
 #if EVAL_PERF==1
   crlibm_second_step_taken++;
 #endif
-  /* we'll use the cosh(x) == (exp(x) + 1/exp(x))/2 */
-  
+
+  DOUBLE2INT(k, x * inv_ln_2.d);
   if ((k > -80) && (k < 80)) {
     exp_SC(exp_scs, x);
     scs_inv(exp_minus_scs, exp_scs);
@@ -225,72 +180,148 @@ static double do_cosh(double x, int rounding_mode){
     exp_SC(res_scs, -x);
     scs_div_2(res_scs);
   }
-
-  switch(rounding_mode) {
-  case RN:
-    scs_get_d(&res_hi, res_scs); break;
-  case RU:
-    scs_get_d_pinf(&res_hi, res_scs); break;
-  case RD:
-    scs_get_d_minf(&res_hi, res_scs); break;
-  }
-  return(res_hi); 
 }
+
 
 
 double cosh_rn(double x){ 
   db_number y;
+  int absxhi;
+  double rh, rl;
+  scs_t res_scs;
+    
   y.d = x;
-  y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
-  if (y.d > max_input_ch.d) { /* out of range */
-    y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000; return (y.d);
+  absxhi = y.i[HI_ENDIAN] & 0x7FFFFFFF; 
+  
+  if (absxhi > max_input_ch.i[HI_ENDIAN]) {
+    /* if NaN, return it */
+    if (((absxhi&0x7FF00000) == 0x7FF00000) && (((y.i[HI_ENDIAN] & 0x000FFFFF)!=0) || (y.i[LO_ENDIAN]!=0)) )
+      return x;
+    else {/* otherwise the result should be +infty */
+      y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000; return (y.d);
+    }
   }
-  if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
-   return (y.d);
-  }
-  return(do_cosh(x, RN));
+  
+  if (absxhi<0x3e500000)
+    return (1.0);
+  
+  do_cosh(x, &rh, &rl);
+
+  
+  if (rh == (rh + (rl * round_cst_cosh.d))) return rh;
+  else{
+    do_cosh_accurate(x, res_scs);
+    scs_get_d(&rh, res_scs); 
+    return rh;
+  }  
 }
 
 
-double cosh_rz(double x){ 
-  db_number y;
-  y.d = x;
-  y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
-  if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
-    return (y.d);
-  }
-  if (y.d > max_input_ch.d) { /* out of range */
-    y.i[LO_ENDIAN] = 0xFFFFFFFF; y.i[HI_ENDIAN] = 0x7FEFFFFF; return (y.d);
-  }
-  return(do_cosh(x, RD));/* cosh is always positive, so rounding to -infinite is equal to rounding to zero */
-}
+
+
+
 
 
 double cosh_ru(double x){ 
   db_number y;
+  int absxhi;
+  double rh, rl;
+  double delta_cst_cosh;
+  db_number absyh, absyl, u53, u;
+  scs_t res_scs;
+
   y.d = x;
-  y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
-  if (y.d > max_input_ch.d) { /* out of range */
-    y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000; return (y.d);
+  absxhi = y.i[HI_ENDIAN] & 0x7FFFFFFF; 
+
+  if (absxhi > max_input_ch.i[HI_ENDIAN]) {
+    /* if NaN, return it */
+    if (((absxhi&0x7FF00000) == 0x7FF00000) && (((y.i[HI_ENDIAN] & 0x000FFFFF)!=0) || (y.i[LO_ENDIAN]!=0)) )
+      return x;
+    else {/* otherwise the result should be +infty */
+      y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000; return (y.d);
+    }
   }
-  if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
-   return (y.d);
+  
+  if (absxhi<0x3e500000) { /* return the successor of 1 */
+    if(x==0.) return 1.0;
+    else{
+      y.l = 0x3ff0000000000001LL;
+      return y.d;
+    }
   }
-  return(do_cosh(x, RU));
+
+  do_cosh(x, &rh, &rl);
+
+  /* Rounding test to + infinity */
+  absyh.d = rh;
+  absyl.d = rl;
+  absyh.i[HI_ENDIAN] = absyh.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
+  absyl.i[HI_ENDIAN] = absyl.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
+  /*      absyl.l = absyl.l & 0x7fffffffffffffffLL;*/
+  u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l = u53.l - 0x0350000000000000LL;
+  delta_cst_cosh = 1e-19;
+  if(absyl.d > delta_cst_cosh * u53.d){ 
+    if(rl > 0.)  rh += u.d;
+    return rh;
+  }
+  else{
+    do_cosh_accurate(x,  res_scs);
+    scs_get_d_pinf(&rh, res_scs); 
+    return rh;
+  }  
 }
+
 
 
 double cosh_rd(double x){ 
   db_number y;
+  int absxhi;
+  double rh, rl;
+  double delta_cst_cosh;
+  db_number absyh, absyl, u53, u;
+  scs_t res_scs;
+
   y.d = x;
-  y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
-  if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
-    return (y.d);
+  absxhi = y.i[HI_ENDIAN] & 0x7FFFFFFF; 
+
+  if (absxhi > max_input_ch.i[HI_ENDIAN]) {
+    /* if NaN, return it */
+    if (((absxhi&0x7FF00000) == 0x7FF00000) && (((y.i[HI_ENDIAN] & 0x000FFFFF)!=0) || (y.i[LO_ENDIAN]!=0)) )
+      return x;
+    else {/* otherwise the result should be +infty */
+      y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000; return (y.d);
+    }
   }
-  if (y.d > max_input_ch.d) { /* out of range */
-    y.i[LO_ENDIAN] = 0xFFFFFFFF; y.i[HI_ENDIAN] = 0x7FEFFFFF; return (y.d);
+  
+  if (absxhi<0x3e500000)
+    return (1.0); 
+
+  do_cosh(x, &rh, &rl);
+
+  /* Rounding test to - infinity (or to zero) */
+  absyh.d = rh;
+  absyl.d = rl;
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l = u53.l - 0x0350000000000000LL;
+  delta_cst_cosh = 1e-19;
+  if(absyl.d >  delta_cst_cosh * u53.d){ 
+    if(rl < 0.)  rh -= u.d;
+    return rh;
   }
-  return(do_cosh(x, RD));/* cosh is always positive, so rounding to -infinite is equal to rounding to zero */
+  else{
+    do_cosh_accurate(x,  res_scs);
+    scs_get_d_minf(&rh, res_scs); 
+    return rh;
+  }  
+}
+
+
+
+double cosh_rz(double x){ 
+  return(cosh_rd(x));/* cosh is always positive, so rounding to -infinite is equivalent to rounding to zero */
 }
 
 
@@ -302,16 +333,11 @@ double cosh_rd(double x){
 
 
 
+void do_sinh(double x, double* prh, double* prl){ 
 
-
-
-
-double do_sinh(double x, int rounding_mode){ 
-
-  /*some variable declarations */
   int k;
   db_number y;
-  double res_hi, res_lo,temp1;
+  double temp1;
   double ch_hi, ch_lo, sh_hi, sh_lo;/* cosh(x) = (sh_hi + sh_lo)*(cosh(k*ln(2)) + (ch_hi + ch_lo)*(sinh(k*ln(2))) */
   db_number  table_index_float;
   int table_index;
@@ -323,20 +349,7 @@ double do_sinh(double x, int rounding_mode){
   double tcb_hi,  tsb_hi; /*results of polynomial approximations*/
   db_number two_p_plus_k, two_p_minus_k; /* 2^(k-1) + 2^(-k-1) */
   double square_y_hi;
-  double delta_cst_cosh;
-  db_number absyh, absyl, u53, u;
-  /* b_hi + b_lo will be the reducted argument on which we'll do all the calculus */
   
-  /* first, we consider special cases (out of range, etc ...) */
-  /*  y.d = x;
-  int hx = y.i[HI_ENDIAN] & 0x7FFFFFFF;
-  if ((hx & 0x7FF00000) >= (0x7FF00000)) {
-    return (y.d);
-  }
-  if ((hx > max_input_sh.i[HI_ENDIAN])&&(y.i[LO_ENDIAN] > max_input_sh.i[LO_ENDIAN])) {
-    y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000; return (y.d);
-  }
-  */
   /* Now we can do the first range reduction*/
   DOUBLE2INT(k, x * inv_ln_2.d)
     if (k != 0){ /* b_hi + b_lo =  x - (ln2_hi + ln2_lo) * k */
@@ -425,9 +438,9 @@ double do_sinh(double x, int rounding_mode){
 	sh_2_mk_hi = sh_hi * two_p_minus_k.d;
 	sh_2_mk_lo = sh_lo * two_p_minus_k.d;
 
-	Add22Cond(&res_hi, &res_lo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
-	Add22Cond(&ch_2_mk_hi, &ch_2_mk_lo , sh_2_pk_hi, sh_2_pk_lo, res_hi, res_lo);
-	Add22Cond(&res_hi, &res_lo, ch_2_pk_hi, ch_2_pk_lo, ch_2_mk_hi, ch_2_mk_lo);
+	Add22Cond(prh, prl, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
+	Add22Cond(&ch_2_mk_hi, &ch_2_mk_lo , sh_2_pk_hi, sh_2_pk_lo, *prh, *prl);
+	Add22Cond(prh, prl, ch_2_pk_hi, ch_2_pk_lo, ch_2_mk_hi, ch_2_mk_lo);
     }
     else if (k >= 35) 
       {
@@ -435,7 +448,7 @@ double do_sinh(double x, int rounding_mode){
 	ch_2_pk_lo = ch_lo * two_p_plus_k.d;
 	sh_2_pk_hi = sh_hi * two_p_plus_k.d;
 	sh_2_pk_lo = sh_lo * two_p_plus_k.d;
-	Add22Cond(&res_hi, &res_lo, ch_2_pk_hi, ch_2_pk_lo, sh_2_pk_hi, sh_2_pk_lo);
+	Add22Cond(prh, prl, ch_2_pk_hi, ch_2_pk_lo, sh_2_pk_hi, sh_2_pk_lo);
       }
     else 
       {
@@ -443,67 +456,28 @@ double do_sinh(double x, int rounding_mode){
 	ch_2_mk_lo = - ch_lo * two_p_minus_k.d;
 	sh_2_mk_hi = sh_hi * two_p_minus_k.d;
 	sh_2_mk_lo = sh_lo * two_p_minus_k.d;
-	Add22Cond(&res_hi, &res_lo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
+	Add22Cond(prh, prl, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
       }
   }
   else {
-    res_hi = sh_hi;
-    res_lo = sh_lo;
+    *prh = sh_hi;
+    *prl = sh_lo;
   }
-  /*  double roundcst = 1.0020; */
-  /* Test for rounding to the nearest  */
-  switch(rounding_mode) {
-  case RN:
-    {  /* Test for rounding to the nearest */
-      if (res_hi == (res_hi + (res_lo * round_cst_cosh.d))) return res_hi;
-      break;
-    }
-  case RU:
-    {
-      /* Rounding test to + infinity */
-      absyh.d = res_hi;
-      absyl.d = res_lo;
-      absyh.i[HI_ENDIAN] = absyh.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
-      absyl.i[HI_ENDIAN] = absyl.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
-      /*      absyl.l = absyl.l & 0x7fffffffffffffffLL;*/
-      u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-      u.l = u53.l - 0x0350000000000000LL;
-      /*      printf("coucou");*/
-      delta_cst_cosh = 1e-19;
-      if(absyl.d > delta_cst_cosh * u53.d){ 
-	if(res_lo > 0.)  res_hi += u.d;
-	return res_hi;
-      }
-      break;
-    }
-  case RD:
-    {
-      /* Rounding test to - infinity (or to zero) */
-      absyh.d = res_hi;
-      absyl.d = res_lo;
-      absyh.l = absyh.l & 0x7fffffffffffffffLL;
-      absyl.l = absyl.l & 0x7fffffffffffffffLL;
-      u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-      u.l = u53.l - 0x0350000000000000LL;
-      delta_cst_cosh = 1e-19;
-      if(absyl.d >  delta_cst_cosh * u53.d){ 
-	if(res_lo < 0.)  res_hi -= u.d;
-	return res_hi;
-      }
-       break;
-    }
-  }
+}
 
-  /*  if(res_hi == (res_hi + (res_lo * round_cst_sinh.d))) {
-    return res_hi;
-    }*/
-  
-  /* Now, the slow pass ! */
-  scs_t res_scs, exp_scs, exp_minus_scs;
+
+
+
+
+static void do_sinh_accurate(double x, scs_ptr res_scs){
+  int k;
+  scs_t exp_scs, exp_minus_scs;
+
 #if EVAL_PERF==1
   crlibm_second_step_taken++;
 #endif
   /* we'll use the sinh(x) == (exp(x) - 1/exp(x))/2 */
+  DOUBLE2INT(k, x * inv_ln_2.d);
   if ((k > -35) && (k < 35)) {
     exp_SC(exp_scs, x);
     scs_inv(exp_minus_scs, exp_scs);
@@ -519,22 +493,15 @@ double do_sinh(double x, int rounding_mode){
     res_scs->sign = -1;
     scs_div_2(res_scs);
   }
-  switch(rounding_mode) {
-  case RN:
-    scs_get_d(&res_hi, res_scs); break;
-  case RU:
-    scs_get_d_pinf(&res_hi, res_scs); break;
-  case RD:
-    scs_get_d_minf(&res_hi, res_scs); break;
-  }
-    /*  scs_get_d(&res_hi, res_scs);*/
-  return(res_hi);
 }
 
 
 
 double sinh_rn(double x){ 
   db_number y;
+  double rh, rl;
+  scs_t res_scs;
+    
   y.d = x;
   y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
   if (y.d > max_input_ch.d) { /* out of range */
@@ -542,40 +509,36 @@ double sinh_rn(double x){
     y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000 | (y.i[HI_ENDIAN] & 0x80000000); return (y.d);
   }
   if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
-   return (y.d);
+   return (x);
   }
-  return(do_sinh(x, RN));
+
+  if(y.i[HI_ENDIAN] < 0x3e500000) /* 2^(-26) */
+    return x;
+
+  do_sinh(x, &rh, &rl);
+
+  if (rh == (rh + (rl * round_cst_sinh.d))) return rh;
+  else{
+    do_sinh_accurate(x, res_scs);
+    scs_get_d(&rh, res_scs); 
+    return rh;
+  }  
+
 }
 
-
-double sinh_rz(double x){ 
-  db_number y;
-  y.d = x;
-  y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
-  if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
-    y.d = x;
-    return (y.d);
-  }
-  if (y.d > max_input_ch.d) { /* out of range */
-    y.d = x;
-    y.i[LO_ENDIAN] = 0xFFFFFFFF; y.i[HI_ENDIAN] = 0x7FEFFFFF | (y.i[HI_ENDIAN] & 0x80000000); return (y.d);
-  }
-  if( x > 0) {
-    return(do_sinh(x, RD));
-  }
-  else {
-    return(do_sinh(x, RU));
-  }
-}
 
 
 double sinh_ru(double x){ 
   db_number y;
+  double rh, rl;
+  double delta_cst_sinh;
+  db_number absyh, absyl, u53, u;
+  scs_t res_scs;
+
   y.d = x;
   y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
   if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
-    y.d = x;
-   return (y.d);
+   return (x);
   }
   if (y.d > max_input_ch.d) { /* out of range */
     if(x>0) {
@@ -585,12 +548,47 @@ double sinh_ru(double x){
       y.i[LO_ENDIAN] = 0xFFFFFFFF; y.i[HI_ENDIAN] = 0xFFEFFFFF ; return (y.d);
     }
   }
-  return(do_sinh(x, RU));
+
+  if(y.i[HI_ENDIAN] < 0x3e500000) /* 2^(-26) */
+    { /* Add one ulp if x positive */
+      if(x>0) { 
+	y.l++;
+	return y.d;
+      }
+      else
+	return x;
+    }
+
+  do_sinh(x, &rh, &rl);
+
+  /* Rounding test to + infinity */
+  absyh.d = rh;
+  absyl.d = rl;
+  absyh.i[HI_ENDIAN] = absyh.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
+  absyl.i[HI_ENDIAN] = absyl.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
+  u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l = u53.l - 0x0350000000000000LL;
+  delta_cst_sinh = 1e-19;
+  if(absyl.d > delta_cst_sinh * u53.d){ 
+    if(rl > 0.)  rh += u.d;
+    return rh;
+  }
+  else{
+    do_sinh_accurate(x, res_scs);
+    scs_get_d(&rh, res_scs); 
+    return rh;
+  }  
 }
 
 
 double sinh_rd(double x){ 
   db_number y;
+  double rh, rl;
+  double delta_cst_sinh;
+  db_number absyh, absyl, u53, u;
+  scs_t res_scs;
+
+
   y.d = x;
   y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
   if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
@@ -605,35 +603,45 @@ double sinh_rd(double x){
       y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0xFFF00000; return (y.d);
     }
   }
-  return(do_sinh(x, RD));
+  if(y.i[HI_ENDIAN] < 0x3e500000) /* 2^(-26) */
+    { /* Add one ulp and restore the sign if x negative */
+      if(x<0){
+	y.l = (y.l+1); 
+	return -y.d;
+      } 
+      else 
+	return x;      
+    }
+  do_sinh(x, &rh, &rl);
+  
+  /* Rounding test to - infinity */
+  absyh.d = rh;
+  absyl.d = rl;
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l = u53.l - 0x0350000000000000LL;
+  delta_cst_sinh = 1e-19;
+  if(absyl.d >  delta_cst_sinh * u53.d){ 
+    if(rl < 0.)  rh -= u.d;
+    return rh;
+  }
+  else{
+    do_sinh_accurate(x, res_scs);
+    scs_get_d_minf(&rh, res_scs); 
+    return rh;
+  }  
 }
 
 
 
-#if DEBUG
-  printf("index := %d  %.8X %.8X\n", table_index-bias, table_index_float.i[HI_ENDIAN], table_index_float.i[LO_ENDIAN]);
-  temp2_hi.d = tsb_hi;
-  printf("tsinhb_hi := hexa2ieee([\"%.8X\",\"%.8X\"]); \n", temp2_hi.i[HI_ENDIAN],temp2_hi.i[LO_ENDIAN]);
-  temp2_lo.d = 0;
-  printf("tsinhb_lo := hexa2ieee([\"%.8X\",\"%.8X\"]); \n", temp2_lo.i[HI_ENDIAN],temp2_lo.i[LO_ENDIAN]);
-  
-  temp2_hi.d = tcb_hi;
-  printf("tcoshb_hi := hexa2ieee([\"%.8X\",\"%.8X\"]); \n", temp2_hi.i[HI_ENDIAN],temp2_hi.i[LO_ENDIAN]);
-  temp2_lo.d = tcb_lo;
-  printf("tcoshb_lo := hexa2ieee([\"%.8X\",\"%.8X\"]); \n", temp2_lo.i[HI_ENDIAN],temp2_lo.i[LO_ENDIAN]);
-  temp2_hi.d = b_hi;
-  printf("\nb_hi := hexa2ieee([\"%.8X\",\"%.8X\"]); \n", temp2_hi.i[HI_ENDIAN],temp2_hi.i[LO_ENDIAN]);
-  temp2_lo.d = b_lo;
-  printf("b_lo := hexa2ieee([\"%.8X\",\"%.8X\"]); \n", temp2_lo.i[HI_ENDIAN],temp2_lo.i[LO_ENDIAN]);
-  printf("cosh_table_hi := hexa2ieee([\"%.8X\",\"%.8X\"]);\n", cosh_table[table_index][0].i[HI_ENDIAN],cosh_table[table_index][0].i[LO_ENDIAN]);
-  printf("cosh_table_lo := hexa2ieee([\"%.8X\",\"%.8X\"]);\n", cosh_table[table_index][1].i[HI_ENDIAN],cosh_table[table_index][1].i[LO_ENDIAN]);
-  printf("sinh_table_hi := hexa2ieee([\"%.8X\",\"%.8X\"]);\n", sinh_table[table_index][0].i[HI_ENDIAN],sinh_table[table_index][0].i[LO_ENDIAN]);
-  printf("sinh_table_lo := hexa2ieee([\"%.8X\",\"%.8X\"]);\n", sinh_table[table_index][1].i[HI_ENDIAN],sinh_table[table_index][1].i[LO_ENDIAN]);
 
-  printf("k = %d\n", k);
-  printf("ch_hi := hexa2ieee([\"%.8X\",\"%.8X\"]);\n", ch_hi.i[HI_ENDIAN],ch_hi.i[LO_ENDIAN]);
-  printf("ch_lo := hexa2ieee([\"%.8X\",\"%.8X\"]);\n", ch_lo.i[HI_ENDIAN],ch_lo.i[LO_ENDIAN]);
-  printf("sh_hi := hexa2ieee([\"%.8X\",\"%.8X\"]);\n", sh_hi.i[HI_ENDIAN],sh_hi.i[LO_ENDIAN]);
-  printf("sh_lo := hexa2ieee([\"%.8X\",\"%.8X\"]);\n", sh_lo.i[HI_ENDIAN],sh_lo.i[LO_ENDIAN]);
-  printf("cr libm     : ");
-#endif 
+double sinh_rz(double x){ 
+  if( x > 0) {
+    return(sinh_rd(x));
+  }
+  else {
+    return(sinh_ru(x));
+  }
+}
+

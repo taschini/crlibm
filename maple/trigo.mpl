@@ -73,6 +73,7 @@ C := Pi/256;
 invC:= nearest(1/C);
 reminvC := evalf(1/C - invC);
 expC:=ieeedouble(C)[2]:
+epsinvC := abs(reminvC*C);
 
 # There are three sets of constants :
 #  - split redC into two constants, for small values when we are concerned with absolute error
@@ -149,8 +150,8 @@ log2(%);
 
 # Third range reduction, using double-double arithmetic, for |k| up to 2^51-1
 
-# max int value that we can be produced by DOUBLE2LONGINT
-kmax:=2^51-1:
+# This max int value can be produced by DOUBLE2LONGINT
+kmax:=2^47-1:
 XMAX_DDRR:=nearest(kmax*C);
 
 #in this case we have C stored as 3 doubles
@@ -247,7 +248,10 @@ log2(eps_ArgRed);
 # Polynomials for do_sine and do_cos, and for the case 2
 degreeSin := 8:
 degreeCos := 7:
-ymaxCase3  := Pi/512*(1+2^(-15)):
+
+maxepsk := (1+epsinvC)*(1+2^(-53))-1:
+
+ymaxCase3  := evalf(Pi/512 +XMAX_DDRR*maxepsk):
 y2maxCase3 := ymaxCase3^2:
 # These are the parameters that can be varied to fine-tune performance
 #   (they should always be larger than Pi/512

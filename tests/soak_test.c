@@ -105,15 +105,15 @@ void test_all() {
 	    || (res_crlibm.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) ) 
 	  {
 #if DETAILED_REPORT	  
-	  printf("CRLIBM ERROR  x=%.70e \n            (%8x %8x) \n", 
+	  printf("CRLIBM ERROR  x=%.70e \n            (%08x %08x) \n", 
 		 input.d, 
 		 input.i[HI_ENDIAN], 
 		 input.i[LO_ENDIAN]);
-	  printf("crlibm gives    %.50e \n         (%8x %8x) \n", 
+	  printf("crlibm gives    %.50e \n         (%08x %08x) \n", 
 		 res_crlibm.d, 
 		 res_crlibm.i[HI_ENDIAN], 
 		 res_crlibm.i[LO_ENDIAN]);
-	  printf("MPFR gives %.50e \n         (%8x %8x) \n\n", 
+	  printf("MPFR gives %.50e \n         (%08x %08x) \n\n", 
 		 res_mpfr.d, 
 		 res_mpfr.i[HI_ENDIAN], 
 		 res_mpfr.i[LO_ENDIAN]);
@@ -130,15 +130,15 @@ void test_all() {
 	       || (res_libultim.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) )) 
 	  {
 #if DETAILED_REPORT
-	      printf("IBM ULTIM ERROR  x=%.50e \n            (%8x %8x) \n", 
+	      printf("IBM ULTIM ERROR  x=%.50e \n            (%08x %08x) \n", 
 		     input.d, 
 		     input.i[HI_ENDIAN], 
 		     input.i[LO_ENDIAN]);
-	      printf("libultim gives    %.50e \n         (%8x %8x) \n", 
+	      printf("libultim gives    %.50e \n         (%08x %08x) \n", 
 		     res_libultim.d, 
 		     res_libultim.i[HI_ENDIAN], 
 		     res_libultim.i[LO_ENDIAN]);
-	      printf("MPFR gives %.50e \n         (%8x %8x) \n\n", 
+	      printf("MPFR gives %.50e \n         (%08x %08x) \n\n", 
 		     res_mpfr.d, 
 	       res_mpfr.i[HI_ENDIAN], 
 		     res_mpfr.i[LO_ENDIAN]);
@@ -152,15 +152,15 @@ void test_all() {
 	       || (res_libmcr.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) )) 
 	  {
 #if DETAILED_REPORT
-	      printf("LIBMCR ERROR  x=%.50e \n            (%8x %8x) \n", 
+	      printf("LIBMCR ERROR  x=%.50e \n            (%08x %08x) \n", 
 		     input.d, 
 		     input.i[HI_ENDIAN], 
 		     input.i[LO_ENDIAN]);
-	      printf("libmcr gives    %.50e \n         (%8x %8x) \n", 
+	      printf("libmcr gives    %.50e \n         (%08x %08x) \n", 
 		     res_libmcr.d, 
 		     res_libmcr.i[HI_ENDIAN], 
 		     res_libmcr.i[LO_ENDIAN]);
-	      printf("MPFR gives %.50e \n         (%8x %8x) \n\n", 
+	      printf("MPFR gives %.50e \n         (%08x %08x) \n\n", 
 		     res_mpfr.d, 
 	       res_mpfr.i[HI_ENDIAN], 
 		     res_mpfr.i[LO_ENDIAN]);

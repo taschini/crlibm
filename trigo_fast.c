@@ -424,6 +424,7 @@ static void ComputeTrigWithArgred2(rrinfo *rri){
       Add12 (th,tl,  kch_l, kcm_h) ;
       /* only rounding error in the last multiplication and addition */ 
       Add22 (&yh, &yl,    (rri->x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+      //      printf("%f\n", yh);
       goto computeNotZero;
     }
   } /* closes if ( absxhi < XMAX_DDRR ) */ 
@@ -728,8 +729,11 @@ double sin_rz(double x){
 
     /* CASE 1 : x small enough, return x suitably rounded */
     if (rri.absxhi <XMAX_RETURN_X_FOR_SIN) {
-      x_split.l --;
-      return x_split.d;
+      if(x==0) return x;
+      else {
+	x_split.l --;
+	return x_split.d;
+      }
     }
     else {
       /* CASE 2 : x < Pi/512
