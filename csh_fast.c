@@ -1,5 +1,10 @@
 /*
- * Function to compute the hyperbolic cosine and the hyperbolic sine  with fully exact rounding
+ * Correctly rounded hyperbolic sine and cosine
+ *
+ *  This file is part of the crlibm library, developed by the Arenaire
+ * project at Ecole Normale Superieur de Lyon
+ *
+ * Licence: LGPL
  *
  * Author : Matthieu Gallet
  * E-Mail : mgallet@ens-lyon.fr
@@ -12,6 +17,8 @@
 #include <crlibm_private.h>
 #include "csh_fast.h"
 #include "exp.h"
+
+
 /* switches on various printfs. Default 0 */
 #define DEBUG 0
 
@@ -22,7 +29,7 @@
 enum {RN, RZ, RD, RU};
 
 
-double do_cosh(double x, int rounding_mode){
+static double do_cosh(double x, int rounding_mode){
 
   /*some variable declarations */
   int k;
@@ -38,8 +45,10 @@ double do_cosh(double x, int rounding_mode){
   double square_b_hi;
   double ch_2_pk_hi, ch_2_pk_lo, ch_2_mk_hi, ch_2_mk_lo;
   double sh_2_pk_hi, sh_2_pk_lo, sh_2_mk_hi, sh_2_mk_lo;
+  double delta_cst_cosh;
   db_number two_p_plus_k, two_p_minus_k; /* 2^(k-1) + 2^(-k-1) */
   db_number absyh, absyl, u53, u;
+
 
 
   /* Now we can do the first range reduction*/
@@ -125,8 +134,8 @@ double do_cosh(double x, int rounding_mode){
 	ch_2_mk_lo = ch_lo * two_p_minus_k.d;
 	sh_2_pk_hi = sh_hi * two_p_plus_k.d;
 	sh_2_pk_lo = sh_lo * two_p_plus_k.d;
-	sh_2_mk_hi = -1 * sh_hi * two_p_minus_k.d;
-	sh_2_mk_lo = -1 * sh_lo * two_p_minus_k.d;
+	sh_2_mk_hi = - sh_hi * two_p_minus_k.d;
+	sh_2_mk_lo = - sh_lo * two_p_minus_k.d;
 	
 	Add22Cond(&res_hi, &res_lo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
 	Add22Cond(&ch_2_mk_hi, &ch_2_mk_lo , sh_2_pk_hi, sh_2_pk_lo, res_hi, res_lo);
@@ -144,8 +153,8 @@ double do_cosh(double x, int rounding_mode){
       {
 	ch_2_mk_hi = ch_hi * two_p_minus_k.d;
 	ch_2_mk_lo = ch_lo * two_p_minus_k.d;
-	sh_2_mk_hi = -1 * sh_hi * two_p_minus_k.d;
-	sh_2_mk_lo = -1 * sh_lo * two_p_minus_k.d;
+	sh_2_mk_hi = - sh_hi * two_p_minus_k.d;
+	sh_2_mk_lo = - sh_lo * two_p_minus_k.d;
 	Add22Cond(&res_hi, &res_lo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
       }
   }
@@ -170,8 +179,7 @@ double do_cosh(double x, int rounding_mode){
       /*      absyl.l = absyl.l & 0x7fffffffffffffffLL;*/
       u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
       u.l = u53.l - 0x0350000000000000LL;
-      /*      printf("coucou");*/
-      double delta_cst_cosh = 1e-19;
+      delta_cst_cosh = 1e-19;
       if(absyl.d > delta_cst_cosh * u53.d){ 
 	if(res_lo > 0.)  res_hi += u.d;
 	return res_hi;
@@ -187,7 +195,7 @@ double do_cosh(double x, int rounding_mode){
       absyl.l = absyl.l & 0x7fffffffffffffffLL;
       u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
       u.l = u53.l - 0x0350000000000000LL;
-      double delta_cst_cosh = 1e-19;
+      delta_cst_cosh = 1e-19;
       if(absyl.d >  delta_cst_cosh * u53.d){ 
 	if(res_lo < 0.)  res_hi -= u.d;
 	return res_hi;
@@ -305,7 +313,7 @@ double do_sinh(double x, int rounding_mode){
   db_number y;
   double res_hi, res_lo,temp1;
   double ch_hi, ch_lo, sh_hi, sh_lo;/* cosh(x) = (sh_hi + sh_lo)*(cosh(k*ln(2)) + (ch_hi + ch_lo)*(sinh(k*ln(2))) */
-  double  table_index_float;
+  db_number  table_index_float;
   int table_index;
   double ch_2_pk_hi, ch_2_pk_lo, ch_2_mk_hi, ch_2_mk_lo;
   double sh_2_pk_hi, sh_2_pk_lo, sh_2_mk_hi, sh_2_mk_lo;
@@ -315,6 +323,7 @@ double do_sinh(double x, int rounding_mode){
   double tcb_hi,  tsb_hi; /*results of polynomial approximations*/
   db_number two_p_plus_k, two_p_minus_k; /* 2^(k-1) + 2^(-k-1) */
   double square_y_hi;
+  double delta_cst_cosh;
   db_number absyh, absyl, u53, u;
   /* b_hi + b_lo will be the reducted argument on which we'll do all the calculus */
   
@@ -349,12 +358,12 @@ double do_sinh(double x, int rounding_mode){
   /* now we can do the second range reduction */
   /* we'll get the 8 leading bits of r_hi */
   
-  table_index_float = b_hi + two_43_44.d;
+  table_index_float.d = b_hi + two_43_44.d;
   /*this add do the float equivalent of a rotation to the right, since -0.5 <= b_hi <= 0.5*/
-  table_index = LO(table_index_float);/* -89 <= table_index <= 89 */
-  table_index_float -= two_43_44.d;
+  table_index = LO(table_index_float.d);/* -89 <= table_index <= 89 */
+  table_index_float.d -= two_43_44.d;
   table_index += bias; /* to have only positive values */
-  b_hi -= table_index_float;/* to remove the 8 leading bits*/
+  b_hi -= table_index_float.d;/* to remove the 8 leading bits*/
   /* since b_hi was between -2^-1 and 2^1, we now have b_hi between -2^-9 and 2^-9 */
   
   y.d = b_hi;
@@ -409,8 +418,8 @@ double do_sinh(double x, int rounding_mode){
     if( (k < 35) && (k > -35) ) {
 	ch_2_pk_hi = ch_hi * two_p_plus_k.d;
 	ch_2_pk_lo = ch_lo * two_p_plus_k.d;
-	ch_2_mk_hi = -1 * ch_hi * two_p_minus_k.d;
-	ch_2_mk_lo = -1 * ch_lo * two_p_minus_k.d;
+	ch_2_mk_hi = - ch_hi * two_p_minus_k.d;
+	ch_2_mk_lo = - ch_lo * two_p_minus_k.d;
 	sh_2_pk_hi = sh_hi * two_p_plus_k.d;
 	sh_2_pk_lo = sh_lo * two_p_plus_k.d;
 	sh_2_mk_hi = sh_hi * two_p_minus_k.d;
@@ -430,8 +439,8 @@ double do_sinh(double x, int rounding_mode){
       }
     else 
       {
-	ch_2_mk_hi = -1 * ch_hi * two_p_minus_k.d;
-	ch_2_mk_lo = -1 * ch_lo * two_p_minus_k.d;
+	ch_2_mk_hi = - ch_hi * two_p_minus_k.d;
+	ch_2_mk_lo = - ch_lo * two_p_minus_k.d;
 	sh_2_mk_hi = sh_hi * two_p_minus_k.d;
 	sh_2_mk_lo = sh_lo * two_p_minus_k.d;
 	Add22Cond(&res_hi, &res_lo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
@@ -460,7 +469,7 @@ double do_sinh(double x, int rounding_mode){
       u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
       u.l = u53.l - 0x0350000000000000LL;
       /*      printf("coucou");*/
-      double delta_cst_cosh = 1e-19;
+      delta_cst_cosh = 1e-19;
       if(absyl.d > delta_cst_cosh * u53.d){ 
 	if(res_lo > 0.)  res_hi += u.d;
 	return res_hi;
@@ -476,7 +485,7 @@ double do_sinh(double x, int rounding_mode){
       absyl.l = absyl.l & 0x7fffffffffffffffLL;
       u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
       u.l = u53.l - 0x0350000000000000LL;
-      double delta_cst_cosh = 1e-19;
+      delta_cst_cosh = 1e-19;
       if(absyl.d >  delta_cst_cosh * u53.d){ 
 	if(res_lo < 0.)  res_hi -= u.d;
 	return res_hi;
