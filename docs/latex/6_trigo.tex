@@ -17,7 +17,7 @@ arguments, and are defined otherwise. $\tan$ may not return
 infinities: an argument based on continued fractions to find the worst
 cases for range reduction may also be used to show that the sine of a
 floating-point number is always larger than $2^{-150}$, and therefore
-never flushes to zero (see \ref{Muller97} p. 151 and following).
+never flushes to zero (see \cite{Muller97} p. 151 and following).
 
 For very small arguments,
 \begin{itemize}
@@ -30,7 +30,7 @@ For very small arguments,
   $\cos(x)=1-2^{-53}$ for $|x|<2^{-26}$.
 \item $\tan(x) = x+x^3/3 + O(x^5) = x(1+x^2/3) + O(x^5)$ where
   $O(x^5)$ has the sign of $x$. Therefore $\tan(x)$ is rounded to $x$
-  for all the rounding  modes if $|x|<2^{-26}$.
+  for all the rounding  modes if $|x|<2^{-27}$.
 \end{itemize}
 
 
@@ -53,7 +53,7 @@ computes an integer $k$ and a reduced argument y such that
 \begin{equation}
   x = k\frac{\pi}{256} + y\label{eq:trigoargred}
 \end{equation}
-where $k$ is an integer and  $ |y| \leq \frac{\pi}{512}$.
+where $k$ is an integer and  $ |y| \leq {\pi}/{512}$.
 This step computes $y$ as a double-double: $y\approx y_h+y_l$. 
 
 In the following we note $a=k\pi/256$. 
@@ -98,9 +98,9 @@ where $t_c$ and $t_s$ are doubles computed using a polynomial
 approximation of small degree:
 
 \begin{itemize}
-\item $t_s = y^2*(s_3 + y^2*(s_5 + y^2*s_7)))$ with $s3$, $s5$ and
+\item $t_s = y^2(s_3 + y^2(s_5 + y^2s_7)))$ with $s3$, $s5$ and
 $s7$ the Taylor coefficients.
-\item $t_c = y^2*(c_2 + y^2*(c_4 + y^2*c_6))$ with $c2$, $c4$ and $c6$ the
+\item $t_c = y^2(c_2 + y^2(c_4 + y^2c_6))$ with $c2$, $c4$ and $c6$ the
 Taylor coefficients (or a more accurate minimax approximation).
 \end{itemize}
 
@@ -203,19 +203,43 @@ magnitude are given by Figure~\ref{fig:sine-reconstruction}.
 
 \subsubsection{Tangent}
 
-The tangent is obtained by the division of the sine by the cosine.
-The procedure "Div22" guarantees a $2^{-104}$ precision result, wich is surely enough to have a precise final result.
+The tangent is obtained by the division of the sine by the cosine,
+using the \texttt{Div22} procedure which is accurate to  $2^{-104}$.
 
 
 \subsection{Precision of this scheme}
 
-As we have $|y|<\pi/512<2^{-7}$, this scheme computes these functions accurately to roughly $53+12$
-bits, so these first steps are  very accurate.
+As we have $|y|<\pi/512<2^{-7}$, this scheme computes these functions
+accurately to roughly $53+12$ bits, so these first steps are very
+accurate. 
  
 
+\subsection{Organisation of the code}
+
+There are four procedures, respectively called \verb!do_sin_k_zero!,
+\verb!do_sin_k_notzero!, \verb!do_cos_k_zero!,
+\verb!do_cos_k_notzero!, which are called after argument reduction in
+many points of each function. These procedures are studied in section
+\ref{trigo:auxilliary}.
+
+The code for argument reduction is mostly shared by the three
+functions, but with variations (mostly, which of the four previous
+functions is called) which makes it difficult to share it efficiently
+as one procedure. Therefore it is mostly duplicated, but the same
+proof applies to the three copies. This proof is detailed in
+Section~\ref{trigo:argred}.
+
+Then each of the three functions come in four variants for the four
+rounding modes. These four variants differ in the beginning (special
+cases) and in the end (rounding), but share the bulk of the
+computation. The shared computation is  called
+\verb!compute_sine_with_argred!, etc.
 
 
-\section{Details of argument reduction}
+
+
+\section{Details of argument reduction
+\label{trigo:argred}}
 
 
 We have 4 possible range reductions, depending on the magnitude of the input number:
@@ -245,7 +269,190 @@ accurate range reduction. As a compensation, in this case when $k \mod
 simple polynomial approximation to the function suffices.
 
 
+In the following we note $$C=\frac{\pi}{256}$$
 
+\subsection{Cody and Waite argument reduction with two constants}
+Here we split $C$ into two floating-point constants $C_h$ and $C_l$
+such that $C_h$ holds 21 bits of the mantissa of $C$ (the rest being
+zeroes), and $C_l=\round(C-C_h)$.  The following is an excerpt of the
+Maple code that computes these constants, and then computes the
+absolute error on this argument reduction out of them.
+
+\begin{lstlisting}[caption={Computing constants for Cody and Waite 2},
+  firstnumber=1,  language={sh}]% of course it's maple
+bitsCh_0:=32:  # ensures at least 53+11 bits
+
+# 1/2 <= C/2^(expC+1) <1
+Ch:= round(evalf(  C * 2^(bitsCh_0-expC-1))) / (2^(bitsCh_0-expC-1)):
+# recompute bitsCh in case we are lucky (and we are for bitsCh_0=32)
+bitsCh:=1+log2(op(2,ieeedouble(Ch)[3])) :  # this means the log of the denominator
+
+Cl:=nearest(C - Ch):
+# Cody and Waite argument reduction will work for |k|<kmax_cw2
+kmax_cw2:=2^(53-bitsCh):
+
+# The constants to move to the .h file
+RR_CW2_CH := Ch:
+RR_CW2_MCL := -Cl:
+XMAX_CODY_WAITE_2 := nearest(kmax_cw2*C):
+
+# The error in this case (we need absolute error)
+delta_repr_C_cw2   := abs(C-Ch-Cl);
+delta_round_cw2    := kmax_cw2* 1/2 * ulp(Cl) ;
+delta_cody_waite_2 := kmax_cw2 * delta_repr_C_cw2 + delta_round_cw2;
+# This is the delta on y, the reduced argument
+\end{lstlisting}
+
+
+\subsection{Cody and Waite argument reduction with three constants}
+\subsection{Cody and Waite argument reduction in double-double}
+\subsection{Payne and Hanek argument reduction }
+
+
+
+\section{Details of auxilliary functions
+  \label{trigo:auxilliary}}
+
+\subsection{Errors due to argument reduction}
+Upon entering one of \texttt{do\_sin\_k\_zero}, \texttt{do\_sin\_k\_notzero},
+\texttt{do\_cos\_k\_zero} or \texttt{do\_cos\_k\_notzero}, we have in
+$y_h+y_l$ an approximation to the ideal reduced value
+$\hat{y}=x-k\pi/256$ with a relative accuracy $\epsilon_{\mathrm{argred}}$:
+
+\begin{equation}
+  y_h+y_l = (x-k\pi/256)(1+\epsilon_{\mathrm{argred}}) 
+  = \hat{y}(1+\epsilon_{\mathrm{argred}})
+  \label{eq:sinargrederror1}
+\end{equation}
+whith, depending on the quadrant, $\sin(\hat{y}) = \pm\sin(x)$ or
+$\sin(\hat{y}) = \pm\cos(x)$ and similarly for $\cos(\hat{y})$. This
+just means that $\hat{y}$ is the ideal, errorless reduced value.
+
+
+For simplicity, we define a common upper bound $y_{\max}$ on
+$|\hat{y}|$, $|\mathtt{yh}+\mathtt{yl}|$ and $|\mathtt{yh}|$. This
+bound takes into account $\epsilon_{argred}$, an $\epsilon_{53}$ just
+for the case when it is a bound on $y_h$, and also an error due to the
+fact that we used a machine rounding to get $k$, so the reduced value
+may exceed $\pi/512$:
+\begin{equation}
+  y_{\mathrm{maxargred}} = \frac{\pi}{512}(1+\epsilon_{\mathrm{argred2}})
+  \label{eq:ymaxsink0}  
+\end{equation}
+where $\epsilon_{\mathrm{argred2}}$ should be defined precisely (TODO).
+
+
+\subsection{\texttt{do\_sin\_k\_zero} \label{dosinkzero}}
+In the following we will
+assume we are in the case $\sin(\hat{y}) = \sin(x)$, (the proof is
+identical in the other cases), therefore the relative error that we need
+to compute is
+\begin{equation}
+  \epsilon_{\mathrm{sinkzero}} = \frac{(\mathtt{*psh} + \mathtt{*psl})}{\sin(\mathtt{x})} -1 = \frac{(\mathtt{*psh} + \mathtt{*psl})}{\sin(\hat{y})} -1
+\end{equation}
+
+
+\begin{lstlisting}[caption={do\_sin\_k\_zero},firstnumber=1]
+#define do_sin_k_zero(psh,psl, yh,  yl)            \
+do{                                                \
+  double yh2 ;	              			   \
+  yh2 = yh*yh;					   \
+  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));	   \
+  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */  \
+  /* Now compute (1+ts)*(yh+yl) */                 \
+  Add12(*psh,*psl,   yh, yl+ts*yh);	           \
+} while(0)						   
+\end{lstlisting}
+
+One can see that we almost have the same code as in
+\ref{sec:trigo:fastsine}. The difference is that we have as input
+a double-double $\mathtt{yh}+\mathtt{yl}$, which is itself an inexact term. 
+
+At Line 4, the error of neglecting $y_l$ and the rounding error in the
+multiplication each amount to half an ulp:
+  $\mathtt{yh2}=\mathtt{yh}^2(1+\epsilon_{-53})$, 
+ with $\mathtt{yh} = (\mathtt{yh}+\mathtt{yl})(1+\epsilon_{-53}) = \hat{y}(1+\epsilon_{\mathrm{argred}})(1+\epsilon_{-53})$
+
+Therefore
+\begin{equation}
+  \mathtt{yh2}=\hat{y}^2(1+\epsilon_{\mathtt{yh2}})
+\end{equation}
+
+with
+\begin{equation}
+  \maxeps_{\mathtt{yh2}} = (1+\maxeps_{\mathrm{argred}})^2(1+\maxeps_{-53})^3 - 1
+\end{equation}
+
+Line 5 is a standard Horner evaluation. Its approximation error is defined by: 
+$$
+P_{\mathtt{ts}}(\hat{y}) = \frac{\sin(\hat{y})-\hat{y}}{\hat{y}}(1+\epsilon_{\mathrm{approxts}})
+$$
+
+This error is computed in Maple as in \ref{sec:trigo:fastsine}, only the interval changes:
+$$\maxeps_{\mathrm{approxts}} = \left\Vert \frac{xP_{\mathtt{ts}}(x)}{\sin(x)-x} -1 \right\Vert_{\infty}$$
+
+We also compute $\maxeps_{\mathrm{hornerts}}$, the bound on the relative error due
+to rounding in the Horner evaluation thanks to the
+\texttt{compute\_horner\_rounding\_error} procedure. This time, this procedure 
+takes into account the relative error carried by \texttt{yh2}, which is
+$\maxeps_{\mathtt{yh2}}$ computed above.
+We thus get the total relative error on \texttt{ts}:
+
+\begin{equation}
+  \mathtt{ts} = P_{\mathtt{ts}}(\hat{y})(1+\epsilon_{\mathrm{hornerts}}) = \frac{\sin(\hat{y})-\hat{y}}{\hat{y}}(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})
+  \label{eq:sink0ts}
+\end{equation}
+
+The final \texttt{Add12} is exact. Therefore the overall relative error is:
+
+\begin{eqnarray*}
+  \epsilon_{\mathrm{sinkzero}} 
+  &=& \frac{((\mathtt{yh}\otimes \mathtt{ts}) \oplus \mathtt{yl}) + \mathtt{yh}}{\sin(\hat{y})} -1 \\
+  &=& \frac{(\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl})(1+\epsilon_{-53}) + \mathtt{yh}}{\sin(\hat{y})} -1\\
+  &=& \frac{\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl} + \mathtt{yh}    \ +\  (\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl}).\epsilon_{-53}}{\sin(\hat{y})} -1\\
+\end{eqnarray*}
+
+Define 
+\begin{equation}
+  \delta_{\mathrm{addsin}} = (\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl}).\epsilon_{-53}
+\label{eq:addsin}
+\end{equation}
+($\maxdelta_{\mathrm{addsin}}$ may be computed out of the the maximum
+values taken by \texttt{ts}, \texttt{yh} and \texttt{yl}). Then we have
+\begin{eqnarray*}
+  \epsilon_{\mathrm{sinkzero}} 
+  &=& \frac{(\mathtt{yh} + \mathtt{yl})\mathtt{ts}(1+\epsilon_{-53})^2 + \mathtt{yl} + \mathtt{yh}    \ +\  \delta_{\mathrm{addsin}} }{\sin(\hat{y})} -1\\
+\end{eqnarray*}
+
+Using (\ref{eq:sinargrederror1}) and (\ref{eq:sink0ts}) we get:
+\begin{eqnarray*}
+  \epsilon_{\mathrm{sinkzero}} 
+  &=& \frac{\hat{y}(1+\epsilon_{\mathrm{argred}})\times\frac{\sin(\hat{y})-\hat{y}}{\hat{y}}(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})(1+\epsilon_{-53})^2 + \mathtt{yl} + \mathtt{yh}    \ +\  \delta_{\mathrm{addsin}} }{\sin(\hat{y})} -1\\
+\end{eqnarray*}
+
+To lighten notations, let us define 
+\begin{equation}
+ \epsilon_{\mathrm{sin1}} = (1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})(1+\epsilon_{-53})^2 \ -\ 1
+  \label{eq:epssin1}
+\end{equation}
+
+We get
+\begin{eqnarray*}
+  \epsilon_{\mathrm{sinkzero}} 
+  &=& \frac{(\sin(\hat{y})-\hat{y})(1+\epsilon_{\mathrm{sin1}}) + \hat{y}(1+\epsilon_{\mathrm{argred}})    \ +\   \delta_{\mathrm{addsin}} - \sin(\hat{y})}{\sin(\hat{y})}\\
+  &=& \frac{(\sin(\hat{y})-\hat{y}).\epsilon_{\mathrm{sin1}} + \hat{y}.\epsilon_{\mathrm{argred}}    \ +\ \delta_{\mathrm{addsin}}}{\sin(\hat{y})}\\
+\label{eq:sinkzero}
+\end{eqnarray*}
+
+Again we may compute the value of $\maxeps_{\mathrm{sinkzero}}$ as an
+infinite norm under Maple. Or, we may compute majorations using
+$y_{\mathrm{maxargred}}$.
+
+ 
+
+
+
+\subsection{\texttt{do\_sin\_k\_notzero}}
 
 
 
@@ -380,143 +587,5 @@ Finally
 
 
 
-
-\section{Detailed examination of auxilliary functions}
-
-\subsection{Errors due to argument reduction}
-Upon entering one of \texttt{do\_sin\_k\_zero}, \texttt{do\_sin\_k\_notzero},
-\texttt{do\_cos\_k\_zero} or \texttt{do\_cos\_k\_notzero}, we have in
-$y_h+y_l$ an approximation to the ideal reduced value
-$\hat{y}=x-k\pi/256$ with a relative accuracy $\epsilon_{argred}$:
-
-\begin{equation}
-  y_h+y_l = (x-k\pi/256)(1+\epsilon_{argred}) = \hat{y}(1+\epsilon_{argred})
-  \label{eq:sinargrederror1}
-\end{equation}
-whith, depending on the quadrant, $\sin(\hat{y}) = \pm\sin(x)$ or
-$\sin(\hat{y}) = \pm\cos(x)$ and similarly for $\cos(\hat{y})$. This
-just means that $\hat{y}$ is the ideal, errorless reduced value.
-
-
-For simplicity, we define a common upper bound $y_{\max}$ on
-$|\hat{y}|$, $|\mathtt{yh}+\mathtt{yl}|$ and $|\mathtt{yh}|$. This
-bound takes into account $\epsilon_{argred}$, an $\epsilon_{53}$ just
-for the case when it is a bound on $y_h$, and also an error due to the
-fact that we used a machine rounding to get $k$, so the reduced value
-may exceed $\pi/512$:
-\begin{equation}
-  y_{\mathrm{maxargred}} = \frac{\pi}{512}(1+\epsilon_{\mathrm{argred2}})
-  \label{eq:ymaxsink0}  
-\end{equation}
-where $\epsilon_{\mathrm{argred2}}$ should be defined precisely (TODO).
-
-
-\subsection{\texttt{do\_sin\_k\_zero}}
-In the following we will
-assume we are in the case $\sin(\hat{y} = \sin(x)$, (the proof is
-identical in the other cases) therfore the relative error that we need
-to compute is
-\begin{equation}
-  \epsilon_{\mathrm{sinkzero}} = \frac{(\mathtt{*psh} + \mathtt{*psl})}{\sin(\mathtt{x})} -1 = \frac{(\mathtt{*psh} + \mathtt{*psl})}{\sin(\hat{y})} -1
-\end{equation}
-
-
-\begin{lstlisting}[caption={do\_sin\_k\_zero},firstnumber=1]
-#define do_sin_k_zero(psh,psl, yh,  yl)            \
-do{                                                \
-  double yh2 ;	              			   \
-  yh2 = yh*yh;					   \
-  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));	   \
-  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */  \
-  /* Now compute (1+ts)*(yh+yl) */                 \
-  Add12(*psh,*psl,   yh, yl+ts*yh);	           \
-} while(0)						   
-\end{lstlisting}
-
-One can see that we almost have the same code as in
-\ref{sec:trigo:fastsine}. The difference is that we have as input
-a double-double $\mathtt{yh}+\mathtt{yl}$, which is itself an inexact term. 
-
-At Line 4, the error of neglecting $y_l$ and the rounding error in the
-multiplication each amount to half an ulp:
-  $\mathtt{yh2}=\mathtt{yh}^2(1+\epsilon_{-53})$, 
- with $\mathtt{yh} = (\mathtt{yh}+\mathtt{yl})(1+\epsilon_{-53}) = \hat{y}(1+\epsilon_{\mathrm{argred}})(1+\epsilon_{-53})$
-
-Therefore
-\begin{equation}
-  \mathtt{yh2}=\hat{y}^2(1+\epsilon_{\mathtt{yh2}})
-\end{equation}
-
-with
-\begin{equation}
-  \maxeps_{\mathtt{yh2}} = (1+\maxeps_{\mathrm{argred}})^2(1+\maxeps_{-53})^3 - 1
-\end{equation}
-
-Line 5 is a standard Horner evaluation. Its approximation error is defined by: 
-$$
-P_{\mathtt{ts}}(\hat{y}) = \frac{\sin(\hat{y})-\hat{y}}{\hat{y}}(1+\epsilon_{\mathrm{approxts}})
-$$
-
-This error is computed in Maple as in \ref{sec:trigo:fastsine}, only the interval changes:
-$$\maxeps_{\mathrm{approxts}} = \left\Vert \frac{xP_{\mathtt{ts}}(x)}{\sin(x)-x} -1 \right\Vert_{\infty}$$
-
-We also compute $\maxeps_{\mathrm{hornerts}}$, the bond on the relative error due
-to rounding in the Horner evaluation thanks to the
-\texttt{compute\_horner\_rounding\_error} procedure. This time, this procedure 
-takes into account the relative error carried by \texttt{yh2}, which is
-$\maxeps_{\mathtt{yh2}}$ computed above.
-We thus get the total relative error on \texttt{ts}:
-
-\begin{equation}
-  \mathtt{ts} = P_{\mathtt{ts}}(\hat{y})(1+\epsilon_{\mathrm{hornerts}}) = \frac{\sin(\hat{y})-\hat{y}}{\hat{y}}(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})
-  \label{eq:sink0ts}
-\end{equation}
-
-The final \texttt{Add12} is exact. Therefore the overall relative error is:
-
-\begin{eqnarray*}
-  \epsilon_{\mathrm{sinkzero}} 
-  &=& \frac{((\mathtt{yh}\otimes \mathtt{ts}) \oplus \mathtt{yl}) + \mathtt{yh}}{\sin(\hat{y})} -1 \\
-  &=& \frac{(\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl})(1+\epsilon_{-53}) + \mathtt{yh}}{\sin(\hat{y})} -1\\
-  &=& \frac{\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl} + \mathtt{yh}    \ +\  (\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl}).\epsilon_{-53}}{\sin(\hat{y})} -1\\
-\end{eqnarray*}
-
-Define 
-\begin{equation}
-  \delta_{\mathrm{addsin}} = \max((\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl}).\epsilon_{-53})
-\label{eq:addsin}
-\end{equation}
-which is computed out of the  the maximum values taken by \texttt{ts}, \texttt{yh} and \texttt{yl}. Then we have
-\begin{eqnarray*}
-  \epsilon_{\mathrm{sinkzero}} 
-  &=& \frac{(\mathtt{yh} + \mathtt{yl})\mathtt{ts}(1+\epsilon_{-53})^2 + \mathtt{yl} + \mathtt{yh}    \ +\  \delta_{\mathrm{addsin}} }{\sin(\hat{y})} -1\\
-\end{eqnarray*}
-
-Using (\ref{eq:sinargrederror1}) and (\ref{eq:sink0ts}) we get:
-\begin{eqnarray*}
-  \epsilon_{\mathrm{sinkzero}} 
-  &=& \frac{\hat{y}(1+\epsilon_{\mathrm{argred}})\times\frac{\sin(\hat{y})-\hat{y}}{\hat{y}}(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})(1+\epsilon_{-53})^2 + \mathtt{yl} + \mathtt{yh}    \ +\  \delta_{\mathrm{addsin}} }{\sin(\hat{y})} -1\\
-\end{eqnarray*}
-
-To lighten notations, let us define 
-\begin{equation}
- \maxeps_{\mathrm{sin1}} = (1+\maxeps_{\mathrm{approxts}})(1+\maxeps_{\mathrm{hornerts}})(1+\maxeps_{-53})^2 \ -\ 1
-  \label{eq:epssin1}
-\end{equation}
-
-We get
-\begin{eqnarray*}
-  \epsilon_{\mathrm{sinkzero}} 
-  &=& \frac{(\sin(\hat{y})-\hat{y})(1+\epsilon_{\mathrm{sin1}}) + \hat{y}(1+\epsilon_{\mathrm{argred}})    \ +\   \delta_{\mathrm{addsin}} - \sin(\hat{y})}{\sin(\hat{y})}\\
-  &=& \frac{(\sin(\hat{y})-\hat{y}).\epsilon_{\mathrm{sin1}} + \hat{y}.\epsilon_{\mathrm{argred}}    \ +\ \delta_{\mathrm{addsin}}}{\sin(\hat{y})}\\
-\label{eq:sinkzero}
-\end{eqnarray*}
-
-Again we may compute the value of $\maxeps_{\mathrm{sinkzero}}$ as an infinite norm under Maple. Or, we may compute majorations using $y_{\mathrm{maxargred}}$.
-
- 
-
-
-
-\subsection{\texttt{do\_sin\_k\_notzero}}
-
+\section{Detailed examination of the sine}
+\section{Detailed examination of the tangent}
