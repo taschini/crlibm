@@ -81,7 +81,7 @@ double log2_rn(double x) {
   /* Filter cases */
   if (nb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
     if (((nb.i[HI] & 0x7fffffff)|nb.i[LO])==0)
-      return - 1.0/0.0;                       /* log(+/-0) = -Inf */
+      return 1.0/0.0;                       /* log(+/-0) = -Inf */
     if (nb.i[HI] < 0) 
       return (x-x)/0;                       /* log(-x) = Nan    */
 
@@ -161,7 +161,7 @@ double log2_rd(double x) {
   /* Filter cases */
   if (nb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
     if (((nb.i[HI] & 0x7fffffff)|nb.i[LO])==0)
-      return -1.0/0.0;                       /* log(+/-0) = -Inf */
+      return 1.0/0.0;                       /* log(+/-0) = -Inf */
     if (nb.i[HI] < 0) 
       return (x-x)/0;                       /* log(-x) = Nan    */
 
@@ -242,7 +242,7 @@ double log2_ru(double x) {
   /* Filter cases */
   if (nb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
     if (((nb.i[HI] & 0x7fffffff)|nb.i[LO])==0)
-      return -1.0/0.0;                       /* log(+/-0) = -Inf */
+      return 1.0/0.0;                       /* log(+/-0) = -Inf */
     if (nb.i[HI] < 0) 
       return (x-x)/0;                       /* log(-x) = Nan    */
 

@@ -9,9 +9,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <crlibm.h>
-#include <crlibm_private.h>
-#include <atan_fast.h>
+#include "crlibm.h"
+#include "crlibm_private.h"
+#include "atan_fast.h"
 
 
 static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x) {

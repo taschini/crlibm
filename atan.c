@@ -8,9 +8,9 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <crlibm_private.h>
-#include <atan.h>
-#include <atan_fast.h>
+#include "crlibm_private.h"
+#include "atan.h"
+#include "atan_fast.h"
 
 
 /*

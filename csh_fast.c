@@ -13,8 +13,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <crlibm.h>
-#include <crlibm_private.h>
+#include "crlibm.h"
+#include "crlibm_private.h"
 #include "csh_fast.h"
 #include "exp.h"
 

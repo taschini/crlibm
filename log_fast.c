@@ -8,8 +8,8 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <crlibm.h>
-#include <crlibm_private.h>
+#include "crlibm.h"
+#include "crlibm_private.h"
 #include "log_fast.h"
 
 

@@ -113,8 +113,8 @@ extern int rem_pio2_scs(scs_ptr, scs_ptr);
 {                                                                      \
   db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
   yh.d = __yh__;    yl.d = __yl__;                                     \
-  yh_neg = (yh.i[HI] & 0x80000000);                             \
-  yl_neg = (yl.i[HI] & 0x80000000);                             \
+  yh_neg = (yh.i[HI] & 0x80000000);                                    \
+  yl_neg = (yl.i[HI] & 0x80000000);                                    \
   yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
   yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
   u53.l     = (yh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;   \
@@ -134,8 +134,8 @@ extern int rem_pio2_scs(scs_ptr, scs_ptr);
 {                                                                      \
   db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
   yh.d = __yh__;    yl.d = __yl__;                                     \
-  yh_neg = (yh.i[HI] & 0x80000000);                             \
-  yl_neg = (yl.i[HI] & 0x80000000);                             \
+  yh_neg = (yh.i[HI] & 0x80000000);                                    \
+  yl_neg = (yl.i[HI] & 0x80000000);                                    \
   yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
   yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
   u53.l     = (yh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;   \
@@ -156,8 +156,8 @@ extern int rem_pio2_scs(scs_ptr, scs_ptr);
 {                                                                      \
   db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
   yh.d = __yh__;    yl.d = __yl__;                                     \
-  yh_neg = (yh.i[HI] & 0x80000000);                             \
-  yl_neg = (yl.i[HI] & 0x80000000);                             \
+  yh_neg = (yh.i[HI] & 0x80000000);                                    \
+  yl_neg = (yl.i[HI] & 0x80000000);                                    \
   yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
   yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
   u53.l     = (yh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;   \
@@ -316,7 +316,10 @@ extern const scs scs_zer, scs_half, scs_one, scs_two, scs_sixinv;
 
 
 /* This sets round to the nearest and disables extended precision on
-   the x86s. Should be done for the Itanii too */
+   the x86s. For the Itanii on Linux there is nothing to do.
+
+   This probably doesn't work on all unix systems...
+ */
 #ifdef SCS_TYPECPU_X86
 #include <fpu_control.h>
 #ifndef __setfpucw
@@ -345,13 +348,13 @@ extern const scs scs_zer, scs_half, scs_one, scs_two, scs_sixinv;
 /*
  * computes s and r such that s + r = a + b,  with s = a @+ b exactly 
  */
-#define Add12Cond(s, r, a, b)     \
+#define Add12Cond(s, r, a, b)      \
         {double _z, _a=a, _b=b;    \
-         s = _a + _b;             \
-         if (ABS(a) > ABS(b)){    \
+         s = _a + _b;              \
+         if (ABS(a) > ABS(b)){     \
            _z = s - _a;            \
            r = _b - _z;            \
-         }else {                  \
+         }else {                   \
            _z = s - _b;            \
            r = _a - _z;}}                          
 
@@ -359,7 +362,7 @@ extern const scs scs_zer, scs_half, scs_one, scs_two, scs_sixinv;
  *  computes s and r such that s + r = a + b,  with s = a @+ b exactly 
  * under the condition  a >= b
  */
-#define Add12(s, r, a, b)         \
+#define Add12(s, r, a, b)          \
         {double _z, _a=a, _b=b;    \
          s = _a + _b;              \
          _z = s - _a;              \
@@ -369,10 +372,10 @@ extern const scs scs_zer, scs_half, scs_one, scs_two, scs_sixinv;
 /*
  * computes r1, r2, r3 such that r1 + r2 + r3 = a + b + c exactly 
  */
-#define Fast3Sum(r1, r2, r3, a, b, c) \
-        {double u, v, w;              \
-         Fast2Sum(u, v, b, c);        \
-         Fast2Sum(r1, w, a, u);       \
+#define Fast3Sum(r1, r2, r3, a, b,  c) \
+        {double u, v, w;               \
+         Fast2Sum(u, v, b, c);         \
+         Fast2Sum(r1, w, a, u);        \
          Fast2Sum(r2, r3, w, v); }
 
 
@@ -394,21 +397,21 @@ extern void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, d
 
 #else /* ADD22_AS_FUNCTIONS */
 
-#define Add22Cond(zh,zl,xh,xl,yh,yl)                             \
-do {                                                             \
-  double _r,_s;                                                    \
-  _r = (xh)+(yh);                                                     \
-  _s = ((ABS(xh)) > (ABS(yh)))? ((xh)-_r+(yh)+(yl)+(xl)) : ((yh)-_r+(xh)+(xl)+(yl));\
-  *zh = _r+_s;                                                     \
-  *zl = (_r - (*zh)) + _s;                                           \
+#define Add22Cond(zh,zl,xh,xl,yh,yl)                                                   \
+do {                                                                                   \
+  double _r,_s;                                                                        \
+  _r = (xh)+(yh);                                                                      \
+  _s = ((ABS(xh)) > (ABS(yh)))? ((xh)-_r+(yh)+(yl)+(xl)) : ((yh)-_r+(xh)+(xl)+(yl));   \
+  *zh = _r+_s;                                                                         \
+  *zl = (_r - (*zh)) + _s;                                                             \
 } while(2+2==5)
 
   
 
-#define Add22(zh,zl,xh,xl,yh,yl) \
-do {                                   \
+#define Add22(zh,zl,xh,xl,yh,yl)         \
+do {                                     \
 double _r,_s;                            \
-_r = (xh)+(yh);                         \
+_r = (xh)+(yh);                          \
 _s = ((((xh)-_r) +(yh)) + (yl)) + (xl);  \
 *zh = _r+_s;                             \
 *zl = (_r - (*zh)) + _s;                 \
@@ -479,16 +482,16 @@ extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, doubl
 {\
   const double two_em53 = 1.1102230246251565404e-16; /* 0x3CA00000, 0x00000000 */\
   const double two_e53  = 9007199254740992.;         /* 0x43400000, 0x00000000 */\
-  double u, v;                                            \
-  db_number _a=a, _b=b;                                   \
-                                                          \
-  if (_a.i[HI]>0x7C900000) u = _a*two_em53;        \
-  else            u = _a;                                 \
-  if (_b.i[HI]>0x7C900000) v = _b*two_em53;        \
-  else            v = _b;                                 \
-                                                          \
-  Mul12(rh, rl, u, v);                                    \
-                                                          \
+  double u, v;                                               \
+  db_number _a=a, _b=b;                                      \
+                                                             \
+  if (_a.i[HI]>0x7C900000) u = _a*two_em53;                  \
+  else            u = _a;                                    \
+  if (_b.i[HI]>0x7C900000) v = _b*two_em53;                  \
+  else            v = _b;                                    \
+                                                             \
+  Mul12(rh, rl, u, v);                                       \
+                                                             \
   if (_a.i[HI]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
   if (_b.i[HI]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
 }
@@ -529,7 +532,9 @@ double mh, ml;                                        \
 
 
 
-/* In the following the one-line computation of _cl was split so that icc would compile it properly */
+/* In the following the one-line computation of _cl was split so that
+   icc(8.1) would compile it properly. It's a bug of icc */
+
 #if DEKKER_AS_FUNCTIONS
 extern void Div22(double *z, double *zz, double x, double xx, double y, double yy);
 #else

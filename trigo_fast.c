@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <crlibm.h>
-#include <crlibm_private.h>
+#include "crlibm.h"
+#include "crlibm_private.h"
 #include "trigo_fast.h"
 
 
@@ -335,7 +335,7 @@ do { 								\
 
 
 /* A structure that holds all the information to be exchanged between
-   ComputeTrigWithArgred2 and the 12 functions sin_rn etc
+   ComputeTrigWithArgred and the 12 functions sin_rn etc
 
    It is purely for performance (almost 100 cycles out of 300 on a P4
    when compared to passing a list of arguments). In addition to
@@ -348,9 +348,9 @@ do { 								\
 
 struct rrinfo_s {double rh; double rl; double x; int absxhi; int function;} ;
 typedef struct rrinfo_s rrinfo;
-#define changesign function
+#define changesign function  /* saves one int in the rrinfo structure */
 
-static void ComputeTrigWithArgred2(rrinfo *rri){ 
+static void ComputeTrigWithArgred(rrinfo *rri){ 
   double sah,sal,cah,cal, yh, yl, yh2, ts,tc, kd; 
   double kch_h,kch_l, kcm_h,kcm_l, th, tl,sh,sl,ch,cl;
   int k, quadrant, index;
@@ -523,11 +523,8 @@ double sin_rn(double x){
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d; 
   }
    
   else if (rri.absxhi < XMAX_SIN_CASE2){
@@ -550,7 +547,7 @@ double sin_rn(double x){
   else {
     rri.x=x;
     rri.function=SIN;
-    ComputeTrigWithArgred2(&rri);
+    ComputeTrigWithArgred(&rri);
 
 #if 0
     {
@@ -563,7 +560,7 @@ double sin_rn(double x){
 #endif
 
 
-    rncst= RN_CST_SIN_CASE3;
+    rncst= RN_CST_SINCOS_CASE3;
     if(rri.rh == (rri.rh + (rri.rl * rncst)))	
       if(rri.changesign) return -rri.rh; else return rri.rh;
     else
@@ -593,11 +590,8 @@ double sin_ru(double x){
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d; 
   }    
   
   if (rri.absxhi < XMAX_SIN_CASE2){
@@ -624,8 +618,8 @@ double sin_ru(double x){
     /* CASE 3 : Need argument reduction */ 
     rri.x=x;
     rri.function=SIN;
-    ComputeTrigWithArgred2(&rri);
-    epsilon=EPS_SIN_CASE3;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_SINCOS_CASE3;
     if(rri.changesign) {
       rri.rh = -rri.rh;
       rri.rl = -rri.rl;
@@ -657,11 +651,8 @@ double sin_rd(double x){
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d; 
   }    
   
   if (rri.absxhi < XMAX_SIN_CASE2){
@@ -689,8 +680,8 @@ double sin_rd(double x){
     /* CASE 3 : Need argument reduction */ 
     rri.x=x;
     rri.function=SIN;
-    ComputeTrigWithArgred2(&rri);
-    epsilon=EPS_SIN_CASE3;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_SINCOS_CASE3;
     if(rri.changesign) {
       rri.rh = -rri.rh;
       rri.rl = -rri.rl;
@@ -722,11 +713,8 @@ double sin_rz(double x){
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d; 
   }    
   
   if (rri.absxhi < XMAX_SIN_CASE2){
@@ -752,8 +740,8 @@ double sin_rz(double x){
     /* CASE 3 : Need argument reduction */ 
     rri.x=x;
     rri.function=SIN;
-    ComputeTrigWithArgred2(&rri);
-    epsilon=EPS_SIN_CASE3;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_SINCOS_CASE3;
     if(rri.changesign) {
       rri.rh = -rri.rh;
       rri.rl = -rri.rl;
@@ -788,7 +776,7 @@ double cos_rn(double x){
        but it's optimized out by Intel compiler (bug reported).
        Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d-x_split.d;
   }
 
   if (rri.absxhi < XMAX_COS_CASE2){
@@ -810,8 +798,8 @@ double cos_rn(double x){
   /* CASE 3 : Need argument reduction */ 
     rri.x=x;
     rri.function=COS;
-    ComputeTrigWithArgred2(&rri);
-    if(rri.rh == (rri.rh + (rri.rl * RN_CST_COS_CASE3)))	
+    ComputeTrigWithArgred(&rri);
+    if(rri.rh == (rri.rh + (rri.rl * RN_CST_SINCOS_CASE3)))	
       if(rri.changesign) return -rri.rh; else return rri.rh;
     else
       return scs_cos_rn(x); 
@@ -835,11 +823,8 @@ double cos_ru(double x){
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d;
   }
    
   if (rri.absxhi < XMAX_COS_CASE2){
@@ -859,8 +844,8 @@ double cos_ru(double x){
     /* CASE 3 : Need argument reduction */ 
     rri.x=x;
     rri.function=COS;
-    ComputeTrigWithArgred2(&rri);
-    epsilon=EPS_COS_CASE3;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_SINCOS_CASE3;
     if(rri.changesign) {
       rri.rh = -rri.rh;
       rri.rl = -rri.rl;
@@ -890,11 +875,8 @@ double cos_rd(double x){
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d;
   }   
 
   if (rri.absxhi < XMAX_COS_CASE2){
@@ -914,8 +896,8 @@ double cos_rd(double x){
   /* CASE 3 : Need argument reduction */ 
     rri.x=x;
     rri.function=COS;
-    ComputeTrigWithArgred2(&rri);
-    epsilon=EPS_COS_CASE3;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_SINCOS_CASE3;
     if(rri.changesign) {
       rri.rh = -rri.rh;
       rri.rl = -rri.rl;
@@ -946,11 +928,8 @@ double cos_rz(double x){
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d;
   }   
 
   if (rri.absxhi < XMAX_COS_CASE2){
@@ -970,8 +949,8 @@ double cos_rz(double x){
     /* CASE 3 : Need argument reduction */ 
     rri.x=x;
     rri.function=COS;
-    ComputeTrigWithArgred2(&rri);
-    epsilon=EPS_COS_CASE3;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_SINCOS_CASE3;
     if(rri.changesign) {
       rri.rh = -rri.rh;
       rri.rl = -rri.rl;
@@ -999,18 +978,13 @@ double tan_rn(double x){
   rrinfo rri;
   db_number x_split;
 
-
   x_split.d=x;
   rri.absxhi = x_split.i[HI] & 0x7fffffff;
 
-
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d; 
   }   
 
   if (rri.absxhi < XMAX_TAN_CASE2){ /* |x|<2^-3 TODO this tradeoff has not been studied */
@@ -1044,7 +1018,7 @@ double tan_rn(double x){
     /* Otherwise : Range reduction then standard evaluation */
     rri.x=x;
     rri.function=TAN;
-    ComputeTrigWithArgred2(&rri);
+    ComputeTrigWithArgred(&rri);
 
     /* Test if round to nearest achieved */ 
     if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE3)))
@@ -1072,11 +1046,8 @@ double tan_ru(double x){
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d;
   }   
   
   if (rri.absxhi < XMAX_TAN_CASE2){
@@ -1111,7 +1082,7 @@ double tan_ru(double x){
     /* Normal case: Range reduction then standard evaluation */
     rri.x=x;
     rri.function=TAN;
-    ComputeTrigWithArgred2(&rri);
+    ComputeTrigWithArgred(&rri);
     epsilon=EPS_TAN_CASE3; 
     if(rri.changesign) {
       rri.rh= -rri.rh; 
@@ -1144,11 +1115,9 @@ double tan_rd(double x){
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000){
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d;
+
   }   
   
   if (rri.absxhi < XMAX_TAN_CASE2){
@@ -1183,7 +1152,7 @@ double tan_rd(double x){
     /* normal case: Range reduction then standard evaluation */
     rri.x=x;
     rri.function=TAN;
-    ComputeTrigWithArgred2(&rri);
+    ComputeTrigWithArgred(&rri);
     epsilon=EPS_TAN_CASE3; 
     if(rri.changesign) {
       rri.rh= -rri.rh; 
@@ -1214,11 +1183,8 @@ double tan_rz(double x){
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d;
   }   
   
   if (rri.absxhi < XMAX_TAN_CASE2){
@@ -1247,7 +1213,7 @@ double tan_rz(double x){
     /* Normal case: Range reduction then standard evaluation */
     rri.x=x;
     rri.function=TAN;
-    ComputeTrigWithArgred2(&rri);
+    ComputeTrigWithArgred(&rri);
     epsilon=EPS_TAN_CASE3; 
     if(rri.changesign) {
       rri.rh = -rri.rh; 

@@ -24,7 +24,8 @@
 
 
 
-/* Polynomial evaluation of sin(x) over [-Pi/4, +Pi/4] */
+/* Polynomial evaluation of sin(x) over [-Pi/4, +Pi/4] 	
+   Approximation error lower than  2^(-133) */
 
 static void scs_sin(scs_ptr x){
   scs_t res_scs;
@@ -37,7 +38,7 @@ static void scs_sin(scs_ptr x){
   for(i=1; i<16; i++){
     scs_add(res_scs, sin_scs_poly_ptr[i], res_scs);
     scs_mul(res_scs, res_scs, x2);
-  }
+  } 
   scs_mul(res_scs, res_scs, x);
   scs_add(x, x, res_scs);
 
@@ -45,7 +46,8 @@ static void scs_sin(scs_ptr x){
 }
 
 
-/* Polynomial evaluation of cos(x) over [-Pi/4, +Pi/4] */
+/* Polynomial evaluation of cos(x) over [-Pi/4, +Pi/4] 
+   Approximation error lower than  2^(-128) */
 
 static void scs_cos(scs_ptr x){
   scs_t res_scs;
