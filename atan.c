@@ -11,9 +11,9 @@
 #include <atan.h>
 
 void atan(scs_ptr, scs_ptr);
-double atan_rd(double);
-double atan_ru(double);
-double atan_rn(double);
+double scs_atan_rd(double);
+double scs_atan_ru(double);
+double scs_atan_rn(double);
 
 /*
  *  WHAT WE CAN DO :
@@ -119,7 +119,6 @@ void atan(scs_ptr res_scs, scs_ptr x){
 	scs_sub(num_scs,x,bsc_ptr[ind]);
 	scs_div(X_scs,num_scs,denom2_scs);
     } 
-printf("ind = %d\n", ind);
 		
 /* Polynomial evaluation of atan(X) , X = (x-b(i)) / (1+ x*b(i)) */ 
 	
@@ -136,7 +135,6 @@ printf("ind = %d\n", ind);
 	scs_set(res_scs, poly_scs);
 	return;
     }else{
-	printf("on ajoute l' atan de b(j)\n"); 
 	/*scs_set(denom_scs, res_scs);*/
 	scs_add(res_scs,atan_bi_ptr[ind], poly_scs); 
     }
@@ -149,7 +147,7 @@ printf("ind = %d\n", ind);
  *************************************************************
  *************************************************************/
 
-double sn_atan(double x){ 
+double scs_atan_rn(double x){ 
   scs_t sc1;
   scs_t res_scs;
   db_number res;
@@ -180,7 +178,6 @@ double sn_atan(double x){
 	scs_get_d(&res.d, res_scs);
 	if (sign == -1){
 	    res.d *= -1;
-	    return res.d;
 	}
 	return res.d;
     }
@@ -192,7 +189,7 @@ double sn_atan(double x){
  *************************************************************
  *************************************************************/
 
-double atan_rd(double x){ 
+double scs_atan_rd(double x){ 
   scs_t sc1;
   scs_t res_scs;
   db_number res;
@@ -235,7 +232,7 @@ double atan_rd(double x){
  *************************************************************
  *************************************************************/
 
-double atan_ru(double x){ 
+double scs_atan_ru(double x){ 
   scs_t sc1;
   scs_t res_scs;
   db_number res;
