@@ -146,22 +146,23 @@ void test_one_arg(int bcl){
   if (nberr){
     printf("Original number :\n"); 
     scs_get_std(scex);
-    scs_get_mpfr(scex, mpfex);  
-    mpfr_out_str(stdout, 2, 150, mpfex, ROUNDING);  printf("\n");
+    scs_get_mpfr(scex, mpfex); 
+    /* commented out because this function has disappeared from recent MPFR versions  */
+/*     mpfr_out_str(stdout, 2, 150, mpfex, ROUNDING);  printf("\n"); */
  
     printf("SCS rounding : \n");
     test_scs_fct(&scsd, scex);
     printf("%.40e\n",scsd);
     printf("In binary : \n");
     mpfr_set_d(mpf1, scsd, ROUNDING); 
-    mpfr_out_str(stdout, 2, 150, mpf1, ROUNDING);  printf("\n"); 
+/*     mpfr_out_str(stdout, 2, 150, mpf1, ROUNDING);  printf("\n");  */
  
     printf("MPFR rounding : \n");
     mpfrd = mpfr_get_d(mpfex, ROUNDING);
     printf("%.40e\n",mpfrd);
     printf("In binary : \n");
     mpfr_set_d(mpf1, mpfrd, ROUNDING); 
-    mpfr_out_str(stdout, 2, 150, mpf1, ROUNDING);  printf("\n"); 
+/*     mpfr_out_str(stdout, 2, 150, mpf1, ROUNDING);  printf("\n");  */
   }
 
   mpfr_clear(mpf1); mpfr_clear(mpfex); 

@@ -231,6 +231,7 @@ end:
 
 
 #---------------------------------------------------------------------
+#  OBSOLETE use compute_horner_rounding_error below
 # Compute a bound on the accumulated rounding error caused by the Horner evaluation of a truncated polynomial 
 # P is the polynomial.
 # xmax is the max value of |x|.
@@ -280,6 +281,7 @@ end proc:
 
 
 #---------------------------------------------------------------------
+#  OBSOLETE use compute_horner_rounding_error below
 # Computes the total relative rounding error
 compute_rel_rounding_error:=proc(poly,xmax, n)
 local deg, p, rho, deltap, Smin, Smax:
@@ -301,6 +303,7 @@ end proc:
 
 
 #---------------------------------------------------------------------
+#  OBSOLETE use compute_horner_rounding_error below
 # Computes the accumulated rounding error during the polynomial evaluation.
 # P is the polynomial.
 # xmax is the max value of |x|.
@@ -432,12 +435,22 @@ end proc:
 #   - using SCS operators
 #   - using double and double-double operators.
 # Arguments:
-# P is the polynomial.
-# xmax is  the max value of |x|.
-# errors is a list of size n where n is the degree of the polynomial. Each element of this list is a triple (xerr,mulerr,adderr) where xerr is the relative error on x at each step, adderr is the relative error on the addition and mulerr is a relative error on the multiplication. This allows to handle SCS Horner as well as evaluation starting in double and ending in double-double.
-# check_dd is a flag, if set to 1 the procedure also checks on the fly that the fast (test-free) versions of the double-double addition can be used, i.e. that for all x, at each Horner step i computing ci+x*Si, we have |ci|>|x*Si|. It prints warnings if it not the case. 
-
-# returns eps, epsp, max absolute error, min of the function, max of the function. 
+#   P is the polynomial.
+#   xmax is  the max value of |x|.
+#   errors is a list of size n where n is the degree of the polynomial. 
+#      Each element of this list is a triple (xerr,mulerr,adderr) where 
+#        xerr is the relative error on x at each step, 
+#        adderr is the max relative error on the addition 
+#        mulerr is the max relative error on the multiplication. 
+#      This allows to handle SCS Horner, as well as evaluation starting in double and ending in double-double.
+#   check_dd is a flag, if set to 1 the procedure also checks on the fly that the fast (test-free) versions 
+#       of the double-double addition can be used, i.e. that for all x, at each Horner step i computing ci+x*Si,
+#       we have |ci|>|x*Si|. It prints warnings if it not the case. 
+# returns (epsprimek, deltak, minP, maxP) where (see the doc) 
+#   epsprimek is the max rel error of the last multiplication (useful if the coeff of degree 0 is 0)
+#   deltak is the max absolute error of the last addition (useful if the reconstruction adds something to result of the polynomial)
+#   minP  min of the evaluated polynomial (useful to compute a relative error out of deltak)
+#   maxP  max of the evaluated polynomial. 
 
 compute_horner_rounding_error:=proc(poly, x, xmax, errors, check_dd)
 local deg, Sk, maxSk, minSk, epsk, epsprimek, deltak, k, ck, xerr, mulerr, adderr, Pk, maxPk;
@@ -447,52 +460,52 @@ local deg, Sk, maxSk, minSk, epsk, epsprimek, deltak, k, ck, xerr, mulerr, adder
     return 'procname(args)';
   fi;
 
-deg:=degree(poly,x):
-if(deg<0) then  printf("ERROR: negative degree in compute_abs_rounding_error"); return 'procname(args)'; fi:
+  deg:=degree(poly,x):
+  if(deg<0) then  printf("ERROR: negative degree in compute_abs_rounding_error"); return 'procname(args)'; fi:
 
-Sk:=coeff(poly, x, deg):
-maxSk:=abs(Sk);
-minSk:=maxSk;
-epsprimek:=0;
-deltak:=0;
-epsk:=0;
+  Sk:=coeff(poly, x, deg):
+  maxSk:=abs(Sk);
+  minSk:=maxSk;
+  epsprimek:=0;
+  deltak:=0;
+  epsk:=0;
 
-for k from (deg) to 1 by -1 do
+  for k from (deg) to 1 by -1 do
 
-  # the errors to consider for this step
-  xerr := errors[k][1];
-  mulerr:=errors[k][2];
-  adderr:=errors[k][3];
+    # the errors to consider for this step
+    xerr := errors[k][1];
+    mulerr:=errors[k][2];
+    adderr:=errors[k][3];
 
-  # multiplication operation
-  Pk:= convert(Sk*x, polynom):
-  epsprimek:=evalf( (1+xerr)*(1+epsk)*(1+mulerr)-1  );
+    # multiplication operation
+    Pk:= convert(Sk*x, polynom):
+    epsprimek:=evalf( (1+xerr)*(1+epsk)*(1+mulerr)-1  );
 
-  #addition
-  ck:=coeff(poly,x,k-1);
-  Sk:=convert(Pk+ck , polynom);
-  maxPk:=evalf(maximize(abs(Pk), x=-xmax..xmax)):
-  maxSk:=evalf(maximize(abs(Sk), x=-xmax..xmax)):
-  minSk:=evalf(minimize(abs(Sk), x=-xmax..xmax));
-  if(ck=0) 
-  then
-    deltak:=0; 
-    epsk:=epsprimek;
-  else
-    if(adderr=2^(-53)) then
-      deltak := evalf(  epsprimek*maxPk + 0.5*ulp(maxSk+epsprimek*maxSk)   ):
+    #addition
+    ck:=coeff(poly,x,k-1);
+    Sk:=convert(Pk+ck , polynom);
+    maxPk:=evalf(maximize(abs(Pk), x=-xmax..xmax)):
+    maxSk:=evalf(maximize(abs(Sk), x=-xmax..xmax)):
+    minSk:=evalf(minimize(abs(Sk), x=-xmax..xmax));
+    if(ck=0) 
+    then
+      deltak:= evalf(  epsprimek*maxPk); 
+      epsk:=epsprimek;
     else
-      deltak := evalf(  epsprimek*maxPk + 2^(-adderr) * (maxSk+epsprimek*maxSk)):
+      if(adderr=2^(-53)) then
+        deltak := evalf(  epsprimek*maxPk + 0.5*ulp(maxSk+epsprimek*maxSk)   ):
+      else
+        deltak := evalf(  epsprimek*maxPk + adderr * (maxSk+epsprimek*maxSk)):
+      fi:
+      epsk := deltak/minSk;
     fi:
-    epsk := deltak/minSk;
-  fi:
-  printf("step %d   epsprimek=%1.4e  deltak=%1.4e   minSk=%1.4e   maxSk=%1.4e\n", 
+    printf("step %d   epsprimek=%1.4e  deltak=%1.4e   minSk=%1.4e   maxSk=%1.4e\n", 
           k, epsprimek, deltak, minSk, maxSk);
 
-  # warnings
-  if(minSk=0) then 
-    printf("Warning! in compute_abs_rounding_error, minSk=0 at iteration %d, consider decreasing xmax\n",k);
-  fi:
+    # warnings
+    if(minSk=0) then 
+      printf("Warning! in compute_abs_rounding_error, minSk=0 at iteration %d, consider decreasing xmax\n",k);
+    fi:
 
 #  if (adderr=2**(-103)) then 
 #    # fast Add22 ?    

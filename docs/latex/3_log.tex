@@ -120,7 +120,7 @@ The polynomials  are evaluated thanks to a Horner scheme:
 
 $$P(z) = c_0^{hi}+c_0^{lo} + z .(c_1^{hi} +c_1^{lo} + z .(c_2 + z
   .(c_3 + ...
-+ z .(c_{11} + z . (c_{11} + (c_{12} . z))))))))))))
+ + z . (c_{11} + (c_{12} . z))))))))))))
 $$
 where the two last iterations may use double-double arithmetic if
 required by the overall target accuracy, as detailed below.
@@ -609,7 +609,7 @@ operating systems.
 \begin{table}[!htb]
 \begin{center}
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{|l|r|r|r||r|}
+\begin{tabular}{|l|r|r|r|}
 \hline
  \multicolumn{4}{|c|}{Pentium 4 Xeon / Linux Debian sarge / gcc 3.3}   \\ 
  \hline
@@ -647,9 +647,9 @@ operating systems.
  \hline
   \texttt{libultim}      & 20           & 19890         &         22 \\
  \hline
- \texttt{crlibm} (using FMA)         & 5            & 1241          &         32 \\
+ \texttt{crlibm} (without FMA)      & 5            & 1241          &         32 \\
 \hline
- \texttt{crlibm} (without FMA)        & 5           & 1144          &         24 \\
+ \texttt{crlibm} (using FMA)        & 5           & 1144          &         24 \\
 
 \hline
 \end{tabular}

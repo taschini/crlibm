@@ -181,7 +181,7 @@ This algorithm is sometimes  also known as the Dekker algorithm \cite{Dek71,Knu7
 
 \begin{theorem}[Restricted exact product]
   Let $a$ and $b$ be two double-precision floating-point numbers, with
-  53 bits of mantissa. Let $c=2^{\frac{\lceil 53 \rceil}{2}}+1$.
+  53 bits of mantissa. Let $c=2^{\lceil\frac{ 53}{2} \rceil}+1$.
   Assuming that $a<2^{970}$ and $b<2^{970}$, the following procedure
   computes the two floating-point numbers $rh$ and $rl$ such that $rh
   + rl = a + b$ with $rh = a \otimes b$:
@@ -213,8 +213,8 @@ true.
 
 \begin{theorem}[Exact product]
   Let $a$ and $b$ be two double-precision floating-point numbers, with
-  53 bits of mantissa. Let $c=2^{\frac{\lceil 53 \rceil}{2}}+1$.
-  Assuming that $a<2^{970}$ and $b<2^{970}$, the following procedure
+  53 bits of mantissa. Let $c=2^{\lceil\frac{ 53 }{2}\rceil}+1$.
+  The following procedure
   computes the two floating-point numbers $rh$ and $rl$ such that $rh
   + rl = a + b$ with $rh = a \otimes b$:
 
@@ -354,6 +354,7 @@ argument reduction.
 
 
 
+
 \section{Horner polynomial approximations \label{sec:Horner}}
 
 Most function evaluation schemes include some kind of polynomial
@@ -439,7 +440,19 @@ In addition we note
 
 \end{itemize}
 
-Given $ |x| \leq \maxx$, we have
+Given $ |x| \leq \maxx$, we want to compute by recurrence
+  $$ \left\{
+    \begin{array}{rl}
+      p_{k}  &= x \otimes s_{k+1}
+             \ = \ \hat{x}.S_{k+1}(\hat{x}) (1+\epsilon'_k)\\
+      s_{k}  &=  c_k \oplus p_k
+             \ = \ S_{k}(\hat{x}) + \delta_k\\
+      \end{array}
+  \right.
+  $$
+
+
+The following computes tight bounds on $\epsilon'_k$ and on $\delta_k$.
 
 \begin{itemize}
 \item Initialization/degree 0 polynomial: 
@@ -452,13 +465,14 @@ Given $ |x| \leq \maxx$, we have
   \right.
   $$
 
+
 \item Horner steps: 
   \begin{itemize}
   \item multiplication step:%  $p_{k}  \ = \ x \otimes s_{k+1} \ = \ P_{k}(\hat{x})(1+\epsilon'_k)$
     \begin{eqnarray*}
       p_{k}  &=& x \otimes s_{k+1} \\
-             &=& \hat{x}(1+\epsilon_x)\ \otimes \ S_{k+1}(\hat{x})(1 + \epsilon_{k+1})\\
-             &=& \hat{x}.S_{k+1}(\hat{x})(1+\epsilon_x)(1 + \epsilon_{k+1})(1+\epsilon_\otimes)\\
+             &=& \hat{x}(1+\epsilon_x)\ \otimes \ (S_{k+1}(\hat{x}) + \delta_{k+1})\\
+             &=& \hat{x}.S_{k+1}(\hat{x})(1+\epsilon_x)(1 + \frac{\delta_{k+1}}{S_{k+1}(\hat{x})})(1+\epsilon_\otimes)\\
     \end{eqnarray*}
     We therefore get 
     \begin{equation}
@@ -521,7 +535,7 @@ Given $ |x| \leq \maxx$, we have
   the tightest possible. If it is not the case (which is unlikely, as
   $p_k$ is small w.r.t $c_k$), then the $\ulp$ above may take two
   different values. We divide the interval of $p_k$ into two
-  sub-intervals, and we compute $\delta_k$, $\mins_0$ and $\rho$ on
+  sub-intervals, and we compute $\delta_k$, $\mins{0}$ and $\rho$ on
   both to take the max.
   
   TODO : check and implement this.
@@ -551,7 +565,7 @@ $y_h$ is the correctly rounded value of $y$.
 \begin{theorem}[Correct rounding of a double-double to the nearest double, avoiding denormals]
 \label{th:roundingRN1}
 ~\\
-Let $y$ be a real number, and  $\epsilon$, $e$, $y_h$ and $y_l$ be
+Let $y$ be a real number, and  $\maxeps$, $e$, $y_h$ and $y_l$ be
   floating-point numbers such that 
   \begin{itemize}
   \item $y_h=y_h\oplus y_l$,
@@ -559,7 +573,7 @@ Let $y$ be a real number, and  $\epsilon$, $e$, $y_h$ and $y_l$ be
   \item $|y_h|\ge 2^{-1022+53}$ 
   \item $|y_h+y_l - y| <\maxeps.|y|$
   \item $0<\maxeps \le 2^{-53-k}$ with $k\ge 2$ integer
-  \item $e\ge 1+  \dfrac{2^{53+k+1}\epsilon}{(2^{k}-1)(1-2^{-53})}$
+  \item $e\ge 1+  \dfrac{2^{53+k+1}\maxeps}{(2^{k}-1)(1-2^{-53})}$
 \end{itemize}
 
 The following test determines whether $y_h$ is the
@@ -582,19 +596,19 @@ else /* more accuracy is needed, launch accurate phase */
   assume that $y\ge0$ (so $y_h\ge0$), as the other case is symmetric.
   
   Let us note $u=\ulp(y_h)$. By definition of the \ulp, we have $y_h
-  \in [2^{52}u, (2^{53}-1)u]$, which implies $y<2^{53}u$ as $y < y_h + y_l +maxeps y
+  \in [2^{52}u, (2^{53}-1)u]$, which implies $y<2^{53}u$ as $y < y_h + y_l +\maxeps y
   < (2^{53}-1)u +\frac{1}{2}u +\frac{1}{2}u$.
 
   What we want to prove is that if the test is true, then $y_h =
-  \round(y)$. We will prove that  if the test is true, then $|y_l-\frac{1}{2}u| > 2^{53}\epsilon
-  u$, which implies $|y_l-\frac{1}{2}u| >maxeps y$, which implies
+  \round(y)$. We will prove that  if the test is true, then $|y_l-\frac{1}{2}u| > 2^{53}\maxeps
+  u$, which implies $|y_l-\frac{1}{2}u| > \maxeps y$, which implies
   that we are not in a difficult case for correct rounding to the
   nearest, so $y_h = \round(y)$.
 
   Consider the case when $y_l$ is positive:  $0\le y_l \le \frac{1}{2}u$.
 
   If $0 \le y_l < (\frac{1}{2} - \frac{1}{2^{k+1}})u$, then since
-    $|\epsilon|<2^{-53+k}$ we are in an easy case for rounding to the
+    $\maxeps<2^{-53+k}$ we are in an easy case for rounding to the
     nearest, and $y_h = \round(y)$ regardless of the result of the test.
 
     Now consider the case when $y_l \ge (\frac{1}{2} - \frac{1}{2^{k+1}})u$.
@@ -618,8 +632,8 @@ else /* more accuracy is needed, launch accurate phase */
 
 (\ref{eq:prooftestRN2}) implies
     $\frac{1}{2}u - y_l \ge \frac{2^{k}-1}{2^{k+1}} (e-1)(1-2^{-53}) >
-    2^{53}\epsilon u$, from $e\ge 1+
-    \frac{2^{53+k+1}\epsilon}{(2^{k}-1)(1-2^{-53})}$.
+    2^{53}\maxeps u$, from $e\ge 1+
+    \frac{2^{53+k+1}\maxeps}{(2^{k}-1)(1-2^{-53})}$.
 
   The case when $y_l$ is negative is similar.
 \end{proof}
@@ -629,14 +643,14 @@ else /* more accuracy is needed, launch accurate phase */
 \begin{theorem}[Correct rounding of a double-double to the nearest double, general case]
 \label{th:roundingRN2}
 ~\\
-  Let $y$ and $\epsilon$ be real numbers, and $e$, $y_h$ and $y_l$ be
+  Let $y$ and $\maxeps$ be real numbers, and $e$, $y_h$ and $y_l$ be
   floating-point numbers such that 
   \begin{itemize}
   \item $y_h=y_h\oplus y_l$,
   \item none of $y_h$ and $y_l$ is a  NaN.
-  \item $|y_h+y_l - y| <maxeps.|y|$
-  \item $0<maxeps \le 2^{-53-k}$ with $k\ge 2$ integer
-  \item $e\ge 1+  \dfrac{2^{53+k+2}\epsilon}{2^{k}-1}$
+  \item $|y_h+y_l - y| <\maxeps.|y|$
+  \item $0<\maxeps \le 2^{-53-k}$ with $k\ge 2$ integer
+  \item $e\ge 1+  \dfrac{2^{53+k+2}\maxeps}{2^{k}-1}$
 \end{itemize}
 
 The following test determines whether $y_h$ is the
@@ -660,7 +674,7 @@ else /* more accuracy is needed, launch accurate phase */
 \subsubsection*{Notes}
 
 \begin{itemize}
-\item In general we will target values of $\epsilon$ in the order of
+\item In general we will target values of $\maxeps$ in the order of
   $2^{-53-10}$ to balance the execution times of the quick and
   accurate phases. In this case, using the first theorem almost divides
   by two the frequency of calls to the accurate phase. 
@@ -685,13 +699,13 @@ three directed rounding modes.
 \begin{theorem}[Test for correct directed rounding of a double-double to a double]
 \label{th:roundingDirected}
 ~\\
-Let $y$ be a real number, and $y_h$, $y_l$ and $\epsilon$ be
+Let $y$ be a real number, and $y_h$, $y_l$ and $\maxeps$ be
 floating-point numbers such that
   \begin{itemize}
   \item $y_h=y_h\oplus y_l$,
   \item $y_h$ is neither a NaN, a denormal, or $\pm \infty$.
   \item $y_l$ is neither a NaN or $\pm \infty$.
-  \item $|y_h+y_l - y| <maxeps.|y|$
+  \item $|y_h+y_l - y| <\maxeps.|y|$
 \end{itemize}
 
 The following test determines whether $y_h$ is the
@@ -706,10 +720,10 @@ The following test determines whether $y_h$ is the
   absyh.lli = absyh.lli & 0x(*@\texttt{7fffffffffffffff}@*)LL;
   absyl.lli = absyl.lli & 0x(*@\texttt{7fffffffffffffff}@*)LL;
   u53.lli  = (absyh.lli & 0x(*@\texttt{7ff0000000000000}@*)LL) + 0x(*@\texttt{0001000000000000}@*)LL;
-  u.lli    = (absyh.lli & 0x(*@\texttt{7ff0000000000000}@*)LL) - 0x(*@\texttt{035000000000000}@*)0LL;
+  u.lli    = (absyh.lli & 0x(*@\texttt{7ff0000000000000}@*)LL) - 0x(*@\texttt{0350000000000000}@*)LL;
   /* back to double arithmetic */
-  if (absyl.d > (*@$\epsilon$@*)*u53.d ) {
-    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
+  if (absyl.d > (*@$\maxeps$@*)*u53.d ) {
+    /* enough accuracy to round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
     ...
   }
   else /* more accuracy is needed, launch accurate phase */
@@ -727,7 +741,7 @@ The following test determines whether $y_h$ is the
   
   If the test is true, then $y_l>(2^{53}u)\otimes\maxeps = 
   2^{53}\maxeps u $ (the multiplication by $u_{53}$, a power of
-  two, is exact), hence $y_l>\epsilon y$ so we are in an easy case for directed rounding.
+  two, is exact), hence $y_l>\maxeps y$ so we are in an easy case for directed rounding.
 
 \end{proof}
 

@@ -469,7 +469,7 @@ mp_rnd_t mpfr_rnd_mode;
 
 #ifdef HAVE_MATHLIB_H
     if (ibm_dtwc > ibm_dtmax) ibm_dtmax=ibm_dtwc;
-    printf(" \\texttt{libultim}  \t & %lld    \t& %lld     \t& %10.0f \\\\ \n \\hline\\hline\n ",  
+    printf(" \\texttt{libultim}  \t & %lld    \t& %lld     \t& %10.0f \\\\ \n \\hline\n ",  
 	 ibm_dtmin, ibm_dtmax,
 	 ((double)ibm_dtsum) / ((double) n)
 	 );

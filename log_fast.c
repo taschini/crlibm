@@ -76,7 +76,8 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
    double z, res, P_hi, P_lo;
    int k, i;
    
-    P_hi=(double)E;
+    res=(double)E;
+    if(E<0) E=-E;
 
     /* find the interval including y.d */
     i = ((((*py).i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;
@@ -89,7 +90,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
     
 
     /* Compute ln2_times_E = E*log(2)   in double-double */
-    Add12( ln2_times_E_HI, ln2_times_E_LO, P_hi*ln2hi.d, P_hi*ln2lo.d); 
+    Add12( ln2_times_E_HI, ln2_times_E_LO, res*ln2hi.d, res*ln2lo.d); 
 
     /* Now begin the polynomial evaluation of log(1 + z)      */
 
@@ -100,7 +101,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       res += (Poly_h[i][k]).d;
     }
 
-    if((ln2_times_E_HI*ln2_times_E_HI < MIN_FASTPATH*MIN_FASTPATH)) {
+    if(E <= EMIN_FASTPATH) {
       /* Slow path */
       if(E==0) {
 	*prndcstindex = 0 ;
@@ -112,15 +113,15 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       } 
       else
 	{
-	  if((ln2_times_E_HI*ln2_times_E_HI > 16.5*16.5))
+	  if(E > EMIN_MEDIUMPATH)
 	    *prndcstindex = 2; 
 	  else 
 	    *prndcstindex =1;
-	  P_hi=res*z;  P_lo=0.; 
-	  Add22(&res_hi, &res_lo, (Poly_h[i][1]).d,  (Poly_l[i][1]).d, P_hi, P_lo);
+	  P_hi=res*z;
+	  Add12(res_hi, res_lo, (Poly_h[i][1]).d,  (Poly_l[i][1]).d + P_hi);
 	  Mul22(&P_hi, &P_lo, res_hi, res_lo, z, 0.); 
 	  Add22(&res_hi, &res_lo, (Poly_h[i][0]).d, (Poly_l[i][0]).d, P_hi, P_lo);
-      
+
 	/* Add E*log(2)  */
 	  Add22(pres_hi, pres_lo, ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo);
 	}
@@ -129,10 +130,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       
       *prndcstindex = 3 ;
       res =   z*((Poly_h[i][1]).d + z*res);
-      Add22(&res_hi, &res_lo, (Poly_h[i][0]).d , (Poly_l[i][0]).d, res, 0.);
-
-	/* Add E*log(2)  */
-      Add22(pres_hi, pres_lo, ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo);
+      Add12(*pres_hi, *pres_lo, ln2_times_E_HI,  (Poly_h[i][0]).d + (res + ((Poly_l[i][0]).d + ln2_times_E_LO)));
     }
 }
 

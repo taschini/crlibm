@@ -76,7 +76,7 @@ void scs_log(scs_ptr res, db_number y, int E){
   i = i >> 16; /* 0<= i <=11 */
   
 
-  wi.d = (11+i)*(double)0.6250e-1;
+  wi.d = ((double)(11+i))*0.0625;
 
   /* (1+f-w_i) */
   y.d -= wi.d; 

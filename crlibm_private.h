@@ -40,7 +40,7 @@ Optimal values for Pentium 4:
 */
 
 #define ADD22_AS_FUNCTIONS 0
-#define DEKKER_AS_FUNCTIONS 1
+#define DEKKER_AS_FUNCTIONS 0
 
 
 
@@ -61,6 +61,7 @@ int crlibm_second_step_taken;
 #else
  #define DB_ONE    {{0x00000000 ,0x3ff00000}}
 #endif
+
 
 #ifdef WORDS_BIGENDIAN
 #define HI(x) (*((int*)(&x)))

@@ -1,5 +1,11 @@
 Commands to type after a cvs checkout (in this order)
 
+cd scs_lib;
+aclocal
+autoheader
+autoconf
+automake --add-missing
+cd ..
 aclocal
 autoheader
 autoconf
