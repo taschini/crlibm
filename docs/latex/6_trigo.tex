@@ -4,8 +4,9 @@ and F. de~Dinechin.
 \section*{Introduction}
 This chapter describes the implementations of sine, cosine and
 tangent, as they share much of their code. The proof sketch below is
-supported by the Maple script \texttt{maple/trigo.mpl} of the \crlibm\
-distribution, which implements the computations of error bounds and
+supported by the Maple script \texttt{maple/trigo.mpl} and the Gappa
+script \texttt{maple/trigoSinCosCase3.gappa} of the \crlibm\
+distribution, which implement the computations of error bounds and
 validity bounds for the various algorithmic paths described here.
 
 \section{Overview of the algorithms}
@@ -16,8 +17,11 @@ The three trigonometric functions return NaN for infinite and NaN
 arguments, and are defined otherwise. $\tan$ may not return
 infinities: an argument based on continued fractions to find the worst
 cases for range reduction may also be used to show that the sine of a
-floating-point number is always larger than $2^{-150}$, and therefore
-never flushes to zero (see \cite{Muller97} p. 151 and following).
+floating-point number outside of $[-1,1]$ is always larger than
+$2^{-150}$, and therefore never flushes to zero nor to denormals (see
+\cite{Muller97} p. 151 and following). This property is important,
+since it means that we can use the rounding tests from Section
+\ref{section:testrounding}.
 
 For very small arguments,
 \begin{itemize}
@@ -56,7 +60,7 @@ computes an integer $k$ and a reduced argument y such that
 where $k$ is an integer and  $ |y| \leq {\pi}/{512}$.
 This step computes $y$ as a double-double: $y\approx y_h+y_l$. 
 
-In the following we note $a=k\pi/256$. 
+In the following we note $$=\frac{\pi}{256}$$ and $$a=k\pi/256.$$ 
 
 Then we read off a table 
 
@@ -118,7 +122,7 @@ According to equation (\ref{eq:sinapy}), we have to compute:
 
 Figure~\ref{fig:sine-reconstruction} shows the worst-case respective
 orders of magnitude of the terms of this sum. The terms completely to the
-right of the $\epsilon$ bar will be neglected, and a bound on the
+right of the vertical bar will be neglected, and a bound on the
 error thus entailed is computed in the following. Note that the term
 $ca_hy_h$ has to be computed exactly by a Mul12.
 
@@ -132,7 +136,7 @@ double-double result by an Add12.
     \setlength{\unitlength}{3ex}
       \framebox{
         \begin{picture}(22,9)(-3,-4.2)
-          \put(9.5,4){\line(0,-1){8}}  \put(9,4){$\epsilon$}
+          \put(9.5,4){\line(0,-1){8}}  %\put(9,4){$\epsilon$}
           
           \put(4,3.2){$sa_h$} \put(0.05,3){\framebox(7.9,0.7){}}
           \put(12,3.2){$sa_l$}  \put(8.05,3){\framebox(7.9,0.7){}}
@@ -174,7 +178,7 @@ magnitude are given by Figure~\ref{fig:sine-reconstruction}.
     \small \setlength{\unitlength}{3ex} \framebox{
       \begin{picture}(22,9)(-3,-4.2)
         \put(9.5,4){\line(0,-1){8}}
-        \put(9,4){$\epsilon$}
+%        \put(9,4){$\epsilon$}
   
         \put(4,3.2){$ca_h$} \put(0.05,3){\framebox(7.9,0.7){}}
         \put(12,3.2){$ca_l$}  \put(8.05,3){\framebox(7.9,0.7){}}
@@ -210,7 +214,7 @@ using the \texttt{Div22} procedure which is accurate to  $2^{-104}$.
 \subsection{Precision of this scheme}
 
 As we have $|y|<\pi/512<2^{-7}$, this scheme computes these functions
-accurately to roughly $53+12$ bits, so these first steps are very
+accurately to roughly $2^{53+13}$ bits, so these first steps are very
 accurate. 
  
 
@@ -234,7 +238,7 @@ Finally, each of the three trigonometric functions comes in four
 variants for the four rounding modes. These four variants differ in
 the beginning (special cases) and in the end (rounding), but share the
 bulk of the computation. The shared computation is called
-\verb!compute_trig_with_argred!, etc.
+\verb!compute_trig_with_argred!.
 
 
 
@@ -274,19 +278,17 @@ multi-level argument reduction, and is followed by a detailed proof of
 each level.
 
 
-In the following we note $$C=\frac{\pi}{256}$$
-
 
 \subsection{Structure of the argument reduction
   \label{trigo:structargred}}
 The complete code is detailed below.
 
-\begin{lstlisting}[caption={Multilevel argument reduction},firstnumber=1]
+\begin{lstlisting}[caption={Multilevel argument reduction \label{lst:trig:argred}},firstnumber=1]
 struct rrinfo_s {double rh; double rl; double x; int absxhi; int function;} ;
 typedef struct rrinfo_s rrinfo;
-#define changesign function
+#define changesign function /* saves one int in the rrinfo structure */
 
-static void ComputeTrigWithArgred2(rrinfo *rri){ 
+static void ComputeTrigWithArgred(rrinfo *rri){ 
   double sah,sal,cah,cal, yh, yl, yh2, ts,tc, kd; 
   double kch_h,kch_l, kcm_h,kcm_l, th, tl,sh,sl,ch,cl;
   int k, quadrant, index;
@@ -463,9 +465,10 @@ actual range reduction come in the following sections).
   on the value of $\mathit{index}=k\mod 256$. However, in the case
   when $x\times\frac{256}{\pi}$ is very close to the middle between
   two integers, it may happen (very rarely) that the value of $k\mod
-  256$ computed by this second range reduction is equal to $\pm 1$. In
-  such cases, both values are equally valid, but we have to ensure
-  that $k$ and the reduced value match, hence the test line 52.
+  256$ computed by this second range reduction differs from the first
+  by $\pm 1$. In such cases, both values will provide different but
+  equally valid reduced arguments, but we have to ensure that $k$ and
+  the reduced value match, hence the test line 52.
 \end{itemize}
 
 
@@ -508,8 +511,8 @@ The C code that performs the reduction in this case is the following:
 
 Here only the rightmost multiplication involving a rounding: 
 \begin{itemize}
-\item The multiplication $\mathit{kd}\otimes \mathit{RR\_CW2\_CH}$ is
-  exact because $kd$ is a small integer and $\mathit{RR\_CW2\_CH}$
+\item The multiplication $\mathrm{kd}\otimes \mathrm{RR\_CW2\_CH}$ is
+  exact because $kd$ is a small integer and $\mathrm{RR\_CW2\_CH}$
   has enough zeroes in the mantissa.
 \item The subtraction is exact thanks to Sterbenz Lemma.
 \item The \texttt{Add12} procedure is exact.
@@ -573,7 +576,7 @@ delta_cody_waite_3 := kmax_cw3 * delta_repr_C_cw3 + delta_round_cw3:
 # This is the delta on y, the reduced argument
 \end{lstlisting}
 
-\subsection{Cody and Waite argument reduction in double-double}
+\subsection{Cody and Waite argument reduction in double-double\label{trigo:CWDD}}
 The C code that performs the reduction in this case is the following:
 
 \begin{lstlisting}[caption={Cody and Waite argument reduction in
@@ -594,8 +597,8 @@ The error and the bound are computed by the following Maple code.
   language={sh}, numbers=none]% of course it's maple
 %Skip a line here, I don't know why, otherwise latex eats the first line
 
-# max int value that we can be produced by DOUBLE2LONGINT
-kmax:=2^51-1:
+# This max int value can be produced by DOUBLE2LONGINT
+kmax:=2^46-1:
 XMAX_DDRR:=nearest(kmax*C);
 
 #in this case we have C stored as 3 doubles
@@ -622,6 +625,8 @@ delta_round :=
 delta_RR_DD :=  kmax * delta_repr_C + delta_round:
 \end{lstlisting}
 
+The value of kmax defined here will be explained below in Section
+\ref{sec:trigo:maxvalred}.
 
 \subsection{Payne and Hanek argument reduction }
 
@@ -643,7 +648,7 @@ delta_PayneHanek := 2^(-100):
 
 \subsection{Maximum error of argument reduction }
 
-We have to cases here.
+We have two cases here.
 
 \paragraph*{Case when $k\mod 256\ne 0$}
 
@@ -709,6 +714,64 @@ error of the final Add22.
 $\maxeps_{\mathrm{argred}} \approx 2^{-69.6}$.
 
 
+\subsection{Maximum value of the reduced argument
+\label{sec:trigo:maxvalred}}
+
+For simplicity, we want to define a common upper bound $y_{\max}$ on
+$|\hat{y}|$, $|\mathtt{yh}+\mathtt{yl}|$ and $|\mathtt{yh}|$. This
+bound takes into account $\epsilon_{argred}$, an $\epsilon_{53}$ 
+for the case when it is a bound on $y_h$, and also an error due to the
+fact that we had a rounding error when computing
+$x\otimes\verb!INV_PIO256!$, so the reduced value may slightly exceed
+$\pi/512$. This rounding error is at most one half-ulp of $x\times
+256/\pi$, but cancellation may then scale it up. 
+
+More precisely, the \texttt{DOUBLE2INT} macro always returns the
+nearest integer of its argument, so we have
+$\intpart{x}=x+\epsilon_{-1}$. However its argument is
+$$x\otimes\verb!INV_PIO256! = x \times
+\verb!INV_PIO256!(1+\epsilon_{-53}) = x\times
+256/\pi(1+\epsilon_{-53})(1+\epsilon')  = x\times
+256/\pi(1+\epsilon_k)$$
+where $\epsilon'=\verb!INV_PIO256!\times256/\pi-1$ can be
+computed exactly.
+
+Therefore we have 
+
+$$k\ =\ \intpart{x\times \frac{256}{\pi}(1+\epsilon_k)}
+\ =\ x\times \frac{256}{\pi}(1+\epsilon_k) - f \quad\mbox{where} \quad |f|\le 1/2
+$$
+
+And, assuming this computation was done exactly,
+
+$$\hat{y}=x-k\frac{\pi}{256} = f\frac{\pi}{256} - x\epsilon_k$$
+
+In absolute value, $$\left|\hat{y}\right| \le \frac{\pi}{512} +
+|x|\maxeps_k$$
+where $\maxeps_k<\maxeps_{-52}$.
+
+Again to compute this value precisely we have to consider the various
+paths of the algorithm. The SCS range reduction is not concerned,
+since the Payne and Hanek algorithm used there does not compute $k$ in
+this manner. For the other paths, the worst case is of course for the
+larger $x$, in the double-double argument reduction. There we define
+$x_{\max} = k_{\max}*C$, hence  $\left|\hat{y}\right|
+\le \frac{\pi}{512} + 2^{k_{\max}}\frac{\pi}{256}\maxeps_k$ where
+$\maxeps_k<2^{-52}$.
+
+
+This is the reason for the bound on $x$ defined in \ref{trigo:CWDD}:
+although this range reduction could work for values up to
+$k_{\max}=2^{52}-1$, larger values would increase the maximum
+value of the reduced argument, decreasing the accuracy of the
+polynomial evaluation. With a smaller value of $k_{\max}$, we still have
+$\left|\hat{y}\right|$ close to $\pi/512$. 
+
+Finally we compute the common maximum value of $y_h$, $y_h+y_l$ and
+$\widehat{y}$ by taking into account the rounding errors and the
+less-than-ulp difference between $y_h$, $y_h+y_l$ and $\widehat{y}$.
+ 
+
 
 
 \section{Details of auxilliary functions
@@ -717,10 +780,10 @@ $\maxeps_{\mathrm{argred}} \approx 2^{-69.6}$.
 \subsection{DoSinNotZero \label{dosinzero}}
 Upon entering  \texttt{do\_sin\_k\_zero}, we have in
 $y_h+y_l$ an approximation to the ideal reduced value
-$\hat{y}=x-k\pi/256$ with a relative accuracy $\epsilon_{\mathrm{argred}}$:
+$\hat{y}=x-k\frac{\pi}{256}$ with a relative accuracy $\epsilon_{\mathrm{argred}}$:
 
 \begin{equation}
-  y_h+y_l = (x-k\pi/256)(1+\epsilon_{\mathrm{argred}}) 
+  y_h+y_l = (x-k\frac{\pi}{256})(1+\epsilon_{\mathrm{argred}}) 
   = \hat{y}(1+\epsilon_{\mathrm{argred}})
   \label{eq:sinargrederror1}
 \end{equation}
@@ -728,23 +791,6 @@ whith, depending on the quadrant, $\sin(\hat{y}) = \pm\sin(x)$ or
 $\sin(\hat{y}) = \pm\cos(x)$ and similarly for $\cos(\hat{y})$. This
 just means that $\hat{y}$ is the ideal, errorless reduced value.
 
-For simplicity, we define a common upper bound $y_{\max}$ on
-$|\hat{y}|$, $|\mathtt{yh}+\mathtt{yl}|$ and $|\mathtt{yh}|$. This
-bound takes into account $\epsilon_{argred}$, an $\epsilon_{53}$ just
-for the case when it is a bound on $y_h$, and also an error due to the
-fact that we had a rounding error when computing
-$x\otimes\verb!INV_PIO256!$, so the reduced value may slightly
-exceed $\pi/512$. More precisely, we may come to \texttt{computeZero}
-either for $x<\verb!XMAX_CODY_WAITE_3!$, in which case we we have used
-DOUBLE2INT to compute $k$, deporting this rounding error at least $52-32=20$
-bits to the right, or after an SCS range reduction in which case the
-error will be much smaller. Therefore we define (to be on the safe side)
-\begin{equation}
-  y_{\mathrm{maxargred}} = \frac{\pi}{512}(1+2^{-15})
-  \label{eq:ymaxsink0}  
-\end{equation}
-where the $2^{-15}$ also accounts for the less-than-ulp difference
-between $y_h$, $y_h+y_l$ and $\widehat{y}$.
 
 In the following we will
 assume we are in the case $\sin(\hat{y}) = \sin(x)$, (the proof is
@@ -861,18 +907,21 @@ compute the error of the following code:
 The same code is used for small arguments to the cosine (when there is
 no argument reduction).
 
-\subsection{DoSinNotZero}
+\subsection{DoSinNotZero and DoCosNotZero}
 
 The proof would here be much longer than the previous one, in the same
 spirit. It would therefore be much more error prone. We probably would
 be even less confident in such a proof than if it was generated
 automatically using experimental software. Therefore, let us do just
-that: We will use \texttt{Gappa}(see
-\url{https://lipforge.ens-lyon.fr/projects/gappa/}), another
+that: We will use \texttt{Gappa} (see
+\url{http://lipforge.ens-lyon.fr/projects/gappa/}), another
 development of the Arenaire project to automate the proof of numerical
-properties, including an interface to the automatic theorem prover Coq.
+properties, including an interface to the automatic theorem prover
+Coq. Gappa will assist us in computing bounds (in the form of
+intervals) for all the errors entailed by our code.
 
-We need to compute the error bound for the following straight line of
+
+Here we need to compute the error bound for the following straight line of
 code.
 
 \begin{lstlisting}[caption={DoSinNotZero},firstnumber=1]
@@ -891,31 +940,40 @@ The additional information we have is
 
 \item The argument reduction total absolute error, such that 
   \begin{equation}
-    y_h+y_l = (x-k\pi/256)(1+\epsilon_{\mathrm{argred}}) 
+    y_h+y_l = (x-k\frac{\pi}{256})(1+\epsilon_{\mathrm{argred}}) 
     = \hat{y}(1+\epsilon_{\mathrm{argred}})
   \end{equation}
 
 \item The rounding error of the double-double tabulated values
-  $sa_h+sa_l$ and  $ca_h+ca_l$  ($\maxeps_{-106}$) and their ranges
+  $sa_h+sa_l$ and  $ca_h+ca_l$  ($\maxeps_{-104}$) and their ranges
 
 \item The approximation error of the polynomials used, computed in
   Maple
 \end{itemize}
 
-We use Gappa to compute the evaluation error.
+We use Gappa to compute the evaluation error. Currently, we actually
+have to lauch Gappa 63 times, one time for each of the possibles
+values of $a=k\pi/256$ that appear in our tables. The reason is that,
+in the current version of Gappa, we are unable to express the identity
+$sin^2(a) + cos^2(a) = 1$ in a useful manner. Without this identity,
+the only information that we could give to Gappa is that both $sin(a)$
+and $cos(a)$ belong to $[-1,1]$, which leads to a gross overestimation of the error. 
+
 The input to Gappa is as follows:
+
 \begin{lstlisting}[caption={Gappa input to compute the error of DoSineNotZero},
   language={sh}, numbers=none]
-%Skip a line here, I don't know why, otherwise latex eats the first line
 
-yh = <float64ce>(yy);
-yl = yy - yh;
-sah = <float64ce>(sa);
-sal = sa - sah;
-cah = <float64ce>(ca);
-cal = ca - cah;
+# Usage: You need to set the constants cah, cal, sah, sal. Running the trigo.mpl Maple script
+# should create 64 files in TEMPTRIG, which can be tested independently as 
+#    cat  TEMPTRIG/SinACosA_1.gappa  SinCosCase3.gappa | gappa>/dev/null
 
-# constantes
+# NOTATION CONVENTION 
+# Variables that correspond to double-precision variables in the code begin with a small letter
+# Other variables begin with a capital letter.
+# Otherwise avoid underscores as they are painful to carry on to LaTeX :)
+
+# polynomial coefficients in Gappa binary format: sign, integer, power of two
 s3 = -6004799503160661b-55;
 s5 = +4803839602528529b-59;
 s7 = -7320136537186330b-65;
@@ -925,53 +983,208 @@ c4 = +6004799503154328b-57;
 c6 = -6405110857547344b-62;
 c8 = +7320136537186330b-68;
 
-# yh2 = yh * yh;
-yh2 = <float64ce>(yh * yh);
+# The variables used here:
+# x input
+# Y perfect reduced argument
+# Ydd = yh+yl, his distance to Y is specified as an hypothesis 
+# TsHat perfect ts
+# TcHat perfect tc
+# SinX exact result for sin(x)
+# SinA, CosA perfect sin(kPi/256) and cos(kPi/256)
+
+
+
+yh = <float64ne>(Ydd);
+yl = Ydd - yh;
+
+#######################################################################
+
+# First, a transcription of the actual computation, which could (and
+# should eventually) be generated automatically from the actual code
+
+# ---------------------Code shared by sin and cos, cut from ComputeTrigWithArgRed : 
+#yh2 = yh * yh; 
+yh2 = <float64ne>(yh * yh);
 
 # ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
-ts = <float64ce>(yh2 * <float64ce>(s3 + <float64ce>(yh2 * <float64ce>(s5 + <float64ce>(yh2 * s7)))));
+ts = <float64ne>(yh2 * <float64ne>(s3 + <float64ne>(yh2 * <float64ne>(s5 + <float64ne>(yh2 * s7)))));
 
 # tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d));
-tc = <float64ce>(yh2 * <float64ce>(c2 + <float64ce>(yh2 * <float64ce>(c4 + <float64ce>(yh2 * c6)))));
+tc = <float64ne>(yh2 * <float64ne>(c2 + <float64ne>(yh2 * <float64ne>(c4 + <float64ne>(yh2 * c6)))));
 
+
+# ---------------------Code for the sine, cut from DosinNotZero: 
 # Mul12(&cahyh_h,&cahyh_l, cah, yh);
 cahyh = cah * yh;
-cahyh_h = <float64ce>(cahyh);
-cahyh_l = cahyh - cahyh_h;
+cahyh_h = <float64ne>(cahyh);
+cahyh_l = cahyh - cahyh_h;    # Exact equation because Mul12 is exact
 
 # Add12(thi, tlo, sah, cahyh_h);
-t = sah + cahyh_h;
-thi = <float64ce>(t);
-tlo1 = t - thi;
+TSin = sah + cahyh_h;
+thiSin = <float64ne>(TSin);
+tloSin1 = TSin - thiSin;          # Exact equation because Add12 is exact
+
+# Rem: need to Rename tlo to tloSin1, and its second use to tloSin2.
+# It would be safer to translate code to single-assignment before
+# using Gappa, modern compilers won't make any difference.
 
 #  tlo = tc*sah+(ts*cahyh_h+(sal+(tlo+(cahyh_l+(cal*yh + cah*yl))))) ;
-tlo = <float64ce>(<float64ce>(tc * sah) + <float64ce>(<float64ce>(ts * cahyh_h)
- + <float64ce>(sal + <float64ce>(tlo1 + <float64ce>(cahyh_l
- + <float64ce>(<float64ce>(cal * yh) + <float64ce>(cah * yl)))))));
-tlo_r = tc*sah+(ts*cahyh_h+(sal+(tlo1+(cahyh_l+(cal*yh + cah*yl))))) ;
+tloSin2 = <float64ne>(<float64ne>(tc * sah) + <float64ne>(<float64ne>(ts * cahyh_h)
+ + <float64ne>(sal + <float64ne>(tloSin1 + <float64ne>(cahyh_l
+ + <float64ne>(<float64ne>(cal * yh) + <float64ne>(cah * yl)))))));
 
 # Add12(*reshi, *reslo, thi, tlo);
-res = thi + tlo;
+ResultSin = thiSin + tloSin2; # we don't need to split it for the proof.
 
+
+# ---------------------Code for the cos, cut from DoCosNotZero: 
+#  Mul12(&sahyh_h,&sahyh_l, sah, yh);			            
+sahyh = sah * yh;
+sahyh_h = <float64ne>(sahyh);
+sahyh_l = sahyh - sahyh_h;    # Exact equation because Mul12 is exact
+
+#  Add12(thi, tlo,  cah, -sahyh_h);			            
+TCos = cah - sahyh_h;
+thiCos = <float64ne>(TCos);
+tloCos1 = TCos - thiCos; # Exact equation because Add12 is exact
+
+#  tlo = tc*cah-(ts*sahyh_h-(cal+(tlo-(sahyh_l+(sal*yh+sah*yl))))) ; 
+tloCos2 = <float64ne>(<float64ne>(tc * cah) - <float64ne>(<float64ne>(ts * sahyh_h)
+ - <float64ne>(cal + <float64ne>(tloCos1 - <float64ne>(sahyh_l
+ + <float64ne>(<float64ne>(sal * yh) + <float64ne>(sah * yl)))))));
+
+#  Add12(*pch, *pcl,    thi, tlo);                                   
+ResultCos = thiCos + tloCos2;   # No need to split it for the proof.
+
+
+#######################################################################
+
+# Now let us pile up layers of approximations
+
+#------------------------------------- 
+#With these notations, the exact sine and cosine are given by these
+#exact mathematical formulae
+
+SinX =  SinY * CosA  +  CosY * SinA;
+CosX =  CosY * CosA  -  SinY * SinA;
+
+#-------------------------------------
+# yh2 is an approximation to :
+Y2 = Y*Y;
+# through three layers: 
+# 1/    Ydd=yh+hl = Y +/- delta_ArgRed  : in the hypotheses below
+# 2/    yh = Ydd - yl                       : already written
+# 3/    rounding error in the mult          : already written       
+
+#-------------------------------------
+# ts is an approximation to :
+TsHat = Y2 * (s3 + Y2*(s5 + Y2*s7));
+# through two layers: 
+# 1/ the approximation y2 of Y2        : done just above
+# 2/ the rounding errors in Horner         : already written
+
+#-------------------------------------
+PolySinY = Y * (1 + TsHat);
+# PolySinY is an approximation to sin(Y) as expressed in the hypotheses below :
+#  PolySinY - SinY in [-0.24126e-23, 0.24126e-23]     # delta_approx_Sin_Case3
+
+#-------------------------------------
+# Same for PolyCosY
+TcHat = Y2 * (c2 +(Y2 * (c4 + (Y2 * c6))));
+PolyCosY = 1 + TcHat;
+
+#------------------------------------- 
+#tc is an approximation to TcHat through the rounding errors, defined
+#in the definition of tc. Same for ts
+
+
+#-------------------------------------
+# SinReconstrExact is an approximation to ResultSin 
+SinReconstrExact = PolySinY * CosA  +  PolyCosY * SinA ;
+# The delta between ResultSin and SinReconstrExact is due to the two
+# mathematical poly approx, and has been defined just above
+CosReconstrExact = PolyCosY * CosA  -  PolySinY * SinA ;
+
+
+#-------------------------------------
+# The reconstruction approximates the following
+SinReconstrNoRound = (Ydd * (1 + ts)  * (cah+cal)   +  (1 + tc) * (sah+sal) );
+# where Ydd is an approximation to Y
+#       ts is an approximation to TsHat
+#       tc is an approximation to TcHat : all already described
+# All what we still need to express is that the actual computation will neglect some terms
+CosReconstrNoRound = ( (1 + tc) * (cah+cal)   -  Ydd * (1 + ts)  * (sah+sal) );
+
+#-------------------------------------
+# tloSin2 is an approximation to TloSin2NoRound (because of rounding error in the operations, already described) 
+TloSin2NoRound = tc*sah+(ts*cahyh_h+(sal+(tloSin1+(cahyh_l+(cal*yh+cah*yl))))) ;
+TloCos2NoRound = tc*cah-(ts*sahyh_h-(cal+(tloCos1-(sahyh_l+(sal*yh+sah*yl)))));
+
+#  tloSinNoRound is an approximation to SinReconstrNoRound - tSinhi, the
+#  difference being the neglected terms. This error will be given as an hint
+
+NeglectedSinTerms = SinReconstrNoRound - (thiSin + TloSin2NoRound);
+NeglectedCosTerms = CosReconstrNoRound - (thiCos + TloCos2NoRound);
+
+# And finally, ResultSin is an approximation to SinX through many layers which are given in the hints.
+
+###########################################################################################
+#  The theorem to prove
 {
-   yy in [0,0.0061362]    # ymaxCase3 computed by Maple
-   /\ ca in [0,1] /\ sa in [0,0.702754744458] # should be refined
-  -> res - ((1 + ts) * ca * yy + (1 + tc) * sa ) in ?
+    Ydd in [-0.0062852, 0.0062852]          # ymaxCase3 computed by Maple
+ /\ Ydd - Y in [-0.253e-22, 0.253e-22]      # delta_ArgRed in Maple
+ /\ PolySinY - SinY in [-0.24126e-23, 0.24126e-23]     # delta_approx_Sin_Case3
+ /\ PolyCosY - CosY in [-0.7287717127e-22, 0.7287717127e-22]     # delta_approx_Cos_Case3
+ /\ SinA-sah-sal in [-1b-104, 1b-104] 
+ /\ CosA-cah-cal in [-1b-104, 1b-104] # double-double absolute rounding error, with margin
+
+ -> 
+
+(ResultSin - SinX)/SinX in ?   #[-1b-62,1b-62]
+/\ 
+(ResultCos - CosX)/CosX in ?   #[-1b-62,1b-62]
 }
 
-# This is a hint to the reduction engine. It tells it what we intend
-# to compute by pointing out that res - ((1 + ts) * ca * yy + (1 + tc) * sa ) 
-# is equal to tlo - tlo_r + the neglected terms
+###########################################################################################
+# Hints to the reduction engine: Gappa is not supposed to be clever, it's an assistant 
 
-res - ((1 + ts) * ca * yy + (1 + tc) * sa ) ->
-  tlo  - tlo_r + (sal*tc + cal*yl + ts*(cahyh_l + cah*yl + cal*yh + cal*yl)) ;
+# To get bounds on SinX, try ResultSin
+SinX -> ResultSin - (ResultSin - SinX);
+CosX -> ResultCos - (ResultCos - CosX);
+
+# To get bounds on SinA, try sah+sal
+SinA -> sah + sal + (SinA - sah - sal);
+CosA -> cah + cal + (CosA - cah - cal);
+
+# To get bounds on Y, try Ydd
+Y ->  Ydd - (Ydd - Y); 
+
+# One layer of approx error, and one layer of rounding error for SinY and CosY
+1 + tc - CosY   ->   (1 + tc - PolyCosY) + (PolyCosY - CosY);
+(Y + Y * ts) - SinY ->   ((Y + Y * ts) - PolySinY) + (PolySinY - SinY);
+
+# Layers of approximations
+ResultSin - SinX ->  (ResultSin - SinReconstrNoRound) + (SinReconstrNoRound - SinReconstrExact) + (SinReconstrExact - SinX);
+ResultCos - CosX ->  (ResultCos - CosReconstrNoRound) + (CosReconstrNoRound - CosReconstrExact) + (CosReconstrExact - CosX);
+
+NeglectedSinTerms ->  sal*tc + cal*yl + ts*(cahyh_l + cah*yl + cal*yh + cal*yl); # Should be machine-checked
+ResultSin - SinReconstrNoRound -> (ResultSin - (thiSin + TloSin2NoRound)) - (SinReconstrNoRound    -  (thiSin + TloSin2NoRound)) ;
+
+NeglectedCosTerms ->  cal*tc - sal*yl - ts*(sahyh_l + sah*yl + sal*yh + sal*yl); # Should be machine-checked
+ResultCos - CosReconstrNoRound -> (ResultCos - (thiCos + TloCos2NoRound)) - (CosReconstrNoRound    -  (thiCos + TloCos2NoRound)) ;
 \end{lstlisting}
 
-We get an approximation error of $2^{-68}$
 
-\subsection{DoCosNotZero}
+The Maple script that computes the table of $(ca_h,ca_l,sa_h,sa_l)$
+also outputs it in a form suitable for input to Gappa.  The max of the
+bounds computed by Gappa for all the values of this table is a little
+bit smaller than $2^{-66}$. Therefore, we take
+$\maxeps_{SinCosCase3}=2^{-66}$ for the trigonometric functions (because the
+reconstructions simply manipulates the signs and is therefore exact).
 
-Here Gappa gives  an approximation error of $2^{-68}$
+In the very near future, this bound should be machine-checked by the
+Coq proof assistant.
+
 
 
 \section{Detailed examination of the sine}
@@ -984,10 +1197,10 @@ the procedure that converts a Maple high-precision number into an
 integer to which \texttt{x} will be compared (procedure
 \texttt{outputHighPart} in \texttt{trigo.mpl}).
 
-\begin{lstlisting}[caption={Casting to an int for faster comparisons},firstnumber=1]
+\begin{lstlisting}[caption={Casting to an int for faster comparisons \label{lst:trigo:takehighpart}},firstnumber=1]
   db_number x_split;
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  absxhi = x_split.i[HI] & 0x7fffffff;
 \end{lstlisting}
 
 
@@ -1108,7 +1321,518 @@ Finally
 
 
 \section{Detailed examination of the cosine}
+The bulk of the computation is shared with the sine.  The main
+differences are therefore in handling special values. We juste show
+the code here. The error computation for small arguments is similar to
+that of the sine, and is implemented in \texttt{maple/trigo.mpl}.
+
+\subsection{Round to nearest mode}
+\begin{lstlisting}[caption={Exceptional cases for cosine RN},firstnumber=1]
+double cos_rn(double x){ 
+  double tc, x2;
+  rrinfo rri;
+  db_number x_split;
+
+  x_split.d=x;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
+
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d-x_split.d;
+  }
+
+  if (rri.absxhi < XMAX_COS_CASE2){
+    /* CASE 1 : x small enough cos(x)=1. */
+    if (rri.absxhi <XMAX_RETURN_1_FOR_COS_RN)
+      return 1.;
+    else {
+      /* CASE 2 : Fast polynomial evaluation */
+      x2 = x*x;
+      tc = x2 * (c2.d + x2*(c4.d + x2*c6.d ));
+      Add12(rri.rh,rri.rl, 1.0, tc);
+      if(rri.rh == (rri.rh + (rri.rl * RN_CST_COS_CASE2)))	
+	return rri.rh;
+      else
+	return scs_cos_rn(x); 
+    }
+  }
+  else {
+  /* CASE 3 : Need argument reduction */ 
+    rri.x=x;
+    rri.function=COS;
+    ComputeTrigWithArgred(&rri);
+    if(rri.rh == (rri.rh + (rri.rl * RN_CST_COS_CASE3)))	
+      if(rri.changesign) return -rri.rh; else return rri.rh;
+    else
+      return scs_cos_rn(x); 
+  }
+}
+\end{lstlisting}
+
+\subsection{RU mode}
+\begin{lstlisting}[caption={Exceptional cases for cosine RU},firstnumber=1]
+double cos_ru(double x){ 
+  double x2, tc, epsilon; 
+  rrinfo rri;
+  db_number x_split;
+
+  x_split.d=x;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
+
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (rri.absxhi>=0x7ff00000) {
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d - x_split.d;
+  }
+   
+  if (rri.absxhi < XMAX_COS_CASE2){
+    /* CASE 1 : x small enough cos(x)=1. */
+    if (rri.absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
+      return 1.;
+    else{
+      /* CASE 2 : Fast polynomial evaluation */
+      x2 = x*x;
+      tc = x2 * (c2.d + x2*(c4.d + x2*c6.d ));
+      Add12(rri.rh,rri.rl, 1, tc);
+      epsilon=EPS_COS_CASE2; 
+    }
+  }
+
+  else {
+    /* CASE 3 : Need argument reduction */ 
+    rri.x=x;
+    rri.function=COS;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_COS_CASE3;
+    if(rri.changesign) {
+      rri.rh = -rri.rh;
+      rri.rl = -rri.rl;
+    }
+  }    
+  
+
+  TEST_AND_RETURN_RU(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_cos_ru(x);
+}
+\end{lstlisting}
+
+\subsection{RD mode}
+\begin{lstlisting}[caption={Exceptional cases for cosine RD},firstnumber=1]
+double cos_rd(double x){ 
+  double x2, tc, epsilon; 
+  rrinfo rri;
+  db_number x_split;
+
+  x_split.d=x;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
+
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (rri.absxhi>=0x7ff00000) {
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d - x_split.d;
+  }   
+
+  if (rri.absxhi < XMAX_COS_CASE2){
+    if (x==0) return 1;
+    /* CASE 1 : x small enough cos(x)=1. */
+    if (rri.absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
+      return ONE_ROUNDED_DOWN; 
+    else {   
+      /* CASE 2 :  Fast polynomial evaluation */
+      x2 = x*x;
+      tc = x2 * (c2.d + x2*(c4.d + x2*c6.d ));
+      Add12(rri.rh,rri.rl, 1, tc);
+      epsilon=EPS_COS_CASE2; 
+    }
+  }
+  else {
+  /* CASE 3 : Need argument reduction */ 
+    rri.x=x;
+    rri.function=COS;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_COS_CASE3;
+    if(rri.changesign) {
+      rri.rh = -rri.rh;
+      rri.rl = -rri.rl;
+    }     
+  }
+
+  TEST_AND_RETURN_RD(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_cos_rd(x);
+}
+\end{lstlisting}
+
+\subsection{RZ mode}
+\begin{lstlisting}[caption={Exceptional cases for cosine RZ},firstnumber=1]
+double cos_rz(double x){ 
+  double x2, tc, epsilon; 
+  rrinfo rri;
+  db_number x_split;
+
+  x_split.d=x;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
+
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (rri.absxhi>=0x7ff00000) {
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d - x_split.d;
+  }   
+
+  if (rri.absxhi < XMAX_COS_CASE2){
+    if (x==0) return 1;
+    /* CASE 1 : x small enough cos(x)=1. */
+    if (rri.absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
+      return ONE_ROUNDED_DOWN; 
+    else {
+      /* CASE 2 : Fast polynomial evaluation */
+      x2 = x*x;
+      tc = x2 * (c2.d + x2*(c4.d + x2*c6.d ));
+      Add12(rri.rh,rri.rl, 1, tc);
+      epsilon=EPS_COS_CASE2; 
+    }
+  }
+  else {
+    /* CASE 3 : Need argument reduction */ 
+    rri.x=x;
+    rri.function=COS;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_COS_CASE3;
+    if(rri.changesign) {
+      rri.rh = -rri.rh;
+      rri.rl = -rri.rl;
+    } 
+  }
+
+  TEST_AND_RETURN_RZ(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_cos_rz(x);
+}
+\end{lstlisting}
+
 \section{Detailed examination of the tangent}
+
+\subsection{Total relative error}
+In the general case, we compute the tangent by using successively the
+macros for computing the sine and the cosine (each accurate to
+$\maxeps_{SinCosCase3}$), then dividing sine by cosine using the Div22
+macro, accurate to $2^{-100}<<\maxeps_{SinCosCase3}$ (see lines 146-156
+of listing \ref{lst:trig:argred}). The overall error is thus bounded
+by $$\maxeps_{tan} = 2.1\maxeps_{SinCosCase3} .$$
+
+
+\subsection{RN mode}
+\begin{lstlisting}[caption={Exceptional cases for tangent RN},firstnumber=1]
+double tan_rn(double x){  
+  double sh, sl, ch, cl;
+  double p7, t, x2;
+  rrinfo rri;
+  db_number x_split;
+
+  x_split.d=x;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
+
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }   
+
+  if (rri.absxhi < XMAX_TAN_CASE2){ /* |x|<2^-3 TODO this tradeoff has not been studied */
+    if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) 
+      return x;
+
+    /* Fast Taylor series */
+    x2 = x*x;
+    p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
+    t  = x2*(t3l.d +x2*(t5.d + x2*p7));
+
+    sh = x*(x2*t3h.d + t);
+    Add12(rri.rh, rri.rl, x, sh);   
+    /* Test if round to nearest achieved */ 
+    if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE22)))
+      return rri.rh;
+    else {
+      /* Still relatively fast, but more accurate */
+      Mul12(&sh, &sl, x2, t3h.d);
+      Add12(ch, cl, sh, (t+sl));
+      Mul22(&sh, &sl, x, 0, ch, cl);
+      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
+      /* Test if round to nearest achieved */ 
+      if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE21)))
+	return rri.rh;
+      else
+	return scs_tan_rn(x); 
+    }
+  }
+  else {
+    /* Otherwise : Range reduction then standard evaluation */
+    rri.x=x;
+    rri.function=TAN;
+    ComputeTrigWithArgred(&rri);
+
+    /* Test if round to nearest achieved */ 
+    if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE3)))
+      if(rri.changesign) return -rri.rh; else return rri.rh;
+    else
+      return scs_tan_rn(x); 
+  }    
+}
+\end{lstlisting}
+
+\subsection{RU mode}
+\begin{lstlisting}[caption={Exceptional cases for tangent RU},firstnumber=1]
+double tan_ru(double x){  
+  double sh, sl, ch, cl, epsilon;
+  double p7, t, x2;
+  db_number x_split;
+  rrinfo rri;
+
+  x_split.d=x;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
+  
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }   
+  
+  if (rri.absxhi < XMAX_TAN_CASE2){
+    if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {
+      if(x<=0.)
+	return x;
+      else {
+	x_split.l ++;
+	return x_split.d;
+      }
+    }
+    else {
+      /* Fast Taylor series */
+      x2 = x*x;
+      p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
+      t  = x2*(t3l.d +x2*(t5.d + x2*p7));
+    
+      sh = x*(x2*t3h.d + t);
+      Add12(rri.rh, rri.rl, x, sh);   
+      
+      TEST_AND_RETURN_RU(rri.rh, rri.rl, EPS_TAN_CASE22);
+
+      /* Still relatively fast, but more accurate */
+      Mul12(&sh, &sl, x2, t3h.d);
+      Add12(ch, cl, sh, (t+sl));
+      Mul22(&sh, &sl, x, 0, ch, cl);
+      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
+      epsilon=EPS_TAN_CASE21; 
+    }
+  }
+  else { 
+    /* Normal case: Range reduction then standard evaluation */
+    rri.x=x;
+    rri.function=TAN;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_TAN_CASE3; 
+    if(rri.changesign) {
+      rri.rh= -rri.rh; 
+      rri.rl=-rri.rl;
+    }
+  }
+  
+  TEST_AND_RETURN_RU(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return  scs_tan_ru(x);
+}
+\end{lstlisting}
+
+\subsection{RD mode}
+\begin{lstlisting}[caption={Exceptional cases for tangent RD},firstnumber=1]
+double tan_rd(double x){  
+  double sh, sl, ch, cl, epsilon;
+  double p7, t, x2;
+  rrinfo rri;
+  db_number x_split;
+
+  
+  x_split.d=x;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
+  
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (rri.absxhi>=0x7ff00000){
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d - x_split.d;
+
+  }   
+  
+  if (rri.absxhi < XMAX_TAN_CASE2){
+    if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {
+      if(x>=0.)
+	return x;
+      else {
+	x_split.l ++;
+	return x_split.d;
+      }
+    }
+    
+    /* Fast Taylor series */
+    x2 = x*x;
+    p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
+    t  = x2*(t3l.d +x2*(t5.d + x2*p7));
+    
+    sh = x*(x2*t3h.d + t);
+    Add12(rri.rh, rri.rl, x, sh);   
+
+    TEST_AND_RETURN_RD(rri.rh, rri.rl, EPS_TAN_CASE22);
+
+    /* Still relatively fast, but more accurate */
+    Mul12(&sh, &sl, x2, t3h.d);
+    Add12(ch, cl, sh, (t+sl));
+    Mul22(&sh, &sl, x, 0, ch, cl);
+    Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
+    epsilon=EPS_TAN_CASE21; 
+  }
+  
+  else { 
+    /* normal case: Range reduction then standard evaluation */
+    rri.x=x;
+    rri.function=TAN;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_TAN_CASE3; 
+    if(rri.changesign) {
+      rri.rh= -rri.rh; 
+      rri.rl=-rri.rl;
+    }
+  }
+  
+  TEST_AND_RETURN_RD(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return  scs_tan_rd(x);
+}
+\end{lstlisting}
+
+\subsection{RZ mode}
+\begin{lstlisting}[caption={Exceptional cases for tangent RZ},firstnumber=1]
+double tan_rz(double x){  
+  double sh, sl, ch, cl, epsilon;
+  double p7, t, x2;
+  rrinfo rri;
+  db_number x_split;
+
+  x_split.d=x;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
+  
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (rri.absxhi>=0x7ff00000) {
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d - x_split.d;
+  }   
+  
+  if (rri.absxhi < XMAX_TAN_CASE2){
+    if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {
+      return x;
+    }
+    else{ /* Fast Taylor series */
+      x2 = x*x;
+      p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
+      t  = x2*(t3l.d +x2*(t5.d + x2*p7));
+      
+      sh = x*(x2*t3h.d + t);
+      Add12(rri.rh, rri.rl, x, sh);   
+      
+      TEST_AND_RETURN_RZ(rri.rh, rri.rl, EPS_TAN_CASE22);
+
+      /* Still relatively fast, but more accurate */
+      Mul12(&sh, &sl, x2, t3h.d);
+      Add12(ch, cl, sh, (t+sl));
+      Mul22(&sh, &sl, x, 0, ch, cl);
+      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
+      epsilon=EPS_TAN_CASE21; 
+    }
+  }
+  else { 
+    /* Normal case: Range reduction then standard evaluation */
+    rri.x=x;
+    rri.function=TAN;
+    ComputeTrigWithArgred(&rri);
+    epsilon=EPS_TAN_CASE3; 
+    if(rri.changesign) {
+      rri.rh = -rri.rh; 
+      rri.rl = -rri.rl;
+    }
+  }
+
+  TEST_AND_RETURN_RZ(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return  scs_tan_rz(x); 
+}
+\end{lstlisting}
+
+ 
+
+
+\section{Accurate phase}
+
+For simplicity, the accurate phase (in file \texttt{trigo.c}) always
+computes a Payne and Hanek argument reduction to $[-\pi/4, \pi/4]$,
+then a polynomial evaluation using a Taylor formula.
+
+The results of the search for worst cases are the following so far:
+
+\begin{center}
+  \begin{tabular}{|c|c|c|}
+    \hline
+    Function & interval & worst-case accuracy \\
+    \hline
+    \hline
+       $\sin(x)$ &  $|x|< 2^{-17}$                            & $2^{-126}$      \\
+                 &  $ 2^{-17} \le |x| \le 2+\frac{4675}{8192}$& $2^{-119}$     \\
+    \hline
+       $\cos(x)$ &  $2^{-25} \le |x| \le 2^{-22}$            & $2^{-142}$       \\
+                 &  $2^{-22} \le |x| \le 2^{-18}$            & $2^{-136}$       \\
+                 &  $2^{-18} \le |x| \le 2^{-17}$            & $2^{-114}$       \\
+                 &  $2^{-17} \le |x| \le \frac{12867}{8192}$ & $2^{-112}$       \\
+    \hline
+       $\tan(x)$ &  $2^{-25} \le |x| \le 2^{-18}$            & $2^{-132}$       \\
+                 &  $2^{-18} \le |x| \le \arctan(2)$         & $2^{-111}$       \\
+    \hline
+  \end{tabular}
+\end{center}
+
+The Taylor polynomial used are
+\begin{itemize}
+\item of degree 32 (16 terms) for sine, with an approximation error
+  lower than $2^{-133}$ on $[-\pi/4, \pi/4]$, and lower than
+  $2^{-600}$ for $|x|< 2^{-17}$,
+
+\item of degree 32 (16 terms) for cosine, with an approximation error
+  lower than $2^{-128}$ on $[-\pi/4, \pi/4]$, and lower than
+  $2^{-300}$ for $|x|< 2^{-18}$,
+
+\item of degree 68 for the tangent, with an approximation error lower
+  than $2^{-151}$ on $[-\pi/4, \pi/4]$, and lower than
+  $2^{-300}$ for $|x|< 2^{-18}$.
+\end{itemize}
+
+
+The polynomial evaluation is an Horner scheme in SCS, ensuring better
+than $2^{-200}$ accumulated roundoff errors. Therefore, the overall
+evaluation error for the accurate phase is lower than the worst case accuracy for
+each function on each interval of the previous table.
 
 
 \section{Performance results}
