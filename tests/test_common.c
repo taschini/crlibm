@@ -133,9 +133,15 @@ double rand_for_sin(){
   /* then the high bits of the mantissa, and the sign bit */
   result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
   /* Now set the exponent between -10 and 15, enough to cover the useful range  */
+#if 0  
   e =  (int) ( (rand_double_normal()-1) * 25 );
   result.i[HI_ENDIAN] += (1023 + e -10)<<20;
+#else
+  e =  (int) ( (rand_double_normal()-1) * 40 ); /* never Payne Hanek : 34 */
+  result.i[HI_ENDIAN] += (1023 + e -10)<<20;
+#endif
   return result.d;
+
 }
 
 
