@@ -183,8 +183,11 @@ double rand_for_trig_perf(){
 
 }
 
+#if 0
 #define rand_for_trig_soaktest rand_generic
-
+#else
+#define rand_for_trig_soaktest rand_for_trig_perf
+#endif
 
 double rand_for_atan_perf(){
   db_number result;
