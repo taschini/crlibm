@@ -31,15 +31,17 @@ needed, some multiple-precision packages like MPFR \cite{MPFRweb}
 offer correct rounding in all rounding modes, but are several orders
 of magnitude slower than the usual mathematical libraries for the same
 precision. The recently released IBM Ultimate Math
-Library\cite{IBMlibultimweb} claims to offer correct rounding to the nearest,
-and this library is both portable and fast, if bulky. However, for
-reasons detailed below, this claim is not proven. Besides, this
-library still lacks directed rounding modes needed for interval
-arithmetic, and has other drawbacks that we analyze in the sequel.
+Library\cite{IBMlibultimweb} is both portable and fast, if bulky. It
+claims to offer correct rounding to the nearest, however this claim is
+not proven, and indeed some values are still uncorrectly
+rounded\footnote{Try
+  $\sin(0.252113814338773334355892075109295547008514404296875)$}.
+Besides, this library still lacks directed rounding modes needed for
+interval arithmetic.
 
 
 The  goal of the \crlibm\ project is to build on a combination of several
-recent advances to design a correctly rounded mathematical
+recent advances to design a proven  correctly rounded mathematical
 library which is fast enough to replace the existing libraries, at acceptable
  cost in terms of performance and resources.
 
@@ -96,12 +98,12 @@ application.
 \section{The Correctly Rounded Mathematical Library}
 \label{section:crlibm}
 
-We have designed our own library called \emph{crlibm} (correctly
-rounded mathematical library). It is based on the work of
-Lef\`evre\cite{LMT98,Lef2000} who computed the worst-case $\maxeps$
+Our own library, called \crlibm\ for \emph{correctly rounded
+  mathematical library}, is based on the work of
+Lef\`evre and Muller \cite{LMT98,Lef2000} who computed the worst-case $\maxeps$
 required for correctly rounding several functions in double-precision
 over selected intervals in the four IEEE-754 rounding modes. For
-example, he proved that 157 bits are enough to ensure correct rounding
+example, they proved that 157 bits are enough to ensure correct rounding
 of the exponential function on all of its domain for the four IEEE-754
 rounding modes.
 

@@ -360,8 +360,8 @@ Let $y$ be a real number, and  $\delta$, $e$, $y_h$ and $y_l$ be
   \item $y_h=y_h\oplus y_l$,
   \item none of $y_h$ and $y_l$ is a  NaN.
   \item $|y_h|\ge 2^{-1022+53}$ 
-  \item $|y_h+y_l - y| < \delta.|y|$
-  \item $0< \delta \le 2^{-53-k}$ with $k\ge 2$ integer
+  \item $|y_h+y_l - y| <maxeps.|y|$
+  \item $0<maxeps \le 2^{-53-k}$ with $k\ge 2$ integer
   \item $e\ge 1+  \dfrac{2^{53+k+1}\delta}{(2^{k}-1)(1-2^{-53})}$
 \end{itemize}
 
@@ -372,7 +372,7 @@ The following test determines whether $y_h$ is the
   firstnumber=1]
 if( (*@$y_h$@*) == ((*@$y_h$@*) + ((*@$y_l$@*)*e)) )
   return (*@$y_h$@*);
-else /* more accuracy is needed, lauch accurate phase */
+else /* more accuracy is needed, launch accurate phase */
 \end{lstlisting}
 \end{theorem}
 
@@ -385,12 +385,12 @@ else /* more accuracy is needed, lauch accurate phase */
   assume that $y\ge0$ (so $y_h\ge0$), as the other case is symmetric.
   
   Let us note $u=\ulp(y_h)$. By definition of the \ulp, we have $y_h
-  \in [2^{52}u, (2^{53}-1)u]$, which implies $y<2^{53}u$ as $y < y_h + y_l + \delta y
+  \in [2^{52}u, (2^{53}-1)u]$, which implies $y<2^{53}u$ as $y < y_h + y_l +maxeps y
   < (2^{53}-1)u +\frac{1}{2}u +\frac{1}{2}u$.
 
   What we want to prove is that if the test is true, then $y_h =
   \round(y)$. We will prove that  if the test is true, then $|y_l-\frac{1}{2}u| > 2^{53}\delta
-  u$, which implies $|y_l-\frac{1}{2}u| > \delta y$, which implies
+  u$, which implies $|y_l-\frac{1}{2}u| >maxeps y$, which implies
   that we are not in a difficult case for correct rounding to the
   nearest, so $y_h = \round(y)$.
 
@@ -437,8 +437,8 @@ else /* more accuracy is needed, lauch accurate phase */
   \begin{itemize}
   \item $y_h=y_h\oplus y_l$,
   \item none of $y_h$ and $y_l$ is a  NaN.
-  \item $|y_h+y_l - y| < \delta.|y|$
-  \item $0< \delta \le 2^{-53-k}$ with $k\ge 2$ integer
+  \item $|y_h+y_l - y| <maxeps.|y|$
+  \item $0<maxeps \le 2^{-53-k}$ with $k\ge 2$ integer
   \item $e\ge 1+  \dfrac{2^{53+k+2}\delta}{2^{k}-1}$
 \end{itemize}
 
@@ -448,7 +448,7 @@ The following test determines whether $y_h$ is the
 \begin{lstlisting}[firstnumber=1,caption={Test for rounding to the nearest}]
 if( (*@$y_h$@*) == ((*@$y_h$@*) + ((*@$y_l$@*)*e)) )
   return (*@$y_h$@*);
-else /* more accuracy is needed, lauch accurate phase */
+else /* more accuracy is needed, launch accurate phase */
 \end{lstlisting}
 \end{theorem}
 
@@ -494,7 +494,7 @@ floating-point numbers such that
   \item $y_h=y_h\oplus y_l$,
   \item $y_h$ is neither a NaN, a denormal, or $\pm \infty$.
   \item $y_l$ is neither a NaN or $\pm \infty$.
-  \item $|y_h+y_l - y| < \delta.|y|$
+  \item $|y_h+y_l - y| <maxeps.|y|$
 \end{itemize}
 
 The following test determines whether $y_h$ is the
@@ -515,7 +515,7 @@ The following test determines whether $y_h$ is the
     /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
     ...
   }
-  else /* more accuracy is needed, lauch accurate phase */
+  else /* more accuracy is needed, launch accurate phase */
     ...
 \end{lstlisting}
 \end{theorem}
@@ -528,8 +528,8 @@ The following test determines whether $y_h$ is the
   
   As previously, by definition of the \ulp, we have  $y<2^{53}u$.
   
-  If the test is true, then $y_l>(2^{53}u)\otimes \delta = 
-  2^{53} \delta u $ (the multiplication by $u_{53}$, a power of
+  If the test is true, then $y_l>(2^{53}u)\otimesmaxeps = 
+  2^{53}maxeps u $ (the multiplication by $u_{53}$, a power of
   two, is exact), hence $y_l>\delta y$ so we are in an easy case for directed rounding.
 
 \end{proof}
@@ -539,7 +539,7 @@ The following three listings show how to round up, down and towards
 zero. Once the value of the $\ulp(x_h)$ is available, they are fairly
 straightforward. Again, this doesn't work if $y_h$ is a denormal. If
 one cannot prove statically that this case doesn't appear, a sensible solution
-is to test for denormals and lauch the accurate phase.
+is to test for denormals and launch the accurate phase.
 
 
 \begin{lstlisting}[caption={Rounding up}, firstnumber=1]

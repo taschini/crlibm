@@ -52,11 +52,11 @@ $\displaystyle \frac{x}{2^{-52}}$ is now a normalized number.
 Argument reduction starts with the decomposition of $x$ into its
 mantissa $m$ and its exponent $E$. This decomposition can be computed
 exactly. The mantissa is in $[1,2[$ and we prefer an interval centered
-around $1$, so if needed the mantissa is possibly divided by 2 (and
+around $1$, so if needed the mantissa is  divided by 2 (and
 the exponent incremented) to get
   
 \begin{equation}
-x = 2^{E} * y \label{eq:argred}
+x = 2^{E}. y \label{eq:argred}
 \end{equation}
 where $E$ is an integer, and $y$ satisfies
 \begin{equation}
@@ -65,7 +65,7 @@ where $E$ is an integer, and $y$ satisfies
 
 The final reconstruction will use the equation
  \begin{equation}
-\log(x) = E * \log(2) + \log(y) \quad.
+\log(x) = E \times \log(2) + \log(y) \quad.
 \end{equation}
 
 
@@ -85,7 +85,7 @@ following $P[i]$ will be noted $P$ when no ambiguity arises.
 Each polynomial has coefficients which are exactly representable as
 IEEE doubles, with the two first coefficients being exactly
 representable as the sum of two doubles: $c_0 = c_0^{hi} + c_0^{lo}$
-and $c1 = c_1^{hi} + c_1^{lo}$. Their relative approximation error is
+and $c_1 = c_1^{hi} + c_1^{lo}$. Their relative approximation error is
 also given in Table~\ref{table:TablePolysLog1}.
 
 
@@ -141,7 +141,7 @@ The computation of $E\times \log(2)$ as a double-double exploits the
 fact that $E$ is a small integer: The constant $\log(2)$ is stored as
 the sum of two double-precision numbers
 $l_h+l_l=\log(2)(1+\epsilon_{-101})$, with $l_h$ having the 11 lower
-bits of its mantissa equal to zero. Therefore, the computation of
+bits of its mantissa equal to zero, so that the computation of
 $E\otimes l_h$ is exact. Now $E\times \log(2)$ may be computed as
 Add12$(E\otimes l_h, E\otimes l_l)$.  There the Add12 procedure is
 exact as well as the computation of $E\otimes l_h$, so the only errors
@@ -162,7 +162,7 @@ The rounding tests need a bound on the relative error, which can be computed as 
 \item If $E\ne0$, then the result is computed as $E\times \log(2) +
   P(z)$. We compute a bound on the relative error by dividing the sum
   of all absolute errors in the approximation scheme by the minimum
-  value attainable value of the result:
+   value of the result:
   $$\maxrelerr{total} = \frac{\maxabserr{approx} +
     \maxabserr{rounding-poly} +
     \maxabserr{reconstruction}}{\min(|E\log(2)+P(x)|)}$$
@@ -470,23 +470,21 @@ are ensured by the image domain of the log.
 \section{Accurate phase}
 
 
-The function called is \texttt{scs\_log\_rn} for a result rounded to
-nearest, \texttt{scs\_log\_rd} for rounding down, or
-\texttt{scs\_log\_ru} for rounding up.
+There is only one accurate function, called is \texttt{scs\_log}. It
+returns an SCS number, which is rounded in the required mode by one of
+\texttt{scs\_get\_d}, \texttt{scs\_get\_d\_pinf} and
+\texttt{scs\_get\_d\_minf} in the corresponding functions in
+\texttt{log\_fast.c}.
 
 
 \subsection{Argument reduction}
 
-Argument reduction is the same as in the first step: 
-$x = 2^E \times y$,
-with $y = 1 + f$, $f \leq 2^{-1}$
-and  $\frac{1}{\sqrt(2)} \leq y < sqrt(2)$
-
-Therefore the \texttt{scs\_log\_*} functions take as arguments $y$ and $E$, computed
-in the first step (similarly, exceptional cases are not considered
+The first argument reduction is the same as in the quick phase.
+Therefore the function  \texttt{scs\_log}  take as arguments $y$ and $E$, computed
+in the quick phase (similarly, exceptional cases are not considered
 again).
 
-As in the first step we will compute the log using $$\log(x) = E \times log(2) + log(1+f)\quad .$$
+As in the quick phase, we will compute the log using $$\log(x) = E \times log(2) + log(1+f)\quad .$$
 
 Now we define $w_i = 1 + i\times2^{-4}$, for $i = -6 ... 6$, and we select the $w_i$ closest to $1+f$, in order to have: 
 
@@ -494,7 +492,11 @@ $$log(1+f) = log(w_i) + log(1+\frac{1+f-w_i}{w_i})$$
 
 where $r=\frac{1+f-w_i}{w_i} \leq 2^{-5}$.
 
-$log(w_i)$ and $log(2)$ are tabulated. 
+The values of $log(w_i)$, $1/w_i$ and $log(2)$ are tabulated. We
+therefore compute the reduced argument $R = (1+f-w_i)/w_i$ by a
+subtraction in double precision (exact thanks to Sterbenz Lemma)
+followed by a conversion to SCS (also exact) and an SCS multiplication
+(relative error smaller than $2^{-207}$ including the error in tabulating $1/w_i$).
 
 \begin{lstlisting}[caption={Argument reduction},firstnumber=1]
 void scs_log(scs_ptr res, db_number y, int E){ 
@@ -510,7 +512,7 @@ void scs_log(scs_ptr res, db_number y, int E){
   i = i >> 16; /* 0<= i <=11 */
   
 
-  wi.d = (11+i)*(double)0.6250e-1;
+  wi.d = ((double)(11+i))*0.0625;
 
   /* (1+f-w_i) */
   y.d -= wi.d; 
@@ -578,23 +580,30 @@ At the end, we compute:
 
 \subsection{Rounding}
 
-The procedure \texttt{scs\_log} returns an SCS number. It is rounded
-in the required mode by one of \texttt{scs\_get\_d}, \texttt{scs\_get\_d\_pinf} and
-\texttt{scs\_get\_d\_minf} in the corresponding functions in \texttt{log\_fast.c}. 
+As already stated, the procedure \texttt{scs\_log} returns an SCS number which is rounded
+in the required mode by the caller function. 
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Analysis of the logarithm performance}
 \label{section:log_results}
+The input numbers for the performance tests given here are random
+positive double-precision numbers with a normal distribution on the
+exponents. More precisely, we take random 63-bit integers and cast
+them into double-precision numbers.  
+
+
+In average, the second step is taken in 0.23\% of the calls, which
+seems a rather good balance considering the respective costs of the
+first and second steps (seen in the table as the min and max times,
+respectively).
+
 
 \subsection{Speed}
 Table \ref{tbl:log_abstime} (produced by the \texttt{crlibm\_testperf}
 executable) gives absolute timings for a variety of processors and
-operating systems.  The input numbers for these tests are random
-positive double-precision numbers with a normal distribution on the
-exponents. More precisely, we take random 63-bit integers and casted
-them into double-precision numbers.  
+operating systems.  
 
 \begin{table}[!htb]
 \begin{center}
@@ -639,7 +648,7 @@ them into double-precision numbers.
  \hline
  \texttt{crlibm} (using FMA)         & 5            & 1241          &         32 \\
 \hline
- \texttt{crlibm} (without FMA)        & 5           & 1144          &         26 \\
+ \texttt{crlibm} (without FMA)        & 5           & 1144          &         24 \\
 
 \hline
 \end{tabular}
@@ -651,11 +660,6 @@ them into double-precision numbers.
 Contributions to this table for new processors/OS/compiler combinations are welcome.
 
 
-In average, the second step is taken in 0.23\% of the calls, which
-seems a rather good balance considering the respective costs of the
-first and second steps (seen in the table as the min and max times,
-respectively).
-
 
 \subsection{Memory requirements}
 
@@ -665,9 +669,9 @@ Table size is
   $8\times 15\times8=960$ bytes for the eight polynomials, plus
   another $64$ bytes for the rounding constants, or a total of exactly
   1kB.
-\item for the \accurate\ phase, $1+13+13+20$ SCS constants ($\log(2)$,
-  the 13 $log(w_i)$ and the 13 $\frac{1}{w_i}$, and the polynomial of
-  degree 20 with a null first coefficient), or a little more than 2kB.
+\item for the \accurate\ phase, $1+13+13+20$ SCS constants:  $\log(2)$,
+  the 13 $log(w_i)$ and the 13 $\frac{1}{w_i}$,  the polynomial of
+  degree 20 with a null first coefficient. This amounts to a little more than 2kB.
 \end{itemize}
 
 
