@@ -1097,7 +1097,7 @@ $
 % 
 % Dessin xfig : magnification : 0.24 %
 % 
-    \input{exp_fig/reconstruction.pstex_t}
+    \input{fig_exp/reconstruction.pstex_t}
     \caption{\'Etape de reconstruction}
     \label{chap4:fig:reconstruction}
 \end{center}\end{figure}
@@ -1108,7 +1108,9 @@ $
 
 
 \subsection{Test if correct rounding is possible}
-We now have to round correctly the result and multiply it by $2^{k}$, with $k$ an integer. This multiplication is exact, therefore we have :
+
+We now have to round correctly the result and multiply it by $2^{k}$,
+with $k$ an integer. This multiplication is exact, therefore we have :
 
 $$
 \begin{array}{rcl}
@@ -1117,7 +1119,14 @@ $$
 \end{array}
 $$
 
-if the result do not represent a denormalised number. Indeed, if the final results belong to denormalised numbers, then the precision of the results is less than the $53$ bits of a normalized nomber. Lets take an exemple. Let $a=1.75$ be a floating-point number exactly representable in double precision format (we have $\circ(a) = a$). Let multiply this number by $2^{-1074}$, the exact result is $1.75 \times 2^{-1074}$ which is different of the result rounded to nearest in double precision $\circ(1.75 \times 2^{-1074})=2^{-1073}$. 
+if the result do not represent a denormalised number. Indeed, if the
+final result belongs to denormalised numbers, then the precision of
+the results is less than the $53$ bits of a normalized number. Let's
+take an exemple. Let $a=1.75$ be a floating-point number exactly
+representable in double precision format (we have $\circ(a) = a$). Let
+multiply this number by $2^{-1074}$, the exact result is $1.75 \times
+2^{-1074}$ which is different of the result rounded to nearest in
+double precision $\circ(1.75 \times 2^{-1074})=2^{-1073}$.
 
 Then in the case the result represent a denormalized number, we have to use a special procedure.
 
@@ -1318,7 +1327,7 @@ Test is we are in presence of one of the previous cases describe previously, and
 %\end{figure}
 
 \begin{figure}[ht] \begin{center}
-\input{exp_fig/rnd_to_nearest.pstex_t}
+\input{fig_exp/rnd_to_nearest.pstex_t}
 \caption{Description of problem with rounding to nearest of a denormalized number.
   \label{chap4:fig:rnd_to_nearest}}
 \end{center}\end{figure}

@@ -18,12 +18,15 @@
 \newtheorem{proof}{Proof}
 \newtheorem{propriete}{Property}
 
+
+
 \newcommand{\pref}[1]{<\ref{#1}>}
-\newcommand{\quick}{\textbf{Quick}}
-\newcommand{\accurate}{\textbf{Accurate}}
+\newcommand{\quick}{{quick}}
+\newcommand{\accurate}{{accurate}}
 \newcommand{\ulp}{\mbox{ulp}}
 \newcommand{\round}{\circ}
-\newcommand{\crlibm}{\texttt{cr-libm}}
+\newcommand{\crlibm}{\texttt{crlibm}}
+\newcommand{\scslib}{\texttt{scslib}}
 \renewcommand{\epsilon}{\varepsilon}
 
 \newcommand{\maxx}{{\widehat{|x|}}}
@@ -72,7 +75,7 @@
 
 
 \title{CR-LIBM\\A library of correctly rounded elementary functions in double-precision}
-\author{\mbox{Catherine Daramy}, \mbox{David Defour}, \mbox{Florent~de~Dinechin}}
+\author{\mbox{Catherine Daramy}, \mbox{David Defour}, \mbox{Florent~de~Dinechin}, \mbox{Jean-Michel Muller}}
 
 %% \abstract{
 %%   CRLibm is a mathematical library with correct rounding in
@@ -110,10 +113,10 @@
 
 \section*{Important warning}
 
-This report describes and proves the initial version of the
-\texttt{crlibm}  library. It may not correspond to the current
-code. However, an up-to-date version will always be distributed along
-with the code.
+This report describes and proves version \input{../../VERSION} of the
+\texttt{crlibm} library. It may therefore not correspond to the latest
+version. An up-to-date version will always be distributed along with
+the code.
 
 
 \tableofcontents

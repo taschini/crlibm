@@ -2,11 +2,6 @@
 
 \section{Notations\label{section:notations}}
 
-Throughout the paper, we will note, and  .
-
-
-
-
 
 The following notations will be used throughout this document:
 \begin{itemize}
@@ -31,7 +26,7 @@ in the IEEE-754 \emph{round to nearest} mode.
 
 
 
-\section{Common C procedures \label{section:commonC}}
+\section{Common C procedures  for double-precision numbers\label{section:commonCdouble}}
 
 \subsection{Sterbenz Lemma}
 
@@ -41,9 +36,7 @@ If $x$ and $y$ are floating-point numbers, and if ${y}/{2} \leq x \leq 2y$ then 
 \end{theorem}
 
 
-\subsection{Conversions}
-
-\subsubsection{Double-precision numbers in memory\label{section:memory}}
+\subsection{Double-precision numbers in memory\label{section:memory}}
 
 A double precision floating-point number uses $64$ bits that is two
 times the size of an integer usually represented with $32$ bits. The
@@ -75,7 +68,7 @@ upper, and lower part.
 
 
 
-\subsubsection{Conversion from floating-point to integer}
+\subsection{Conversion from floating-point to integer}
 
 \begin{theorem}[Conversion floating-point to integer \cite{AMD01}]
   The following algorithm convert a floating-point number $d$ into an
@@ -94,7 +87,7 @@ propagations with negative numbers.
 
 
 
-\subsection{Algorithms for double-double arithmetic}
+\section{Common C procedures for double-double arithmetic\label{section:commonCdoubledouble}}
 
 In this section, we give the basic algorithms for computing with
 numbers represented the sum of two floating-point numbers (or
@@ -104,7 +97,7 @@ implement them as macros or inlined functions. This implementation
 decision depends on the ability of the compiler.
 
 
-\subsubsection{Exact sum algorithm {Add12}}
+\subsection{Exact sum algorithm {Add12}}
 
 This algorithm is also known as the Fast2Sum algorithm in the litterature.
 \begin{theorem}[Exact sum~\cite{Knu73, Boldo2001}]
@@ -150,7 +143,7 @@ The cost of this algorithm is $3$ floating-point additions.
 
 
 
-\subsubsection{Exact product algorithm {Mul12}}
+\subsection{Exact product algorithm {Mul12}}
 
 This algorithm is also known as the Dekker algorithm.
 
@@ -211,12 +204,7 @@ which reduces the cost of this algorithm to $10$ floating-point
 additions and $7$ floating-point multiplications.
 
 
-
-
-
-
-
-\subsubsection{Double-double addition {Add22}}
+\subsection{Double-double addition {Add22}}
   
 This algorithm computes the sum of two double-double numbers as a double-double.
 
@@ -234,7 +222,7 @@ s = (ABS(x) > ABS(y))? (x-r+y+yy+xx) : (y-r+x+xx+yy);
 Here ABS is a macro that returns the absolute value of a floating-point number.
 
 
-\subsubsection{Double-double multiplication {Mul22}}
+\subsection{Double-double multiplication {Mul22}}
 
 \begin{lstlisting}[label={Mul22},caption={Mul22},firstnumber=1]
 void Mul22(double x, double xx, double y, double yy, double * z, double * zz){
@@ -251,7 +239,7 @@ void Mul22(double x, double xx, double y, double yy, double * z, double * zz){
 
 
 
-\subsection{Test if rounding is possible\label{section:testrounding}}
+\section{Test if rounding is possible\label{section:testrounding}}
 
 We assume here that an evaluation of $y=f(x)$ has been computed with a
 total relative error smaller than $\delta$, and that the result is
@@ -261,90 +249,9 @@ algorithms). This section gives and proves algorithms for testing if
 $y_h$ is the correctly rounded value of $y$.
 
 
-%% \subsubsection{Rounding to the nearest}
-%% % All this commented out, because of the  improved test below
-%% \begin{theorem}[Correct rounding of a double-double to a double]
-%%   Let $y$ and $\delta$ be real numbers, and $e$, $y_h$ and $y_l$ be
-%%   floating-point numbers such that 
-%%   \begin{itemize}
-%%   \item $y_h=y_h\oplus y_l$,
-%%   \item none of $y_h$ and $y_l$ is a  NaN.
-%%   \item $|y_h+y_l - y| < \delta.|y_h|$
-%%   \item $0< \delta \le 2^{-54}$
-%%   \item $e\ge 1+ 2^{55}\delta$ 
-%% \end{itemize}
-
-%% The following test determines whether $y_h$ is the
-%%   correctly rounded value of $y$ in  round to nearest mode.
-
-%% \begin{lstlisting}[label={roundingtonearest},
-%%   caption={Test for correct rounding to nearest},
-%%   firstnumber=1]
-%% if( (*@$y_h$@*) == ((*@$y_h$@*) + ((*@$y_l$@*)*e)) )
-%%   return (*@$y_h$@*);
-%% else /* more accuracy is needed, lauch accurate phase */
-%% \end{lstlisting}
-%% \end{theorem}
-
-%% \begin{proof}
-%% %%   The intuition here is the following: the exact value $y=f(x)$ is in
-%% %%   an interval $](y_h+y_l)(1-\delta),(y_h+y_l)(1+\delta)[$.  The
-%% %%   floating-point number $e$ is precomputed such that we have a
-%% %%   guarantee that $y$ is in the interval $[y_h+y_l, y_h+y_l\otimes e]$
-%% %%   (or $[y_h+y_l\otimes e, y_h+y_l]$ if $y_l$ is negative).  By
-%% %%   hypothesis we know that $\round(y_h + y_l) = y_h$.  The test tries
-%% %%   to round the other bound of the interval.  If the rounding of this
-%% %%   bound is also $y_h$, then thanks to the monotonicity of the rounding
-%% %%   function, it is also the rounding of all the points in the interval,
-%% %%   including $y$.
-  
-%% %%   We now give a more formal proof.
-  
-%%   The property holds if $y_h$ is $\pm \infty$.
-  
-%%   In the following we assume that $y_h\ge0$, as the other
-%%   case is symmetric.
-  
-%%   Let us note  $u=\ulp(y_h)$. By definition of the \ulp,
-%%   we have $y_h \in [2^{52}u, (2^{53}-1)u]$, which implies $y_h < 2^{53}u$. 
 
 
-%% %% The error bound
-%% %%   $|y_h+y_l - y| < \delta |y_h|$ therefore implies $|y_h+y_l - y| <
-%% %%   \delta |y_h|$.
-
-  
-%%   What we want to prove is that if the test is true, then $y_h =
-%%   \round(y)$. We will prove that $|y_l-\frac{1}{2}u| \ge 2^{53}\delta
-%%   u$, which implies $|y_l-\frac{1}{2}u| \ge \delta y_h$, which implies
-%%   that we are not in a difficult case for correct rounding to the
-%%   nearest.
-
-%%   Suppose that the test is true ($y_h \oplus y_l \otimes e = y_h$). 
-%%   With IEEE-54 compliant rounding to
-%%   nearest, this implies $|y_l \otimes e|
-%%   \le \frac{1}{2}u$, which in turn implies $|y_l \times e|
-%%   (1-2^{-53}) \le \frac{1}{2}u$. 
-  
-%%   Consider the case when $y_l$ is positive:  $0\le y_l \le \frac{1}{2}u$.
-%%   We get $y_l \times (1+e-1)(1-2^{-53}) \le \frac{1}{2}u$, or
-%%   \begin{equation}
-%%   \frac{1}{2}u - y_l \ge y_l (e-1)(1-2^{-53})\label{eq:prooftestRN}
-%%   \end{equation}  
-%%   Now if $0 \le y_l < \frac{1}{4}u$, then since $|\delta|<2^{-54}$ we
-%%   are in an easy case for rounding to the nearest, and $y_h =
-%%   \round(y)$. If $y_l \ge \frac{1}{4}u$, then (\ref{eq:prooftestRN})
-%%   implies $\frac{1}{2}u - y_l \ge \frac{1}{4}u (e-1)(1-2^{-53}) >
-%%   2^{53}\delta u$ (since  $e-1 \ge 2^{55}\delta$).
-  
-%%   The case when $y_l$ is negative is similar.
-%% \end{proof}
-
-%% Note that a fused multiply-and-add may be used safely for the
-%% computation of $y_h+y_l\times e$.
-
-
-\subsubsection{Rounding to the nearest}
+\subsection{Rounding to the nearest}
 
 \begin{theorem}[Correct rounding of a double-double to a double]
   Let $y$ and $\delta$ be real numbers, and $e$, $y_h$ and $y_l$ be
@@ -370,19 +277,6 @@ else /* more accuracy is needed, lauch accurate phase */
 \end{theorem}
 
 \begin{proof}
-%%   The intuition here is the following: the exact value $y=f(x)$ is in
-%%   an interval $](y_h+y_l)(1-\delta),(y_h+y_l)(1+\delta)[$.  The
-%%   floating-point number $e$ is precomputed such that we have a
-%%   guarantee that $y$ is in the interval $[y_h+y_l, y_h+y_l\otimes e]$
-%%   (or $[y_h+y_l\otimes e, y_h+y_l]$ if $y_l$ is negative).  By
-%%   hypothesis we know that $\round(y_h + y_l) = y_h$.  The test tries
-%%   to round the other bound of the interval.  If the rounding of this
-%%   bound is also $y_h$, then thanks to the monotonicity of the rounding
-%%   function, it is also the rounding of all the points in the interval,
-%%   including $y$.
-  
-%%   We now give a more formal proof.
-  
   The property holds if $y_h$ is $\pm \infty$.
   
   In the following we assume that $y\ge0$ (so $y_h\ge0$), as the other
@@ -391,11 +285,6 @@ else /* more accuracy is needed, lauch accurate phase */
   Let us note $u=\ulp(y_h)$. By definition of the \ulp, we have $y_h
   \in [2^{52}u, (2^{53}-1)u]$, which implies $y<2^{53}u$ as $y < y_h + y_l + \delta y
   < (2^{53}-1)u +\frac{1}{2}u +\frac{1}{2}u$.
-
-
-%% The error bound
-%%   $|y_h+y_l - y| < \delta |y_h|$ therefore implies $|y_h+y_l - y| <
-%%   \delta |y_h|$.
 
   
   What we want to prove is that if the test is true, then $y_h =
@@ -429,13 +318,17 @@ else /* more accuracy is needed, lauch accurate phase */
   The case when $y_l$ is negative is similar.
 \end{proof}
 
+ Note that a fused multiply-and-add may be used safely for the
+ computation of $y_h+y_l\times e$.
 
 
-\subsubsection{Rounding up}
+
+
+\subsection{Rounding up}
 
 TODO
 
-\subsubsection{Rounding down}
+\subsection{Rounding down}
 
 TODO
 
@@ -447,6 +340,308 @@ TODO
 
 \section{The Software Carry Save library}
 
+The accurate phase of two-step function evaluations uses
+multiple-precision representation and operators from the \scslib\ 
+library.  The software carry-save internal representation of
+multiple-precision numbers was designed specifically for simple and
+fast implementations of addition and multiplication in the 100-500 bit
+precision range. More details on software carry-save are available in
+\cite{DefDin2002,DinDef2003}.
+
+The parameters of \scslib\ are set up so that all the operators offer
+a relative error better than $2^{-200}$ (actually 208 to 210 bits).
+This is a large overkill for all the functions in \crlibm, as the
+worst cases computed by Lefevre never require more than 158 bits of
+accuracy. This enables simple proofs for the second steps, assuming
+the operators in \scslib\ are correct.
+
+Another feature that makes accuracy proofs simple when using \scslib\ 
+is the following: The range of SCS numbers includes the range of IEEE
+double-precision numbers, including denormals and exceptional cases.
+Conversions between SCS format and IEEE-754 doubles, as well as
+arithmetic operations, follow the IEEE rules concerning the
+exceptional cases. SCS doesn't ensure correct rounding, but provides
+conversions to doubles in the four IEEE-754 rounding modes, wich is
+enough for the purpose of \crlibm.
+
+A formal proof of correctness of the \scslib\ operators remains to be
+done. Currently there is nothing more than good confidence based on
+the simplicity of the code.
+
+
+\subsection{Machine implementation}
+ A MP number is represented in the proposed format as a
+\emph{Software Carry Save} (SCS) structure $R$, depicted on
+Figure~\ref{defourdinechin:fig:representation} and composed of the following
+fields:
+\begin{description}
+\item[\emph{R.digits[$n_r$]}] A table of $n_r$ digits with $m_r$ bits
+  of precision, using either integer or FP machine numbers 
+  (depending of the architecture);
+\item[\emph{R.index}] An integer storing the index of the first digit
+  in the range of representable numbers, as depicted on
+  Figure~\ref{fig:representation};
+ \item[\emph{R.sign}] A sign information.  
+\end{description}
+
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=0.7\textwidth]{fig_scs/exponent_representation} % image file name
+\caption{The proposed format \label{fig:representation}}
+\end{center}
+\end{figure}
+  
+In other words, the value  $x$ of a representation $R$  is:
+\begin{equation}
+\label{defourdinechin:eqn4}
+x = R.sign \times \sum_{j=1}^{n_r} R.digits[j] \times 2^{m_r * (R.index - j)}
+\end{equation}
+
+In such a \emph{normal} SCS number $R$, the bits from $m_I$ to $m_r$
+of the $R.digits$ fields are thus set to zero. They will be exploited
+by the algorithms to store temporary \emph{carry} information, and are
+therefore called \emph{carry-save} bits. An SCS number where these
+bits are non-zero is said to be non-normal.
+
+
+In the case when FP machine numbers are used, their exponent field is
+unused: Using it would make alignment of mantissas, in the addition
+algorithm, much more complex. However, a trick allows to exploit their
+sign bit, along with the well-defined rounding properties of the
+IEEE-754 standard, to increase the precision of each word by one bit,
+which explains some values of Table~\ref{defourdinechin:table}. Due to lack of space
+we do not detail this trick here.
+
+
+\subsection{Arithmetic operations\label{defourdinechin:sec:ops}}
+
+In this section we present algorithms used to perform basic arithmetic
+operations. For easier comprehension, we adopt a syntax very similar
+to the C language syntax.
+
+\subsubsection{Conversion from double to SCS}
+ A first method for converting a double precision floating
+point number $d$ into an SCS representation is to extract the
+exponent $d_{exp}$ from $d$, and then determine the corresponding
+$R.index$ as the integer part of
+$\frac{d_{exp}}{2^{m_r}}$.
+
+Another method, described below, uses only a variable number of
+multiplications by $2^{m_r}$ or $2^{-m_r}$. This method is faster than the previous
+one when the exponent of $d$ is close to $0$.
+
+%% \begin{small}
+%% \begin{algorithm}[double2SCS]\mbox{}\\[-3ex]
+%% %\begin{defourdinechinspecialdescription}{Stimulus:}
+%%   \begin{description}
+%% \item[Input:] A double precision floating point number $d$
+%%     \vspace{-2mm}
+%%   \item[Output:] A multi-precision number $R$ \vspace{-2mm}
+%%   \item[Method:]
+%%   \begin{tabbing}
+%%     $R.index=0$;\\ 
+%%     {\bf if} $d$ $\in$ \{Nan, $+\infty$, $-\infty$\}
+%%     {\bf then} \{$R=d$; {\bf return}; \}\\
+%%     {\bf if} $d>0$  
+%%     \={\bf then}  \= \{ $R.sign = 1$; \}\\
+%%     \> {\bf else} \> \{ $R.sign = -1$; ~~ $d = -d$; \}
+%%   \end{tabbing}
+%%   \vspace{-2ex}
+%%   \begin{tabbing}
+%%     {\bf while} $d>2^{m_r}$ \= {\bf do} \= \{ $R.index++$; ~~ $d = d \times 2^{-m_r}$; \}\\  
+%%     {\bf while} $d<1$ \> {\bf do} \> \{ $R.index --$; ~~ $d = d \times 2^{m_r}$; \}\\
+%%     {\bf for(}$i=1$ {\bf;} $i \leq n_r$ {\bf;} $i++$ {\bf)} \\ 
+%%     \ind \{ $R.digits[i] = \lfloor d \rfloor$; ~~ 
+%%     $d=(d-R.digits[i]) \times 2^{m_r}$; \}
+%%   \end{tabbing}
+%% \end{description}
+%% %\end{defourdinechinspecialdescription}
+%% \end{algorithm}
+%% \end{small}
+TODO:
+A REFAIRE COMPLETEMENT
+
+
+%----------
+% ADDITION
+%----------
+\subsubsection{Addition and subtraction}
+
+The addition of two SCS numbers of the same sign consists in
+aligning, then adding digits of the same order. Thanks to the
+carry-save bits, all these additions will be \emph{exact} and
+\emph{independent}.  However the result will usually not be a normal
+SCS number: the sums will have overflown in the carry-save bits. A
+\emph{renormalization} procedure is presented in section \ref{defourdinechin:renorm}
+to propagate these carry bits and get again a normal SCS number.
+However, the advantage of SCS representation is that many SCS
+numbers can be summed before needing to perform this expensive step
+(the exact number depends on the value chosen for $m_r$, $m_I$ and
+$n_r$). For example, with $m_I=64$ and $m_r=30$ (see
+Table \ref{defourdinechin:table}), we can add approximately $8 \times 10^{9}$
+normal SCS numbers between two renormalizations. 
+
+The subtraction (addition of two numbers of opposite signs) is very
+similar to the addition algorithm, although more depending on the
+choice of integer or FP format. It may also classically lead to a
+cancellation, which may need an update of the index of the result. Due
+to lack of space we do not detail this here.
+
+Although all the digit operations are exact, the addition or
+subtraction of two numbers also classically involves a rounding error,
+due to aligning the digits of same magnitude.
+
+
+
+
+%---------------- 
+% MULTIPLICATION
+%----------------
+\subsubsection{Multiplication}
+
+The multiplication of two normal SCS numbers involves the operations
+depicted on the Figure \ref{defourdinechin:fig:multiplication}: The partial products
+are computed (in parallel) and summed in columns. We already showed in
+section~\ref{defourdinechin:theformat} that none of these operation overflows as long
+as equation~\ref{defourdinechin:eqn_general} is satisfied. Again, the result is not a
+normal SCS number, and a renormalization procedure (described below)
+has to be applied to empty the carry bits. However, a few additions
+may follow a multiplication before this renormalization, which allows
+for further optimization of algorithms using SCS arithmetic. For
+instance, a polynomial evaluation can be implemented with a
+renormalization after one multiplication and one addition.
+
+Here also, a rounding error is involved when two $n_r$-digit numbers
+are multiplied if the result is to fit on $n_r$ digits. The actual
+implementation tests if the most significant digit ($z_1$ on
+Figure~\ref{defourdinechin:fig:multiplication}) is null, in which case the index of
+the result is that of $z_2$.
+
+A further optimization is to avoid computing the columns of lower
+magnitude, at the expense of a known increase in the rounding error.
+The significance of such a tradeoff is application-dependent.
+
+
+\subsubsection{Renormalization (carry propagation) \label{defourdinechin:renorm}}
+
+Renormalization is a carry propagation from the low
+order to high order digits:  Starting with an initially null carry, at
+each step, the previous carry is added to the current digit, and this
+sum is then split into two parts. The low $m_r$ bits are a digit of
+the normalized result, and the upper part is the next carry.
+
+The actual algorithm is a little bit more complex. The initial
+non-normal number may not be representable exactly as a normal SCS
+number, therefore the index of the normalized result has to be
+increased by one or two.  Normalization thus again involves a rounding
+error.
+
+To get the higher-order part of a floating-point digit, the classical
+method is to add, then subtract the constant
+$2^{m_I+m_r}+2^{m_I+m_r-1}$. For integer digits, a simple mask is used.
+
+
+
+%-----------------
+% CONVERSION BACK
+%-----------------
+\subsubsection{Conversion from SCS to floating-point}
+
+A few (4 in the worst case) multiplications and additions suffice to
+get the FP number closest to a SCS number.  For instance, for $m_I=53$
+and $m_r=26$, we need to compute $d = A.sign \times 2^{A.index \times
+  m_r} \times ( A.digits[0]+ 2^{-m_r} \times A.digits[1]+ 2^{-2.m_r}
+\times A.digits[2]+ 2^{-3.m_r} \times A.digits[3])$. The number
+$2^{A.index \times m_r}$ is build using integer masks. The actual
+implementation of this formula is slightly less simple, but this
+conversion is still very fast.
+
+
+\subsubsection{Mixed 32- and 64-bit arithmetics}
+
+An improvement implemented in \scslib\ was the combined use of integer 32- and 64-bit
+arithmetics as follows: 
+
+\begin{itemize}
+\item MP digits are stored as 32-bit numbers where only a few bits are
+  reserved for carries. This removes the main problem of the initial
+implementation \cite{Dinechin2002b}, namely its memory inefficiency.
+
+\item Addition uses 32-bit arithmetic. 
+
+\item In the MP multiplication, the partial products are products of
+  two 32-bit digits, which are 64-bit numbers. The column sums need
+  thus to be computed using 64-bit arithmetic. This can be expressed
+  in the C language in a non-ANSI-C99, but de-facto standard way, as
+  follows: 32-bit numbers have the \texttt{unsigned int} type; 64-bit
+  numbers have the \texttt{unsigned long long int} type. When
+  multiplying two digits, one is first cast into this 64-bit type.
+  
+  For UltraSPARC architectures (detected at build time) the
+  conversion is to floating-point, but we will not detail this
+  peculiarity further.
+\end{itemize}
+
+
+This works well because all modern processors either have 64-bit
+integer units, or offer instructions which store the 64-bit product of
+two 32-bit integers into two 32-bit registers. The compiler does the
+rest well, because it is conceptually simple: casting unsigned 32-bit
+into unsigned 64-bit is trivial; 64-bit addition is translated
+straightforwardly into one 32-bit \emph{add} followed by one 32-bit
+\emph{add-with carry}.
+
+
+
+
+\subsubsection{Implementation considerations}
+
+For portability purposes, the implemention uses ANSI C as defined by
+the C99 standard, and tries to use a recent version of \texttt{gcc}.
+We could not exhibit a case where a native compiler from the processor
+vendor (Intel or Sun) gave significantly better results than
+\texttt{gcc}, which is probably a consequence of the simplicity of our
+code.
+
+However, when tuning for performance, we observed that the same code
+which was efficient on one processor could lead to very poor results
+on another.  Usually, this difference can be traced down to the
+capabilities of the processor itself. The typical example is the
+knowingly poor integer multiplication on UltraSPARC II. Sometimes
+however, the processor should be able to perform well, and it is the
+processor-specific backend of the compiler which is to blame, which
+can be checked by observing the assembly code produced.  A typical
+example is the casting of 32-bits digits to 64-bit arithmetic (or to
+an FP number in the case of the UltraSPARC) in the multiplication
+algorithm. In these cases we tried to change the programming style in
+a way that works well on all processors. Sometimes it wasn't possible,
+in which case the code contains, along with a generic version, several
+processor-specific tricky versions of the problematic operation,
+selected at compile time thanks to the GNU \texttt{automake/autoconf}
+tools.
+
+
+More surprisingly, we were disappointed by the higher-level
+capabilities of the compilers, especially at unrolling loops. Our code
+exhibits many small \texttt{for} loops whose size is known at
+compile-time (usually $n$). This is the ideal situation for loop
+unrolling, a technique well known and described in most textbooks on
+compiler design. Options exist in most compilers to turn on this
+optimisation. Unfortunately, leaving loop unrolling to the compiler
+gives very poor results, even when compared to the non-unrolled case.
+Since unrolling the loops by hand in the C code takes a few minutes,
+we did it for the version of the library which we use ($m=30$, $n=8$).
+It marginally increases the code sizes for this small $n$, and
+sometimes provides a twofold improvement on speed, depending of the
+processor. Of course, this is not satisfactory: We don't want to do it
+for all values of $n$, nor do we want to study for each processor the
+tradeoffs involved as $n$ increase. We expect however future compilers
+to handle unrolling better, and we were surprised that no compiler had
+a clear edge on the other in this respect. Some argue, however, that
+this issue is pointless, as superscalarity, along with register
+renaming and branch prediction inside modern processors, sum up to the
+equivalent of dynamic unrolling of the code. In our tests, it isn't :
+unrolling does bring a speed-up.
 
 
 

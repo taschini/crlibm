@@ -9,7 +9,7 @@ correctly rounded result in double precision. The worst-case accuracy
 required for this purpose is $118$ bits according to Lefèvre and
 Muller \cite{LefMul2004}.
 
-We therefore proceed in two steps as suggested by Ziv \cite{Ziv71}.
+We therefore proceed in two steps as suggested by Ziv \cite{Ziv91}.
 The first step (program \texttt{log\_fast.c}) is fast but accurate
 only to $59$ bits.  If this is not enough to decide correct rounding,
 a second step accurate to $120$ bits is lauched (program
