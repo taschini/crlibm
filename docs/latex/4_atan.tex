@@ -1,0 +1,509 @@
+\newcommand{\xred}{X_{\mathrm{red}}}
+\newcommand{\xredhi}{X_{\mathrm{red hi}}}
+\newcommand{\xredlo}{X_{\mathrm{red lo}}}
+
+\section{Overview}
+
+We compute atan in two steps : the first one gives us a precision around 64
+bits. The second one compute about 130 bits of precision is order to have
+correct rounding in all cases (the worst-case is ...).
+
+\subsubsection{Definition interval and exceptional cases}
+
+The inverse tangent is defined over all real number.
+
+\begin{itemize}
+\item If $x = Nan$ , then $\arctan(x)$ should return $NaN$
+\item If $x = \pm\infty$ , then $\arctan(x)$ should return
+$\pm\round(\pi/2)$. 
+\end{itemize}
+we choose to return $\pm\round(\pi/2)$ when $|x|>2^{54}$ since
+$\pm\round(\pi/2) =\pm\rounddown(\pi/2) $. That could be a probem for
+rounding up but we choose not to have a x with $\arctan(x) > \pi/2$.
+\section{Quick phase}
+
+We try to have about 64 bits of precision.
+
+\subsection{Overview of the algorithm.}
+
+There are two steps in the algorithm: an argument reduction and a polynomial
+approximation with a degree 9 polynomial. We return $\arctan(x)$ when
+$x>0$ and $-\arctan(-x)$ when $x<0$ in order to compute $\arctan(x)$ for positive
+values only.
+
+We compute $\arctan(x)$ as 
+\begin{equation}
+\arctan(x) = \arctan( b_i ) + \arctan(\frac{x-b_i}{1+x.b_i}) \label{eq:arctan_redu}
+\end{equation}
+
+The $b_i$ are exact double and $\arctan(b_i)$ are stored in
+double-double.
+
+We defined $\xred = \dfrac{x-b_i}{1+x.b_i}$ for the rest of this chapter.
+
+We build 62 intervals $[a_i;a_{i+1}]$ and 62 $b_i$ in order that $ x \in
+[a_i;a_{i+1}] \Rightarrow \dfrac{x-b_i}{1+x.b_i} < e$
+
+We make a dichotomy in order to find $i$ such as $ x \in [a_i;a_{i+1}]
+$. That's why we choose 62 $b_i$ and $e=2^{-6.3}$ (since 62 is close to
+$2^6$ and a power of 2 is better for dichotomy).
+
+Then we use a 9 degree polynomial for the approximation of $\arctan(\xred)$:
+in order to have 66 bits of precision.
+
+\begin{equation}
+\begin{split} \arctan(x)& \approx x - \dfrac{1}{3} .x^3 + \frac{1}{5}.x^5
+- \frac{1}{7}.x^7 + \frac{1}{9}.x^9 \\ \label{eq:poly_eval}
+  & \approx x . ( 1 + Q(x^2))
+\end{split}
+\end{equation}
+where 
+Q is evaluated thanks to a Horner scheme:
+$ Q(z) = z. (-\frac{1}{3} + z.(\frac{1}{5} + z.(-\frac{1}{7} +
+z.\frac{1}{9}))) $
+where each operation is computed in double.
+
+At the end, the reconstruction implements equation and (\ref{eq:poly_eval})  
+(\ref{eq:arctan_redu}) in double-double
+arithmetic.
+ to improve performances.
+
+%\begin{equation} \arctan(x) = \arctan( b_i ) + \arctan(\frac{x-b_i}{1+x.b_i}).\label{eq:\arctan_redu}
+%\end{equation}
+
+
+\subsection{Details of computer program}
+  
+\subsubsection{Exceptional cases}
+\begin{lstlisting}[caption={Exceptional cases},firstnumber=1]
+
+  db_number x_db;
+  x_db.d = x;
+  unsigned int hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
+
+  /* Filter cases */
+  if ( hx >= 0x43500000)           /* x >= 2^54 */
+    {
+      if ( ( (hx & 0x000fffff) | x_db.i[LO_ENDIAN] ) == 0)
+        return x+x;                /* NaN */
+      else
+        return HALFPI.d;           /* \arctan(x) = Pi/2 */
+    }
+  else
+    if ( hx < 0x3E400000 )
+      {return x;                   /* x<2^-27 then \arctan(x) =~ x */}
+
+\end{lstlisting}
+\begin{tabular}{ll}
+Lines 3 & Test if x is greatear than $2^{54}$, $\infty$ or $NaN$. \\
+Line 5,6 & return $\arctan(NaN) = NaN$\\
+Line 8 & \texttt{HALFPI} is the greatest double smaller than
+&$\dfrac{\pi}{2}$ in order not to have $\arctan(x) > \dfrac{pi}{2}$.\\
+Line 11 & When $x<2^{-27}$ : $x^2 < 2^{-54}$. Plus we know that $\arctan(x) = \displaystyle {\sum_{i=0}^{\infty}
+\frac{x^{2i+1}}{2i+1}(-1)^i}$.
+\end{tabular}
+\begin{eqnarray}
+\lefteqn{ 
+     \Big| \frac{\arctan(x)-x}{x}  \Big|  = 
+     \Bigg|\frac{ \displaystyle {\sum_{i=0}^{\infty}
+     \Big( \frac{x^{2i+1}}{2i+1}(-1)^i} \Big) - x}{x} \Bigg|
+                                \nonumber 
+                                }\\
+& & {} = \Big|\displaystyle {\sum_{i=1}^{\infty}}
+     \frac{x^{2i}}{2i+1}(-1)^i\Big|\nonumber \\ 
+& & {} < \frac{x^2}{3}\nonumber \\
+& & {} < 2^{-54} \nonumber
+\end{eqnarray}
+
+\bigskip
+
+
+\subsubsection{Argument reduction}
+\begin{lstlisting}[caption={Reduction},firstnumber=1]
+
+  if (x > my_e) /* test if reduction is necessary : */ 
+  {
+    double xmBIhi,xmBIlo;      
+
+      if (x > value[61][B].d) {
+        i=61;
+        Add12( xmBIhi , xmBIlo , x , -value[61][B].d);
+      }
+      else {
+        /* determine i so that a[i] < x < a[i+1] */
+        i=31;
+        if (x < value[i][A].d) i-= 16;
+        else i+=16;
+        if (x < value[i][A].d) i-= 8;
+        else i+= 8;
+        if (x < value[i][A].d) i-= 4;
+        else i+= 4;
+        if (x < value[i][A].d) i-= 2;
+        else i+= 2;
+        if (x < value[i][A].d) i-= 1;
+        else i+= 1;
+        if (x < value[i][A].d) i-= 1;
+          
+        xmBIhi = x-value[i][B].d;
+        xmBIlo = 0.0;
+      }
+\end{lstlisting}
+
+\begin{tabular}{ll}
+Lines  1 & test if $x > 2^{-6.3}$ and so need to be reduced\\
+Line 5 & test if $x>b[61]$ because when $i \in [0;60] : b_i/2 < x <
+b_i$ (or $ x/2 < b_i < x$) and then \\&$x-b_i$ is computed exactly
+value thanks to Sterbenz lemma.\\
+Line 10...21 & compute $i$ so that $\frac{x-b_i}{1+x.b_i} < 2^{-6.3} $\\
+Line 7 and 23 & compute $xmBIhi + xmBIlo = x - b_i$
+
+\end{tabular}
+
+\begin{lstlisting}[caption={Reduction : 2nd part},firstnumber=1]
+
+      Mul12(&tmphi,&tmplo, x, value[i][B].d);
+
+      if (x > 1)
+        Add22(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
+      else {Add22( &x0hi , &x0lo , 1.0,0.0,tmphi,tmplo);}
+
+      DIV2( xmBihi , xmBilo , x0hi,x0lo, Xredhi,Xredlo);
+
+\end{lstlisting}
+\begin{tabular}{ll}
+Line 1 & compute $x.b_i$\\
+Line 3-5 & We need to have a Add22Comp but as we know that $x.b_i > 0$ (so
+$tmphi>0$), We test if\\& $tmphi$ is greater than 1 in order to be
+faster.\\
+Line 7 & compute $\xred = \dfrac{x-b_i}{1+x.b_i}$
+\end{tabular}
+\bigskip
+\subsubsection{Polynomial evaluation and reconstruction}
+
+\begin{lstlisting}[caption={Polynomial Evaluation and recontruction},firstnumber=1]
+
+      Xred2 = Xredhi*Xredhi;
+
+      q = Xred2*(coef_poly[3]+Xred2*
+                 (coef_poly[2]+Xred2*
+                  (coef_poly[1]+Xred2*
+                   coef_poly[0]))) ;
+
+      /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
+      double testlo = Xredlo+ value[i][ATAN_BLO].d + Xredhi*q;
+      double tmphi2, tmplo2;
+      Add12( tmphi2, tmplo2, value[i][ATAN_BHI].d, Xredhi);
+      Add12( atanhi, atanlo, tmphi2, (tmplo2+testlo));
+
+\end{lstlisting}
+
+\begin{tabular}{ll}
+Line 1 & Computation of $(\xred)^2$\\
+Line 3 & Computation of the polynomial evaluation\\
+Line 5-8 & We use an approximation of the reconstruction to compute faster  \\
+       & $\arctan(b_i))_{hi}+\arctan(b_i)_{lo} +
+        (\xredhi+\xredlo).(1+Q)$\\
+       & We compute this in tree steps $test_{lo}= \xredlo+ \arctan(b_i)_{lo}
+        + \xredhi.q$.\\
+       & then we add $\xredhi+\arctan(b_i)_{hi}$ at the end we add the two results.\\
+\end{tabular}
+
+We represent the different values on the next figures :
+
+\label{fig:rec}
+\begin{center}
+ \small
+ \setlength{\unitlength}{3ex}
+      \framebox{
+        \begin{picture}(22,3.5)(-3,-4.15)
+         \put(9.5,-0.5){\line(0,-1){4}}  \put(9,-1){$\epsilon$}
+  
+          \put(4,-2){$\arctan(b_i)_{hi}$} \put(0.05,-2.15){\framebox(7.9,0.7){}}
+          \put(12,-2){$\arctan(b_i)_{lo}$}  \put(8.05,-2.15){\framebox(7.9,0.7){}}
+
+          \put(4,-3){$\xredhi$} \put(0.55,-3.15){\framebox(7.9,0.7){}}
+          \put(12,-3){$\xredlo$}  \put(8.55,-3.15){\framebox(7.9,0.7){}}
+
+          \put(5,-4){$\xredhi.Q$} \put(2.05,-4.15){\framebox(7.9,0.7){}}
+          \put(13,-4){$\xredlo.Q$}  \put(10.05,-4.15){\framebox(7.9,0.7){}}
+
+        \end{picture}
+      }
+  \end{center}
+\label{fig:rec}
+\begin{center}
+ \small
+ \setlength{\unitlength}{3ex}
+      \framebox{
+        \begin{picture}(22,3.5)(-3,-4.15)
+         \put(9.5,-0.5){\line(0,-1){4}}  \put(9,-1){$\epsilon$}
+  
+          \put(4,-2){$\arctan(b_i)_{hi}$} \put(0.05,-2.15){\framebox(7.9,0.7){}}
+          \put(12,-2){$\arctan(b_i)_{lo}$}  \put(8.05,-2.15){\framebox(7.9,0.7){}}
+
+          \put(4,-3){$\xredhi$} \put(0.55,-3.15){\framebox(7.9,0.7){}}
+          \put(12,-3){$\xredlo$}  \put(8.55,-3.15){\framebox(7.9,0.7){}}
+
+          \put(5,-4){$\xredhi.Q$} \put(2.05,-4.15){\framebox(7.9,0.7){}}
+
+        \end{picture}
+      }
+  \end{center}
+\label{fig:rec}
+\begin{center}
+ \small
+ \setlength{\unitlength}{3ex}
+      \framebox{
+        \begin{picture}(22,2.5)(-3,-4.15)
+         \put(9.5,-0.5){\line(0,-1){4}}  \put(9,-1){$\epsilon$}
+  
+          \put(0.5,-3){$(\arctan(b_i)_{hi} + \xredhi)_{hi}$}
+          \put(0.05,-3.15){\framebox(7.9,0.7){}}
+          \put(8.5,-3){$(\arctan(b_i)_{hi} + \xredhi)_{lo}$} \put(8.05,-3.15){\framebox(7.9,0.7){}}
+
+          \put(5,-4){$testlo$} \put(2.05,-4.15){\framebox(7.9,0.7){}}
+
+
+        \end{picture}
+      }
+  \end{center}
+\bigskip
+\subsection{Error analysis}
+
+We choose four rounding constant : two when there is a argument reduction, two in
+the other case. For each case, we have make two constant on order to
+improve performances. We will compute the error separately.
+
+An accurate computation is done in \texttt{maple/arctan\_coef.mw} 
+
+\subsubsubsection{Notes on $b_i$, $a_i$ and $\arctan(b_i)$}
+The $b_i$ and $a_i$ are computed thanks to the \texttt{allbi} maple
+procedure (see \texttt{maple/arctan\_coef.mw}). There is no approximation
+error on $b_i$ since they are computed (in the maple procedure) as
+double. $\arctan (b_i)$ are stored in double-double so there is an
+approximation of $2^{-105}$ on them. We have a possible error about $a_i$
+because they are real number stored as double but we have a margin on $a_i$
+that prove us that $\xred$ is always smaller than $e$.
+
+\\
+\subsubsection{Error about argument reduction}
+\begin{lstlisting}[caption={Reduction part 1},firstnumber=1]
+
+      if (x > value[61][B].d) {
+        i=61;
+        Add12( xmBihi , xmBilo , x , -value[61][B].d);
+      }
+      else
+      {
+        ...
+        /* determine i so that a[i] < x < a[i+1] */
+        ...          
+        xmBihi = x-value[i][B].d;
+        xmBilo = 0.0;
+      }
+      
+\end{lstlisting}
+
+In the worst case, we have $\epsilon_{105}$ relative error when we compute
+$x-b_i$.
+
+\begin{lstlisting}[caption={Reduction part 2},firstnumber=1]
+
+      Mul12(&tmphi,&tmplo, x, value[i][B].d);
+
+      if (tmphi > 1)
+        Add22(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
+      else {Add22( &x0hi , &x0lo , 1.0,0.0,tmphi,tmplo);}
+      
+      DIV2( xmBihi , xmBilo , x0hi,x0lo, xhi,xlo);
+
+\end{lstlisting}
+
+\begin{tabular}{ll}
+Line 1 & The error due to the Mul12 $< \epsilon_{105}$\\
+Line 4-5 & Add22 : $\epsilon_{105}$\\
+Line 6 & DIV2 makes $\epsilon_{104}$ (according to Ziv ... ref) error so we have :
+\end{tabular}
+
+\begin {equation}
+\epsilon_{\xred} = (1+\epsilon_{105})(1+\epsilon_{105}+\epsilon_{105}+\epsilon_{104})-1 \cong
+\epsilon_{102.6}
+\end {equation}
+
+\subsubsection{Error about polynomial evaluation}
+\begin{lstlisting}[caption={Polynomial Evaluation},firstnumber=1]
+
+      Xred2 = Xredhi*Xredhi;
+      
+      q = Xred2*(coef_poly[3]+Xred2*
+                 (coef_poly[2]+Xred2*
+                  (coef_poly[1]+Xred2*
+                   coef_poly[0]))) ;
+
+      /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
+      double testlo = Xredlo+ value[i][ATAN_BLO].d + Xredhi*q;
+      double tmphi2, tmplo2;
+      Add12( tmphi2, tmplo2, value[i][ATAN_BHI].d, Xredhi);
+      Add12( atanhi, atanlo, tmphi2, (tmplo2+testlo));
+
+\end{lstlisting}
+\begin{tabular}{ll}
+Line 1 & $\xred \times \xred$ makes an error of $\epsilon_{53}$ so $x2 =
+      o((\xredhi)^2) = (\xredhi)^2 + \epsilon_{53} = x^2 + \epsilon_{105} +
+      \epsilon_{53} + \epsilon_{53} $\\ 
+      &the error about x2 is $\epsilon_{52}$ \\
+Line 3 & Horner approximation with error on x2 :
+      Maple compute an error around $\epsilon_{50.7}$\\ 
+Line 5-9 & We need to add $\arctan(b_i)_{hi}+\arctan(b_i)_{lo} +
+      (\xredhi+\xredlo).(1+Q)$\\
+      &
+      We compute this in tree steps $test_{lo}= \xredlo+ \arctan(b_i)_{lo}
+      + \xredhi.q$.\\
+      & then we add $\xredhi+\arctan(b_i))_{hi}$ at the end we add the two results.\\
+
+      &We have two kinds of errors. A first because we forgot $\xredlo.Q$
+      but $\xredlo < \xredhi.2^{-53}$ \\ &and $q<x^2<2^{-12.6}$ so $error =
+      \epsilon_{65.6}$. \\
+      & A second error due to the operations : the computation of
+      $test_{lo}$ causes 3 errors :\\
+      & $ \epsilon_{53}.(\xredlo+ \arctan(b_i)_{lo}) < \delta_{105}$\\
+      & $\epsilon_{53}.\xredhi.q < \delta_{53+6.3+6.3*2} < \delta_{71.9}$\\
+      & $ \epsilon_{53} . testlo < \delta_{65.5}$\\
+
+      &If we add all these errors, we have 
+
+      $testlo_{error} = < \epsilon_{52}.e^3 + \epsilon_{105}.e +
+      \epsilon_{65.6}.e = \delta_{70.89}$\\
+
+Line 8 & Add12 add an relative error of $\epsilon_{105}$ so the absolute error is
+      $\epsilon_{105}.(\arctan(b_i)_{hi} + \xredhi) < \epsilon_{105}.\frac{\pi}{2}$\\
+Line 9 & Add12 add an relative error of $\epsilon_{105}$ so the absolute error is 
+       less than $\epsilon_{105}.\frac{\pi}{2}$
+\end{tabular}
+\bigskip
+
+\subsubsection {Error due to the polynomial approximation}
+
+The error due to the polynomial approximation is $\delta_{approx} =
+\infnorm{ \arctan(x) - x.(1+Q)}= \delta_{72,38}$ 
+
+\subsubsection {Final error and rounding constant}
+
+We have to add all error : 
+\begin{equation}
+\delta_{error} = \delta_{72,38} (\text{due to the error on the polynomial
+approximation}) + \epsilon_{105}.\frac{\pi}{2} +
+\epsilon_{105}.\frac{\pi}{2} + \delta_{approx} = \delta_{70.45}
+\end{equation}
+
+So when $i < 10$, the relative error is $\epsilon_{64.15}$ that leads to a
+rounding constant of $1.000876$.
+
+And when $i > 10$ the relative error is $\epsilon_{70.27}$ that leads to a
+rounding constant of $1.00000126$.
+\end{tabular}
+
+\subsubsection{Error when there is no reduction}
+\begin{lstlisting}[caption={No reduction},firstnumber=1]
+
+      x2 = x*x;
+      q = x2*(coef_poly[3]+x2*
+                 (coef_poly[2]+x2*
+                  (coef_poly[1]+x2*
+                   coef_poly[0]))) ;
+      Add12(atanhi,atanlo, x , x*q);
+
+\end{lstlisting}
+
+The code is very simple so there is few error :
+\begin{tabular}
+Line 1 & $\epsilon_{53}$
+Line 2 & The Maple procedure to compute Horner approximation gives $\epsilon_{51}$
+Line 3 & $delta_{no\_reduction} = \epsilon_{105}.x + \epsilon_Q.x^3 +
+\epsilon_{x.Q}.x^3 + |arctan(x) - x.(1+Q)| $
+\end{tabular}
+
+When $x>2^{-10}$ the relative error is $\epsilon_{62.9}$. The
+constant is $1.0021$. 
+
+When $x<2^{-10}$ the relative error is $\epsilon_{70.4}$. The
+constant is $1.0000114$. 
+
+\section{Accurate phase}
+The accurate phase is the same as the quick phase, except that number are
+scs and not double.
+
+The intervals are the same as in quick phase. The only difference is that
+$\arctan(b_i)$ as a third double to improve the precision of $\arctan(b_i)$ to
+150 bits.
+
+The polynomial degree is 19 in order to have 136 bits of precision.
+
+\begin{equation} \arctan(x) \approx
+x-\frac{1}{3}.x^3+\frac{1}{5}.x^5-\frac{1}{7}.x^7+\frac{1}{9}.x^9-\frac{1}{11}.x^{11}+\frac{1}{13}.x^{13}-\frac{1}{15}.x^{15}+\frac{1}{17}.x^{17}-\frac{1}{19}.x^{19}
+\label{eq:arctan_scspoly}
+\end{equation}
+
+\section{Analysis of the performance}
+
+\subsection{Speed}
+Table \ref{tbl:arctan_abstime} (produced by the \texttt{crlibm\_testperf}
+executable) gives absolute timings for a variety of processors and
+
+\begin{table}[!htb]
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|l|r|r|r|}
+\hline
+\hline
+
+ \multicolumn{4}{|c|}{Pentium 4 Xeon / Linux Debian / gcc 2.95}   \\
+ \hline
+                         & min time      & max time      & avg time \\
+ \hline
+ \texttt{libm}           & 832          & 920           &        890 \\
+ \hline
+  \texttt{mpfr}          & 882740       & 2203288       &     933186 \\
+ \hline
+  \texttt{libultim}      & 656          & 2256          &        831 \\
+ \hline
+ \texttt{crlibm}         & 688          & 30908         &        964 \\
+ \hline
+
+
+\multicolumn{4}{|c|}{PowerPC G4 / Macos X.2 / gcc }   \\
+ \hline
+                         & min time      & max time      & avg time \\
+ \hline
+ \texttt{libm}           & 8            & 13            &          9 \\
+ \hline
+  \texttt{mpfr}          & 67196        & 894424        &     205574 \\
+ \hline
+  \texttt{libultim}      & 9            & 19            &          9 \\
+ \hline
+ \texttt{crlibm}         & 7            & 25            &          8 \\
+ \hline
+
+\end{tabular}
+\end{center}
+\caption{Absolute timings for the inverse tangent (arbitrary units)
+  \label{tbl:arctan_abstime}}
+\end{table}
+
+\subsection{Memory requirements}
+Table size is
+\begin{itemize}
+\item for the \quick\ phase,
+  $62\times (1+1+2) \times8=1984$ bytes for the 62 $a_i$, $b_i$,
+  $\arctan(b_i)$ (hi and lo), plus another $8$ bytes for the rounding
+  constant, plus $4\times8$ for the polynomial and $8$ Bytes for
+  $\frac{\pi}{2}$ or $2032$ Bytes in total.
+  
+\item for the \accurate\ phase, we just have $10$ SCS constants for the
+  polynomial, and 62 other double for $\arctan(b_i)_{lo_{lo}}$.
+  If we add all : $10*11*8 + 62*8 = 1376$
+\end{itemize}
+If we add the fast phase and the acurate one, we have a total of 3408
+Bytes.
+\section{Conclusion and perspectives}
+
