@@ -308,26 +308,17 @@ do {                                                             \
 } while(2+2==5)
 
   
-#define Add22(zh,zl,xh,xl,yh,yl)             \
-do {                                         \
-  double r,s;                                \
-  r = xh+yh;                                 \
-  s = xh-r+yh+yl+xl;                         \
-  *zh = r+s;                                 \
-  *zl = r - (*zh) + s;                       \
-} while(2+2==5)
+
+#define Add22(zh,zl,xh,xl,yh,yl) \
+do {\
+double r,s;\
+r = (xh)+(yh);\
+s = (xh)-r+(yh)+(yl)+(xl);\
+*zh = r+s;\
+*zl = r - (*zh) + s;\
+} while(0)
+
 #endif /* ADD22_AS_FUNCTIONS */
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -353,9 +344,9 @@ double ph, pl;                                        \
 
 #define  Div22(zh,zl,xh,xl,yh,yl)\
 {double ch,cl,uh,ul;  \
-           ch=(xh)/(yh);   Mul12(&uh,&ul,ch,yh);  \
+           ch=(xh)/(yh);   Mul12(&uh,&ul,ch,(yh));  \
            cl=(((((xh)-uh)-ul)+(xl))-ch*(yl))/(yh);   zh=ch+cl;   zl=(ch-zh)+cl;\
-} 
+}
 
 
 /* besides we don't care anymore about overflows in the mult  */
@@ -442,9 +433,9 @@ double mh, ml;                                        \
 
 /* Compute the double-double division of (x+xx) over (y+yy) */
 #define  Div22(z,zz,x,xx,y,yy)\
-{double c,cc,u,uu;  \
-           c=(x)/(y);   Mul12(&u,&uu,c,y);  \
-           cc=(((((x)-u)-uu)+(xx))-c*(yy))/(y);   z=c+cc;   zz=(c-z)+cc;\
+{double __c,__cc,__u,__uu;  \
+           __c=(x)/(y);   Mul12(&__u,&__uu,__c,y);  \
+           __cc=(((((x)-__u)-__uu)+(xx))-__c*(yy))/(y);   z=__c+__cc;   zz=(__c-z)+__cc;\
 } 
 
 
@@ -452,15 +443,6 @@ double mh, ml;                                        \
 #endif /* DEKKER_AS_FUNCTIONS */
 
 #endif /* PROCESSOR_HAS_FMA */
-
-
-
-
-
-
-
-
-
 
 /* A few prototypes that are not worth being in crlibm.h */
 
