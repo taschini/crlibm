@@ -1399,7 +1399,7 @@ double tan_rd(double x){
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
-  epsilon=EPS_TAN_CASE21; 
+  epsilon=EPS_TAN_CASE3; 
   if(absyl.d > epsilon * u53.d){ 
     if(tl>0) return th;
     else     return th-u.d;
@@ -1470,13 +1470,14 @@ double tan_ru(double x){
     absyl.l = absyl.l & 0x7fffffffffffffffLL;
     u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
     u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_TAN_CASE22; 
+    epsilon=EPS_TAN_CASE21; 
     if(absyl.d > epsilon * u53.d){ 
       if(tl>0) return th+u.d;
       else     return th;
     }
     else return scs_tan_ru(x); 
   }
+
   /* Otherwise : Range reduction then standard evaluation */
   compute_tan_with_argred(&th,&tl,x,absxhi);
   /* Rounding test to + infinity */
@@ -1486,7 +1487,7 @@ double tan_ru(double x){
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
-  epsilon=EPS_TAN_CASE22; 
+  epsilon=EPS_TAN_CASE3; 
   if(absyl.d > epsilon * u53.d){ 
     if(tl>0) return th+u.d;
     else     return th;
@@ -1556,7 +1557,7 @@ double tan_rz(double x){
     absyl.l = absyl.l & 0x7fffffffffffffffLL;
     u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
     u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_TAN_CASE22; 
+    epsilon=EPS_TAN_CASE21; 
     if(absyl.d > epsilon * u53.d){ 
       if(th>0) 
 	if(tl>0) return th;
@@ -1577,7 +1578,7 @@ double tan_rz(double x){
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
-  epsilon=EPS_TAN_CASE22; 
+  epsilon=EPS_TAN_CASE3; 
   if(absyl.d > epsilon * u53.d){ 
     if(th>0) 
       if(tl>0) return th;
