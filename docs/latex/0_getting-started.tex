@@ -42,15 +42,18 @@ produce exactly the same results on different architectures and
 different operating systems.
 \begin{itemize}
 \item Try to use the same compiler on all the systems.
-\item Demand C99 compliance (pass the \texttt{-C99} flag to the compiler). For Fortran, demand F90 compliance.
+\item Demand C99 compliance (pass the \texttt{-C99},
+  \texttt{-std=c99}, or similar flag to the compiler). For Fortran,
+  demand F90 compliance.
 \item Call \texttt{crlibm\_init()} before you begin floating-point
   computation. This ensures that the computations will all be done in
-  IEEE-754 double-precision with round to nearest mode. On IA32
-  processors, problems may still occur for extremely large or extremely small
-  values.
+  IEEE-754 double-precision with round to nearest mode, which is the
+  largest precision well supported by most systems. On IA32
+  processors, problems may still occur for extremely large or
+  extremely small values.
 \item Do not hesitate to rely heavily on parentheses (the compiler
-  should respect them according to the standards, although some
-  don't). Many times, wondering where the parentheses should go in an
+  should respect them according to the standards, although of course some
+  won't). Many times, wondering where the parentheses should go in an
   expression like \texttt{a+b+c+d} will even help you improve the
   accuracy of your code.
 \item Use \texttt{crlibm} functions in place of \texttt{math.h} functions.

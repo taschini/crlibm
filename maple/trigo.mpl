@@ -10,7 +10,6 @@ mkdir("TEMPTRIG"):
 #################################
 #Comments and todos :
 
-#don't forget the error on k in Cody and Waite
 # recheck the max_return_* : we shave off the lower bits, etc
 
 # - Evaluation scheme :
@@ -65,8 +64,6 @@ rnconstantTanCase3 := evalf(compute_rn_constant(maxepstotalTanCase3));
 
 #################################################
 # CODY and WAITE  Argument reduction
-
-# TODO add the error due to rounding k
 
 
 C := Pi/256;
@@ -262,35 +259,17 @@ xmaxSinCase2   := Pi/256:
 x2maxSinCase2:= xmaxSinCase2^2:
 x2maxCosCase2:= xmaxCosCase2^2:
 
-# The difficulty here is to find polynomials which are good for case 2
-# as well as for case 3. A simple solution is to set xmaxCosCase2 =ymaxCase3...
+# We had the difficulty here to find minimax polynomials which are good for case 2
+# as well as for case 3. A simple solution was to set xmaxCosCase2 =ymaxCase3...
+# However we found another answer: in the future we intend to use these polynomials for second
+# step, too. Therefore, no minimax, only Taylor.
 
-
-# For the sine: simple approach using Taylor is better than minimax
-if(1+1=2) then
 polySin:=  poly_exact(convert( series(sin(x), x=0, degreeSin+1), polynom)):
 polyTs := expand(polySin/x-1):
 polyTs2 := subs(x=sqrt(y), polyTs):
-else
-# More accurate. Compute the minimax up to the case 2 limit
-# THIS MINIMAX MINIMIZES ABS ERROR AND NOT REL ERROR
-polyTs2x := poly_exact(numapprox[minimax]((sin(sqrt(x))/sqrt(x)), x=2^(-2048)..x2maxSinCase2, [3,0]) ) -1:
-polyTs2 := subs(x=y, polyTs2x):
-polySin := expand(x*(1+ subs(y=x^2, polyTs2))):
-end if:
 
-# For the cos: compute a minimax
-if(1+1=2) then
-# simple approach using Taylor
 polyCos  := poly_exact (convert( series(cos(x), x=0, degreeCos+1), polynom)):
 polyTc2 := subs(x=sqrt(y), polyCos - 1):
-else
-# More accurate. Compute the minimax up to the case 2 limit
-polyTc2x := poly_exact(numapprox[minimax](cos(sqrt(x)), x=2^(-2048)..x2maxCosCase2, [3,0]) ) -1:
-polyTc2 := subs(x=y,polyTc2x):
-polyCos := expand(1+ subs(y=x^2, polyTc2)):
-end if:
-
 
 eps_approx_Sin_Case2 := numapprox[infnorm]((x*polyTs+x -sin(x))/sin(x), x=0..xmaxSinCase2):
 log2(%);

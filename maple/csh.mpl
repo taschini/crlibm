@@ -3,7 +3,6 @@ Digits := 150;
 with (numapprox):with(orthopoly):
 interface(quiet=true);
 read "common-procedures.mpl";
-deg:=18;
 mkdir("TEMPCSH");
 
 
@@ -17,7 +16,7 @@ b_max := 2**(-9.): # max absolute input for polynomial evaluation
 #some constants ...
 inv_ln_2 := 1/ln(2.):
 ln2_hi := hexa2ieee(["3FE62E42", "FEFA3800"]):
-ln2_lo := nearest(ln(2.)-hexa2ieee(["3FE62E42", "FEFA3800"])):
+ln2_lo := nearest(ln(2.)-ln2_hi):
 two_43_44 := 2^43 + 2^44:
 bias := convert(op(2,ieeehexa(ln(2.)/2.+two_43_44)),'decimal','hex'): #to get maximum index for the second range reduction ...
 
@@ -31,6 +30,21 @@ k_max_sh := ceil(max_input_sh / ln(2)):
 #towards +inf, we have cosh(x) = sinh(x) since exp(-x) is too small
 #so, we are sure of k_max_sh == k_max_ch
 k_max := k_max_ch;
+
+######################################################################
+# When can we ignore exp(-x) in front of exp(x) in the first step ?
+# We want the same error as in the general case
+k_max_csh_approx_exp := 35:
+tempxmax:=(k_max_csh_approx_exp-1)*log(2):
+eps_csh_approx_exp := exp(-tempxmax)/exp(tempxmax):
+log2(%);  #
+
+# When can we ignore exp(-x) in front of exp(x) in the second step ?
+# The worst case for exp for large arguments requires 115 bits
+k_max_csh_approx_exp_2 := 65:
+tempxmax:=(k_max_csh_approx_exp_2-1)*log(2):
+eps_csh_approx_exp_2 := exp(-tempxmax)/exp(tempxmax):
+log2(%); # 118
 
 
 ######################################################################
@@ -46,7 +60,8 @@ poly_sh := (convert(poly_sh,polynom))/x-1;
 
 
 ####################################################################
-#little secondary functions
+# secondary functions
+
 size_of_table := convert(op(2,ieeehexa(two_43_44+ln(2.)/2.)),decimal,hex);
 #returns the float which follow immediately the input
 next_float := proc(value)

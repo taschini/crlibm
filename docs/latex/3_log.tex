@@ -5,9 +5,10 @@ This chapter is contributed by Florent de~Dinechin, with assistance from C. Dara
 
 \section{Overview}
 
-The worst-case accuracy required to compute a logarithm function
-correctly rounded in double precision is $118$ bits according to
-Lefèvre and Muller \cite{LefMul2004}.
+For this function, the search for worst-case accuracy required to
+compute the logarithm of a double correctly rounded to a double is
+completed. This worst-case accuracy is $118$ bits according to Lefèvre
+and Muller \cite{LefMul2004}.
 
 We therefore proceed in two phases \cite{Ziv91}.  The first, quick
 phase (program \texttt{log\_fast.c}) is accurate only to $57-64$ bits,
