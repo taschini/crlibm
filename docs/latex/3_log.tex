@@ -421,7 +421,8 @@ Line 13 & Let us prove that z.d is computed exactly, without rounding error: \\
 Line 17 & The computation of $E\log(2)$ is done as early as possible. \\
         & As stated previously, the relative error here is smaller than $2^{-100}$\\
 Lines 22-27 & Begin of Horner evaluation in double arithmetic\\
-Line 29 & This test is equivalent to $|ln2\_times\_E_HI| < \mathtt{MIN\_FASTPATH}$\\
+Line 29 & This test is equivalent to $|ln2\_times\_E_HI| < \mathtt{MIN\_FASTPATH}$.\\
+        & As $|E|$ is an integer smaller than $2048$, neither overflow nor denormal can occur.\\
         & Currently $\mathtt{MIN\_FASTPATH}=128.5$ but the Maple programs in \texttt{coef\_log.mw}\\
         & allow to change this value.\\
 Lines 31-53 & Slow path, divided two cases:\\

@@ -166,6 +166,38 @@ we may rely at the proof level. This library is included in \crlibm,
 but also distributed separately \cite{SCSweb}.
 
 
+\subsection{Error analysis and the accuracy/performance tradeoff\label{sec:error-accuracy-perf}}
+
+TODO better...
+
+The error analysis for a function evaluation aims at providing an
+overall relative error of the whole evaluation process, which can then
+be used to test rounding thanks to theorems given in
+\ref{section:testrounding}. Care must be taken that only
+\emph{absolute} error terms (noted $\delta$) can be added, although
+some error terms are best expressed as \emph{relative} (noted
+$\epsilon$), like the the rounding error of an IEEE operation, or the
+minimax approximation error. Remark also that the error needed for the
+theorems in \ref{section:testrounding} is a \emph{relative} error.
+Managing the relative and absolute error terms is very dependent on
+the function, and usually involves keeping upper and lower bounds on
+the values manipulated along with the error terms. 
+
+Error terms to consider are the following:
+\begin{itemize}
+\item approximation errors  (minimax or Taylor),
+\item rounding error, which fall into two categories:
+  \begin{itemize}
+  \item roundoff errors in values tabulated as doubles or
+    double-doubles (with the exception of roundoff errors on the coefficient
+    of a polynomial, which are counted in the appproximation error),
+  \item roundoff errors in IEEE-compliant operations.
+  \end{itemize}
+\end{itemize}
+
+
+
+
 \subsection{Current state of \emph{crlibm}}
 
 The library \texttt{crlibm} \emph{(correctly rounded mathematical
