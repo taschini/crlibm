@@ -221,16 +221,19 @@ The code for argument reduction is shared by the three
 trigonometric functions. It is detailed and proven in
 Section~\ref{trigo:argred}.
 
-Then there are four procedures, respectively called \verb!do_sin_k_zero!,
-\verb!do_sin_k_notzero!, \verb!do_cos_k_zero!, \verb!do_cos_k_notzero!
-which do the actual computation after argument reduction. The tangent
-function is computed by dividing \verb!do_sin! by \verb!do_cos!. These
-procedures are studied in section \ref{trigo:auxilliary}.
+Then there are four procedures (currently implemented as macros for
+efficiency), respectively called \texttt{DoSinZero},
+\texttt{DoCosZero}, \texttt{DoSinNotZero} and \texttt{DoCosNotZero}
+which do the actual computation after argument reduction as per
+Figures~\ref{fig:sine-reconstruction} and
+\ref{fig:cosine-reconstruction}. The tangent function is computed by
+dividing the sine by the cosine. These procedures are studied in
+section \ref{trigo:auxilliary}.
 
-Finally, each of the three trigonometric functions come in four variants for the four
-rounding modes. These four variants differ in the beginning (special
-cases) and in the end (rounding), but share the bulk of the
-computation. The shared computation is  called
+Finally, each of the three trigonometric functions comes in four
+variants for the four rounding modes. These four variants differ in
+the beginning (special cases) and in the end (rounding), but share the
+bulk of the computation. The shared computation is called
 \verb!compute_trig_with_argred!, etc.
 
 
@@ -276,158 +279,167 @@ In the following we note $$C=\frac{\pi}{256}$$
 
 \subsection{Structure of the argument reduction
   \label{trigo:structargred}}
-The complet code is detailed below.
+The complete code is detailed below.
 
 \begin{lstlisting}[caption={Multilevel argument reduction},firstnumber=1]
-static void compute_trig_with_argred(double* prh, double* prl,  double x, int absxhi, int function){ 
-  double sah,sal,cah,cal, yh, yl, ts,tc, kd; 
-  double kch_h,kch_l, kcm_h,kcm_l,  th, tl,sh,sl,ch,cl;
+struct rrinfo_s {double rh; double rl; double x; int absxhi; int function;} ;
+typedef struct rrinfo_s rrinfo;
+#define changesign function
+
+static void ComputeTrigWithArgred2(rrinfo *rri){ 
+  double sah,sal,cah,cal, yh, yl, yh2, ts,tc, kd; 
+  double kch_h,kch_l, kcm_h,kcm_l, th, tl,sh,sl,ch,cl;
   int k, quadrant, index;
   long long int kl;
 
-  if  (absxhi < XMAX_CODY_WAITE_3) {
+  if  (rri->absxhi < XMAX_CODY_WAITE_3) {
     /* Compute k, deduce the table index and the quadrant */
-    DOUBLE2INT(k, x * INV_PIO256);
+    DOUBLE2INT(k, rri->x * INV_PIO256);
     kd = (double) k;
     quadrant = (k>>7)&3;      
     index=(k&127)<<2;
     if((index == 0)) { 
-      /* Here we risk a large cancellation on yh+yl: use double-double RR */
+      /* Here a large cancellation on yh+yl would be a problem, so use double-double RR */
       /* all this is exact */
       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
       Add12 (th,tl,  kch_l, kcm_h) ;
       /* only rounding error in the last multiplication and addition */ 
-      Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-      goto trigzero;
+      Add22 (&yh, &yl,    (rri->x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+      goto computeZero;
     } 
     else {      
       /* index <> 0, don't worry about cancellations on yh+yl */
-      if (absxhi < XMAX_CODY_WAITE_2) {
+      if (rri->absxhi < XMAX_CODY_WAITE_2) {
 	/* CW 2: all this is exact but the rightmost multiplication */
-	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ; 
+	Add12 (yh,yl,  (rri->x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ; 
       }
       else { 
 	/* CW 3: all this is exact but the rightmost multiplication */
-	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
+	Add12Cond(yh,yl,  (rri->x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
       }
     }
-    goto trignotzero;
+    goto computeNotZero;
   }
 
-  else if ( absxhi < XMAX_DDRR ) {
+  else if ( rri->absxhi < XMAX_DDRR ) {
     /* x sufficiently small for a Cody and Waite in double-double */
-    DOUBLE2LONGINT(kl, x*INV_PIO256);
+    DOUBLE2LONGINT(kl, rri->x*INV_PIO256);
     kd=(double)kl;
     quadrant = (kl>>7)&3;
     index=(kl&127)<<2;
-    if(index == 0) { /* In this case cancellation may occur, so we
-			  do the accurate range reduction */
-      scs_range_reduction(); 
+    if(index == 0) { 
+      /* Here again a large cancellation on yh+yl would be a problem, 
+	 so we do the accurate range reduction */
+      RangeReductionSCS();   /*recomputes k, index, quadrant, and yh and yl*/
       /* Now it may happen that the new k differs by 1 of kl, so check that */
-      if(index==0) {  /* no surprise */
-	goto trigzero;      }
-      else { /*recompute index and quadrant */
-	if (index==4) kl++;   else kl--; /* no more than one bit difference */
-	kd=(double)kl;
-	quadrant = (kl>>7)&3;
-      }
+      if(index==0)   /* no surprise */
+	goto computeZero; 
+      else 
+	goto computeNotZero;
     }
-    /* arrive here if index<>0 */
-    /* double-double argument reduction*/
-    /* all this is exact */
-    Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
-    Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
-    Add12 (th,tl,  kch_l, kcm_h) ;
-    /* only rounding error in the last multiplication and addition */ 
-    Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-    goto trignotzero;
-  }
+    else {   /*  index<>0 : double-double argument reduction*/
+      /* all this is exact */
+      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+      Add12 (th,tl,  kch_l, kcm_h) ;
+      /* only rounding error in the last multiplication and addition */ 
+      Add22 (&yh, &yl,    (rri->x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+      goto computeNotZero;
+    }
+  } /* closes if ( absxhi < XMAX_DDRR ) */ 
+
   else {
     /* Worst case : x very large, sin(x) probably meaningless, we return
        correct rounding but do't mind taking time for it */
-    scs_range_reduction(); 
+    RangeReductionSCS(); 
     quadrant = (k>>7)&3;                                       
     if(index == 0)
-      goto trigzero;
+      goto computeZero;
     else 
-      goto trignotzero;
+      goto computeNotZero;
   }
 
- trigzero:
-  switch(function) {
+
+ computeZero:
+  switch(rri->function) {
  
   case SIN: 
     if (quadrant&1)
-      do_cos_k_zero(prh, prl, yh,yl);
+      DoCosZero(&rri->rh, &rri->rl);
     else 
-      do_sin_k_zero(prh, prl, yh,yl);
-    if ((quadrant==2)||(quadrant==3)) {
-      *prl=-*prl; *prh=-*prh;
-    }
+      DoSinZero(&rri->rh, &rri->rl);
+    rri->changesign=(quadrant==2)||(quadrant==3);
     return;
     
   case COS: 
     if (quadrant&1)
-      do_sin_k_zero(prh, prl, yh,yl);
+      DoSinZero(&rri->rh, &rri->rl);
     else 
-      do_cos_k_zero(prh, prl, yh,yl);
-    if ((quadrant==1)||(quadrant==2)) {
-      *prl=-*prl; *prh=-*prh;
-    }
+      DoCosZero(&rri->rh, &rri->rl);
+    rri->changesign= (quadrant==1)||(quadrant==2);
     return;
 
   case TAN: 
+    rri->changesign = quadrant&1;
     if (quadrant&1) {
-      do_sin_k_zero(&ch, &cl, yh,yl);
-      do_cos_k_zero(&sh, &sl, yh,yl);
-      sh=-sh; sl=-sl;
+      DoSinZero(&ch, &cl);
+      DoCosZero(&sh, &sl);
     } else {
-      do_sin_k_zero(&sh, &sl, yh,yl);
-      do_cos_k_zero(&ch, &cl, yh,yl);
+      DoSinZero(&sh, &sl);
+      DoCosZero(&ch, &cl);
     }
-    Div22(prh, prl, sh, sl, ch, cl);
+    Div22(&rri->rh, &rri->rl, sh, sl, ch, cl);
     return;
   }
   
- trignotzero:
-  LOAD_TABLE_SINCOS();
-  switch(function) {
+ computeNotZero:
+  if(index<=(64<<2)) {                                    
+    sah=sincosTable[index+0].d; /* sin(a), high part */   
+    sal=sincosTable[index+1].d; /* sin(a), low part  */   
+    cah=sincosTable[index+2].d; /* cos(a), high part */   
+    cal=sincosTable[index+3].d; /* cos(a), low part  */   
+  }else { /* cah <= sah */                                
+    index=(128<<2) - index;                               
+    cah=sincosTable[index+0].d; /* cos(a), high part */   
+    cal=sincosTable[index+1].d; /* cos(a), low part  */   
+    sah=sincosTable[index+2].d; /* sin(a), high part */   
+    sal=sincosTable[index+3].d; /* sin(a), low part  */   
+  }                                                       
+  yh2 = yh*yh ;
+  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));	
+  tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));	
+  switch(rri->function) {
 
   case SIN: 
     if (quadrant&1)   
-      do_cos_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
+      DoCosNotZero(&rri->rh, &rri->rl);
     else 
-      do_sin_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
-    if ((quadrant==2)||(quadrant==3)) {
-      *prl=-*prl; *prh=-*prh;
-    }
+      DoSinNotZero(&rri->rh, &rri->rl);
+    rri->changesign=(quadrant==2)||(quadrant==3);
     return;
 
   case COS: 
     if (quadrant&1)   
-      do_sin_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
+      DoSinNotZero(&rri->rh, &rri->rl);
     else 
-      do_cos_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
-    if ((quadrant==1)||(quadrant==2)) {
-      *prl=-*prl; *prh=-*prh;
-    }
+      DoCosNotZero(&rri->rh, &rri->rl);
+    rri->changesign=(quadrant==1)||(quadrant==2);
     return;
 
   case TAN: 
+    rri->changesign = quadrant&1;
     if (quadrant&1) {
-      do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
-      do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      sh=-sh; sl=-sl;
+      DoSinNotZero(&ch, &cl);
+      DoCosNotZero(&sh, &sl);
     } else {
-      do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+      DoSinNotZero(&sh, &sl);
+      DoCosNotZero(&ch, &cl);
     }
-    Div22(prh, prl, sh, sl, ch, cl);
+    Div22(&rri->rh, &rri->rl, sh, sl, ch, cl);
     return;
   }
 }
-
 \end{lstlisting}
  
 
@@ -435,25 +447,25 @@ Here are some comments on the structure of this code (the details on
 actual range reduction come in the following sections).
 
 \begin{itemize}
-\item The DOUBLETOINT macro at line 9 is called only if
-  $x<\verb!XMAX_CODY_WAITE_3!$ (line 7). This constant is defined  (see
+\item The DOUBLETOINT macro at line 13 is called only if
+  $x<\verb!XMAX_CODY_WAITE_3!$ (line 11). This constant is defined  (see
   Listing~\ref{trigo:lst:cw3maple} below) such
   that the conditions for this macro to work (see
   Section~\ref{sec:double2int}) are fullfilled. 
 
 \item Similarly for the DOUBLETOLONGINT macro (see
-  Section~\ref{sec:double2longint}) at line 39, which is called for
+  Section~\ref{sec:double2longint}) at line 43, which is called for
   inputs smaller than \verb!XMAX_DDR! defined in Listing
   \ref{trigo:lst:cwddrmaple} below.
 
-\item There is one subtlety at lines 46 and following. There we take
+\item There is one subtlety at lines 51 and following. There we take
   the decision of computing a more accurate range reduction depending
   on the value of $\mathit{index}=k\mod 256$. However, in the case
   when $x\times\frac{256}{\pi}$ is very close to the middle between
   two integers, it may happen (very rarely) that the value of $k\mod
   256$ computed by this second range reduction is equal to $\pm 1$. In
   such cases, both values are equally valid, but we have to ensure
-  that $k$ and the reduced value match, hence the code at lines 46-54.
+  that $k$ and the reduced value match, hence the test line 52.
 \end{itemize}
 
 
@@ -490,7 +502,7 @@ XMAX_CODY_WAITE_2 := nearest(kmax_cw2*C):
 The C code that performs the reduction in this case is the following:
 
 \begin{lstlisting}[caption={Cody and Waite argument reduction with two
-    constants},firstnumber=27]
+    constants},firstnumber=31]
 	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
 \end{lstlisting}
 
@@ -520,7 +532,7 @@ delta_cody_waite_2 := kmax_cw2 * delta_repr_C_cw2 + delta_round_cw2;
 The C code that performs the reduction in this case is the following:
 
 \begin{lstlisting}[caption={Cody and Waite argument reduction with three 
-    constants},firstnumber=31]
+    constants},firstnumber=35]
 	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
 \end{lstlisting}
 
@@ -531,7 +543,7 @@ this reduction to work, and the resulting absolute error of the reduced
 argument with respect to the ideal reduced argument.
 
 \begin{lstlisting}[caption={Maple script for computing constants for
-    Cody and Waite 3\label{trigo:lst:cw3maple} }, firstnumber=1,
+    Cody and Waite 3\label{trigo:lst:cw3maple} },
   language={sh}, numbers=none]% of course it's maple
 %Skip a line here, I don't know why, otherwise latex eats the first line
 
@@ -565,7 +577,7 @@ delta_cody_waite_3 := kmax_cw3 * delta_repr_C_cw3 + delta_round_cw3:
 The C code that performs the reduction in this case is the following:
 
 \begin{lstlisting}[caption={Cody and Waite argument reduction in
-    double-double},firstnumber=57]
+    double-double},firstnumber=20]
     /* all this is exact */
     Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
     Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
@@ -578,7 +590,7 @@ The C code that performs the reduction in this case is the following:
 The error and the bound are computed by the following Maple code.
 
 \begin{lstlisting}[caption={Maple script for computing constants for Cody and Waite
-    double-double\label{trigo:lst:cwddrmaple}}, firstnumber=1,
+    double-double\label{trigo:lst:cwddrmaple}},
   language={sh}, numbers=none]% of course it's maple
 %Skip a line here, I don't know why, otherwise latex eats the first line
 
@@ -621,8 +633,7 @@ The result is then converted to a double-double.  Even counting a
 worst-case cancellation of less than 70 bits, the final absolute error
 is much smaller than for the other reductions.
 
-\begin{lstlisting}[caption={Computing constants for Cody and Waite
-    double-double}, firstnumber=1,
+\begin{lstlisting}[caption={Payne and Hanek error},
   language={sh}, numbers=none]% of course it's maple
 %Skip a line here, I don't know why, otherwise latex eats the first line
 
@@ -656,7 +667,7 @@ We find that $\maxdelta_{\mathrm{argred}}\approx 2^{-71}$
 
 Here we directly need the relative error $\epsilon_{\mathrm{argred}}$
 on range reduction, which will be used below in Section
-\ref{dosinkzero}. Looking back at Listing~\ref{trigo:structargred}, we
+\ref{dosinzero}. Looking back at Listing~\ref{trigo:structargred}, we
 see that in this case we compute range reduction either in
 double-double, or in SCS. The following Maple code computes
 $\maxeps_{\mathrm{argred}}$.
@@ -703,7 +714,7 @@ $\maxeps_{\mathrm{argred}} \approx 2^{-69.6}$.
 \section{Details of auxilliary functions
   \label{trigo:auxilliary}}
 
-\subsection{\texttt{do\_sin\_k\_zero} \label{dosinkzero}}
+\subsection{DoSinNotZero \label{dosinzero}}
 Upon entering  \texttt{do\_sin\_k\_zero}, we have in
 $y_h+y_l$ an approximation to the ideal reduced value
 $\hat{y}=x-k\pi/256$ with a relative accuracy $\epsilon_{\mathrm{argred}}$:
@@ -727,12 +738,12 @@ exceed $\pi/512$. More precisely, we may come to \texttt{computeZero}
 either for $x<\verb!XMAX_CODY_WAITE_3!$, in which case we we have used
 DOUBLE2INT to compute $k$, deporting this rounding error at least $52-32=20$
 bits to the right, or after an SCS range reduction in which case the
-error will be much smaller. Therefore we define
+error will be much smaller. Therefore we define (to be on the safe side)
 \begin{equation}
-  y_{\mathrm{maxargred}} = \frac{\pi}{512}(1+2^{-19})
+  y_{\mathrm{maxargred}} = \frac{\pi}{512}(1+2^{-15})
   \label{eq:ymaxsink0}  
 \end{equation}
-where the $2^{-19}$ also accounts for the less-than-ulp difference
+where the $2^{-15}$ also accounts for the less-than-ulp difference
 between $y_h$, $y_h+y_l$ and $\widehat{y}$.
 
 In the following we will
@@ -744,21 +755,17 @@ to compute is
 \end{equation}
 
 
- \begin{lstlisting}[caption={do\_sin\_k\_zero},firstnumber=1]
-#define do_sin_k_zero(psh,psl, yh,  yl)            \
-do{                                                \
-  double yh2 ;	              			   \
+ \begin{lstlisting}[caption={DoSinZero},firstnumber=1]
   yh2 = yh*yh;					   \
   ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));	   \
-  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */  \
-  /* Now compute (1+ts)*(yh+yl) */                 \
   Add12(*psh,*psl,   yh, yl+ts*yh);	           \
-} while(0)						   
 \end{lstlisting}
 
-One can see that we almost have the same code as in
-\ref{sec:trigo:fastsine}. The difference is that we have as input
-a double-double $\mathtt{yh}+\mathtt{yl}$, which is itself an inexact term. 
+One may remark that we almost have the same code as we have for
+computing the sine of a small argument (without argument reduction) in
+Section~\ref{sec:trigo:fastsine}. The difference is that we have as
+input a double-double $\mathtt{yh}+\mathtt{yl}$, which is itself an
+inexact term.
 
 At Line 4, the error of neglecting $y_l$ and the rounding error in the
 multiplication each amount to half an ulp:
@@ -842,16 +849,129 @@ $y_{\mathrm{maxargred}}$.
 
  
 
+\subsection{DoCosZero}
+This is currently left as an exercise for the reader. We need to
+compute the error of the following code:
+\begin{lstlisting}[caption={DoCosZero},firstnumber=1]
+  yh2 = yh*yh ;                                   
+  tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));	  
+  Add12(*pch,*pcl, 1., tc);		          
+\end{lstlisting}
 
+The same code is used for small arguments to the cosine (when there is
+no argument reduction).
 
-\subsection{\texttt{do\_sin\_k\_notzero}}
+\subsection{DoSinNotZero}
 
+The proof would here be much longer than the previous one, in the same
+spirit. It would therefore be much more error prone. We probably would
+be even less confident in such a proof than if it was generated
+automatically using experimental software. Therefore, let us do just
+that: We will use \texttt{Gappa}(see
+\url{https://lipforge.ens-lyon.fr/projects/gappa/}), another
+development of the Arenaire project to automate the proof of numerical
+properties, including an interface to the automatic theorem prover Coq.
 
-\subsection{\texttt{do\_cos\_k\_zero}}
+We need to compute the error bound for the following straight line of
+code.
 
+\begin{lstlisting}[caption={DoSinNotZero},firstnumber=1]
+  yh2 = yh*yh ;
+  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));	
+  tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));	
+  Mul12(&cahyh_h,&cahyh_l, cah, yh);				       
+  Add12(thi, tlo, sah,cahyh_h);					       
+  tlo = tc*sah+(ts*cahyh_h+(sal+(tlo+(cahyh_l+(cal*yh + cah*yl))))) ;  
+  Add12(*psh,*psl,  thi, tlo);	   			               
+\end{lstlisting}
 
-\subsection{\texttt{do\_cos\_k\_notzero}}
+The additional information we have is 
 
+\begin{itemize}
+
+\item The argument reduction total absolute error, such that 
+  \begin{equation}
+    y_h+y_l = (x-k\pi/256)(1+\epsilon_{\mathrm{argred}}) 
+    = \hat{y}(1+\epsilon_{\mathrm{argred}})
+  \end{equation}
+
+\item The rounding error of the double-double tabulated values
+  $sa_h+sa_l$ and  $ca_h+ca_l$  ($\maxeps_{-106}$) and their ranges
+
+\item The approximation error of the polynomials used, computed in
+  Maple
+\end{itemize}
+
+We use Gappa to compute the evaluation error.
+The input to Gappa is as follows:
+\begin{lstlisting}[caption={Gappa input to compute the error of DoSineNotZero},
+  language={sh}, numbers=none]
+%Skip a line here, I don't know why, otherwise latex eats the first line
+
+yh = <float64ce>(yy);
+yl = yy - yh;
+sah = <float64ce>(sa);
+sal = sa - sah;
+cah = <float64ce>(ca);
+cal = ca - cah;
+
+# constantes
+s3 = -6004799503160661b-55;
+s5 = +4803839602528529b-59;
+s7 = -7320136537186330b-65;
+s9 = +6506788033054516b-71;
+c2 = -4503599627370496b-53;
+c4 = +6004799503154328b-57;
+c6 = -6405110857547344b-62;
+c8 = +7320136537186330b-68;
+
+# yh2 = yh * yh;
+yh2 = <float64ce>(yh * yh);
+
+# ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
+ts = <float64ce>(yh2 * <float64ce>(s3 + <float64ce>(yh2 * <float64ce>(s5 + <float64ce>(yh2 * s7)))));
+
+# tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d));
+tc = <float64ce>(yh2 * <float64ce>(c2 + <float64ce>(yh2 * <float64ce>(c4 + <float64ce>(yh2 * c6)))));
+
+# Mul12(&cahyh_h,&cahyh_l, cah, yh);
+cahyh = cah * yh;
+cahyh_h = <float64ce>(cahyh);
+cahyh_l = cahyh - cahyh_h;
+
+# Add12(thi, tlo, sah, cahyh_h);
+t = sah + cahyh_h;
+thi = <float64ce>(t);
+tlo1 = t - thi;
+
+#  tlo = tc*sah+(ts*cahyh_h+(sal+(tlo+(cahyh_l+(cal*yh + cah*yl))))) ;
+tlo = <float64ce>(<float64ce>(tc * sah) + <float64ce>(<float64ce>(ts * cahyh_h)
+ + <float64ce>(sal + <float64ce>(tlo1 + <float64ce>(cahyh_l
+ + <float64ce>(<float64ce>(cal * yh) + <float64ce>(cah * yl)))))));
+tlo_r = tc*sah+(ts*cahyh_h+(sal+(tlo1+(cahyh_l+(cal*yh + cah*yl))))) ;
+
+# Add12(*reshi, *reslo, thi, tlo);
+res = thi + tlo;
+
+{
+   yy in [0,0.0061362]    # ymaxCase3 computed by Maple
+   /\ ca in [0,1] /\ sa in [0,0.702754744458] # should be refined
+  -> res - ((1 + ts) * ca * yy + (1 + tc) * sa ) in ?
+}
+
+# This is a hint to the reduction engine. It tells it what we intend
+# to compute by pointing out that res - ((1 + ts) * ca * yy + (1 + tc) * sa ) 
+# is equal to tlo - tlo_r + the neglected terms
+
+res - ((1 + ts) * ca * yy + (1 + tc) * sa ) ->
+  tlo  - tlo_r + (sal*tc + cal*yl + ts*(cahyh_l + cah*yl + cal*yh + cal*yl)) ;
+\end{lstlisting}
+
+We get an approximation error of $2^{-68}$
+
+\subsection{DoCosNotZero}
+
+Here Gappa gives  an approximation error of $2^{-68}$
 
 
 \section{Detailed examination of the sine}
@@ -929,6 +1049,8 @@ integer to which \texttt{x} will be compared (procedure
       return x_split.d;
     }
 \end{lstlisting}
+
+
 \subsection{Fast approximation of sine for small arguments \label{sec:trigo:fastsine}}
 
 \begin{lstlisting}[caption={Sine, case 2},firstnumber=1]
@@ -987,3 +1109,75 @@ Finally
 
 \section{Detailed examination of the cosine}
 \section{Detailed examination of the tangent}
+
+
+\section{Performance results}
+
+Table~\ref{tbl:sine_abstime} gives performance results for input numbers with random
+mantissa and exponents uniformely distributed between -20 and 40, by the command:\\
+\verb!tests/crlibm_testperf sin RN 100000!.
+
+In this case the second step was taken 79 times out of 100000.
+
+Which input interval should be used to measure the performance of
+trigonometric functions is an open question for us. For larger exponents, \texttt{libultim}
+is faster than \texttt{crlibm}.
+
+\begin{table}[!htb]
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|l|r|r|r|}
+\hline
+ \multicolumn{4}{|c|}{Pentium 4 Xeon / Linux Debian sarge / gcc 3.3}   \\ 
+ \hline
+                        & min time       & avg time     & max time        \\ 
+ \hline
+ \texttt{libm}          & 144           &        171    & 308      \\ 
+ \hline
+ \texttt{mpfr}          & 17096         &      57296    & 179188      \\ 
+ \hline
+ \texttt{libultim}      & 104           &        250    & 3005616      \\ 
+ \hline
+ \texttt{libmcr}        & 356           &       1716    & 156452      \\ 
+ \hline
+\texttt{crlibm}         & 100           &        213    & 46444      \\ 
+ \hline
+\end{tabular}
+\end{center}
+\caption{Absolute timings for the sine (arbitrary units)
+  \label{tbl:sine_abstime}}
+\end{table}
+
+Results for the cosine are very similar. The tangent leaves more room
+for improvement, as Table~\ref{tbl:tan_abstime} shows. The culprit is
+the Div22 procedure, which is very expensive. 
+
+Directed rounding mode have a penalty of about 100 cycles, due to the
+heavy use of integer 64-bit arithmetic.
+
+\begin{table}[!htb]
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|l|r|r|r|}
+\hline
+ \multicolumn{4}{|c|}{Pentium 4 Xeon / Linux Debian sarge / gcc 3.3}   \\ 
+ \hline
+                        & min time       & avg time     & max time        \\ 
+ \hline
+ \texttt{libm}          & 1472          &       2575    & 251084      \\ 
+ \hline
+ \texttt{mpfr}          & 23884         &      71856    & 183088      \\ 
+ \hline
+ \texttt{libultim}      & 116           &        530    & 3160808      \\ 
+ \hline
+ \texttt{libmcr}        & 1516          &       2539    & 252368      \\ 
+ \hline
+\texttt{crlibm}         & 152           &        550    & 67128      \\ 
+ \hline
+\end{tabular}
+\end{center}
+\caption{Absolute timings for the sine (arbitrary units)
+  \label{tbl:tan_abstime}}
+\end{table}
+
+
