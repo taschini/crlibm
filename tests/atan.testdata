@@ -45,6 +45,8 @@ P fff80000 00000000 fff80000 00000000 # NaN
 M fff80000 00000000 fff80000 00000000 # NaN
 Z fff80000 00000000 fff80000 00000000 # NaN
 
+# Various bad cases either provided by Evgeny Gvozdev, or found during debugging
+M 3e400000 00000000 3e3fffff ffffffff
 
 # One in five of the very worst cases computed by Lefevre and Muller.
 # Rounding these values requires evaluating the function to at least 2^(-100).

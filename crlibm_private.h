@@ -24,7 +24,6 @@
 
 
 
-
 /* The Add22 and Add22 functions, as well as double-double
 multiplications of the Dekker family may be either defined as
 functions, or as #defines.  Which one is better depends on the
@@ -87,7 +86,7 @@ extern int rem_pio2_scs(scs_ptr, scs_ptr);
 #define DOUBLE2INT(_i, _d)       \
   {db_number _t;              \
    _t.d = (_d+6755399441055744.0);  \
-   _i = _t.i[LO_ENDIAN];}
+   _i = _t.i[LO];}
 
 
 /* Same idea but beware: works only for |_i| < 2^51 -1 */
@@ -105,7 +104,72 @@ extern int rem_pio2_scs(scs_ptr, scs_ptr);
 
 
 
+/* Macros for the rounding tests in directed modes */
+/* After Evgeny Gvozdev pointed out a bug in the rounding procedures I
+   decided to centralize them here */
 
+
+#define TEST_AND_RETURN_RU(__yh__, __yl__, __eps__)                    \
+{                                                                      \
+  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
+  yh.d = __yh__;    yl.d = __yl__;                                     \
+  yh_neg = (yh.i[HI] & 0x80000000);                             \
+  yl_neg = (yl.i[HI] & 0x80000000);                             \
+  yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  u53.l     = (yh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;   \
+  if(yl.d > __eps__ * u53.d){                                          \
+    if(!yl_neg) {  /* The case yl==0 is filtered by the above test*/   \
+      /* return next up */                                             \
+      yh.d = __yh__;                                                   \
+      if(yh_neg) yh.l--;  else yh.l++; /* Beware: fails for zero */    \
+      return yh.d ;                                                    \
+    }                                                                  \
+    else  return __yh__;                                               \
+  }                                                                    \
+}
+
+
+#define TEST_AND_RETURN_RD(__yh__, __yl__, __eps__)                    \
+{                                                                      \
+  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
+  yh.d = __yh__;    yl.d = __yl__;                                     \
+  yh_neg = (yh.i[HI] & 0x80000000);                             \
+  yl_neg = (yl.i[HI] & 0x80000000);                             \
+  yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  u53.l     = (yh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;   \
+  if(yl.d > __eps__ * u53.d){                                          \
+    if(yl_neg) {   /* The case yl==0 is filtered by the above test*/   \
+      /* return next down */                                           \
+      yh.d = __yh__;                                                   \
+      if(yh_neg) yh.l++;  else yh.l--; /* Beware: fails for zero */    \
+      return yh.d ;                                                    \
+    }                                                                  \
+    else  return __yh__;                                               \
+  }                                                                    \
+}
+
+
+
+#define TEST_AND_RETURN_RZ(__yh__, __yl__, __eps__)                    \
+{                                                                      \
+  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
+  yh.d = __yh__;    yl.d = __yl__;                                     \
+  yh_neg = (yh.i[HI] & 0x80000000);                             \
+  yl_neg = (yl.i[HI] & 0x80000000);                             \
+  yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  u53.l     = (yh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;   \
+  if(yl.d > __eps__ * u53.d){                                          \
+    if(yl_neg!=yh_neg) {                                               \
+      yh.d = __yh__;                                                   \
+      yh.l--;                          /* Beware: fails for zero */    \
+      return yh.d ;                                                    \
+    }                                                                  \
+    else  return __yh__;                                               \
+  }                                                                    \
+}
 
 
 /* If the processor has a FMA, use it !   **/
@@ -225,13 +289,6 @@ typedef enum {
 #endif
 
 
-#ifdef WORDS_BIGENDIAN
-#define HI(x) (*((int*)(&x)))
-#define LO(x) (*(1+(int*)(&x)))
-#else
-#define HI(x) (*(1+(int*)(&x)))
-#define LO(x) (*((int*)(&x)))
-#endif
 
 
 
@@ -425,15 +482,15 @@ extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, doubl
   double u, v;                                            \
   db_number _a=a, _b=b;                                   \
                                                           \
-  if (_a.i[HI_ENDIAN]>0x7C900000) u = _a*two_em53;        \
+  if (_a.i[HI]>0x7C900000) u = _a*two_em53;        \
   else            u = _a;                                 \
-  if (_b.i[HI_ENDIAN]>0x7C900000) v = _b*two_em53;        \
+  if (_b.i[HI]>0x7C900000) v = _b*two_em53;        \
   else            v = _b;                                 \
                                                           \
   Mul12(rh, rl, u, v);                                    \
                                                           \
-  if (_a.i[HI_ENDIAN]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
-  if (_b.i[HI_ENDIAN]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
+  if (_a.i[HI]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
+  if (_b.i[HI]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
 }
 
 

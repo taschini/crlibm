@@ -104,15 +104,15 @@ int main (int argc, char *argv[])
 
 
 
-  printf("Input      : %.50e  %08x %08x\n", input.d, input.i[HI_ENDIAN], input.i[LO_ENDIAN] ); 
+  printf("Input      : %.50e  %08x %08x\n", input.d, input.i[HI], input.i[LO] ); 
   printf("cr_libm    : "); 
   fflush(stdout); /* To help debugging */
   if(testfun_crlibm != NULL)   {
     res_crlibm.d = testfun_crlibm(input.d);
     printf("%.50e  %08x %08x\n", 
 	   res_crlibm.d, 
-	   res_crlibm.i[HI_ENDIAN], 
-	   res_crlibm.i[LO_ENDIAN] );
+	   res_crlibm.i[HI], 
+	   res_crlibm.i[LO] );
   }
   else 
     printf("Not available\n");
@@ -127,8 +127,8 @@ int main (int argc, char *argv[])
     res_mpfr.d = mpfr_get_d(mp_res, mpfr_rnd_mode);
     printf("%.50e  %08x %08x \n", 
 	   res_mpfr.d, 
-	   res_mpfr.i[HI_ENDIAN], 
-	   res_mpfr.i[LO_ENDIAN] );
+	   res_mpfr.i[HI], 
+	   res_mpfr.i[LO] );
   }else 
     printf("Not available\n");
   fflush(stdout);
@@ -143,8 +143,8 @@ int main (int argc, char *argv[])
     res_ibm.d = testfun_libultim(input.d);
     printf("%.50e  %08x %08x \n", 
 	   res_ibm.d, 
-	   res_ibm.i[HI_ENDIAN], 
-	   res_ibm.i[LO_ENDIAN] );
+	   res_ibm.i[HI], 
+	   res_ibm.i[LO] );
   }
   else 
     printf("Not available\n");
@@ -158,8 +158,8 @@ int main (int argc, char *argv[])
     res_libmcr.d = testfun_libmcr(input.d);
     printf("%.50e  %08x %08x \n", 
 	   res_libmcr.d, 
-	   res_libmcr.i[HI_ENDIAN], 
-	   res_libmcr.i[LO_ENDIAN] );
+	   res_libmcr.i[HI], 
+	   res_libmcr.i[LO] );
   }
   else 
     printf("Not available\n");
@@ -177,8 +177,8 @@ int main (int argc, char *argv[])
       res_libm.d = testfun_libm(input.d);
       printf("%.50e  %08x %08x \n", 
 	     res_libm.d, 
-	     res_libm.i[HI_ENDIAN], 
-	     res_libm.i[LO_ENDIAN]) ;
+	     res_libm.i[HI], 
+	     res_libm.i[LO]) ;
     }
   else
     printf("Not available\n");

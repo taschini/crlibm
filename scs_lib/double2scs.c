@@ -41,7 +41,7 @@ void scs_set_d(scs_ptr result, double x){
   if(x>=0){R_SGN = 1;    nb.d = x;}
   else    {R_SGN = -1;   nb.d = -x;}
 
-  exponent = nb.i[HI_ENDIAN] & 0x7ff00000 ;
+  exponent = nb.i[HI] & 0x7ff00000 ;
 
   if (exponent == 0x7ff00000)  {
     /*
@@ -65,7 +65,7 @@ void scs_set_d(scs_ptr result, double x){
     if (exponent == 0){
       /* x is a denormal number : bring it back to the normal range */
       nb.d = nb.d * SCS_RADIX_TWO_DOUBLE;      /* 2^(2.SCS_NB_BITS) */
-      exponent = nb.i[HI_ENDIAN] & 0x7ff00000 ;
+      exponent = nb.i[HI] & 0x7ff00000 ;
       R_IND = -2;
     }else {
       R_IND = 0;
@@ -92,12 +92,12 @@ void scs_set_d(scs_ptr result, double x){
 
     /* 11 = 64-53 */
     mantissa.l =  (mantissa.l << (exponent_remainder+11));
-    R_HW[1] = (mantissa.i[HI_ENDIAN] >> (32 - SCS_NB_BITS))& SCS_MASK_RADIX ;
+    R_HW[1] = (mantissa.i[HI] >> (32 - SCS_NB_BITS))& SCS_MASK_RADIX ;
     mantissa.l =  (mantissa.l << SCS_NB_BITS);
-    R_HW[2] = (mantissa.i[HI_ENDIAN] >> (32 - SCS_NB_BITS))& SCS_MASK_RADIX ;
+    R_HW[2] = (mantissa.i[HI] >> (32 - SCS_NB_BITS))& SCS_MASK_RADIX ;
 #if SCS_NB_BITS < 27
     mantissa.l =  (mantissa.l << SCS_NB_BITS);
-    R_HW[3] = (mantissa.i[HI_ENDIAN] >> (32 - SCS_NB_BITS))& SCS_MASK_RADIX ;
+    R_HW[3] = (mantissa.i[HI] >> (32 - SCS_NB_BITS))& SCS_MASK_RADIX ;
 #else
     R_HW[3] = 0 ;
 #endif

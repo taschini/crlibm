@@ -6,52 +6,23 @@
 
    To test within crlibm: 
 icc -mcpu=itanium  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c exp-itanium.c;\
-mv exp-itanium.o exp_fast.o; make
+    mv exp-itanium.o exp_fast.o; make
+
+icc -mcpu=itanium2  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c exp-itanium.c;\
+    mv exp-itanium.o exp_fast.o; make
 
 
 */
 
 //============================================================================================
 
+#include "crlibm_private.h"
 #define ITANIUMICC 1
 
-#include "crlibm_private.h"
 #include "double-extended.h"
 
 //============================================================================================
 
-#define L 7     /* # bits in table index (i1,i2) */
-#define K 128   /* table size = 2^L */
-#define L_EXPAND    (((K/2) << L) + (K/2))
-#define L_MASK      ((1 << L)-1)
-
-#define constants_80 ((const LC_FLOAT_TYPE *)_constants_80)
-# define _SHL      (constants_80[ 0])
-# define _K2LN2L   (constants_80[ 1])
-# define _NLN2K20L (constants_80[ 2])
-# define _NLN2K21L (constants_80[ 3])
-# define _SP2L     (constants_80[ 4])
-# define _SP1X_HI  (constants_80[ 5])
-# define _SP0L     (constants_80[ 6])
-
-# define _NLN2K22L (constants_80[ 7])
-# define _SP4L     (constants_80[ 8])
-# define _SP3L     (constants_80[ 9])
-# define _SP1X_LO  (constants_80[ 10])
-__declspec(align(16)) static const unsigned short _constants_80[] = {
-     LDOUBLE_HEX(403e,c000,0000,0000,0000)  /*  0 SHL      = 1.5*2^63 */
-    ,LDOUBLE_HEX(400d,b8aa,3b29,5c17,f0bc)  /*  1 K2LN2L   = K^2/log(2) ~ 23637.11554992 */
-    ,LDOUBLE_HEX(bff0,b172,17f7,d1cf,79ac)  /*  2 NLN2K20L ~ -4.23063464697232244524347213247665588919943502332898e-05 */
-    ,LDOUBLE_HEX(3fae,d871,319f,f000,0000)  /*  3 NLN2K21L ~  6.99362349047620977408942987412840832949912800870764e-25 */
-    ,LDOUBLE_HEX(3ffa,aaaa,aaaa,aaaa,aaab)  /*  4 SP2L     ~  4.16666666666666666677960439296724004520910966675728e-02 */
-    ,LDOUBLE_HEX(3ffc,aaaa,aaaa,aaaa,aaab)  /*  5 SP1X_HI  ~  1.66666666666666666671184175718689601808364386670291e-01 */
-    ,LDOUBLE_HEX(3ffe,8000,0000,0000,0000)  /*  6 SP0L     = 0.5 */
- 
-    ,LDOUBLE_HEX(3f84,d095,0bf0,cbcd,98d6)  /*  7 NLN2K22L ~  1.53242008494748302860112907643687641670519495734080e-37 */
-    ,LDOUBLE_HEX(3ff5,b60b,60b6,1286,f983)  /*  8 SP4L     ~  1.38888888890158889343717346078962981970050805102800e-03 */
-    ,LDOUBLE_HEX(3ff8,8888,8888,91d5,7943)  /*  9 SP3L     ~  8.33333333346550207291141649720844775117711833445355e-03 */
-    ,LDOUBLE_HEX(bfbb,ab70,78a8,ae65,09cf)  /*  10 SP1X_LO  ~ -4.53796157421198095955516441874944572386592208568553e-21 */
-};
 
 /* T1[i1] = 2^(i1/(K^1))  i1 = [-L/2..L/2]
  * T2[i2] = 2^(i2/(K^2))  i2 = [-L/2..L/2]
@@ -317,6 +288,39 @@ __declspec(align(16)) static const unsigned short _TXL[] = {
 /*  64*/ ,LDOUBLE_HEX(3fff,b504,f333,f9de,6484),LDOUBLE_HEX(3fbe,b2fb,1366,ea95,7d3e)   /* ~1.41421356237309504876378807303183293697657063603401 T1[128] hi,lo */
 /*  64*/ ,LDOUBLE_HEX(3fff,8058,d7d2,d5e5,f6b1),LDOUBLE_HEX(bfbe,d654,ec13,ee23,6abc)   /* ~1.00271127505020248547613209710860360246442724019289 T2[128] hi,lo */
 };
+#define L 7     /* # bits in table index (i1,i2) */
+#define K 128   /* table size = 2^L */
+#define L_EXPAND    (((K/2) << L) + (K/2))
+#define L_MASK      ((1 << L)-1)
+
+#define constants_80  ((const LC_FLOAT_TYPE *)_constants_80)
+# define _DE2IntCst   (constants_80[ 0])
+# define _K2byLog2    (constants_80[ 1])
+# define _Log2byK2Hi  (constants_80[ 2])
+# define _Log2byK2Med (constants_80[ 3])
+# define _p3_HI       (constants_80[ 4])
+
+# define _p5          (constants_80[ 5])
+# define _p4          (constants_80[ 6])
+# define _p3_LO       (constants_80[ 7])
+
+# define _Log2byK2Lo  (constants_80[ 8])
+# define _p6          (constants_80[ 9])
+
+__declspec(align(16)) static const unsigned short _constants_80[] = {
+     LDOUBLE_HEX(403e,c000,0000,0000,0000)  /*  0 DE2IntCst      = 1.5*2^63 */
+    ,LDOUBLE_HEX(400d,b8aa,3b29,5c17,f0bc)  /*  1 K2byLog2   = K^2/log(2) ~ 23637.11554992 */
+    ,LDOUBLE_HEX(bff0,b172,17f7,d1cf,79ac)  /*  2 Log2byK2Hi ~ -4.23063464697232244524347213247665588919943502332898e-05 */
+    ,LDOUBLE_HEX(3fae,d871,319f,f000,0000)  /*  3 Log2byK2Med ~  6.99362349047620977408942987412840832949912800870764e-25 */
+    ,LDOUBLE_HEX(3ffc,aaaa,aaaa,aaaa,aaab)  /*  4 p3_HI  ~  1.66666666666666666671184175718689601808364386670291e-01 */
+
+    ,LDOUBLE_HEX(3ff8,8888,8888,91d5,7943)  /*  5 p5     ~  8.33333333346550207291141649720844775117711833445355e-03 */
+    ,LDOUBLE_HEX(3ffa,aaaa,aaaa,aaaa,aaab)  /*  6 p4     ~  4.16666666666666666677960439296724004520910966675728e-02 */
+    ,LDOUBLE_HEX(bfbb,ab70,78a8,ae65,09cf)  /*  7 p3_LO  ~ -4.53796157421198095955516441874944572386592208568553e-21 */
+ 
+    ,LDOUBLE_HEX(3f84,d095,0bf0,cbcd,98d6)  /*  8 Log2byK2Lo ~  1.53242008494748302860112907643687641670519495734080e-37 */
+    ,LDOUBLE_HEX(3ff5,b60b,60b6,1286,f983)  /*  9 p6     ~  1.38888888890158889343717346078962981970050805102800e-03 */
+};
 
 //============================================================================================
 
@@ -324,22 +328,26 @@ double exp_rn( double xd )
 {
     UINT64 x_val,x_abs,sign_mask,range,x_exp;
     SINT64 m,n,i1,i2,xsign,yesno;
-    X_FLOAT_TYPE xx,rx,r2x,tp0x,tp1x,tpxx,tt1x,tt2x,tptx,resx;
-    L_FLOAT_TYPE SHL,K2LN2L,NLN2K20L,NLN2K21L,NLN2K22L;
-    X_FLOAT_TYPE SP1X;
-    L_FLOAT_TYPE SP0L,SP2L,SP3L,SP4L;
-    L_FLOAT_TYPE tmp,w,mr,tmp1,tmp5,tmp6,tmp7,sc,resl,rx2,x4,inf_d,minnorm_d,maxnorm_d,rn_constant;
+    X_FLOAT_TYPE xx, rx, r2x, tp0x, tp1x, tpxx, tt1x, tt2x, tptx, resx;
+    L_FLOAT_TYPE DE2IntCst,K2byLog2,Log2byK2Hi,Log2byK2Med,Log2byK2Lo;
+    X_FLOAT_TYPE p3;
+    L_FLOAT_TYPE p2,p4,p5,p6;
+    L_FLOAT_TYPE tmp,w,mr,tmp1,tmp5,tmp6,tmp7,res,ef,rx2,x4,inf_d,minnorm_d,maxnorm_d;
+    L_FLOAT_TYPE sc; // Don't know if it wouldn't be better as a double
+    double resd;
     double volatile exception;
 
     /* load constants */
-    SHL      = _SHL;
-    K2LN2L   = _K2LN2L;
-    NLN2K20L = _NLN2K20L;
-    NLN2K21L = _NLN2K21L;
-    SP2L     = _SP2L;
-    SP1X.hi  = _SP1X_HI;
-    SP0L     = _SP0L;
-    rn_constant = 1.005;
+    DE2IntCst      = _DE2IntCst;
+    //DE2IntCst = _Asm_setf(_FR_D, 0x43e8000000000000); /* 1 cycle slower */
+    K2byLog2   = _K2byLog2;
+    Log2byK2Hi = _Log2byK2Hi;
+    Log2byK2Med = _Log2byK2Med;
+    p3.hi  = _p3_HI;
+    p2 = _Asm_setf(_FR_EXP, 0xfffe); /* 0.5 */
+    p5     = _p5;
+    p4     = _p4;
+    p3.lo  = _p3_LO;
 
 
     /* get and classify input value; obtain range value */
@@ -362,20 +370,20 @@ double exp_rn( double xd )
             return _Asm_fma( _PC_D, xd, 1, 1, _SF0 );
         }
         /* 2^(-55) <= |x| < 2^(-15) */
-        tmp = SP3L*xd + SP2L;
+        tmp = p5*xd + p4;
         __X_SQR_L( r2x, xd );
-        tmp = SP4L*r2x.hi + tmp;
-        tp1x.hi = SP0L;
+        tmp = p6*r2x.hi + tmp;
+        tp1x.hi = p2;
         tp1x.lo = tmp*r2x.hi;
-        __X_FMA_GREATER_LXX( tp0x, xd, SP1X, tp1x );
-        __X_FMA_GREATER_XXL( tpxx, r2x, tp0x, xd );
+        __X_FMA_GREATER_LXX( tp0x, xd, p3, tp1x );   /* tp0 = xd * p3   +  tp1 */
+        __X_FMA_GREATER_XXL( tpxx, r2x, tp0x, xd );  /* tpx = r2 * tp0  +  xd*/
         /* res = (tpxx.lo + tpxx.hi) + 1; */
-        resl = _Asm_fma( _PC_D, tpxx.hi, 1, 1, _SF1 );
-        tmp = (1 - resl);
+        res = _Asm_fma( _PC_D, tpxx.hi, 1, 1, _SF1 );
+        tmp = (1 - res);
         tmp = (tmp + tpxx.hi);
         tmp = (tmp + tpxx.lo);
-        resl = _Asm_fma( _PC_D, resl, 1, tmp, _SF0 );
-        return resl;
+        res = _Asm_fma( _PC_D, res, 1, tmp, _SF0 );
+        return res;
     }
 
     if (__builtin_expect( x_abs > range, 0 )) { /* nan, inf, large finite */
@@ -410,82 +418,90 @@ double exp_rn( double xd )
 
     /* reduction: x = m*log(2)/(K^2) + r; m = n*K^2 + i1*K + i2; |r|=[0..log(2)/(2*K^2)] */
 
-    w = xd * K2LN2L + SHL;   /* Double2Int on a doubledouble */
-    mr = (w - SHL);
+    w = xd * K2byLog2 + DE2IntCst;   /* Double2Int on a doubledouble */
+    mr = (w - DE2IntCst);
     m = _Asm_getf( _FR_SIG, w ) + L_EXPAND; /* add L/2 to i1,i2 (make it unsigned table offset) */
+ 
+    rx.hi = mr * Log2byK2Hi + xd;
 
-    tmp7 = mr * NLN2K20L + xd;
-    tmp1 = mr * NLN2K21L;
-    rx.hi = (tmp7 + tmp1);
 
-    i2 = m & L_MASK;
     i1 = (m >> L) & L_MASK;
-    n = _Asm_extr( m, 2*L, 16 );
+    i2 = m & L_MASK;
+
+    // was:   n = _Asm_extr( m, 2*L, 16 ); The compiler seems to get it
+    n = m >> 2*L;
     sc = _Asm_setf( _FR_EXP, 0xffff + n ); /* build 2^n */
+    //sc = _Asm_setf( _FR_D, ULL(3ff0000000000000) + (n<<52) ); /* build 2^n */
 
 
     /* First step */
     /* Compute e^xred as 1+p(xred) 
        Then compute T*e^xred as T+T*p(xred) */ 
 
-      /* table lookup and reconstruction: T = T1[i1]*T2[i2]*2^n */
-    /* TODO Optimize out half of the reads */
+    /* table lookup and reconstruction: T = T1[i1]*T2[i2]*2^n */
+    /* We read both vlues but it isn't slower  */
+
     __X_CONVERT_XC2X( tt1x, TX[i1*2+0] );   /* load T1[i1] */
     __X_CONVERT_XC2X( tt2x, TX[i2*2+1] );   /* load T2[i2] */
 
-    tptx.hi = tt2x.hi * tt1x.hi;
+    tptx.hi = tt2x.hi * tt1x.hi ;
 
-    /* tptx.hi *= sc;
-       Scaling moved to after the rounding test 
-       (who cares, it is an exact operation, and it saves 2 cycles)*/
       
-    /* degree 4 polynomial evaluation:  */
-    /* Parallel Horner  saves  2 cycles */
+    /* degree 3 polynomial evaluation:  */
     rx2=rx.hi*rx.hi;
-    tmp = SP0L + SP1X.hi*rx.hi;  
+    tmp = p2 + p3.hi*rx.hi;  
+
+    // We're not adding a correcting term to rx.hi, we're multiplying the final exp by (1+f)
+    rx.hi = rx.hi + mr * Log2byK2Med;
+
+    //ef = 1.0 + mr * Log2byK2Med;
     tmp = rx.hi +rx2*tmp; /* tmp = x+x^2/2 + ...*/
 
     /* Final reconstruction and rounding test */
-    L_FLOAT_TYPE res,reshi,reslo,test;
+    
+    res = tmp*tptx.hi + tptx.hi;
+    resd = res*sc;    /* do the scaling now, saves a few cycles */
 
+#if 0 // test a la Ziv
+    /* This test is 3 cycles slower */
+    L_FLOAT_TYPE reshi,reslo,test,rn_constant;
     reshi = _Asm_fma( _PC_D, tmp, tptx.hi, tptx.hi, _SF0 );      /*  tmp*tptx.hi + tptx.hi, round to double */
-
-#if 0 /* To time the 1-step only  */
-      return (double)(reshi*sc); 
-#endif
-    res =    _Asm_fma( _PC_NONE, tmp, tptx.hi, tptx.hi, _SF1 );  /*  tmp*tptx.hi + tptx.hi, round to ext */
+    rn_constant = 1.005;
     reslo = res - reshi;  
     test=_Asm_fma( _PC_D, reslo, rn_constant, reshi, _SF0 );
   
-
-#if 0
-    printf("xred=%1.10e     mr=%1.10e     tmp=%1.10e\n",(double)rx.hi,(double)mr,(double)tmp);
-    printf("i1=%u \t i2=%d \t n=%d \t\t tptx.hi=%1.10e\n", i1,i2,n,(double)tptx.hi);
-#endif
-
-    /* This builtin_expect really is expected to be true, but it loses two cycles then ?!?*/
-    if(__builtin_expect( reshi==test, 1+1==3) ) {
-      return (double)(reshi*sc);   /* do the scaling now, saves a few cycles */
+    if(__builtin_expect( reshi==test, 1+1==2) ) {
+      return resd;   /* do the scaling now, saves a few cycles */
     }
+#else // else test a la Ziv
+
+    i1 = _Asm_getf( _FR_SIG, res);
+    m =  i1 & (0xff<<3);
+    if(__builtin_expect((m!=(0x7f<<3) && m!=(0x80<<3)), 1+1==2)) {
+      return resd;
+    }      
+#endif // end test a la Ziv
     else {
-      /* second step */
-      // printf("*\n");
+      /***************************************************************************************************/
+      /**************************************** second step **********************************************/
+      /***************************************************************************************************/
 
 #if EVAL_PERF
         crlibm_second_step_taken++;
 #endif
 
-    NLN2K22L = _NLN2K22L;
-    SP4L     = _SP4L;
-    SP3L     = _SP3L;
-    SP1X.lo  = _SP1X_LO;
+    Log2byK2Lo = _Log2byK2Lo;
+    p6     = _p6;
 
+    // Cut from the first step
+    tmp1 = mr * Log2byK2Med;
+    tmp7 = mr * Log2byK2Hi + xd;
 
     tmp6 = _Asm_famax( tmp7, tmp1, _SF1 );
     tmp5 = _Asm_famin( tmp1, tmp7, _SF1 );
     rx.lo = (tmp6 - rx.hi);
     rx.lo = (tmp5 + rx.lo);
-    rx.lo = (mr * NLN2K22L + rx.lo);
+    rx.lo = (mr * Log2byK2Lo + rx.lo);
 
       
       /* table lookup and reconstruction: T = T1[i1]*T2[i2]*2^n */
@@ -497,15 +513,15 @@ double exp_rn( double xd )
       
       /* polynomial evaluation: px = P(r)*r */
       
-      tmp = SP3L*rx.hi + SP2L;
+      tmp = p5*rx.hi + p4;
       
       __X_SQR_X( r2x, rx );
       
-      tmp = SP4L*r2x.hi + tmp;
-      tp1x.hi = SP0L;
+      tmp = p6*r2x.hi + tmp;
+      tp1x.hi = p2;
       tp1x.lo = tmp*r2x.hi;
       
-      __X_FMA_GREATER_XXX( tp0x, rx, SP1X, tp1x );
+      __X_FMA_GREATER_XXX( tp0x, rx, p3, tp1x );
       __X_FMA_GREATER_XXX( tpxx, r2x, tp0x, rx );
       
       /* final reconstruction: res = (P(r)*r + 1)*T*2^n */

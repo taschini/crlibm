@@ -54,12 +54,14 @@ typedef enum {
 
 
 
+
 #define ULL(bits) 0x##bits##uLL
 
 #if (!defined(EM64T) && defined(__linux__) && defined(IA32))
 # define LDOUBLE_ALIGN 12   /* IA32 Linux: 12-byte alignment */
 #else
-# define LDOUBLE_ALIGN 16   /* EM64T, IA32 Win or IPF Win/Linux: 16-byte alignment */
+# define LDOUBLE_ALIGN 16   /* EM64T, IA32 Win or IPF Win/Linux: 16-byte alignm\
+			       ent */
 #endif
 
 #if (LDOUBLE_ALIGN == 16)
@@ -69,6 +71,7 @@ typedef enum {
 #endif
 
 #define LDOUBLE_HEX(w4,w3,w2,w1,w0) 0x##w0,0x##w1,0x##w2,0x##w3,0x##w4 _XPD_ /*LITTLE_ENDIAN*/
+
 
 
 /* Load XC constant data and convert to X format */
@@ -169,31 +172,6 @@ typedef enum {
         (__resx__).hi = __xfmagxxl_r_hi__; (__resx__).lo = __xfmagxxl_r_lo__;                       \
     }
 
-
-
-/* One of the nice things with the fused multiply-and-add is that it
-   greatly simplifies the double-double multiplications : */
-#define Mul12(rh,rl,u,v)                              \
-{                                                     \
-  *rh = u*v;                                          \
-  *rl = FMS(u,v, *rh);                               \
-}
-
-#define Mul22(pzh,pzl, xh,xl, yh,yl)                  \
-{                                                     \
-double ph, pl;                                        \
-  ph = xh*yh;                                         \
-  pl = FMS(xh, yh,  ph);                               \
-  pl = FMA(xh,yl, pl);                                  \
-  pl = FMA(xl,yh,pl);                                   \
-  *pzh = ph+pl;					      \
-  *pzl = (ph - (*pzh)) + pl;                          \
-}
-
-
-/* besides we don't care anymore about overflows in the mult  */
-#define Mul12Cond Mul12    
-#define Mul22cond Mul22
 
 
 #else /*ITANIUMICC*/

@@ -35,12 +35,12 @@ void pr(char* s,double d) {
   x.d=d;
   printf(s);printf("   ");
   printf("%8x%8x . 2^%d   (%8f %8x %8x)   \n",
-	 (x.i[HI_ENDIAN]&0x000FFFFF)+0x00100000,
-	 x.i[LO_ENDIAN],
-	 (x.i[HI_ENDIAN]>>20)-1023,
+	 (x.i[HI]&0x000FFFFF)+0x00100000,
+	 x.i[LO],
+	 (x.i[HI]>>20)-1023,
 	 x.d,
-	 x.i[HI_ENDIAN],
-	 x.i[LO_ENDIAN]);
+	 x.i[HI],
+	 x.i[LO]);
 }
 #endif
 
@@ -312,7 +312,7 @@ void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
     /* i=0 */
     for(j=0; j<(SCS_NB_WORDS); j++) {
       __asm__ volatile("mull %3" 
-		       : "=a" (t.i[LO_ENDIAN]), "=d" (t.i[HI_ENDIAN])
+		       : "=a" (t.i[LO]), "=d" (t.i[HI])
 		       : "a" (X_HW[0]) , "g" (Y_HW[j]));
       RES[j] += t.l;
     }
@@ -320,12 +320,12 @@ void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
     for(i=1 ; i<SCS_NB_WORDS; i++){
       for(j=0; j<(SCS_NB_WORDS-i); j++){
 	__asm__ volatile("mull %3" 
-			 : "=a" (t.i[LO_ENDIAN]), "=d" (t.i[HI_ENDIAN])
+			 : "=a" (t.i[LO]), "=d" (t.i[HI])
 			 : "a" (X_HW[i]) , "g" (Y_HW[j]));
 	RES[i+j] += t.l;
       }
       __asm__ volatile("mull %3" 
-		       : "=a" (t.i[LO_ENDIAN]), "=d" (t.i[HI_ENDIAN])
+		       : "=a" (t.i[LO]), "=d" (t.i[HI])
 		       : "a" (X_HW[i]) , "g" (Y_HW[j])); 
       /* here j==SCS_NB_WORDS-i */
       RES[SCS_NB_WORDS] += t.l;

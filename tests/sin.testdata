@@ -40,6 +40,14 @@ P fff80000 00000000 fff80000 00000000 # NaN
 M fff80000 00000000 fff80000 00000000 # NaN
 Z fff80000 00000000 fff80000 00000000 # NaN
 
+# Various bad cases either provided by Evgeny Gvozdev, or found during debugging
+M 41132ce9 0b3217e0 bff00000 00000000 # a bad case around Pi
+M 41132ce9 0b32181e bff00000 00000000 # a transition on a binade boundary
+M 41132ce9 0b32181f bfefffff ffffffff 
+P 41132ce9 0b32173e bfefffff ffffffff
+ 
+
+
 # One in five of the very worst cases computed by Lefevre and Muller.
 # Rounding these values requires evaluating the function to at least 2^(-100).
 # If you want the full list please contact Jean-Michel Muller

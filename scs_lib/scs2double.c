@@ -72,7 +72,7 @@ void scs_get_d(double *result, scs_ptr x){
   }
   
   /* take the exponent of nb.d (will be in [0:SCS_NB_BITS])*/
-  expo = ((nb.i[HI_ENDIAN] & 0x7ff00000)>>20) - 1023; 
+  expo = ((nb.i[HI] & 0x7ff00000)>>20) - 1023; 
 
   /* compute the exponent of the result */
   expofinal = expo + SCS_NB_BITS*X_IND;
@@ -92,8 +92,8 @@ void scs_get_d(double *result, scs_ptr x){
     /* Look at the last bit to decide rounding */
     if (lowpart & 0x0000000000000001ULL){
       /* need to add an half-ulp */
-      rndcorr.i[LO_ENDIAN] = 0; 
-      rndcorr.i[HI_ENDIAN] = (expo-52+1023)<<20;    /* 2^(exp-52) */ 
+      rndcorr.i[LO] = 0; 
+      rndcorr.i[HI] = (expo-52+1023)<<20;    /* 2^(exp-52) */ 
     }else{
       /* need to add nothing*/
       rndcorr.d = 0.0;
@@ -108,14 +108,14 @@ void scs_get_d(double *result, scs_ptr x){
        First check this number won't be a denormal itself */
     if((X_IND)*SCS_NB_BITS +1023 > 0) {
       /* build the double 2^(X_IND*SCS_NB_BITS)   */         		
-      nb.i[HI_ENDIAN] = ((X_IND)*SCS_NB_BITS +1023)  << 20;  		
-      nb.i[LO_ENDIAN] = 0;
+      nb.i[HI] = ((X_IND)*SCS_NB_BITS +1023)  << 20;  		
+      nb.i[LO] = 0;
       res *= nb.d;     /* exact multiplication */
     }
     else { /*offset the previous computation by 2^(2*SCS_NB_BITS) */
       /* build the double 2^(X_IND*SCS_NB_BITS)   */         		
-      nb.i[HI_ENDIAN] = ((X_IND)*SCS_NB_BITS +1023 + 2*SCS_NB_BITS)  << 20;  		
-      nb.i[LO_ENDIAN] = 0;                                 
+      nb.i[HI] = ((X_IND)*SCS_NB_BITS +1023 + 2*SCS_NB_BITS)  << 20;  		
+      nb.i[LO] = 0;                                 
       res *= SCS_RADIX_MTWO_DOUBLE;  /* exact multiplication */
       res *= nb.d;                  /* exact multiplication */
     }
@@ -143,7 +143,7 @@ void scs_get_d(double *result, scs_ptr x){
       /* keep only the significant bits */
       nb.l = nb.l >> (-1023 - expofinal);
       /* Look at the last bit to decide rounding */
-      if (nb.i[LO_ENDIAN] & 0x00000001){
+      if (nb.i[LO] & 0x00000001){
 	/* need to add an half-ulp */
 	rndcorr.l = 1;    /* this is a full ulp but we multiply by 0.5 in the end */ 
       }else{
@@ -195,7 +195,7 @@ static void get_d_directed(double *result, scs_ptr x, int rndMantissaUp){
   }
   
   /* take the exponent of nb.d (will be in [0:SCS_NB_BITS])*/
-  expo = ((nb.i[HI_ENDIAN] & 0x7ff00000)>>20) - 1023; 
+  expo = ((nb.i[HI] & 0x7ff00000)>>20) - 1023; 
   not_null = ((lowpart << (64+52 - 2*SCS_NB_BITS - expo)) != 0 );      
   /* Test if we are not on an exact double precision number */        
   for (i=3; i<SCS_NB_WORDS; i++)                                      
@@ -223,8 +223,8 @@ static void get_d_directed(double *result, scs_ptr x, int rndMantissaUp){
     /* Finish to fill the mantissa */                                   
     nb.l = nb.l | lowpart;                                              
     if (rndMantissaUp && (not_null)){                                   
-      rndcorr.i[LO_ENDIAN] = 0;                                         
-      rndcorr.i[HI_ENDIAN] = (expo-52+1023)<<20;    /* 2^(exp-52) */     
+      rndcorr.i[LO] = 0;                                         
+      rndcorr.i[HI] = (expo-52+1023)<<20;    /* 2^(exp-52) */     
     } else {                                                            
       rndcorr.d = 0.0;                                                
     }                                                                   
@@ -235,14 +235,14 @@ static void get_d_directed(double *result, scs_ptr x, int rndMantissaUp){
        First check this number won't be a denormal itself */
     if((X_IND)*SCS_NB_BITS +1023 > 0) {
       /* build the double 2^(X_IND*SCS_NB_BITS)   */         		
-      nb.i[HI_ENDIAN] = ((X_IND)*SCS_NB_BITS +1023)  << 20;  		
-      nb.i[LO_ENDIAN] = 0;
+      nb.i[HI] = ((X_IND)*SCS_NB_BITS +1023)  << 20;  		
+      nb.i[LO] = 0;
       res *= nb.d;     /* exact multiplication */
     }
     else { /*offset the previous computation by 2^(2*SCS_NB_BITS) */
       /* build the double 2^(X_IND*SCS_NB_BITS)   */         		
-      nb.i[HI_ENDIAN] = ((X_IND)*SCS_NB_BITS +1023 + 2*SCS_NB_BITS)  << 20;  		
-      nb.i[LO_ENDIAN] = 0;                                 
+      nb.i[HI] = ((X_IND)*SCS_NB_BITS +1023 + 2*SCS_NB_BITS)  << 20;  		
+      nb.i[LO] = 0;                                 
       res *= SCS_RADIX_MTWO_DOUBLE;  /* exact multiplication */
       res *= nb.d;                  /* exact multiplication */
     }
@@ -309,7 +309,7 @@ void get_d_directed0(double *result, scs_ptr x,int rndMantissaUp)
     return;                                                           
   }                                                                   
   /* take the exponent */                                             
-  expo = ((nb.i[HI_ENDIAN] & 0x7ff00000)>>20) - 1023;                  
+  expo = ((nb.i[HI] & 0x7ff00000)>>20) - 1023;                  
   not_null = ((lowpart << (64+52 - 2*SCS_NB_BITS - expo)) != 0 );      
   /* align the rest of the mantissa  */                               
   lowpart = lowpart >> (expo + 2*SCS_NB_BITS - 52);                    
@@ -319,8 +319,8 @@ void get_d_directed0(double *result, scs_ptr x,int rndMantissaUp)
   for (i=3; i<SCS_NB_WORDS; i++)                                      
       if (X_HW[i]!=0)  not_null = 1;                                  
   if (rndMantissaUp && (not_null)){                                   
-    rndcorr.i[LO_ENDIAN] = 0;                                         
-    rndcorr.i[HI_ENDIAN] = (expo-52+1023)<<20;    /* 2^(exp-52) */     
+    rndcorr.i[LO] = 0;                                         
+    rndcorr.i[HI] = (expo-52+1023)<<20;    /* 2^(exp-52) */     
   } else {                                                            
       rndcorr.d = 0.0;                                                
   }                                                                   
@@ -328,8 +328,8 @@ void get_d_directed0(double *result, scs_ptr x,int rndMantissaUp)
   if ((X_IND < SCS_MAX_RANGE) && (X_IND > -SCS_MAX_RANGE)){	      
     /* x is comfortably in the double-precision range */   	      
     /* build the double 2^(X_IND*SCS_NB_BITS)   */         	      
-    nb.i[HI_ENDIAN] = ((X_IND)*SCS_NB_BITS +1023)  << 20;  	      
-    nb.i[LO_ENDIAN] = 0;                                   	      
+    nb.i[HI] = ((X_IND)*SCS_NB_BITS +1023)  << 20;  	      
+    nb.i[LO] = 0;                                   	      
     res *= nb.d;                                           	      
   }else {                                                  	      
     /* x may end up being a denormal or overflow */        	      

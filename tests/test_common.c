@@ -73,8 +73,8 @@ int rand_int(){
 double rand_generic(){
   db_number result;
   
-  result.i[LO_ENDIAN]=rand_int();
-  result.i[HI_ENDIAN]=rand_int();
+  result.i[LO]=rand_int();
+  result.i[HI]=rand_int();
  
   return result.d;
 }
@@ -87,13 +87,13 @@ double rand_double(){
   db_number result;
   int e;
   /*first the low bits of the mantissa*/
-  result.i[LO_ENDIAN]=rand_int();
+  result.i[LO]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
-  result.i[HI_ENDIAN]=  rand_int() & 0x000fffff;
+  result.i[HI]=  rand_int() & 0x000fffff;
   /* Now set the exponent (negative value) */
   e = rand() & 0x000003ff; 
   if (e>0) e-=1;
-  result.i[HI_ENDIAN] += e<<20;
+  result.i[HI] += e<<20;
   return (result.d);
 }
 
@@ -105,12 +105,12 @@ double rand_double_normal(){
   db_number result;
   int e;
   /*first the low bits of the mantissa*/
-  result.i[LO_ENDIAN]=rand_int();
+  result.i[LO]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
-  result.i[HI_ENDIAN]=  rand_int() & 0x000fffff;
+  result.i[HI]=  rand_int() & 0x000fffff;
   /* Now set the exponent */
   e = 1023; 
-  result.i[HI_ENDIAN] += e<<20;
+  result.i[HI] += e<<20;
   return (result.d);
 }
 
@@ -127,12 +127,12 @@ double rand_for_exp_perf(){
   int e;
 
   /*first the low bits of the mantissa*/
-  result.i[LO_ENDIAN]=rand_int();
+  result.i[LO]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
-  result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
+  result.i[HI]=  rand_int() & 0x800fffff;
   /* Now set the exponent between -9 and 9, enough to cover the useful range  */
   e =  (int) ( (rand_double_normal()-1) * 18 );
-  result.i[HI_ENDIAN] += (1023 + e -9)<<20;
+  result.i[HI] += (1023 + e -9)<<20;
   return result.d;
 }
 
@@ -160,9 +160,9 @@ double rand_for_log(){
   int e;
 
   /*first the low bits of the mantissa*/
-  result.i[LO_ENDIAN]=rand_int();
+  result.i[LO]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
-  result.i[HI_ENDIAN]=  rand_int() & 0x7fffffff;
+  result.i[HI]=  rand_int() & 0x7fffffff;
   /* printf("x = %1.5e\n", result.d);*/
   return result.d;
 }
@@ -174,12 +174,12 @@ double rand_for_trig_perf(){
   db_number result;
   int e;
   /*first the low bits of the mantissa*/
-  result.i[LO_ENDIAN]=rand_int();
+  result.i[LO]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
-  result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
+  result.i[HI]=  rand_int() & 0x800fffff;
   /* Now set the exponent  between -20 and 40 */
     e =  (int) ( (rand_double_normal()-1) * 60 ); 
-   result.i[HI_ENDIAN] += (1023 + e -20)<<20;
+   result.i[HI] += (1023 + e -20)<<20;
   return result.d;
 
 }
@@ -191,12 +191,12 @@ double rand_for_atan_perf(){
   db_number result;
   int e;
   /*first the low bits of the mantissa*/
-  result.i[LO_ENDIAN]=rand_int();
+  result.i[LO]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
-  result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
+  result.i[HI]=  rand_int() & 0x800fffff;
   /* Now set the exponent between -20 and 50, enough to cover the useful range  */
   e =  (int) ( (rand_double_normal()-1) * 70 );
-  result.i[HI_ENDIAN] += (1023 + e -20)<<20;
+  result.i[HI] += (1023 + e -20)<<20;
   return result.d;
 
 }
@@ -206,12 +206,12 @@ double rand_for_atan_soaktest(){
   int e;
 
   /*first the low bits of the mantissa*/
-  result.i[LO_ENDIAN]=rand_int();
+  result.i[LO]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
-  result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
+  result.i[HI]=  rand_int() & 0x800fffff;
   /* Now set the exponent between -20 and 50, enough to cover the useful range  */
   e =  (int) ( (rand_double_normal()-1) * 70 );
-  result.i[HI_ENDIAN] += (1023 + e -20)<<20;
+  result.i[HI] += (1023 + e -20)<<20;
   return result.d;
 
 }
@@ -229,7 +229,7 @@ void test_rand()  {
     input.d = rand_for_exp_perf();
     if (input.d<min) min=input.d;
     if (input.d>max) max=input.d;
-    printf("%1.5ex \t%.8x %.8x\t%1.5e \t%1.5e\n", input.d, input.i[HI_ENDIAN], input.i[LO_ENDIAN],min,max );
+    printf("%1.5ex \t%.8x %.8x\t%1.5e \t%1.5e\n", input.d, input.i[HI], input.i[LO],min,max );
   }
 }
 

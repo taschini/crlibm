@@ -519,7 +519,7 @@ double sin_rn(double x){
   db_number x_split;
   
   x_split.d=x;
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
@@ -556,9 +556,9 @@ double sin_rn(double x){
     {
       db_number t;
       t.d = rri.rh ;
-      printf("\nrh = %08x %08x\n", t.i[HI_ENDIAN], t.i[LO_ENDIAN]);
+      printf("\nrh = %08x %08x\n", t.i[HI], t.i[LO]);
       t.d =  rri.rl;
-      printf("rl = %08x %08x\n", t.i[HI_ENDIAN], t.i[LO_ENDIAN]);
+      printf("rl = %08x %08x\n", t.i[HI], t.i[LO]);
     }
 #endif
 
@@ -586,10 +586,10 @@ double sin_rn(double x){
 double sin_ru(double x){
   double xx, ts, epsilon; 
   rrinfo rri;
-  db_number x_split,  absyh, absyl, u, u53;
+  db_number x_split;
   
   x_split.d=x;
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
@@ -631,19 +631,11 @@ double sin_ru(double x){
       rri.rl = -rri.rl;
     } 
   }
-  /* Rounding test to + infinity */
-  absyh.d=rri.rh;
-  absyl.d=rri.rl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-   
-  if(absyl.d > epsilon * u53.d){
-    if(rri.rl>0)  return rri.rh+u.d;
-    else      return rri.rh;
-  }
-  else return scs_sin_ru(x);
+
+  TEST_AND_RETURN_RU(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_sin_ru(x);
 }
 
 
@@ -657,11 +649,11 @@ double sin_ru(double x){
  *************************************************************/
 double sin_rd(double x){ 
   double xx, ts, epsilon; 
-  db_number x_split,  absyh, absyl, u, u53;
+  db_number x_split;
   rrinfo rri;
   
   x_split.d=x;
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
@@ -705,19 +697,10 @@ double sin_rd(double x){
     } 
   }
 
-  /* Rounding test to + infinity */
-  absyh.d=rri.rh;
-  absyl.d=rri.rl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-   
-  if(absyl.d > epsilon * u53.d){ 
-    if(rri.rl>0)  return rri.rh;
-    else      return rri.rh-u.d;
-  }
-  else return scs_sin_rd(x);
+  TEST_AND_RETURN_RD(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_sin_rd(x);
 }
 
 
@@ -731,11 +714,11 @@ double sin_rd(double x){
  *************************************************************/
 double sin_rz(double x){ 
   double xx, ts, epsilon; 
-  db_number x_split,  absyh, absyl, u, u53;
+  db_number x_split;
   rrinfo rri;  
   x_split.d=x;
 
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
@@ -777,25 +760,10 @@ double sin_rz(double x){
     } 
   }
 
-  /* Rounding test to + infinity */
-  absyh.d=rri.rh;
-  absyl.d=rri.rl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-   
-  if(absyl.d > epsilon * u53.d){ 
-    if(rri.rh>0) {
-      if (rri.rl>0) return rri.rh;
-      else      return rri.rh-u.d;
-    }
-    else {
-      if (rri.rl>0) return rri.rh+u.d;
-      else      return rri.rh;
-    }	
-  }
-  else return scs_sin_rz(x);
+  TEST_AND_RETURN_RZ(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_sin_rz(x);
 }
 
 
@@ -812,7 +780,7 @@ double cos_rn(double x){
   db_number x_split;
 
   x_split.d=x;
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
@@ -860,10 +828,10 @@ double cos_rn(double x){
 double cos_ru(double x){ 
   double x2, tc, epsilon; 
   rrinfo rri;
-  db_number x_split,  absyh, absyl, u, u53;
+  db_number x_split;
 
   x_split.d=x;
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
@@ -899,19 +867,11 @@ double cos_ru(double x){
     }
   }    
   
-  /* Rounding test to + infinity */
-  absyh.d=rri.rh;
-  absyl.d=rri.rl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-  
-  if(absyl.d > epsilon * u53.d){ 
-    if(rri.rl>0)  return rri.rh+u.d;
-    else      return rri.rh;
-  }
-  else return scs_cos_ru(x);
+
+  TEST_AND_RETURN_RU(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_cos_ru(x);
 }
 
 
@@ -923,10 +883,10 @@ double cos_ru(double x){
 double cos_rd(double x){ 
   double x2, tc, epsilon; 
   rrinfo rri;
-  db_number x_split,  absyh, absyl, u, u53;
+  db_number x_split;
 
   x_split.d=x;
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
@@ -961,19 +921,11 @@ double cos_rd(double x){
       rri.rl = -rri.rl;
     }     
   }
-  /* Rounding test to - infinity */
-  absyh.d=rri.rh;
-  absyl.d=rri.rl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-  
-  if(absyl.d > epsilon * u53.d){ 
-    if(rri.rl>=0)  return rri.rh;
-    else       return rri.rh-u.d;
-  }
-  else return scs_cos_rd(x);
+
+  TEST_AND_RETURN_RD(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_cos_rd(x);
 }
 
 
@@ -987,10 +939,10 @@ double cos_rd(double x){
 double cos_rz(double x){ 
   double x2, tc, epsilon; 
   rrinfo rri;
-  db_number x_split,  absyh, absyl, u, u53;
+  db_number x_split;
 
   x_split.d=x;
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
@@ -1025,25 +977,11 @@ double cos_rz(double x){
       rri.rl = -rri.rl;
     } 
   }
-  /* Rounding test to zero */
-  absyh.d=rri.rh;
-  absyl.d=rri.rl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-  
-  if(absyl.d > epsilon * u53.d){ 
-    if(rri.rh>0) {
-      if (rri.rl>0) return rri.rh;
-      else      return rri.rh-u.d;
-    }
-    else {
-      if (rri.rl>0) return rri.rh+u.d;
-      else      return rri.rh;
-    }	
-  }
-  else return scs_cos_rz(x);
+
+  TEST_AND_RETURN_RZ(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_cos_rz(x);
 }
 
 
@@ -1063,7 +1001,7 @@ double tan_rn(double x){
 
 
   x_split.d=x;
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
 
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
@@ -1126,11 +1064,11 @@ double tan_rn(double x){
 double tan_ru(double x){  
   double sh, sl, ch, cl, epsilon;
   double p7, t, x2;
-  db_number x_split,  absyh, absyl, u, u53;
+  db_number x_split;
   rrinfo rri;
 
   x_split.d=x;
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
@@ -1159,26 +1097,14 @@ double tan_ru(double x){
       sh = x*(x2*t3h.d + t);
       Add12(rri.rh, rri.rl, x, sh);   
       
-      /* Rounding test to + infinity */
-      absyh.d = rri.rh;
-      absyl.d = rri.rl;
-      absyh.l = absyh.l & 0x7fffffffffffffffLL;
-      absyl.l = absyl.l & 0x7fffffffffffffffLL;
-      u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-      u.l   = u53.l - 0x0350000000000000LL;
-      epsilon=EPS_TAN_CASE22; 
-      if(absyl.d > epsilon * u53.d){ 
-	if(rri.rl>0) return rri.rh+u.d;
-	else     return rri.rh;
-      }
-      else {
-	/* Still relatively fast, but more accurate */
-	Mul12(&sh, &sl, x2, t3h.d);
-	Add12(ch, cl, sh, (t+sl));
-	Mul22(&sh, &sl, x, 0, ch, cl);
-	Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-	epsilon=EPS_TAN_CASE21; 
-      }
+      TEST_AND_RETURN_RU(rri.rh, rri.rl, EPS_TAN_CASE22);
+
+      /* Still relatively fast, but more accurate */
+      Mul12(&sh, &sl, x2, t3h.d);
+      Add12(ch, cl, sh, (t+sl));
+      Mul22(&sh, &sl, x, 0, ch, cl);
+      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
+      epsilon=EPS_TAN_CASE21; 
     }
   }
   else { 
@@ -1193,18 +1119,11 @@ double tan_ru(double x){
     }
   }
   
-  /* Rounding test to + infinity */
-  absyh.d = rri.rh;
-  absyl.d = rri.rl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-  if(absyl.d > epsilon * u53.d){ 
-    if(rri.rl>0) return rri.rh+u.d;
-    else     return rri.rh;
-  }
-  else return scs_tan_ru(x); 
+  
+  TEST_AND_RETURN_RU(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return  scs_tan_ru(x);
 }
 
 
@@ -1217,11 +1136,11 @@ double tan_rd(double x){
   double sh, sl, ch, cl, epsilon;
   double p7, t, x2;
   rrinfo rri;
-  db_number x_split,  absyh, absyl, u, u53;
+  db_number x_split;
 
   
   x_split.d=x;
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000){
@@ -1250,26 +1169,14 @@ double tan_rd(double x){
     sh = x*(x2*t3h.d + t);
     Add12(rri.rh, rri.rl, x, sh);   
 
-    /* Rounding test to - infinity */
-    absyh.d=rri.rh;
-    absyl.d=rri.rl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_TAN_CASE22; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(rri.rl>0) return rri.rh;
-      else     return rri.rh-u.d;
-    }
-    else { 
-      /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, x2, t3h.d);
-      Add12(ch, cl, sh, (t+sl));
-      Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-      epsilon=EPS_TAN_CASE21; 
-    }
+    TEST_AND_RETURN_RD(rri.rh, rri.rl, EPS_TAN_CASE22);
+
+    /* Still relatively fast, but more accurate */
+    Mul12(&sh, &sl, x2, t3h.d);
+    Add12(ch, cl, sh, (t+sl));
+    Mul22(&sh, &sl, x, 0, ch, cl);
+    Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
+    epsilon=EPS_TAN_CASE21; 
   }
   
   else { 
@@ -1284,18 +1191,10 @@ double tan_rd(double x){
     }
   }
   
-  /* Rounding test to - infinity */
-  absyh.d=rri.rh;
-  absyl.d=rri.rl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-  if(absyl.d > epsilon * u53.d){ 
-    if(rri.rl>0) return rri.rh;
-    else     return rri.rh-u.d;
-  }
-  else return scs_tan_rd(x);
+  TEST_AND_RETURN_RD(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return  scs_tan_rd(x);
 }
  	
 
@@ -1308,10 +1207,10 @@ double tan_rz(double x){
   double sh, sl, ch, cl, epsilon;
   double p7, t, x2;
   rrinfo rri;
-  db_number x_split,  absyh, absyl, u, u53;
+  db_number x_split;
 
   x_split.d=x;
-  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
@@ -1334,30 +1233,14 @@ double tan_rz(double x){
       sh = x*(x2*t3h.d + t);
       Add12(rri.rh, rri.rl, x, sh);   
       
-      /* Rounding test to zero */
-      absyh.d=rri.rh;
-      absyl.d=rri.rl;
-      absyh.l = absyh.l & 0x7fffffffffffffffLL;
-      absyl.l = absyl.l & 0x7fffffffffffffffLL;
-      u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-      u.l   = u53.l - 0x0350000000000000LL;
-      epsilon=EPS_TAN_CASE22; 
-      if(absyl.d > epsilon * u53.d){ 
-	if(rri.rh>0) 
-	  if(rri.rl>0) return rri.rh;
-	  else     return rri.rh-u.d;
-	else 
-	  if(rri.rl>0) return rri.rh+u.d;
-	  else    return rri.rh;
-      }
-      else {
-	/* Still relatively fast, but more accurate */
-	Mul12(&sh, &sl, x2, t3h.d);
-	Add12(ch, cl, sh, (t+sl));
-	Mul22(&sh, &sl, x, 0, ch, cl);
-	Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-	epsilon=EPS_TAN_CASE21; 
-      }
+      TEST_AND_RETURN_RZ(rri.rh, rri.rl, EPS_TAN_CASE22);
+
+      /* Still relatively fast, but more accurate */
+      Mul12(&sh, &sl, x2, t3h.d);
+      Add12(ch, cl, sh, (t+sl));
+      Mul22(&sh, &sl, x, 0, ch, cl);
+      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
+      epsilon=EPS_TAN_CASE21; 
     }
   }
   else { 
@@ -1371,21 +1254,10 @@ double tan_rz(double x){
       rri.rl = -rri.rl;
     }
   }
-  /* Rounding test to zero */
-  absyh.d=rri.rh;
-  absyl.d=rri.rl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-  if(absyl.d > epsilon * u53.d){ 
-    if(rri.rh>0) 
-      if(rri.rl>0) return rri.rh;
-      else     return rri.rh-u.d;
-    else 
-      if(rri.rl>0) return rri.rh+u.d;
-      else    return rri.rh;
-  }
-  else return scs_tan_rz(x); 
+
+  TEST_AND_RETURN_RZ(rri.rh, rri.rl, epsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return  scs_tan_rz(x); 
 }
 

@@ -197,8 +197,8 @@ static void do_add_no_renorm(scs_ptr result, scs_ptr x, scs_ptr y){
   unsigned int RES[SCS_NB_WORDS];
   unsigned int i, j, Diff;
   
-  if (x->exception.i[HI_ENDIAN]==0){scs_set(result, y); return; }
-  if (y->exception.i[HI_ENDIAN]==0){scs_set(result, x); return; }  
+  if (x->exception.i[HI]==0){scs_set(result, y); return; }
+  if (y->exception.i[HI]==0){scs_set(result, x); return; }  
   
   for (i=0; i<SCS_NB_WORDS; i++)
     RES[i] = X_HW[i];
@@ -590,8 +590,8 @@ static void do_sub(scs_ptr result, scs_ptr x, scs_ptr y){
 void  scs_add(scs_ptr result, scs_ptr x, scs_ptr y)
 {
     
-  if (x->exception.i[HI_ENDIAN]==0){scs_set(result, y); return; }
-  if (y->exception.i[HI_ENDIAN]==0){scs_set(result, x); return; }  
+  if (x->exception.i[HI]==0){scs_set(result, y); return; }
+  if (y->exception.i[HI]==0){scs_set(result, x); return; }  
 
   if (X_SGN == Y_SGN){
     if(X_IND >= Y_IND)
@@ -614,9 +614,9 @@ void  scs_add(scs_ptr result, scs_ptr x, scs_ptr y)
  */
 void  scs_sub(scs_ptr result, scs_ptr x, scs_ptr y)
 {
-  if (x->exception.i[HI_ENDIAN]==0)
+  if (x->exception.i[HI]==0)
     { scs_set(result, y); R_SGN = -R_SGN; return; }
-  if (y->exception.i[HI_ENDIAN]==0)
+  if (y->exception.i[HI]==0)
     { scs_set(result, x); return; }
 
   if (X_SGN == Y_SGN) {

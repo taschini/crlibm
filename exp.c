@@ -75,7 +75,7 @@ void exp_SC(scs_ptr res_scs, double x){
   /* db.d = x/512  (= 2^9)  */
   
   db.d = x;                                  
-  db.i[HI_ENDIAN] -= (9 << 20);              
+  db.i[HI] -= (9 << 20);              
   scs_set_d(sc1, db.d);                      
   
   

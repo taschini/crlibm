@@ -82,10 +82,10 @@ double log10_rn(double x)
 
   nb.d = x;
   /* Filter cases */
-  if (nb.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
-    if (((nb.i[HI_ENDIAN] & 0x7fffffff)|nb.i[LO_ENDIAN])==0)
+  if (nb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
+    if (((nb.i[HI] & 0x7fffffff)|nb.i[LO])==0)
       return 1.0/0.0;                       /* log(+/-0) = -Inf */
-    if (nb.i[HI_ENDIAN] < 0) 
+    if (nb.i[HI] < 0) 
       return (x-x)/0;                       /* log(-x) = Nan    */
 
     /* Subnormal number */
@@ -94,12 +94,12 @@ double log10_rn(double x)
     /* We may just want add 2 to the scs number.index */
     /* may be .... we will see */
   }
-  if (nb.i[HI_ENDIAN] >= 0x7ff00000)
+  if (nb.i[HI] >= 0x7ff00000)
     return x+x;                             /* Inf or Nan       */
 
   /* find n, nb.d such that sqrt(2)/2 < nb.d < sqrt(2) */
-  E += (nb.i[HI_ENDIAN]>>20)-1023;
-  nb.i[HI_ENDIAN] =  (nb.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;
+  E += (nb.i[HI]>>20)-1023;
+  nb.i[HI] =  (nb.i[HI] & 0x000fffff) | 0x3ff00000;
   if (nb.d > SQRT_2){
     nb.d *= 0.5;
     E++;
@@ -109,7 +109,7 @@ double log10_rn(double x)
   /* to normalize nb.d and round to nearest      */
   /* +((2^4 - trunc(sqrt(2)/2) *2^4 )*2 + 1)/2^5 */ 
   nb2.d = nb.d + norm_number.d; 
-  i = (nb2.i[HI_ENDIAN] & 0x000fffff);
+  i = (nb2.i[HI] & 0x000fffff);
   i = i >> 16; /* 0<= i <=11 */
   
   wi.d = (11+i)*(double)0.6250e-1;
@@ -179,10 +179,10 @@ double log10_rd(double x)
 
   nb.d = x;
   /* Filter cases */
-  if (nb.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
-    if (((nb.i[HI_ENDIAN] & 0x7fffffff)|nb.i[LO_ENDIAN])==0)
+  if (nb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
+    if (((nb.i[HI] & 0x7fffffff)|nb.i[LO])==0)
       return 1.0/0.0;                       /* log(+/-0) = -Inf */
-    if (nb.i[HI_ENDIAN] < 0) 
+    if (nb.i[HI] < 0) 
       return (x-x)/0;                       /* log(-x) = Nan    */
 
     /* Subnormal number */
@@ -191,12 +191,12 @@ double log10_rd(double x)
     /* We may just want add 2 to the scs number.index */
     /* may be .... we will see */
   }
-  if (nb.i[HI_ENDIAN] >= 0x7ff00000)
+  if (nb.i[HI] >= 0x7ff00000)
     return x+x;                             /* Inf or Nan       */
 
   /* find n, nb.d such that sqrt(2)/2 < nb.d < sqrt(2) */
-  E += (nb.i[HI_ENDIAN]>>20)-1023;
-  nb.i[HI_ENDIAN] =  (nb.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;
+  E += (nb.i[HI]>>20)-1023;
+  nb.i[HI] =  (nb.i[HI] & 0x000fffff) | 0x3ff00000;
   if (nb.d > SQRT_2){
     nb.d *= 0.5;
     E++;
@@ -206,7 +206,7 @@ double log10_rd(double x)
   /* to normalize nb.d and round to nearest      */
   /* +((2^4 - trunc(sqrt(2)/2) *2^4 )*2 + 1)/2^5 */ 
   nb2.d = nb.d + norm_number.d; 
-  i = (nb2.i[HI_ENDIAN] & 0x000fffff);
+  i = (nb2.i[HI] & 0x000fffff);
   i = i >> 16; /* 0<= i <=11 */
   
   wi.d = (11+i)*(double)0.6250e-1;
@@ -270,10 +270,10 @@ double log10_ru(double x)
 
   nb.d = x;
   /* Filter cases */
-  if (nb.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
-    if (((nb.i[HI_ENDIAN] & 0x7fffffff)|nb.i[LO_ENDIAN])==0)
+  if (nb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
+    if (((nb.i[HI] & 0x7fffffff)|nb.i[LO])==0)
       return 1.0/0.0;                       /* log(+/-0) = -Inf */
-    if (nb.i[HI_ENDIAN] < 0) 
+    if (nb.i[HI] < 0) 
       return (x-x)/0;                       /* log(-x) = Nan    */
 
     /* Subnormal number */
@@ -282,12 +282,12 @@ double log10_ru(double x)
     /* We may just want add 2 to the scs number.index */
     /* may be .... we will see */
   }
-  if (nb.i[HI_ENDIAN] >= 0x7ff00000)
+  if (nb.i[HI] >= 0x7ff00000)
     return x+x;                             /* Inf or Nan       */
 
   /* find n, nb.d such that sqrt(2)/2 < nb.d < sqrt(2) */
-  E += (nb.i[HI_ENDIAN]>>20)-1023;
-  nb.i[HI_ENDIAN] =  (nb.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;
+  E += (nb.i[HI]>>20)-1023;
+  nb.i[HI] =  (nb.i[HI] & 0x000fffff) | 0x3ff00000;
   if (nb.d > SQRT_2){
     nb.d *= 0.5;
     E++;
@@ -297,7 +297,7 @@ double log10_ru(double x)
   /* to normalize nb.d and round to nearest      */
   /* +((2^4 - trunc(sqrt(2)/2) *2^4 )*2 + 1)/2^5 */ 
   nb2.d = nb.d + norm_number.d; 
-  i = (nb2.i[HI_ENDIAN] & 0x000fffff);
+  i = (nb2.i[HI] & 0x000fffff);
   i = i >> 16; /* 0<= i <=11 */
   
   wi.d = (11+i)*(double)0.6250e-1;

@@ -92,15 +92,15 @@ int main (int argc, char *argv[])
 	/* This is a difficult to round case. Now in which direction ? */
 	/* First filter results equal to zero, infty, 1.0 */ 
 	res_mpfr.d = mpfr_get_d(mp_res, GMP_RNDN);
-	if(  ((res_mpfr.i[HI_ENDIAN] & 0x7ff00000) != 0x7ff00000) && (res_mpfr.d!=0.0) && (res_mpfr.d!=1.0)  ){
+	if(  ((res_mpfr.i[HI] & 0x7ff00000) != 0x7ff00000) && (res_mpfr.d!=0.0) && (res_mpfr.d!=1.0)  ){
 
 	  /* is it difficult to round to nearest ? */
 	  testfun_mpfr(mp_res53, mp_inpt, GMP_RNDN);
 	  if(mpfr_cmp (mp_res54, mp_res53)!=0) {
 	    res_mpfr.d = mpfr_get_d(mp_res53, GMP_RNDN);
 	    printf("N %08x %08x  %08x %08x # %1.30e\n", 
-		 input.i[HI_ENDIAN], input.i[LO_ENDIAN],
-		 res_mpfr.i[HI_ENDIAN], res_mpfr.i[LO_ENDIAN],
+		 input.i[HI], input.i[LO],
+		 res_mpfr.i[HI], res_mpfr.i[LO],
 		 input.d);
 	  }
 	  else{
@@ -109,22 +109,22 @@ int main (int argc, char *argv[])
 	    testfun_mpfr(mp_res53, mp_inpt, GMP_RNDD);
 	    res_mpfr.d = mpfr_get_d(mp_res53, GMP_RNDN);
 	    printf("M %08x %08x  %08x %08x # %1.30e\n", 
-		   input.i[HI_ENDIAN], input.i[LO_ENDIAN],
-		   res_mpfr.i[HI_ENDIAN], res_mpfr.i[LO_ENDIAN],
+		   input.i[HI], input.i[LO],
+		   res_mpfr.i[HI], res_mpfr.i[LO],
 		   input.d);
 
 	    testfun_mpfr(mp_res53, mp_inpt, GMP_RNDU);
 	    res_mpfr.d = mpfr_get_d(mp_res53, GMP_RNDN);
 	    printf("P %08x %08x  %08x %08x # %1.30e\n", 
-		   input.i[HI_ENDIAN], input.i[LO_ENDIAN],
-		   res_mpfr.i[HI_ENDIAN], res_mpfr.i[LO_ENDIAN],
+		   input.i[HI], input.i[LO],
+		   res_mpfr.i[HI], res_mpfr.i[LO],
 		   input.d);
 	    
 	    testfun_mpfr(mp_res53, mp_inpt, GMP_RNDZ);
 	    res_mpfr.d = mpfr_get_d(mp_res53, GMP_RNDN);
 	    printf("Z %08x %08x  %08x %08x # %1.30e\n", 
-		   input.i[HI_ENDIAN], input.i[LO_ENDIAN],
-		   res_mpfr.i[HI_ENDIAN], res_mpfr.i[LO_ENDIAN],
+		   input.i[HI], input.i[LO],
+		   res_mpfr.i[HI], res_mpfr.i[LO],
 		   input.d);
 	  }
 	}

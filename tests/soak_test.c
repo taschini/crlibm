@@ -99,71 +99,71 @@ void test_all() {
 #if PRINT_NAN
     if(1){
 #else
-      if((res_mpfr.i[HI_ENDIAN] & 0x7ff00000) != 0x7ff00000){
+      if((res_mpfr.i[HI] & 0x7ff00000) != 0x7ff00000){
 #endif
-	if( (res_crlibm.i[LO_ENDIAN] != res_mpfr.i[LO_ENDIAN]) 
-	    || (res_crlibm.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) ) 
+	if( (res_crlibm.i[LO] != res_mpfr.i[LO]) 
+	    || (res_crlibm.i[HI] != res_mpfr.i[HI]) ) 
 	  {
 #if DETAILED_REPORT	  
 	  printf("CRLIBM ERROR  x=%.70e \n            (%08x %08x) \n", 
 		 input.d, 
-		 input.i[HI_ENDIAN], 
-		 input.i[LO_ENDIAN]);
+		 input.i[HI], 
+		 input.i[LO]);
 	  printf("crlibm gives    %.50e \n         (%08x %08x) \n", 
 		 res_crlibm.d, 
-		 res_crlibm.i[HI_ENDIAN], 
-		 res_crlibm.i[LO_ENDIAN]);
+		 res_crlibm.i[HI], 
+		 res_crlibm.i[LO]);
 	  printf("MPFR gives %.50e \n         (%08x %08x) \n\n", 
 		 res_mpfr.d, 
-		 res_mpfr.i[HI_ENDIAN], 
-		 res_mpfr.i[LO_ENDIAN]);
+		 res_mpfr.i[HI], 
+		 res_mpfr.i[LO]);
 #endif
 	  failures_crlibm++;
 	  }
 	
-	if( (res_libm.i[LO_ENDIAN] != res_mpfr.i[LO_ENDIAN]) 
-	    || (res_libm.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) ) failures_libm++;
+	if( (res_libm.i[LO] != res_mpfr.i[LO]) 
+	    || (res_libm.i[HI] != res_mpfr.i[HI]) ) failures_libm++;
 	  
 #ifdef HAVE_MATHLIB_H
 	if(mpfr_rnd_mode==0  && testfun_libultim != NULL 
-	   && ((res_libultim.i[LO_ENDIAN] != res_mpfr.i[LO_ENDIAN]) 
-	       || (res_libultim.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) )) 
+	   && ((res_libultim.i[LO] != res_mpfr.i[LO]) 
+	       || (res_libultim.i[HI] != res_mpfr.i[HI]) )) 
 	  {
 #if DETAILED_REPORT
 	      printf("IBM ULTIM ERROR  x=%.50e \n            (%08x %08x) \n", 
 		     input.d, 
-		     input.i[HI_ENDIAN], 
-		     input.i[LO_ENDIAN]);
+		     input.i[HI], 
+		     input.i[LO]);
 	      printf("libultim gives    %.50e \n         (%08x %08x) \n", 
 		     res_libultim.d, 
-		     res_libultim.i[HI_ENDIAN], 
-		     res_libultim.i[LO_ENDIAN]);
+		     res_libultim.i[HI], 
+		     res_libultim.i[LO]);
 	      printf("MPFR gives %.50e \n         (%08x %08x) \n\n", 
 		     res_mpfr.d, 
-	       res_mpfr.i[HI_ENDIAN], 
-		     res_mpfr.i[LO_ENDIAN]);
+	       res_mpfr.i[HI], 
+		     res_mpfr.i[LO]);
 #endif
 	      failures_libultim++;
 	  }
 #endif
 #ifdef HAVE_LIBMCR_H
 	if(mpfr_rnd_mode==0  && testfun_libmcr != NULL 
-	   && ((res_libmcr.i[LO_ENDIAN] != res_mpfr.i[LO_ENDIAN]) 
-	       || (res_libmcr.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) )) 
+	   && ((res_libmcr.i[LO] != res_mpfr.i[LO]) 
+	       || (res_libmcr.i[HI] != res_mpfr.i[HI]) )) 
 	  {
 #if DETAILED_REPORT
 	      printf("LIBMCR ERROR  x=%.50e \n            (%08x %08x) \n", 
 		     input.d, 
-		     input.i[HI_ENDIAN], 
-		     input.i[LO_ENDIAN]);
+		     input.i[HI], 
+		     input.i[LO]);
 	      printf("libmcr gives    %.50e \n         (%08x %08x) \n", 
 		     res_libmcr.d, 
-		     res_libmcr.i[HI_ENDIAN], 
-		     res_libmcr.i[LO_ENDIAN]);
+		     res_libmcr.i[HI], 
+		     res_libmcr.i[LO]);
 	      printf("MPFR gives %.50e \n         (%08x %08x) \n\n", 
 		     res_mpfr.d, 
-	       res_mpfr.i[HI_ENDIAN], 
-		     res_mpfr.i[LO_ENDIAN]);
+	       res_mpfr.i[HI], 
+		     res_mpfr.i[LO]);
 #endif
 	      failures_libmcr++;
 	  }

@@ -72,7 +72,7 @@ void scs_log(scs_ptr res, db_number y, int E){
   /* to normalize y.d and round to nearest      */
   /* + (1-trunc(sqrt(2.)/2 * 2^(4))*2^(-4) )+2.^(-(4+1))*/ 
   z.d = y.d + norm_number.d; 
-  i = (z.i[HI_ENDIAN] & 0x000fffff);
+  i = (z.i[HI] & 0x000fffff);
   i = i >> 16; /* 0<= i <=11 */
   
   

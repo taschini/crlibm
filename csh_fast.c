@@ -22,6 +22,8 @@
 /* switches on various printfs. Default 0 */
 #define DEBUG 0
 
+static const double largest_double = 0x1.fffffffffffffp1023;
+static const double tiniest_double = 0x1.0p-1074;
 
 
 enum{RN,RD,RU,RZ};
@@ -52,17 +54,17 @@ static void do_cosh(double x, double* preshi, double* preslo){
       b_hi = x;  b_lo = 0.;
     }                                                               
   /*we'll construct 2 constants for the last reconstruction */
-  two_p_plus_k.i[LO_ENDIAN] = 0;
-  two_p_plus_k.i[HI_ENDIAN] = (k-1+1023) << 20;
-  two_p_minus_k.i[LO_ENDIAN] = 0;
-  two_p_minus_k.i[HI_ENDIAN] = (-k-1+1023) << 20;
+  two_p_plus_k.i[LO] = 0;
+  two_p_plus_k.i[HI] = (k-1+1023) << 20;
+  two_p_minus_k.i[LO] = 0;
+  two_p_minus_k.i[HI] = (-k-1+1023) << 20;
 
   /* at this stage, we've done the first range reduction : we have b_hi + b_lo  between -ln(2)/2 and ln(2)/2 */
   /* now we can do the second range reduction */
   /* we'll get the 8 leading bits of b_hi */
   table_index_float.d = b_hi + two_43_44.d;
   /*this add do the float equivalent of a rotation to the right, since -0.5 <= b_hi <= 0.5*/
-  table_index = LO(table_index_float.d);/* -89 <= table_index <= 89 */
+  table_index = table_index_float.i[LO];/* -89 <= table_index <= 89 */
   table_index_float.d -= two_43_44.d;
   table_index += bias; /* to have only positive values */
   b_hi -= table_index_float.d;/* to remove the 8 leading bits*/
@@ -74,7 +76,7 @@ static void do_cosh(double x, double* preshi, double* preslo){
   square_b_hi = b_hi * b_hi;
   /* effective computation of the polynomial approximation */
   
-  if (((y.i[HI_ENDIAN])&(0x7FFFFFFF)) < (two_minus_30.i[HI_ENDIAN])) {
+  if (((y.i[HI])&(0x7FFFFFFF)) < (two_minus_30.i[HI])) {
     tcb_hi = 0;
     tsb_hi = 0;
   }
@@ -186,25 +188,33 @@ static void do_cosh_accurate(double x, scs_ptr res_scs){
 
 double cosh_rn(double x){ 
   db_number y;
-  int absxhi;
+  int hx;
   double rh, rl;
   scs_t res_scs;
     
   y.d = x;
-  absxhi = y.i[HI_ENDIAN] & 0x7FFFFFFF; 
-  
-  if (absxhi > max_input_ch.i[HI_ENDIAN]) {
-    /* if NaN, return it */
-    if (((absxhi&0x7FF00000) == 0x7FF00000) && (((y.i[HI_ENDIAN] & 0x000FFFFF)!=0) || (y.i[LO_ENDIAN]!=0)) )
-      return x;
-    else {/* otherwise the result should be +infty */
-      y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000; return (y.d);
+  hx = y.i[HI] & 0x7FFFFFFF; 
+
+  /* Filter special cases */
+  if (hx > max_input_csh.i[HI]) { /* strictly greater, implies x > max_input_csh */
+    if (hx >= 0x7ff00000){
+      if (((hx&0x000fffff)|y.i[LO])!=0)
+	return x+x;                                        /* Nan */ 
+      else {/* otherwise the result should be +infty */
+	y.i[HI] = 0x7FF00000; 
+	return (y.d);
+      }
+      if (x > max_input_csh.d || x < -max_input_csh.d) 
+	return largest_double * largest_double;     /* overflow  */ 
     }
   }
-  
-  if (absxhi<0x3e500000)
-    return (1.0);
-  
+  if (hx<0x3e500000) {
+    if(x==0) 
+      return 1.0; /* exact */
+    else 
+      return (1.0+tiniest_double); /* to raise inexact flag */
+  }
+
   do_cosh(x, &rh, &rl);
 
   
@@ -224,24 +234,23 @@ double cosh_rn(double x){
 
 double cosh_ru(double x){ 
   db_number y;
-  int absxhi;
+  int hx;
   double rh, rl;
-  db_number absyh, absyl, u53, u;
   scs_t res_scs;
 
   y.d = x;
-  absxhi = y.i[HI_ENDIAN] & 0x7FFFFFFF; 
+  hx = y.i[HI] & 0x7FFFFFFF; 
 
-  if (absxhi > max_input_ch.i[HI_ENDIAN]) {
+  if (hx > max_input_csh.i[HI]) {
     /* if NaN, return it */
-    if (((absxhi&0x7FF00000) == 0x7FF00000) && (((y.i[HI_ENDIAN] & 0x000FFFFF)!=0) || (y.i[LO_ENDIAN]!=0)) )
+    if (((hx&0x7FF00000) == 0x7FF00000) && (((y.i[HI] & 0x000FFFFF)!=0) || (y.i[LO]!=0)) )
       return x;
     else {/* otherwise the result should be +infty */
-      y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000; return (y.d);
+      y.i[LO] = 0; y.i[HI] = 0x7FF00000; return (y.d);
     }
   }
   
-  if (absxhi<0x3e500000) { /* return the successor of 1 */
+  if (hx<0x3e500000) { /* return the successor of 1 */
     if(x==0.) return 1.0;
     else{
       y.l = 0x3ff0000000000001LL;
@@ -251,66 +260,67 @@ double cosh_ru(double x){
 
   do_cosh(x, &rh, &rl);
 
-  /* Rounding test to + infinity */
-  absyh.d = rh;
-  absyl.d = rl;
-  absyh.i[HI_ENDIAN] = absyh.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
-  absyl.i[HI_ENDIAN] = absyl.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
-  u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l = u53.l - 0x0350000000000000LL;
-  if(absyl.d > maxepsilon_csh * u53.d){ 
-    if(rl > 0.)  rh += u.d;
-    return rh;
-  }
-  else{
-    do_cosh_accurate(x,  res_scs);
-    scs_get_d_pinf(&rh, res_scs); 
-    return rh;
-  }  
+  TEST_AND_RETURN_RU(rh, rl, maxepsilon_csh);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  do_cosh_accurate(x,  res_scs);
+  scs_get_d_pinf(&rh, res_scs); 
+  return rh;
 }
 
 
 
 double cosh_rd(double x){ 
   db_number y;
-  int absxhi;
+  int hx;
   double rh, rl;
-  db_number absyh, absyl, u53, u;
   scs_t res_scs;
 
   y.d = x;
-  absxhi = y.i[HI_ENDIAN] & 0x7FFFFFFF; 
+  hx = y.i[HI] & 0x7FFFFFFF; 
 
-  if (absxhi > max_input_ch.i[HI_ENDIAN]) {
-    /* if NaN, return it */
-    if (((absxhi&0x7FF00000) == 0x7FF00000) && (((y.i[HI_ENDIAN] & 0x000FFFFF)!=0) || (y.i[LO_ENDIAN]!=0)) )
-      return x;
-    else {/* otherwise the result should be +infty */
-      y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000; return (y.d);
+
+  if (hx > max_input_csh.i[HI]) {
+    if (hx >= 0x7FF00000) {    /*particular cases : QNaN, SNaN, +- oo*/
+      if (((hx&0x7FF00000) == 0x7FF00000) && (((y.i[HI] & 0x000FFFFF)!=0) || (y.i[LO]!=0)) )
+	return x; /* NaN */
+      else { /* infinity */ 
+	y.i[HI] = hx;
+	return (y.d);
+      }
     }
+    if (y.d > max_input_csh.d) { /* out of range */
+	y.i[LO] = 0xFFFFFFFF; y.i[HI] = 0x7FEFFFFF ; return (y.d);
+    }
+
+
+#if 0
+    if (((hx&0x7FF00000) == 0x7FF00000) && (((y.i[HI] & 0x000FFFFF)!=0) || (y.i[LO]!=0)) )
+      return x;
+    else if ((hx == 0x7FF00000) && ((y.i[LO] == 0))) { /* Infinity ?*/
+      y.i[HI] = 0x7ff00000 + (y.i[HI] & 0x80000000); 
+      y.i[LO] = 0;
+      return (y.d); /* TODO we should raise the overflow flag  as david does*/
+    }
+      else {/* otherwise the result should be the largest representable number */
+      y.i[LO] = 0xffffffff; y.i[HI] = 0x7fefffff; 
+      return (y.d); /* TODO we should raise the inexact flag */
+    }
+#endif
+
   }
   
-  if (absxhi<0x3e500000)
+  if (hx<0x3e500000)
     return (1.0); 
 
   do_cosh(x, &rh, &rl);
 
-  /* Rounding test to - infinity (or to zero) */
-  absyh.d = rh;
-  absyl.d = rl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l = u53.l - 0x0350000000000000LL;
-  if(absyl.d >  maxepsilon_csh * u53.d){ 
-    if(rl < 0.)  rh -= u.d;
-    return rh;
-  }
-  else{
-    do_cosh_accurate(x,  res_scs);
-    scs_get_d_minf(&rh, res_scs); 
-    return rh;
-  }  
+  TEST_AND_RETURN_RD(rh, rl, maxepsilon_csh);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  do_cosh_accurate(x,  res_scs);
+  scs_get_d_minf(&rh, res_scs); 
+  return rh;
 }
 
 
@@ -357,10 +367,10 @@ static void do_sinh(double x, double* prh, double* prl){
     }                                                               
 
   /*we'll construct 2 constants for the last reconstruction */
-  two_p_plus_k.i[LO_ENDIAN] = 0;
-  two_p_plus_k.i[HI_ENDIAN] = (k-1+1023) << 20;
-  two_p_minus_k.i[LO_ENDIAN] = 0;
-  two_p_minus_k.i[HI_ENDIAN] = (-k-1+1023) << 20;
+  two_p_plus_k.i[LO] = 0;
+  two_p_plus_k.i[HI] = (k-1+1023) << 20;
+  two_p_minus_k.i[LO] = 0;
+  two_p_minus_k.i[HI] = (-k-1+1023) << 20;
 
   /* at this stage, we've done the first range reduction : we have b_hi + b_lo  between -ln(2)/2 and ln(2)/2 */
   /* now we can do the second range reduction */
@@ -368,7 +378,7 @@ static void do_sinh(double x, double* prh, double* prl){
   
   table_index_float.d = b_hi + two_43_44.d;
   /*this add do the float equivalent of a rotation to the right, since -0.5 <= b_hi <= 0.5*/
-  table_index = LO(table_index_float.d);/* -89 <= table_index <= 89 */
+  table_index = table_index_float.i[LO];/* -89 <= table_index <= 89 */
   table_index_float.d -= two_43_44.d;
   table_index += bias; /* to have only positive values */
   b_hi -= table_index_float.d;/* to remove the 8 leading bits*/
@@ -378,7 +388,7 @@ static void do_sinh(double x, double* prh, double* prl){
   /*   first, y² = square_y_hi + square_y_lo  */
   square_y_hi = b_hi * b_hi;
   /* effective computation of the polyomial approximation */
-  if (((y.i[HI_ENDIAN])&(0x7FFFFFFF)) <= (two_minus_30.i[HI_ENDIAN])) {
+  if (((y.i[HI])&(0x7FFFFFFF)) <= (two_minus_30.i[HI])) {
     tsb_hi = 0;
     tcb_hi = 0;
   }
@@ -494,22 +504,33 @@ static void do_sinh_accurate(double x, scs_ptr res_scs){
 
 double sinh_rn(double x){ 
   db_number y;
+  int hx;
   double rh, rl;
   scs_t res_scs;
     
+
   y.d = x;
-  y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
-  if (y.d > max_input_ch.d) { /* out of range */
-    y.d = x;
-    y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000 | (y.i[HI_ENDIAN] & 0x80000000); return (y.d);
+  hx = y.i[HI] & 0x7FFFFFFF; 
+
+  /* Filter special cases */
+  if (hx > max_input_csh.i[HI]) { /* strictly greater, implies x > max_input_csh */
+    if (hx >= 0x7ff00000){
+      if (((hx&0x000fffff)|y.i[LO])!=0)
+	return x+x;                                        /* Nan */ 
+      else {/* otherwise the result should be +infty */
+	return (y.d);
+      }
+      if (x > max_input_csh.d) 
+	return largest_double * largest_double;     /* overflow  */ 
+      if (x < -max_input_csh.d) 
+	return -largest_double * largest_double;     /* overflow  */ 
+    }
   }
-  if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
-   return (x);
+  if (hx<0x3e500000) {
+      return x; /* exact, we should find some way of raising the inexact flag */
   }
 
-  if(y.i[HI_ENDIAN] < 0x3e500000) /* 2^(-26) */
-    return x;
-
+  
   do_sinh(x, &rh, &rl);
 
   if (rh == (rh + (rl * round_cst_csh))) return rh;
@@ -526,25 +547,24 @@ double sinh_rn(double x){
 double sinh_ru(double x){ 
   db_number y;
   double rh, rl;
-  double delta_cst_sinh;
-  db_number absyh, absyl, u53, u;
   scs_t res_scs;
 
+
   y.d = x;
-  y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
-  if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
+  y.i[HI] = y.i[HI] & 0x7FFFFFFF;     /* to get the absolute value of the input */
+  if ((y.i[HI] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
    return (x);
   }
-  if (y.d > max_input_ch.d) { /* out of range */
+  if (y.d > max_input_csh.d) { /* out of range */
     if(x>0) {
-      y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000; return (y.d);
+      y.i[LO] = 0; y.i[HI] = 0x7FF00000; return (y.d);
     }
     else {
-      y.i[LO_ENDIAN] = 0xFFFFFFFF; y.i[HI_ENDIAN] = 0xFFEFFFFF ; return (y.d);
+      y.i[LO] = 0xFFFFFFFF; y.i[HI] = 0xFFEFFFFF ; return (y.d);
     }
   }
 
-  if(y.i[HI_ENDIAN] < 0x3e500000) /* 2^(-26) */
+  if(y.i[HI] < 0x3e500000) /* 2^(-26) */
     { /* Add one ulp if x positive */
       if(x>0) { 
 	y.l++;
@@ -556,49 +576,36 @@ double sinh_ru(double x){
 
   do_sinh(x, &rh, &rl);
 
-  /* Rounding test to + infinity */
-  absyh.d = rh;
-  absyl.d = rl;
-  absyh.i[HI_ENDIAN] = absyh.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
-  absyl.i[HI_ENDIAN] = absyl.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
-  u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l = u53.l - 0x0350000000000000LL;
-  delta_cst_sinh = 1e-19;
-  if(absyl.d > maxepsilon_csh * u53.d){ 
-    if(rl > 0.)  rh += u.d;
-    return rh;
-  }
-  else{
-    do_sinh_accurate(x, res_scs);
-    scs_get_d_pinf(&rh, res_scs); 
-    return rh;
-  }  
+  TEST_AND_RETURN_RU(rh, rl, maxepsilon_csh);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  do_sinh_accurate(x, res_scs);
+  scs_get_d_pinf(&rh, res_scs); 
+  return rh;  
 }
 
 
 double sinh_rd(double x){ 
   db_number y;
   double rh, rl;
-  double delta_cst_sinh;
-  db_number absyh, absyl, u53, u;
   scs_t res_scs;
 
 
   y.d = x;
-  y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
-  if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
+  y.i[HI] = y.i[HI] & 0x7FFFFFFF;     /* to get the absolute value of the input */
+  if ((y.i[HI] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
     y.d = x;
    return (y.d);
   }
-  if (y.d > max_input_ch.d) { /* out of range */
+  if (y.d > max_input_csh.d) { /* out of range */
     if(x>0) {
-      y.i[LO_ENDIAN] = 0xFFFFFFFF; y.i[HI_ENDIAN] = 0x7FEFFFFF ; return (y.d);
+      y.i[LO] = 0xFFFFFFFF; y.i[HI] = 0x7FEFFFFF ; return (y.d);
     }
     else {
-      y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0xFFF00000; return (y.d);
+      y.i[LO] = 0; y.i[HI] = 0xFFF00000; return (y.d);
     }
   }
-  if(y.i[HI_ENDIAN] < 0x3e500000) /* 2^(-26) */
+  if(y.i[HI] < 0x3e500000) /* 2^(-26) */
     { /* Add one ulp and restore the sign if x negative */
       if(x<0){
 	y.l = (y.l+1); 
@@ -609,23 +616,12 @@ double sinh_rd(double x){
     }
   do_sinh(x, &rh, &rl);
   
-  /* Rounding test to - infinity */
-  absyh.d = rh;
-  absyl.d = rl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l = u53.l - 0x0350000000000000LL;
-  delta_cst_sinh = 1e-19;
-  if(absyl.d >  maxepsilon_csh * u53.d){ 
-    if(rl < 0.)  rh -= u.d;
-    return rh;
-  }
-  else{
-    do_sinh_accurate(x, res_scs);
-    scs_get_d_minf(&rh, res_scs); 
-    return rh;
-  }  
+  TEST_AND_RETURN_RD(rh, rl, maxepsilon_csh);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  do_sinh_accurate(x, res_scs);
+  scs_get_d_minf(&rh, res_scs); 
+  return rh;  
 }
 
 

@@ -13,8 +13,7 @@
   static int const bias = 89 ;
 
 /* some bounds */ 
-  static db_number const max_input_ch =  {{0x408633CE,0x8FB9F87E}};     /*7.1047586007e+02*/  
-  static db_number const max_input_sh =  {{0x408633CE,0x8FB9F87E}};     /*7.1047586007e+02*/  
+  static db_number const max_input_csh = {{0x408633CE,0x8FB9F87E}};     /*7.1047586007e+02*/  
 
   static const db_number cosh_sinh_table[179][4] = { 
 	{{{0x3FF0FA08, 0xD2F35F97}}, {{0x3C9B39D1, 0x9DAB3AF1}},
@@ -396,8 +395,7 @@
   static int const bias = 89 ;
 
 /* some bounds */ 
-  static db_number const max_input_ch =  {{0x8FB9F87E,0x408633CE}};     /*7.1047586007e+02*/  
-  static db_number const max_input_sh =  {{0x8FB9F87E,0x408633CE}};     /*7.1047586007e+02*/  
+  static db_number const max_input_csh =  {{0x8FB9F87E,0x408633CE}};     /*7.1047586007e+02*/  
 
   static const db_number cosh_sinh_table[179][4] = { 
 	{{{0xD2F35F97, 0x3FF0FA08}}, {{0x9DAB3AF1, 0x3C9B39D1}},

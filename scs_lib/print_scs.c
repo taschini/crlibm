@@ -63,7 +63,7 @@ void scs_get_std( scs_ptr x){
   scs_get_d(&d.d, x);
   printf("Exception : %e \n", X_EXP);
   printf("Index= %d   \n Sign=  %d \n Double value= %.30e   \n Hex mantissa= %x %x\n", 
-	 X_IND, X_SGN, d.d, d.i[HI_ENDIAN], d.i[LO_ENDIAN]);
+	 X_IND, X_SGN, d.d, d.i[HI], d.i[LO]);
   for(i=0;i<SCS_NB_WORDS;i++){
     printf("  D %d :  %8x %20u \n",i, X_HW[i], X_HW[i]);
   }

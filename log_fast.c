@@ -76,7 +76,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
     if(E<0) E=-E;
 
     /* find the interval including y.d */
-    i = ((((*py).i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;
+    i = ((((*py).i[HI] & 0x001F0000)>>16)-6) ;
     if (i < 10)
       i = i>>1;
     else
@@ -155,11 +155,11 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
    y.d=x;
 
    /* Filter cases */
-   if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
-     if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
+   if (y.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
+     if (((y.i[HI] & 0x7fffffff)|y.i[LO])==0){
        return -1.0/0.0;     
      }                    		   /* log(+/-0) = -Inf */
-     if (y.i[HI_ENDIAN] < 0){ 
+     if (y.i[HI] < 0){ 
        return (x-x)/0;                      /* log(-x) = Nan    */
      }
      /* Subnormal number */
@@ -167,13 +167,13 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
      y.d *= two52.d; 	  /* make x a normal number    */ 
    }
     
-   if (y.i[HI_ENDIAN] >= 0x7ff00000){
+   if (y.i[HI] >= 0x7ff00000){
      return  x+x;				 /* Inf or Nan       */
    }
    
    /* reduce to  y.d such that sqrt(2)/2 < y.d < sqrt(2) */
-   E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
-   y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
+   E += (y.i[HI]>>20)-1023;				/* extract the exponent */
+   y.i[HI] =  (y.i[HI] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
    if (y.d > SQRT_2){
      y.d *= 0.5;
      E++;
@@ -220,17 +220,17 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
    db_number y;
    double res_hi,res_lo,roundcst;
    int E,rndcstindex;
-   db_number absyh, absyl, u, u53;
+   scs_t res;
 
    E=0;
    y.d=x;
 
  /* Filter cases */
-   if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
-     if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
+   if (y.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
+     if (((y.i[HI] & 0x7fffffff)|y.i[LO])==0){
        return -1.0/0.0;     
      }                    		   /* log(+/-0) = -Inf */
-     if (y.i[HI_ENDIAN] < 0){ 
+     if (y.i[HI] < 0){ 
       return (x-x)/0;                      /* log(-x) = Nan    */
      }
      /* Subnormal number */
@@ -238,44 +238,34 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
      y.d *= two52.d; 	  /* make x as normal number = x's mantissa    */ 
    }
     
-   if (y.i[HI_ENDIAN] >= 0x7ff00000){
+   if (y.i[HI] >= 0x7ff00000){
      return  x+x;				    /* Inf or Nan       */
    }
-   
+
+   /* The only double whose log is exactly a double */
+   if(x==1.0) return 0.0; 
  
-   E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
-   y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
+   E += (y.i[HI]>>20)-1023;				/* extract the exponent */
+   y.i[HI] =  (y.i[HI] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
    if (y.d > SQRT_2){
      y.d *= 0.5;
      E++;
    }
 
-  log_quick(&res_hi, &res_lo, &rndcstindex, &y, E);
+   log_quick(&res_hi, &res_lo, &rndcstindex, &y, E);
    roundcst = epsilon[rndcstindex];
    
-   /* Rounding test to + infinity */
-   absyh.d=res_hi;
-   absyl.d=res_lo;
-   
-   absyh.l = absyh.l & 0x7fffffffffffffffLL;
-   absyl.l = absyl.l & 0x7fffffffffffffffLL;
-   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-   u.l   = u53.l - 0x0350000000000000LL;
-   
-   if(absyl.d > roundcst*u53.d){ 
-     if(res_lo<0.)
-       res_hi -= u.d;
-    return res_hi;
-  }else {
-    scs_t res;
+   TEST_AND_RETURN_RD(res_hi, res_lo, roundcst);
+
+   /* if the previous block didn't return a value, launch accurate phase */
 #if DEBUG
-    printf("Going for Accurate Phase");
+   printf("Going for Accurate Phase");
 #endif
-    scs_log(res, y, E);
-    scs_get_d_minf(&res_hi, res);
-    return res_hi;
-  }
-}
+   scs_log(res, y, E);
+   scs_get_d_minf(&res_hi, res);
+   return res_hi;
+ 
+ }
 
 
 
@@ -292,17 +282,17 @@ double log_ru(double x){
    db_number y;
    double res_hi,res_lo,roundcst;
    int E,rndcstindex;
-   db_number absyh, absyl, u, u53;
+   scs_t res;
 
    E=0;
    y.d=x;
 
  /* Filter cases */
-   if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
-     if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
+   if (y.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
+     if (((y.i[HI] & 0x7fffffff)|y.i[LO])==0){
        return -1.0/0.0;     
      }                    		   /* log(+/-0) = -Inf */
-     if (y.i[HI_ENDIAN] < 0){ 
+     if (y.i[HI] < 0){ 
       return (x-x)/0;                      /* log(-x) = Nan    */
      }
      /* Subnormal number */
@@ -310,12 +300,15 @@ double log_ru(double x){
      y.d *= two52.d; 	  /* make x as normal number = x's mantissa    */ 
    }
     
-   if (y.i[HI_ENDIAN] >= 0x7ff00000){
+   if (y.i[HI] >= 0x7ff00000){
      return  x+x;				    /* Inf or Nan       */
    }
-   
-    E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
-   y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
+
+   /* The only double whose log is exactly a double */
+   if(x==1.0) return 0.0;   
+
+   E += (y.i[HI]>>20)-1023;				/* extract the exponent */
+   y.i[HI] =  (y.i[HI] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
    if (y.d > SQRT_2){
      y.d *= 0.5;
      E++;
@@ -325,27 +318,15 @@ double log_ru(double x){
    roundcst = epsilon[rndcstindex];
 
 
-   /* Rounding test to + infinity */
-   absyh.d=res_hi;
-   absyl.d=res_lo;
-   
-   absyh.l = absyh.l & 0x7fffffffffffffffLL;
-   absyl.l = absyl.l & 0x7fffffffffffffffLL;
-   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-   u.l   = u53.l - 0x0350000000000000LL;
-   
-   if(absyl.d > roundcst*u53.d){ 
-     if(res_lo>0.)    res_hi += u.d;
-     return res_hi;
-   }else {
-     scs_t res;
+   TEST_AND_RETURN_RU(res_hi, res_lo, roundcst);
+
+   /* if the previous block didn't return a value, launch accurate phase */
 #if DEBUG
-     printf("Going for Accurate Phase");
+   printf("Going for Accurate Phase");
 #endif
-     scs_log(res, y, E);
-     scs_get_d_pinf(&res_hi, res);
-     return res_hi;
-   }
+   scs_log(res, y, E);
+   scs_get_d_pinf(&res_hi, res);
+   return res_hi;
 }
 
 

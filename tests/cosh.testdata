@@ -40,6 +40,30 @@ P fff80000 00000000 fff80000 00000000 # NaN
 M fff80000 00000000 fff80000 00000000 # NaN
 Z fff80000 00000000 fff80000 00000000 # NaN
 
+# Behaviour at the bounds of the domain 
+N 408633ce 8fb9f87e 7ff00000 00000000 # The first value whose cosh is  +inf
+N 408633ce 8fb9f87d 7fefffff fffffd3b # and the one before
+N c08633ce 8fb9f87e 7ff00000 00000000 # Same in negative
+N c08633ce 8fb9f87d 7fefffff fffffd3b # 
+P 408633ce 8fb9f87e 7ff00000 00000000
+P 408633ce 8fb9f87d 7fefffff fffffd3b
+P c08633ce 8fb9f87e 7ff00000 00000000
+P c08633ce 8fb9f87d 7fefffff fffffd3b
+M 408633ce 8fb9f87e 7fefffff ffffffff
+M 408633ce 8fb9f87d 7fefffff fffffd3a
+M c08633ce 8fb9f87e 7fefffff ffffffff
+M c08633ce 8fb9f87d 7fefffff fffffd3a
+Z 408633ce 8fb9f87e 7fefffff ffffffff
+Z 408633ce 8fb9f87d 7fefffff fffffd3a
+Z c08633ce 8fb9f87e 7fefffff ffffffff
+Z	 c08633ce 8fb9f87d 7fefffff fffffd3a
+
+P 40865294 a5294a53 7ff00000 00000000
+M 40865294 a5294a53 7fefffff ffffffff # Thanks to Evgeny Gozdev for this one
+Z 40865294 a5294a53 7fefffff ffffffff
+
+
+
 # One in five of the very worst cases computed by Lefevre and Muller.
 # Rounding these values requires evaluating the function to at least 2^(-100).
 # If you want the full list please contact Jean-Michel Muller

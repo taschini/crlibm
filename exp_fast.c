@@ -24,14 +24,12 @@ static const double
  ln2_lo   = 5.49792301870837115524e-14, /* 0x3D2EF357, 0x93C76730 */
  inv_ln2  = 1.44269504088896338700e+00;
 
-static const db_number 
-#ifdef WORDS_BIGENDIAN
- scs_huge ={{0x7fefffff, 0xffffffff}},
- scs_small={{0x00000000, 0x00000001}};
-#else
- scs_huge ={{0xffffffff, 0x7fefffff}},
- scs_small={{0x00000001, 0x00000000}};
-#endif
+
+/* For non-C99 compilers maybe which don't handle hex floats, maybe we
+   should have some #ifs there */
+static const double largest_double = 0x1.fffffffffffffp1023;
+static const double tiniest_double = 0x1.0p-1074;
+
 
 
 
@@ -111,7 +109,7 @@ static const int errd  = 73400320;                   /* 70 * 2^20 */
                                                                   \
   /* Arrondi au plus près */                                      \
   db.d  = (r_hi + two_44_43);                                     \
-  indx  = db.i[LO_ENDIAN];                                        \
+  indx  = db.i[LO];                                        \
   indx += BIAS;                                                   \
   r_hi  -= (db.d - two_44_43);                                    \
                                                                   \
@@ -133,7 +131,7 @@ static const int errd  = 73400320;                   /* 70 * 2^20 */
   R1.d = rp_hi * rp_hi;                                           \
                                                                   \
   crp_hi = R1.d * rp_hi;                                          \
-  /*R1.i[HI_ENDIAN] -= 0x00100000;*/                              \
+  /*R1.i[HI] -= 0x00100000;*/                              \
   R1.d *= 0.5;                                                    \
                                                                   \
   R2 =  P_r * crp_hi;                                             \
@@ -173,72 +171,72 @@ double exp_rn(double x){
 
 
   /*
-   * 1) Première réduction d'argument
+   * 1) First argument reduction
    */
 
   db.d = x;
-  hx   = db.i[HI_ENDIAN]; 
+  hx   = db.i[HI]; 
   hx  &= 0x7fffffff;  
 
-  /* Filtre les cas spéciaux */
+  /* Filter special cases */
   if (hx >= 0x40862E42){
     if (hx >= 0x7ff00000){
-      if (((hx&0x000fffff)|db.i[LO_ENDIAN])!=0)
+      if (((hx&0x000fffff)|db.i[LO])!=0)
 	return x+x;                                        /* Nan */ 
-      else return ((db.i[HI_ENDIAN]&0x80000000)==0)? x:0.0;/* exp(+/-inf) = inf,0 */
+      else return ((db.i[HI]&0x80000000)==0)? x:0.0;/* exp(+/-inf) = inf,0 */
     }
-    if (x > o_bound) return scs_huge.d * scs_huge.d;       /* overflow  */ 
-    if (x < u_bound) return scs_small.d * scs_small.d;     /* underflow */ 
+    if (x > o_bound) return largest_double * largest_double;       /* overflow  */ 
+    if (x < u_bound) return tiniest_double * tiniest_double;     /* underflow */ 
   }
 
   if (hx < 0x3C900000)                                     /* if (hx <= 2^(-54)) */
-    return ((hx == 0) && (db.i[LO_ENDIAN] == 0))? 1.: 1.+scs_small.d;  
+    return ((hx == 0) && (db.i[LO] == 0))? 1.: 1.+tiniest_double;  
     
   EVAL_EXP_STEP_2_AND_3;
 
   /* Résultat = (R11 + R8) */
-  exp_R11 = (HI(R11) & 0x7ff00000) - errd;
+  exp_R11 = (R11.i[HI] & 0x7ff00000) - errd;
 
   if (R11.d == (R11.d + (R8.d * errn))){
     if (k > -1020){                                               
       if (k < 1020){                                              
-	R11.i[HI_ENDIAN] += (k<<20);                              
+	R11.i[HI] += (k<<20);                              
 	return R11.d;                                             
       }else {                                                     
 	/* On est proche de + Inf */                              
-	R11.i[HI_ENDIAN] += ((k-1000)<<20);                       
+	R11.i[HI] += ((k-1000)<<20);                       
 	return R11.d*two1000;                                     
       }                                                           
     }else {                                                       
-      /* On est dans les dénormalisés */                          
-      R11.i[HI_ENDIAN] += ((k+1000)<<20);    
+      /* result is a subnorml number  */                          
+      R11.i[HI] += ((k+1000)<<20);    
       db.d = R11.d * twom1000;
 
       /*
        * We are working on adress to force the compiler and data
        * to transit throught memory and avoid extra precision.
        */
-      st_to_mem.i[HI_ENDIAN] = db.i[HI_ENDIAN];
-      st_to_mem.i[LO_ENDIAN] = db.i[LO_ENDIAN];
+      st_to_mem.i[HI] = db.i[HI];
+      st_to_mem.i[LO] = db.i[LO];
       
       R11.d -= st_to_mem.d * two1000;
-      R1.i[HI_ENDIAN] = R11.i[HI_ENDIAN] & 0x7fffffff;
-      R1.i[LO_ENDIAN] = R11.i[LO_ENDIAN];
+      R1.i[HI] = R11.i[HI] & 0x7fffffff;
+      R1.i[LO] = R11.i[LO];
 
       if (R1.d == two_m75){
-	if ((HI(R8) & 0x7ff00000) < exp_R11){
+	if ((R8.i[HI] & 0x7ff00000) < exp_R11){
 	  /* Arrondi difficile ! */
 	  return scs_exp_rn(x);
 	}
 	/* The error  is exactly 1/2 ulp of the result */
-	if ((R11.i[HI_ENDIAN] > 0)&&(R8.i[HI_ENDIAN] > 0)){
+	if ((R11.i[HI] > 0)&&(R8.i[HI] > 0)){
 	  /* st_to_mem                   */
 	  /*          R11.d    R8        */ 
 	  /*   |---| |10--0| |0----01--| */
 	  /* We need to add 1 ulp        */
 	  db.l += 1;
 	}else
-	if ((R11.i[HI_ENDIAN] < 0)&&(R8.i[HI_ENDIAN] < 0)){
+	if ((R11.i[HI] < 0)&&(R8.i[HI] < 0)){
 	  /* st_to_mem    R11.d         R8       */ 
 	  /*  |--(+1)| |(-1)0--0| |0----0(-1)--| */
 	  /*                                     */
@@ -271,66 +269,66 @@ double exp_ru(double x){
    */
 
   db.d = x;
-  hx   = db.i[HI_ENDIAN]; 
+  hx   = db.i[HI]; 
   hx  &= 0x7fffffff;  
 
   /* Filtre les cas spéciaux */
   if (hx >= 0x40862E42){
     if (hx >= 0x7ff00000){
-      if (((hx&0x000fffff)|db.i[LO_ENDIAN])!=0)
+      if (((hx&0x000fffff)|db.i[LO])!=0)
 	return x+x;                                        /* Nan */ 
-      else return ((db.i[HI_ENDIAN]&0x80000000)==0)? x:0.0;/* exp(+/-inf) = inf,0 */
+      else return ((db.i[HI]&0x80000000)==0)? x:0.0;/* exp(+/-inf) = inf,0 */
     }
-    if (x > o_bound) return scs_huge.d * scs_huge.d;       /* overflow  */ 
-    if (x < u_bound) return scs_small.d*(1.+scs_small.d);  /* 2^(-1074) */ 
+    if (x > o_bound) return largest_double * largest_double;       /* overflow  */ 
+    if (x < u_bound) return tiniest_double*(1.+tiniest_double);  /* 2^(-1074) */ 
    }
 
   if (hx < 0x3CA00000){                                    /* if (hx <= 2^(-53)) */ 
-    if ((hx == 0) && (db.i[LO_ENDIAN] == 0))
+    if ((hx == 0) && (db.i[LO] == 0))
       return 1.;                                           /* exp(0)=1. */
-    if (db.i[HI_ENDIAN] < 0)
-      return 1. + scs_small.d;                             /* 1 and inexact */
+    if (db.i[HI] < 0)
+      return 1. + tiniest_double;                             /* 1 and inexact */
     else
       return 1. + two_m52_56;                              /* 1 + 2^(-52) and inexact */
   }
 
   EVAL_EXP_STEP_2_AND_3;
 
-  exp_R11   = (R11.i[HI_ENDIAN] & 0x7ff00000) - errd;
+  exp_R11   = (R11.i[HI] & 0x7ff00000) - errd;
 
-  if ((R8.i[HI_ENDIAN] & 0x7ff00000) > exp_R11){
+  if ((R8.i[HI] & 0x7ff00000) > exp_R11){
     /* On est capable d'arrondir */
     if (k > -1020){                                         
       if (k < 1020){                                              
-	R11.i[HI_ENDIAN] += (k<<20);                              
+	R11.i[HI] += (k<<20);                              
       }else {                                                     
 	/* On est proche de + Inf */                              
-	R11.i[HI_ENDIAN] += ((k-1000)<<20);                       
+	R11.i[HI] += ((k-1000)<<20);                       
 	R11.d *= two1000;                                     
       }
-      if (R8.i[HI_ENDIAN] > 0)
+      if (R8.i[HI] > 0)
 	R11.l += 1; /* Be carefull this work only if R11>0 see David PhD */
                     /* Which is the case for exp(x) !! */
       return R11.d;
     }else {                                                       
       /* On est dans les dénormalisés */     
       
-      R11.i[HI_ENDIAN] += ((k+1000)<<20);                         
+      R11.i[HI] += ((k+1000)<<20);                         
       db.d = R11.d * twom1000;
 
       /*
        * We are working on adress to force the compiler and data
        * to transit throught memory and avoid extra precision.
        */
-      st_to_mem.i[HI_ENDIAN] = db.i[HI_ENDIAN];
-      st_to_mem.i[LO_ENDIAN] = db.i[LO_ENDIAN];
+      st_to_mem.i[HI] = db.i[HI];
+      st_to_mem.i[LO] = db.i[LO];
 
       R11.d -= st_to_mem.d * two1000;
 
       /* Be carefull this work only if R11>0 see David PhD */
       /* Which is the case for exp(x) !! */
-      if ((R11.i[HI_ENDIAN]  > 0)||
-	  ((R11.i[HI_ENDIAN] == 0)&&(R8.i[HI_ENDIAN] > 0))) db.l += 1;
+      if ((R11.i[HI]  > 0)||
+	  ((R11.i[HI] == 0)&&(R8.i[HI] > 0))) db.l += 1;
       
       return db.d;                                      
     }                                                             
@@ -359,66 +357,66 @@ double exp_rd(double x){
    * 1) Première réduction d'argument
    */
   db.d = x;
-  hx   = db.i[HI_ENDIAN];
+  hx   = db.i[HI];
   hx  &= 0x7fffffff;  
 
   /* Filtre les cas spéciaux */
   if (hx >= 0x40862E42){
     if (hx >= 0x7ff00000){
-      if (((hx&0x000fffff)|db.i[LO_ENDIAN])!=0)
+      if (((hx&0x000fffff)|db.i[LO])!=0)
 	return x+x;                                      /* Nan */ 
-      else return ((db.i[HI_ENDIAN]&0x80000000)==0)? x:0.0;           /* exp(+/-inf) = inf,0 */
+      else return ((db.i[HI]&0x80000000)==0)? x:0.0;           /* exp(+/-inf) = inf,0 */
     }
-    if (x > o_bound) return scs_huge.d*(1.+scs_small.d); /* (1-2^-53).2^1024  */ 
-    if (x < u_bound) return scs_small.d * scs_small.d;   /* underflow */ 
+    if (x > o_bound) return largest_double * (1.+tiniest_double); /* (1-2^-53).2^1024  */ 
+    if (x < u_bound) return tiniest_double * tiniest_double;   /* underflow */ 
   }
 
   if (hx < 0x3CA00000){                                  /* if (hx<=2^(-53)) */
-    if ((hx == 0) && (db.i[LO_ENDIAN] == 0)) 
+    if ((hx == 0) && (db.i[LO] == 0)) 
       return 1.;                                         /* exp(0)=1. */
-    if (db.i[HI_ENDIAN] < 0)
+    if (db.i[HI] < 0)
       return 1. - two_m53_56;                            /* 1-2^(-53) and inexact */
     else
-      return 1. + scs_small.d;                           /* 1 and inexact         */
+      return 1. + tiniest_double;                           /* 1 and inexact         */
   }
 
   EVAL_EXP_STEP_2_AND_3;
 
-  exp_R11   = (R11.i[HI_ENDIAN] & 0x7ff00000) - errd;
+  exp_R11   = (R11.i[HI] & 0x7ff00000) - errd;
 
-  if ((R8.i[HI_ENDIAN] & 0x7ff00000) > exp_R11){
+  if ((R8.i[HI] & 0x7ff00000) > exp_R11){
     /* On est capable d'arrondir */
     if (k > -1020){                                         
       if (k < 1020){                                              
-	R11.i[HI_ENDIAN] += (k<<20);                              
+	R11.i[HI] += (k<<20);                              
       }else {                                                     
 	/* On est proche de + Inf */                              
-	R11.i[HI_ENDIAN] += ((k-1000)<<20);                       
+	R11.i[HI] += ((k-1000)<<20);                       
 	R11.d *= two1000;                                     
       }
-      if (R8.i[HI_ENDIAN] < 0)
+      if (R8.i[HI] < 0)
 	R11.l -= 1; /* Be carefull this work only if R11>0 see David PhD */
                     /* Which is the case for exp(x) !! */
       return R11.d;
     }else {                                                       
       /* Subnormal here */     
       
-      R11.i[HI_ENDIAN] += ((k+1000)<<20);                         
+      R11.i[HI] += ((k+1000)<<20);                         
       db.d = R11.d * twom1000;
 
       /*
        * We are working on adress to force the compiler and data
        * to transit throught memory and avoid extra precision.
        */
-      st_to_mem.i[HI_ENDIAN] = db.i[HI_ENDIAN];
-      st_to_mem.i[LO_ENDIAN] = db.i[LO_ENDIAN];
+      st_to_mem.i[HI] = db.i[HI];
+      st_to_mem.i[LO] = db.i[LO];
 
       R11.d -= st_to_mem.d * two1000;
 
       /* Be carefull this work only if R11>0 see David PhD */
       /* Which is the case for exp(x) !! */
-      if ((R11.i[HI_ENDIAN]  < 0)||
-	  ((R11.i[HI_ENDIAN] == 0)&&(R8.i[HI_ENDIAN] < 0))) db.l -= 1;
+      if ((R11.i[HI]  < 0)||
+	  ((R11.i[HI] == 0)&&(R8.i[HI] < 0))) db.l -= 1;
       
       return db.d;                                      
     }

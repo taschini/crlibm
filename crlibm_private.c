@@ -13,7 +13,7 @@
 #include "crlibm_private.h"
 
 /* I wish I could use C99 fenv.h, but as of 2004 it doesn't specify
-   anything about precision, only rounding direction. */  #include <fenv.h>
+   anything about precision, only rounding direction. */
 
 #ifdef HAVE_FENV_H
 #include <fenv.h>
@@ -26,6 +26,12 @@
 #ifdef CRLIBM_TYPECPU_X86
 #include <fpu_control.h>
 #endif
+
+
+
+
+
+
 
 /* An init function which sets FPU flags when needed */
 unsigned short crlibm_init() {

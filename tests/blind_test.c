@@ -37,7 +37,7 @@ int main (int argc, char *argv[])
   char* filename;
   char rounding_mode[10];
   char function_name[10];
-  char line[200];
+  char line[400];
   char* r;
   int count=0;
   double worstcase;
@@ -76,10 +76,10 @@ int main (int argc, char *argv[])
 
   r=skip_comments(f, line);
   while(r!=0) { 
-    sscanf(line, "%s %x %x %x %x", 
+    sscanf(line, "%s %x %x %x %x\n", 
 	   rounding_mode, 
-	   &input.i[HI_ENDIAN], &input.i[LO_ENDIAN],
-	   &expected.i[HI_ENDIAN], &expected.i[LO_ENDIAN] );
+	   &input.i[HI], &input.i[LO],
+	   &expected.i[HI], &expected.i[LO] );
       /* Centralized test initialization function */
     test_init(
 	      &unused, &unused, 
@@ -92,17 +92,20 @@ int main (int argc, char *argv[])
     count++;
 
     if(verbose){
-      printf("Input:      %08x %08x  (%0.50e)\n", input.i[HI_ENDIAN], input.i[LO_ENDIAN], input.d ); 
-      printf("    Output: %08x %08x  (%0.50e)", output.i[HI_ENDIAN], output.i[LO_ENDIAN], output.d ); 
+      printf("Input:      %08x %08x  (%0.50e)\n", input.i[HI], input.i[LO], input.d ); 
+      printf("    Output: %08x %08x  (%0.50e)", output.i[HI], output.i[LO], output.d ); 
       if( output.l==expected.l)
 	printf("   ...  OK \n");
+      else
+	printf(" \n");
+
     }
     if(output.l!=expected.l) {
       failures ++;
       printf("ERROR for %s with rounding %s\n", function_name, rounding_mode);
-      printf("    Input: %08x %08x  (%0.50e)\n", input.i[HI_ENDIAN], input.i[LO_ENDIAN], input.d ); 
-      printf("   Output: %08x %08x  (%0.50e)\n", output.i[HI_ENDIAN], output.i[LO_ENDIAN], output.d ); 
-      printf(" Expected: %08x %08x  (%0.50e)\n", expected.i[HI_ENDIAN], expected.i[LO_ENDIAN], expected.d ); 
+      printf("    Input: %08x %08x  (%0.50e)\n", input.i[HI], input.i[LO], input.d ); 
+      printf("   Output: %08x %08x  (%0.50e)\n", output.i[HI], output.i[LO], output.d ); 
+      printf(" Expected: %08x %08x  (%0.50e)\n", expected.i[HI], expected.i[LO], expected.d ); 
     }
     fflush(stdout); /* To help debugging */
     

@@ -37,11 +37,11 @@ Copyright (C) 2002  David Defour and Florent de Dinechin
 #include "scs.h"
 
 #ifdef WORDS_BIGENDIAN
- #define HI_ENDIAN 0
- #define LO_ENDIAN 1 
+ #define HI 0
+ #define LO 1 
 #else
- #define HI_ENDIAN 1
- #define LO_ENDIAN 0
+ #define HI 1
+ #define LO 0
 #endif
 
 /* An int such that SCS_MAX_RANGE * SCS_NB_BITS < 1024, 

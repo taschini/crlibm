@@ -137,29 +137,29 @@ extern double atan_rn(double x) {
  
   double atanhi,atanlo;
   int index_of_e;
-  double sign,absx;
+  double sign;
   db_number x_db;
-  unsigned int hx;
+  unsigned int absxhi;
 
   x_db.d = x;
-  hx = x_db.i[HI_ENDIAN] & 0x7fffffff; 
+  absxhi = x_db.i[HI] & 0x7fffffff; 
 
-  if(x_db.i[HI_ENDIAN] & 0x80000000){
-    x_db.i[HI_ENDIAN] = hx;
+  if(x_db.i[HI] & 0x80000000){
+    x_db.i[HI] = absxhi;
     sign =-1;
   }
   else 
     sign=1;
   
   /* Filter cases */
-  if ( hx >= 0x43500000)           /* x >= 2^54 */
+  if ( absxhi >= 0x43500000)           /* x >= 2^54 */
     {
-      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+      if ((absxhi > 0x7ff00000) || ((absxhi == 0x7ff00000) && (x_db.i[LO] != 0)))
         return x+x;                /* NaN */
       else 
         return sign*HALFPI.d;           /* atan(+/-infty) = +/- Pi/2 */
     }
-  if ( hx < 0x3E400000 )
+  if ( absxhi < 0x3E400000 )
       return x;                   /* x<2^-27 then atan(x) =~ x */
   
   atan_quick(&atanhi, &atanlo,&index_of_e , x_db.d);
@@ -180,27 +180,26 @@ extern double atan_rn(double x) {
  *************************************************************/
 extern double atan_rd(double x) {
   double atanhi,atanlo;
-  db_number absyh, absyl, u, u53;
   int index_of_e;
   double roundcst;
   db_number x_db;
-  unsigned int hx;
+  unsigned int absxhi;
   int sign;
 
   x_db.d = x;
-  hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
+  absxhi = x_db.i[HI] & 0x7FFFFFFF; 
 
-  if(x_db.i[HI_ENDIAN] & 0x80000000){
-    x_db.i[HI_ENDIAN] = hx;
+  if(x_db.i[HI] & 0x80000000){
+    x_db.i[HI] = absxhi;
     sign =-1;
   }
   else 
     sign=1;
 
   /* Filter cases */
-  if ( hx >= 0x43500000)           /* x >= 2^54 */
+  if ( absxhi >= 0x43500000)           /* x >= 2^54 */
     {
-      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+      if ((absxhi > 0x7ff00000) || ((absxhi == 0x7ff00000) && (x_db.i[LO] != 0)))
         return x+x;                /* NaN */
       else{
 	if (sign>0)
@@ -210,7 +209,7 @@ extern double atan_rd(double x) {
       }
     }
   else
-    if ( hx < 0x3E400000 )
+    if ( absxhi < 0x3E400000 )
       {if (sign>0)
         {if(x==0)
 	  return x;
@@ -229,22 +228,10 @@ extern double atan_rd(double x) {
   
   /* Rounding test to - infinity */ 
   
-  absyh.d=atanhi;
-  absyl.d=atanlo;
-  
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-  
-  if(absyl.d > roundcst*u53.d){
-    if(atanlo<0.)
-      {atanhi -= u.d;}
-    return atanhi;
-  }
-  else {
-    return scs_atan_rd(sign*x_db.d);
-  }
+  TEST_AND_RETURN_RD(atanhi, atanlo, roundcst);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_atan_rd(sign*x_db.d);
 }
 
 /*************************************************************
@@ -255,28 +242,27 @@ extern double atan_rd(double x) {
 
 extern double atan_ru(double x) {
   double atanhi,atanlo;
-  db_number absyh, absyl, u, u53;
   int index_of_e;
   int sign;
   double roundcst;
   db_number x_db;
-  unsigned int hx;
+  unsigned int absxhi;
 
   x_db.d = x;
-  hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
+  absxhi = x_db.i[HI] & 0x7FFFFFFF; 
 
-  if (x_db.i[HI_ENDIAN] & 0x80000000){
+  if (x_db.i[HI] & 0x80000000){
     sign = -1;
-    x_db.i[HI_ENDIAN] = hx;
+    x_db.i[HI] = absxhi;
   }
   else 
     sign = 1;
   
   
   /* Filter cases */
-  if ( hx >= 0x43500000)           /* x >= 2^54 */
+  if ( absxhi >= 0x43500000)           /* x >= 2^54 */
     {
-      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+      if ((absxhi > 0x7ff00000) || ((absxhi == 0x7ff00000) && (x_db.i[LO] != 0)))
         return x+x;                /* NaN */
       else
         {
@@ -287,7 +273,7 @@ extern double atan_ru(double x) {
         }
     }
     
-  if ( hx < 0x3E400000 ){
+  if ( absxhi < 0x3E400000 ){
     if(x==0)
       return x;
     
@@ -304,24 +290,10 @@ extern double atan_ru(double x) {
   atanhi = sign*atanhi;
   atanlo = sign*atanlo;
   
-  /* Rounding test to + infinity */ 
-  
-  absyh.d=atanhi;
-  absyl.d=atanlo;
-  
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-  
-  if(absyl.d > roundcst*u53.d){
-    if(atanlo>0.)
-      {atanhi += u.d;}
-    return atanhi;
-  }
-  else {
-    return scs_atan_ru(x);
-  }
+  TEST_AND_RETURN_RU(atanhi, atanlo, roundcst);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_atan_ru(x);
 }
 
 /*************************************************************
