@@ -13,7 +13,7 @@ log2:=proc(x) evalf( log[2](x)) end proc:
 # returns sign (-1 or 1), exponent between -1022 and 1023, mantissa as a fraction between 0.5 and 1.
 # Digits should be at least 30.
 ieeedouble:=proc(xx)
-local x, sign, logabsx, exponent, mantissa, infmantissa;
+local x, sign, logabsx, exponent, mantissa, infmantissa,powermin,powermax,expmin,expmax,expmiddle,powermiddle;
 Digits := 100;
 x := evalf(xx);
 if (x=0) then sign, exponent, mantissa := 1, -1022, 0
@@ -50,15 +50,15 @@ else
          fi;
          infmantissa := x*2^(52-exponent);         
 	 if frac(infmantissa) <> 0.5 then mantissa := round(infmantissa)
-            else
-               mantissa := floor(infmantissa);
+            else 
+              mantissa := floor(infmantissa);
                if type(mantissa,odd) then mantissa := mantissa+1 fi
             fi;
          mantissa := mantissa*2^(-52);
       fi;
   fi;
 fi;
-sign*mantissa*2^exponent;
+sign,exponent,mantissa;
 end;
 
 
@@ -748,6 +748,25 @@ SCS_to_real := proc(tab)
 
 
 #---------------------------------------------------------------------
+# This procedure truncates the coefficients of a polynomial to SCS
+# numbers, so that we can then evaluate its approximation error
+# (equivalent to poly_exact for the doubles)
+poly_exact_SCS:=proc(P)
+local deg,i, coef, coef_t, Q:
+Q:= 0:
+convert(Q, polynom):
+deg:=degree(P,x):
+  for i from 0 to deg do
+    coef:=coeff(P,x,i):
+    coef_t:=SCS_to_real(real_to_SCS(evalf(coef))):
+    Q:= Q + coef_t*x^i:
+  od:
+return(Q):
+end:
+
+
+
+#---------------------------------------------------------------------
 # Write Into file fd the SCSS number stored into the table tab where
 # tab[0..(SCS_NB_WORDS-1)] store the mantissa
 # tab[SCS_NB_WORDS] store the exception
@@ -834,7 +853,7 @@ local i, deg:
                        WriteSCS(fd, coeff(poly, x, i), 0):
                    end if:
                end do:
-               fprintf(fd,"}:\n"):
+               fprintf(fd,"};\n"):
             end try:
           end proc:
 
