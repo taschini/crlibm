@@ -30,7 +30,7 @@ in the IEEE-754 \emph{round to nearest} mode.
 
 
 
-\section{Common C procedures  for double-precision numbers\label{section:commonCdouble}}
+\section{Common C procedures for double-precision numbers\label{section:commonCdouble}}
 
 \subsection{Sterbenz Lemma \label{sec:sterbenz}}
 
@@ -128,10 +128,10 @@ In ANSI-C99, the following instructions raise exceptions and
 flags:
 
 \begin{itemize}
-\item {\bf underflow} : the multiplication $\pm smallest \times smallest$ where $smallest$ correspond to the smallest denormalized number,
+\item {\bf underflow} : the multiplication $\pm smallest \times smallest$ where $smallest$ correspond to the smallest subnormalized number,
 \item {\bf overflow} : the multiplication  $\pm largest \times largest$ where $largest$ correspond to the largest normalized number,
 \item {\bf division by zero} : the division $\pm 1.0/0.0$,
-\item {\bf inexact} : the addition $(x + smallest) - smallest$ where $x$ is the result and  $smallest$ the smallest denormalized number,
+\item {\bf inexact} : the addition $(x + smallest) - smallest$ where $x$ is the result and  $smallest$ the smallest subnormalized number,
 \item {\bf invalid} : the division $\pm 0.0/0.0$.
 \end{itemize}
 
@@ -143,9 +143,10 @@ flags:
 
 
 \section{Common C procedures for double-double arithmetic\label{section:commonCdoubledouble}}
-
-In this section, we give the basic algorithms for computing with
-numbers represented as the sum of two floating-point numbers (or
+Hardware operators are usualy limited to double precision. To perform
+operations with more precision, then software solutions need to be
+used. One among them is to represent a floating point number as the
+sum of two non-overlapping floating-point numbers (or
 \emph{double-double} numbers). 
 
 The algorithms are given as plain C functions, but it may be
@@ -375,15 +376,8 @@ by zero and one useless addition: a specific procedure is not needed.
 \subsection{Multiplication of a double-double by an integer}
 
 
-Use Cody and Waite algorithm. See for instance  the $\log$ and the trigonometric
-argument reduction.
-
-
-
-
-
-
-
+Use Cody and Waite algorithm. See for instance the $\log$ and the
+trigonometric argument reduction (chapter \ref{chap3:log}, \pageref{chap3:log}).
 
 
 
@@ -411,12 +405,12 @@ recursion:
   
   In the \quick\ phase, the evaluation always begins in
   double-precision, but it may end with double-double arithmetic in
-  order to compute the result as a double-double (from the point of
-  view of the performance/accuracy tradeoff, it usually makes more
-  sense to begin the double-double part with a double-double addition
-  rather than a costly double-double multiplication).  In this section
-  only, $\oplus$ and $\otimes$ therefore denote either a double, or a
-  double-double, or an SCS operation.
+  order to compute the result as a double-double (from a performance
+  point of view it is a less costly to begin the double-double part
+  with a double-double addition rather than with a double-double
+  multiplication).  In this section only, $\oplus$ and $\otimes$
+  therefore denote either a double, or a double-double, or an SCS
+  operation.
 
 
   For fast and accurate function evaluation, we try to have $\maxx$
@@ -598,18 +592,18 @@ to round case.
 
 \subsection{Rounding to the nearest}
 
-\begin{theorem}[Correct rounding of a double-double to the nearest double, avoiding denormals]
+\begin{theorem}[Correct rounding of a double-double to the nearest double, avoiding subnormals]
 \label{th:roundingRN1}
 ~\\
 Let $y$ be a real number, and  $\maxeps$, $e$, $y_h$ and $y_l$ be
   floating-point numbers such that 
   \begin{itemize}
-  \item $y_h=y_h\oplus y_l$,
-  \item none of $y_h$ and $y_l$ is a  NaN.
-  \item $|y_h|\ge 2^{-1022+53}$ 
-  \item $|y_h+y_l - y| <\maxeps.|y|$
-  \item $0<\maxeps \le 2^{-53-k}$ with $k\ge 2$ integer
-  \item $e\ge 1+  \dfrac{2^{53+k+1}\maxeps}{(2^{k}-1)(1-2^{-53})}$
+  \item Non overlapping: $y_h=y_h\oplus y_l$,
+  \item equality required by ieee-754 for NaN: none of $y_h$ and $y_l$ is a  NaN.
+  \item non-underflowing numbers: $|y_h|\ge 2^{-1022+53}$ 
+  \item definition of the error term: $|y_h+y_l - y| <\maxeps.|y|$
+  \item error greater than the precision of one dp number: $0<\maxeps \le 2^{-53-k}$ with $k\ge 2$ integer
+  \item condition over the constant $e$: $e\ge 1+  \dfrac{2^{53+k+1}\maxeps}{(2^{k}-1)(1-2^{-53})}$
 \end{itemize}
 
 The following test determines whether $y_h$ is the
@@ -626,7 +620,7 @@ else /* more accuracy is needed, launch accurate phase */
 \begin{proof}
   The theorem holds if $y_h$ is $\pm \infty$.
   
-  It also holds if $y_h$ is a denormal: In this case $y_l$ is zero, so
+  It also holds if $y_h$ is a subnormal: In this case $y_l$ is zero, so
   the correctly rounded result is $y_h$, and the test is true. In the
   following we therefore assume that $y_h$ is a normal number. We also
   assume that $y\ge0$ (so $y_h\ge0$), as the other case is symmetric.
@@ -701,7 +695,7 @@ else /* more accuracy is needed, launch accurate phase */
 
 \begin{proof}
   The proof is identical to the previous theorem, with the exception
-  that we cannot ensure anymore that $y_l$ will not be a denormal.
+  that we cannot ensure anymore that $y_l$ will not be a subnormal.
   Therefore the relative error on $y_l\times e$ may be as high as
   $\frac{1}{2}$, and the condition on $e$ is reinforced accordingly.
 \end{proof}
@@ -751,7 +745,7 @@ Let $y$ be a real number, and $y_h$, $y_l$ and $\maxeps$ be
 floating-point numbers such that
   \begin{itemize}
   \item $y_h=y_h\oplus y_l$,
-  \item $y_h$ is neither a NaN, a denormal, $\pm 0$ or $\pm \infty$.
+  \item $y_h$ is neither a NaN, a subnormal, $\pm 0$ or $\pm \infty$.
   \item $y_l$ is neither a NaN or $\pm \infty$.
   \item $|y_h+y_l - y| <\maxeps.|y|$
 \end{itemize}
@@ -788,7 +782,7 @@ The following test determines whether $y_h$ is the
   sign information of $y_h$ and $y_l$, and $u_{53}=2^{53}\ulp(y_h)$.
   Here we use integer 64-bit arithmetic for readability, but other
   implementations may be more efficient on some systems. Note that
-  these computations don't work for infinities, zeroes or denormals.
+  these computations don't work for infinities, zeroes or subnormals.
   
   As previously, by definition of the \ulp, we have  $y<2^{53}u$.
   
@@ -806,9 +800,9 @@ The following test determines whether $y_h$ is the
 \end{proof}
 
 
-It is important to note that all this doesn't work if $y_h$ is a denormal. If
+It is important to note that all this doesn't work if $y_h$ is a subnormal. If
 one cannot prove statically that this case doesn't appear, a sensible solution
-is to test for denormals and launch the accurate phase.
+is to test for subnormals and launch the accurate phase.
 
 Finally, remark that for some functions, the tests on the sign of
 $y_h$ are statically predictable to be true because the function is
@@ -843,7 +837,7 @@ correct.
 
 Another feature that makes accuracy proofs simple when using \scslib\ 
 is the following: The range of SCS numbers includes the range of IEEE
-double-precision numbers, including denormals and exceptional cases.
+double-precision numbers, including subnormals and exceptional cases.
 Conversions between SCS format and IEEE-754 doubles, as well as
 arithmetic operations, follow the IEEE rules concerning the
 exceptional cases. SCS doesn't ensure correct rounding, but provides

@@ -145,12 +145,12 @@ if (hx <= 0x3C900000) return 1.;             /* if (hx <= 2^(-54)) */ (*@ \label
 \\
 \ref{exp:code:10} & Under the assumption that the compiler correctly translates the floating-point number we have $u\_bound = -3277130554578985/4398046511104$. If $x<u\_bound$ then $\exp(x)=+0$.  The multiplication $largest*largest$ leaves to the compiler the generation of an underflow and the corresponding flags.
 \\
-\ref{exp:code:10bis} & Test equivalent to $if (|x| \leq 2^{-54})$. This test is performed with integers to make it faster and is valid because $x \notin \{NaN, \infty\}$. In addition, this test allows to handle cases when $x$ is a denormalized number. We have the following property : 
+\ref{exp:code:10bis} & Test equivalent to $if (|x| \leq 2^{-54})$. This test is performed with integers to make it faster and is valid because $x \notin \{NaN, \infty\}$. In addition, this test allows to handle cases when $x$ is a subnormalized number. We have the following property : 
 \begin{prop}
   \label{chap3:exp:prop10bis}
   $|x| > 2^{-54}$~~and~~~~$x\notin\{NaN, \infty\}$
 \end{prop}
-Indeed, in rounding to nearest, if $|x| \leq 2^{-54}$ then $\exp(x) = 1.0$. This test prevents to encounter a denormalized number in the rest of the program.
+Indeed, in rounding to nearest, if $|x| \leq 2^{-54}$ then $\exp(x) = 1.0$. This test prevents to encounter a subnormalized number in the rest of the program.
 
 \\
 \end{longtable}
@@ -656,7 +656,7 @@ The, the property \pref{chap3:exp:evalpoly} become :
 
 \noindent $P\_r=P(rp\_hi)$ is evaluated by the following sequences of instructions : 
 
-\begin{lstlisting}[label={exp:lst:evalpoly},caption={\'Polynomial evaluation}]
+\begin{lstlisting}[label={exp:lst:evalpoly},caption={Polynomial evaluation}]
 static const union{int i[2]; double d;}
 #ifdef BIG_ENDIAN
  _c0         = {0x3FC55555, 0x55555535}, /*  1.66666666666665769236e-01 */
@@ -840,7 +840,7 @@ By using property \pref{chap3:exp:prop28} and $|rp\_hi| \leq 2^{-9}$ we get :
   $crp\_hi = (rp\_hi)^3    . (1 + \epsilon_{-53})$
 \end{prop}\\
 \ref{exp:code:30}&
-This operation is a division by 2, done by subtracting $1$ to the exposant. This oepration is valid and exact if $R1$ is not a denormalized number, which is the case (property \pref{chap3:exp:prop10bis} $|x| \geq 2^{-54}$), and the table  \ref{chap3:exp:table:reduction} showing that we have at most $58$ bits of cancellation).
+This operation is a division by 2, done by subtracting $1$ to the exposant. This oepration is valid and exact if $R1$ is not a subnormalized number, which is the case (property \pref{chap3:exp:prop10bis} $|x| \geq 2^{-54}$), and the table  \ref{chap3:exp:table:reduction} showing that we have at most $58$ bits of cancellation).
 
 \begin{prop}
   \label{chap3:exp:prop30}
@@ -1112,8 +1112,8 @@ $$
 \end{array}
 $$
 
-if the result do not represent a denormalised number. Indeed, if the
-final result belongs to denormalised numbers, then the precision of
+if the result do not represent a subnormalised number. Indeed, if the
+final result belongs to subnormalised numbers, then the precision of
 the results is less than the $53$ bits of a normalized number. Let's
 take an exemple. Let $a=1.75$ be a floating-point number exactly
 representable in double precision format (we have $\circ(a) = a$). Let
@@ -1121,7 +1121,7 @@ multiply this number by $2^{-1074}$, the exact result is $1.75 \times
 2^{-1074}$ which is different of the result rounded to nearest in
 double precision $\circ(1.75 \times 2^{-1074})=2^{-1073}$.
 
-Then in the case the result represent a denormalized number, we have to use a special procedure.
+Then in the case the result represent a subnormalized number, we have to use a special procedure.
 
 \subsection{Rounding to nearest}
 \begin{lstlisting}[caption={Test if rounding to nearest is possible}]
@@ -1159,7 +1159,7 @@ if (R11 == (R11 + R8 * errn)){             (*@ \label{exp:code:44} @*)
       return R11*two1000;                
     }                                      (*@ \label{exp:code:46} @*)
   }else {
-    /* We consider denormalized number */
+    /* We consider subnormalized number */
     HI(R11_new) = HI(R11)+((k+1000)<<20);  (*@ \label{exp:code:47} @*)
     LO(R11_new) = LO(R11);
     R12.d       = R11_new * twom1000;      (*@ \label{exp:code:48} @*)
@@ -1214,9 +1214,9 @@ This test is true if we are able round correctly the result, else we need to cal
 \ref{exp:code:45}-\ref{exp:code:46}&
 We are able to round, now we need to perform the multiplication $R11 \times 2^k$ exactly.
 To keep good performance we do this multiplication by using integer addition on the exponent of $R11$. 
-However this operation is valide and exact, only if we do not create a denormalized or infinity number. This is the reason why we perform a test on the value of $k$.
+However this operation is valide and exact, only if we do not create a subnormalized or infinity number. This is the reason why we perform a test on the value of $k$.
 
-$(R11 + R8) > 2^{-2}$ then $2^{k}.(R11 + R8)$ will not lead to a denormalized number if  $k> -1020$.
+$(R11 + R8) > 2^{-2}$ then $2^{k}.(R11 + R8)$ will not lead to a subnormalized number if  $k> -1020$.
 
 $(R11 + R8) < 2^{3}$ then $2^{k}.(R11 + R8)$ will not lead to an overflow if $k< 1020$.
 The we have $R11 = R11 \oplus R8$
@@ -1224,7 +1224,7 @@ The we have $R11 = R11 \oplus R8$
 In the case, we may give an overflow as result, we make the value of $k$ smaller, by subtracting $1000$ to it that will prevent the apparition of exception cases during the multiplication by $k$. This result is exactly multiplies (powerof 2) by the floating-point number $twom1000=2^{-1000}$, and leave to the group composed of the system, compiler and processor overflows handling.
 \\
 \ref{exp:code:47}&
-The result mcan be a denormalized number. We need to use a specific test to check whether if we are able to round properly the result.
+The result mcan be a subnormalized number. We need to use a specific test to check whether if we are able to round properly the result.
 $$
 R11 = R11 \times 2^{k+1000}
 $$
@@ -1234,10 +1234,10 @@ In rounding to nearest we get :
 $$
 R12 = R11 \otimes 2^{-1000} = R11 \times 2^{-1000} + \epsilon_{-1075}
 $$
-The error terms $\epsilon_{-1075}$ come from the possible truncationwhen the result belong to denormalized number.
+The error terms $\epsilon_{-1075}$ come from the possible truncationwhen the result belong to subnormalized number.
 \\
 \ref{exp:code:49},\ref{exp:code:50}&
-These lines prevent the compiler to perform ``dangerous'' optimizations, meanwhile prevent to have extra precision by forcing $R12$ to transit through memory. These lines could be removed for exemple by using gcc and the flag  {\tt -ffloat-store} that will have the same effect. However this flag force each floating-point instruction to transit through memory, and have as consequences to severely degrade performance of the resulting program. The solution to keep good performance is to manually force a data to transit through memory, in order to have an IEEE compliant behavior for denormalized number.
+These lines prevent the compiler to perform ``dangerous'' optimizations, meanwhile prevent to have extra precision by forcing $R12$ to transit through memory. These lines could be removed for exemple by using gcc and the flag  {\tt -ffloat-store} that will have the same effect. However this flag force each floating-point instruction to transit through memory, and have as consequences to severely degrade performance of the resulting program. The solution to keep good performance is to manually force a data to transit through memory, in order to have an IEEE compliant behavior for subnormalized number.
 \\
 \ref{exp:code:51}&
 Let
@@ -1257,7 +1257,7 @@ R13 = |R11\_err|
 $$
 \\
 \ref{exp:code:54}&
-Test if $R13$ is exactly equal to the absolute error (which is also the relative error) done during the rounding process, in rounding to nearest, whitin denormalized number, times $2^{1000}$ :
+Test if $R13$ is exactly equal to the absolute error (which is also the relative error) done during the rounding process, in rounding to nearest, whitin subnormalized number, times $2^{1000}$ :
   $$2^{-1075} \times 2^{1000} = 2^{-75}$$
 
 Now we want to prove that if error term is strictly less than $1/2 ulp (R12)$ then $R12$ correspond to the correct rounding of $R11 + R8$.
@@ -1298,9 +1298,9 @@ If $R8 < 0$, and $R11\_err = \frac{1}{2} ulp (R12)$, then the round to odd/even 
 
 \\
 \ref{exp:code:55}&
-When we are in presence of a consecutive sequence of  $0$ or $1$ straddling $R11$ and  $R8$, then the test done at line \ref{exp:code:44} will not detect a possible problem. This problem will arise only will denormalized number, when $R11\_err$ is close to $\frac{1}{2} ulp (R12)$. 
+When we are in presence of a consecutive sequence of  $0$ or $1$ straddling $R11$ and  $R8$, then the test done at line \ref{exp:code:44} will not detect a possible problem. This problem will arise only will subnormalized number, when $R11\_err$ is close to $\frac{1}{2} ulp (R12)$. 
 
-Then we have to detect if in that case (denormalized, $|R11\_err| = \frac{1}{2} ulp(R12)$) we have enought precision to correctly round the result. We use a test similar to the one used to test wheteher we can round with rounding toward $\pm \infty$. Indeed, problematic cases arise when  $ \frac{1}{2} ulp(R12) - 2^{-68}.R11 \leq |R11\_err + R8| \leq \frac{1}{2} ulp(R12) + 2^{-68}.R11 ) $.
+Then we have to detect if in that case (subnormalized, $|R11\_err| = \frac{1}{2} ulp(R12)$) we have enought precision to correctly round the result. We use a test similar to the one used to test wheteher we can round with rounding toward $\pm \infty$. Indeed, problematic cases arise when  $ \frac{1}{2} ulp(R12) - 2^{-68}.R11 \leq |R11\_err + R8| \leq \frac{1}{2} ulp(R12) + 2^{-68}.R11 ) $.
 \\
 \ref{exp:code:56},\ref{exp:code:57}&
 Test is we are in presence of one of the previous cases describe previously, and correct the result by adding or subtracting $1 ulp$ by using the ``continuity'' of the representation of floating-point number.
@@ -1321,7 +1321,7 @@ Test is we are in presence of one of the previous cases describe previously, and
 
 \begin{figure}[ht] \begin{center}
 \input{fig_exp/rnd_to_nearest.pstex_t}
-\caption{Description of problem with rounding to nearest of a denormalized number.
+\caption{Description of problem with rounding to nearest of a subnormalized number.
   \label{chap4:fig:rnd_to_nearest}}
 \end{center}\end{figure}
 
@@ -1366,7 +1366,7 @@ if ((HI(R8) & 0x7ff00000) > exp_R11){      (*@ \label{exp:code:pinf:0} @*)
     }
     return R11;
   }else {
-    /* We are with denormalized number */
+    /* We are with subnormalized number */
     HI(R11) += ((k+1000)<<20);          
     R12.d    = R11 * twom1000;              (*@ \label{exp:code:pinf:2} @*)
 
@@ -1398,7 +1398,7 @@ The program used to check whether correct rounding toward $+ \infty$ is possible
 % en fin de derniere page
 \endlastfoot 
 \ref{exp:code:pinf:0} & 
-This test is valid even if the final result is a denormalized number.
+This test is valid even if the final result is a subnormalized number.
 \\
 
 \ref{exp:code:pinf:1} &
@@ -1455,7 +1455,7 @@ if ((HI(R8) & 0x7ff00000) > exp_R11){
     }
     return R11;
   }else {
-    /* We are with denormalized number */
+    /* We are with subnormalized number */
     HI(R11) += ((k+1000)<<20);             
     R12.d    = R11 * twom1000;             
 
@@ -1705,7 +1705,7 @@ void exp_SC(scs_ptr res_scs, double x){
 \ref{exp:mp:0}& $db.d = x$
 \\
 \ref{exp:mp:1}& 
-This operation divide  $db.d$ by $512=2^9$ and is valid under the condition that $db.d$, and consequently $x$, do not represent a special values (denormalized, infinity, NaN). Condition that is satisfied because special case have been treated during the quick phase.
+This operation divide  $db.d$ by $512=2^9$ and is valid under the condition that $db.d$, and consequently $x$, do not represent a special values (subnormalized, infinity, NaN). Condition that is satisfied because special case have been treated during the quick phase.
 
 \\
 \ref{exp:mp:2}& 

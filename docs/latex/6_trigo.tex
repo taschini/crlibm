@@ -73,7 +73,7 @@ computes an integer $k$ and a reduced argument y such that
 where $k$ is an integer and  $ |y| \leq {\pi}/{512}$.
 This step computes $y$ as a double-double: $y\approx y_h+y_l$. 
 
-In the following we note $$=\frac{\pi}{256}$$ and $$a=k\pi/256.$$ 
+In the following we note $$a=k\pi/256.$$ 
 
 Then we read off a table 
 
@@ -259,6 +259,62 @@ bulk of the computation. The shared computation is called
 \section{Details of argument reduction
 \label{trigo:argred}}
 
+\subsection{Basics about argument reduction}
+The argument reduction or range reduction is the first step used in
+the elementary function evaluation scheme. This step is required to
+introduce a relation between the whole range of ieee double precision
+number and the small range where the polynomial evaluation is accurate
+enought. This relation between the input argument and the reduced
+argument is called the range reduction step.
+
+There is two categories of range reduction. First the multiplicative
+reduction as we used for the logarithm, and the additive reduction as
+the one we will use for the trigonometric function. Among this two,
+only the additive reduction needs to be carrefully performed as it was
+exhibit by K.C. Ng \cite{Ng1992}.
+
+The additive reduction consists in adding or removing $N$ times a
+certain constant $C$ from the input argument. For trigonometric
+function this constant is usually equal to $\pi/2$ or
+$\pi/4$. Therefor the naive range reduction based on machine precision
+for trigonometric function consists in :
+
+
+\begin{equation}
+\begin{array}{rcl}
+k    &=&  \lfloor \frac{x}{C} \rfloor \\
+x^*  &=&  x-kC. \\
+\end{array}
+\label{chap6:eqn:rangereduction}
+\end{equation}
+
+When the input argument $x$ is close to $kC$, almost all the accuracy
+is lost when preforming the substraction $x-kC$. When targeting
+correctly rounded trigonometric function evaluation, we need to
+determine how many bits can be lost with this operation. This number
+is related to the knowledge of the closest input number $x$ to a
+multiple of $C$. There exists an algorithm due to Kahan/Douglas and
+based on continued fraction to compute this number and therefor the
+number of bit lost. 
+
+We used a Maple version from \cite{Muller97} to determine than up to
+62 bits may be cancel up during range reduction for a ieee double
+precision number. This Maple procedure is implemented as function
+\texttt{WorstCaseForAdditiveRangeReduction} in
+\texttt{maple/common-procedures.mpl} However this is not a concern
+unless x is close to a multiple of $\pi/2$ (that is, $k \mod 128=0$):
+in the general case the reconstruction will add some tabulated
+non-zero value, so the error to consider in the range reduction is the
+absolute error.  Only in the cases when $k \mod 128=0$ do we need to
+have 62 extra bits to compute with. This is ensured by using a slower,
+more accurate range reduction. As a compensation, in this case when $k
+\mod 128=0$, there is no table to read and no reconstruction to
+perform: a simple polynomial approximation to the function suffices.
+
+
+
+
+\subsection{Details of the used scheme}
 
 We have 4 possible range reductions, depending on the magnitude of the input number:
 
@@ -272,19 +328,6 @@ We have 4 possible range reductions, depending on the magnitude of the input num
 Each of these range reductions except Payne and Hanek is valid for $x$
 smaller than some bound. The computation of these bounds is detailed
 below.
-
-Such a range reduction may cancel up to 62 bits according to a program
-by Kahan/Douglas available in Muller's book \cite{Muller97} and
-implemented as function \texttt{WorstCaseForAdditiveRangeReduction} in
-\texttt{maple/common-procedures.mpl}.  However this is not a concern
-unless x is close to a multiple of $\pi/2$ (that is, $k \mod 128=0$): in
-the general case the reconstruction will add some tabulated non-zero
-value, so the error to consider in the range reduction is the absolute
-error.  Only in the cases when $k \mod 128=0$ do we need to have 62
-extra bits to compute with. This is ensured by using a slower, more
-accurate range reduction. As a compensation, in this case when $k \mod
-128=0$, there is no table to read and no reconstruction to perform: a
-simple polynomial approximation to the function suffices. 
 
 Section \ref{trigo:structargred} details the organization of this
 multi-level argument reduction, and is followed by a detailed proof of
@@ -490,7 +533,7 @@ actual range reduction come in the following sections).
 
 Here we split $C$ into two floating-point constants $C_h$ and $C_l$
 such that $C_h$ holds 21 bits of the mantissa of $C$ (the rest being
-zeroes), and $C_l=\round(C-C_h)$.  The following is an excerpt of the
+zeroes), and $C_l=\round(C-C_h)$.  The following is an example of the
 Maple code that computes these constants, and then computes the
 bound on which this argument reduction is valid.
 
@@ -538,7 +581,7 @@ this case.
   firstnumber=1,  language={sh}, numbers=none]% of course it's maple
 
 delta_repr_C_cw2   := abs(C-Ch-Cl);
-delta_round_cw2    := kmax_cw2* 1/2 * ulp(Cl) ;
+delta_round_cw2    := kmax_cw2 * 1/2 * ulp(Cl) ;
 delta_cody_waite_2 := kmax_cw2 * delta_repr_C_cw2 + delta_round_cw2;
 # This is the delta on y, the reduced argument
 \end{lstlisting}
@@ -982,7 +1025,7 @@ reason is that, in the current version of Gappa, we are unable to
 express the identity $sin^2(a) + cos^2(a) = 1$ in a useful manner.
 Without this identity, the only information that we could give to
 Gappa is that both $sin(a)$ and $cos(a)$ belong to $[-1,1]$, which
-leads to a gross overestimation of the error.
+leads to an overestimation of the error.
 
 The Maple script that computes the table of $(ca_h,ca_l,sa_h,sa_l)$,
 the polynomial coefficient, and the approximation errors, also outputs

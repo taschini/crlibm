@@ -78,6 +78,51 @@ probably only need one call to \texttt{crlibm\_init()} at the beginning
 of your program, not one call before each call to a mathematical
 function.
 
+Here's an example function named \texttt{compare.c} using the cosine
+function from \texttt{crlibm} library.
+
+\begin{lstlisting}[label={chap0:lst:prog_example},caption={compare.c},firstnumber=1]
+#include<stdio.h>
+#include<math.h>
+#include<crlibm.h>
+
+int main(void){
+  double x, res1, res2;
+
+  printf("Enter a floating point number :");
+  scanf("%e",&x);
+
+  printf("\n cos(x) with the system : %.25e \n");
+  printf("\n cos(x) with crlibm     : %.25e \n");
+  return 0;
+}
+\end{lstlisting}
+
+This example will be compiled with \texttt{gcc compare.c -lm -lcrlibm -o compare}
+
+
+\section{Currently available functions}
+In the sequel $x$ and $y$ are of type $double$ and every function
+return a double precision number. For trigonometric functions the
+angles are express in radian.
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}    \hline
+ & \multicolumn{4}{c|}{crlibm} \\ \cline{2-5}
+ \raisebox{5pt}{C99} & to nearest & to $+ \infty$ & to $- \infty$ & to zero \\ \hline
+    cos(x) & cos\_rn(x) & cos\_ru(x) & cos\_rd(x) & cos\_rz(x) \\ \hline
+    sin(x) & sin\_rn(x) & sin\_ru(x) & sin\_rd(x) & sin\_rz(x) \\ \hline
+    tan(x) & tan\_rn(x) & tan\_ru(x) & tan\_rd(x) & tan\_rz(x) \\ \hline
+    cosh(x) & cosh\_rn(x) & cosh\_ru(x) & cosh\_rd(x) & cosh\_rz(x) \\ \hline
+    sinh(x) & sinh\_rn(x) & sinh\_ru(x) & sinh\_rd(x) & sinh\_rz(x) \\ \hline
+    atan(x) & atan\_rn(x) & atan\_ru(x) & atan\_rd(x) & atan\_rz(x) \\ \hline
+    exp(x) & exp\_rn(x) & exp\_ru(x) & exp\_rd(x) & exp\_rz(x) \\ \hline
+    log(x) & log\_rn(x) & log\_ru(x) & log\_rd(x) & log\_rz(x) \\ \hline
+%    log2(x) & log2\_rn(x) & log2\_ru(x) & log2\_rd(x) & log2\_rz(x) \\ \hline
+%    log10(x) & log10\_rn(x) & log10\_ru(x) & log10\_rd(x) & log10\_rz(x) \\ \hline
+\end{tabular}
+\end{center}
+
+
 
 \section{Writing portable floating-point programs}
 

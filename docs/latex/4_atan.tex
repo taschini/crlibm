@@ -77,7 +77,7 @@ which ensures 66 bits of precision:
 - \frac{1}{7}.x^7 + \frac{1}{9}.x^9 \nonumber \\ 
   & \approx x . + x.Q(x^2)
 \end{split}
-\label{eq:poly_eval}
+\label{eq:poly_eval1}
 \end{equation}
  
 Q is evaluated thanks to a Horner scheme:
@@ -88,7 +88,7 @@ where each operation is computed in double.
 As $|z| \leq e$, $Q(z) \leq e^2$
 
 At the end, the reconstruction implements equation
-(\ref{eq:poly_eval}) and (\ref{eq:arctan_redu}) in double-double
+(\ref{eq:poly_eva1l}) and (\ref{eq:arctan_redu}) in double-double
 arithmetic.
 
 
@@ -211,17 +211,17 @@ Line 1 & The error between $\mathrm{Xred2}$ and the ideal value of $\xred^2$\\
        & $\bullet$~ then the FP multiplication squares this term and adds a rounding error of $\epsilon_{53}$\\
        & which sum up to  $\epsilon_\mathrm{Xred2} = ((1+2^{-53}+2^{-105})^2)(1+2^{-53}) 
           \approx \epsilon_{51.4}$ \\
-Line 3 & Horner approximation with error on $\xred2$:
+Line 3 & Horner approximation with error on $\mathrm{Xred2}$:
       Maple computes an error around $\epsilon_{50.7}$\\
       & or $\delta_{q}=\delta_{63.3}$\\ 
 \end{tabular}
 
 \subsubsection{Reconstruction}
 
-The reconstruction adds $\arctan(b_i)$, 
-which is read as a double-double from a table, and $\arctan(\xred)$, 
-approximated by  $(\xredhi+\xredlo)(1+q)$. 
-The terms of this developed product are depicted in the following figure. 
+The reconstruction adds $\arctan(b_i)$ that is read as a double-double
+from a table, and $\arctan(\xred)$, approximated by
+$(\xredhi+\xredlo)(1+q)$.  The terms of this developed product are
+depicted in the following figure.
 
 
 \begin{center}

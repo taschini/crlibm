@@ -1,3 +1,4 @@
+\label{chap3:log}
 This chapter is contributed by Florent de~Dinechin, with assistance from C. Daramy-Loirat and J.M. Muller. 
 
 \newcommand{\middlei}{\mathrm{middle}[i]}
@@ -6,12 +7,12 @@ This chapter is contributed by Florent de~Dinechin, with assistance from C. Dara
 \section{Overview}
 
 For this function, the search for worst-case accuracy required to
-compute the logarithm of a double correctly rounded to a double is
+compute in double precision the correctly rounded  logarithm of a double is
 completed. This worst-case accuracy is $118$ bits according to Lefèvre
 and Muller \cite{LefMul2004}.
 
 We therefore proceed in two phases \cite{Ziv91}.  The first, quick
-phase (program \texttt{log\_fast.c}) is accurate only to $57-64$ bits,
+phase (program \texttt{log\_fast.c}) is accurate only to $2^57$ and $2^64$,
 depending on the execution path as detailed below.  If this is not
 enough to decide correct rounding, a second phase, accurate to $120$
 bits using the SCS library is launched (program \texttt{log.c}).
@@ -28,12 +29,11 @@ The natural logarithm is defined over positive floating point numbers.
 
 This is true in all rounding modes.
 
-Concerning denormals, the smallest exponent of the logarithm of a
-double-precision input number is $-53$ (for the input values
-$\log(1+2^{-52})$ and $\log(1-2^{-52})$, as $\log(1+\epsilon) \approx
-\epsilon$ when $\epsilon\rightarrow 0$). This will make it easy to
-ensure that no denormal ever appears in the computation of the
-logarithm of a double-precision input number.
+Concerning subnormals, the logarithm function cannot return a subnormal number: it comes close to $0$  as $x$ comes close to $1$ (as $\log(1+x) \approx x$ when $x\rightarrow 0$), and the double-precision floating-point numbers closest to $1$ are $1+2^{-52}$ and $1-2^{-53}$. Therefore the smallest possible exponent of the logarithm of a double is $-53$.
+
+%the smallest exponent of the logarithm of a double-precision input number is $-53$ (for the input values $\log(1+2^{-52})$ and $\log(1-2^{-52})$, as $\log(1+\epsilon) \approx \epsilon$ when $\epsilon\rightarrow 0$). This will make it easy to ensure that no subnormal ever appears in the computation of the logarithm of a double-precision input number.
+
+
 
 \section{Quick phase}
 
@@ -43,8 +43,35 @@ The algorithm consists of an argument reduction using the well-known
 property of the logarithm, and a polynomial evaluation using a degree
 12 polynomial.
 
+\begin{enumerate}
+\item Handling of subnormal number:\\
+If $x < 2^{-1022}$ then
+$$\log(x) = -52 * \log(2) + \log\left(\frac{x}{2^{-52}}\right)$$
 
-First we need to handle denormal inputs: If $x < 2^{-1022}$ , ie if x
+\item Argument reduction:\\
+Computes the reduced argument $y$ such that $x=2^E.y$ with $E$ and 
+\begin{equation}
+\frac{11}{16}<\frac{\sqrt{2}}{2} < y < \sqrt{2}<\frac{23}{16} \quad.
+\end{equation}
+
+\item Polynomial evaluation:\\
+The interval $[\frac{11}{16},\frac{23}{16}]$ is broken down into
+8 intervals given in Table~\ref{table:TablePolysLog1}. On each interval the choosen polynomial are evaluated thanks to a Horner scheme:
+$$P(z) = c_0^{hi}+c_0^{lo} + z .(c_1^{hi} +c_1^{lo} + z .(c_2 + z
+  .(c_3 + ...
+ + z . (c_{11} + (c_{12} . z))))))))))))
+$$
+
+\item Reconstruction:\\
+Compute in double-double precision arithmetic :
+$$\log(x) \approx E\times \log(2) + P(z)$$
+where $P(z)$
+\end{enumerate}
+
+
+
+
+First we need to handle subnormal inputs: If $x < 2^{-1022}$ , ie if x
 is a subnormal number, then we use the equation
 $$\log(x) = -52 * \log(2) + \log\left(\frac{x}{2^{-52}}\right)$$
 where
@@ -128,7 +155,7 @@ where the two last iterations may use double-double arithmetic if
 required by the overall target accuracy, as detailed below.
 
 Also note that the range of $z$ makes it easy to prove that no
-denormal ever appear in the Horner evaluation of a polynomial. This
+subnormal ever appear in the Horner evaluation of a polynomial. This
 will be checked by the Maple procedure computing the rounding error of
 the Horner scheme.
 
@@ -158,7 +185,7 @@ Bounds on the polynomial approximation errors (both relative
 $\maxrelerr{approx}[i]$ and absolute $\maxabserr{approx}[i]$) are easily computed under Maple
 as infinite norms.
 
-The rounding tests need a bound on the relative error, which can be computed as follows:
+The rounding tests need a bound on the relative error for each interval, which can be computed as follows:
 
 \begin{itemize}
 \item If $E\ne0$, then the result is computed as $E\times \log(2) +
@@ -181,7 +208,7 @@ The rounding tests need a bound on the relative error, which can be computed as 
   accuracy (which translates as percentage of cases where the slow,
   accurate phase will be needed) and performance of the quick phase:
 \begin{itemize}
-\item The absolute value of $P(z)$ is bounded by $0.37$. A bound on
+\item The absolute value of $P(z)$ is bounded by $0.346=\log(\sqrt{2})$. A bound on
   the denominator can therefore easily be deduced from the value of
   $|E|$.  In other terms, all things being equal, there will be less
   chances to go to the accurate phase for larger $E$.  It is therefore
@@ -215,13 +242,14 @@ The rounding tests need a bound on the relative error, which can be computed as 
   $\maxrelerr{total}$ is given by the Maple procedures of
   \ref{section:commonMaple}. 
   
-  It turns out that the polynomial $P[5]$ (the one which is centered
-  on $1$ and has therefore a null coefficient of degree 0) leads to a
-  relative rounding error which is much worse than that of the other
-  polynomials. To still get an acceptable percentage of accurate phase
-  in this case, and as the code contains a test if $E=0$ anyway, we
-  chose to perform the polynomial evaluation in this case with one
-  double-double multiplication more than in the normal case.
+  The double-double part of the polynomial evaluation is usually
+  started with an addition as we noticed in section \ref{sec:Horner}, page
+  \pageref{sec:Horner}. However, it turns out that the polynomial $P[5]$ (the
+  one which is centered on $1$ and has therefore a null coefficient of
+  degree 0) leads to the worst relative rounding error. To keep an
+  acceptable percentage of accurate phase in this case, we chose to
+  exceptionnaly start the double-double part of the polynomial
+  evaluation with a multiplication rather than the usual addition.
 
 \end{itemize}
 
@@ -416,7 +444,7 @@ Line 17 & The computation of $E\log(2)$ is done as early as possible. \\
         & As stated previously, the relative error here is smaller than $2^{-100}$\\
 Lines 22-27 & Begin of Horner evaluation in double arithmetic\\
 Line 29 & This test is equivalent to $|ln2\_times\_E_HI| < \mathtt{MIN\_FASTPATH}$.\\
-        & As $|E|$ is an integer smaller than $2048$, neither overflow nor denormal can occur.\\
+        & As $|E|$ is an integer smaller than $2048$, neither overflow nor subnormal can occur.\\
         & Currently $\mathtt{MIN\_FASTPATH}=128.5$ but the Maple programs in \texttt{coef\_log.mw}\\
         & allow to change this value.\\
 Lines 31-53 & Slow path, divided two cases:\\
@@ -428,7 +456,7 @@ Lines 40-52 & ~Case $E\ne 0$ Thanks to the final addition to $E\log(2)$,\\
 Lines 54-62 & Fast path : the polynomial evaluation is entirely in double-precision, and the \\
             & ~ final addition with a large  $E\log(2)$ scales the resulting bad absolute accuracy\\
             & ~ to acceptable relative accuracy\\ 
-Lines 34,36,47 & None of the intermediate values reaches  $2^{970}$ so we may use the unconditional Mul22.\\
+Lines 34,36,47 & None of the intermediate values reach  $2^{970}$ so we may use the unconditional Mul22.\\
 Lines 35,37,46,48 & The Maple procedure checks that the first argument is always greater \\
                   & than the second, so we may use the unconditional Add22.\\
 Lines 51,61 & $E\log(2)$ is greater than  $\log(2)\approx 0.69$, and $\infnorm{P_i(x)}<0.4$\\
@@ -475,7 +503,7 @@ returns an SCS number, which is rounded in the required mode by one of
 \subsection{Argument reduction}
 
 The first argument reduction is the same as in the quick phase.
-Therefore the function  \texttt{scs\_log}  take as arguments $y$ and $E$, computed
+Therefore the function  \texttt{scs\_log} takes as arguments $y$ and $E$, computed
 in the quick phase (similarly, exceptional cases are not considered
 again).
 
@@ -658,7 +686,7 @@ Contributions to this table for new processors/OS/compiler combinations are welc
 
 \subsection{Memory requirements}
 
-Table size is
+Tables sizes are
 \begin{itemize}
 \item for the \quick\ phase,
   $8\times 15\times8=960$ bytes for the eight polynomials, plus
@@ -666,7 +694,7 @@ Table size is
   1kB.
 \item for the \accurate\ phase, $1+13+13+20$ SCS constants:  $\log(2)$,
   the 13 $log(w_i)$ and the 13 $\frac{1}{w_i}$,  the polynomial of
-  degree 20 with a null first coefficient. This amounts to a little more than 2kB.
+  degree 20 with a null first coefficient. This amount represents a bit more than 2kB.
 \end{itemize}
 
 

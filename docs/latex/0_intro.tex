@@ -83,7 +83,20 @@ rounding. For example, if $[{y}(1-\maxeps{}) , {y}(1+\maxeps{})]$
 contains the middle of two consecutive floating-point numbers, it is
 impossible to decide which of these two numbers is the correctly
 rounded to the nearest of $\hat{y}$. This is known as the Table Maker's
-Dilemma (TMD).
+Dilemma (TMD). For example, if we consider a numeration system in radix $2$ with $n$-bit mantissa floating point number and $m$ the number of significant bit in $y$ such that $\maxeps{} \leq 2^m$, then the TMD occurs:
+
+\begin{itemize}
+\item for rounding toward $+\infty$, $-\infty$, $0$, when the result is of the form:
+
+$$\overbrace{\underbrace{1.xxx...xx}_{n~bits}111111...11}^{m~bits}xxx...$$
+or:
+$$\overbrace{\underbrace{1.xxx...xx}_{n~bits}000000...00}^{m~bits}xxx...$$
+\item for rounding to nearest, when the result is of the form:
+$$\overbrace{\underbrace{1.xxx...xx}_{n~bits}011111...11}^{m~bits}xxx...$$
+or :
+$$\overbrace{\underbrace{1.xxx...xx}_{n~bits}100000...00}^{m~bits}xxx...$$
+\end{itemize}
+
 
 \subsection{The onion peeling strategy}
 
@@ -455,7 +468,7 @@ Three libraries offer correct correct rounding:
   most of elementary functions for the four rounding modes defined by
   the IEEE-754 standard. However this library is not optimized for
   double precision arithmetic. In addition, as its exponent range is
-  much wider than that of IEEE-754, the subtleties of denormal numbers
+  much wider than that of IEEE-754, the subtleties of subnormal numbers
   are difficult to handle properly using such a multiprecision
   package.
 
