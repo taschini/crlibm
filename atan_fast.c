@@ -80,7 +80,7 @@ static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x)
         Add22(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
       else {Add22( &x0hi , &x0lo , 1.0,0.0,tmphi,tmplo);}
 
-      Div22( Xredhi, Xredlo, xmBihi , xmBilo , x0hi,x0lo);
+      Div22( &Xredhi, &Xredlo, xmBihi , xmBilo , x0hi,x0lo);
 
       /* Polynomial evaluation : 
        *  

@@ -355,12 +355,6 @@ double ph, pl;                                        \
   *pzl = (ph - (*pzh)) + pl;                          \
 }
 
-#define  Div22(zh,zl,xh,xl,yh,yl)\
-{double ch,cl,uh,ul;  \
-           ch=(xh)/(yh);   Mul12(&uh,&ul,ch,(yh));  \
-           cl=(((((xh)-uh)-ul)+(xl))-ch*(yl))/(yh);   zh=ch+cl;   zl=(ch-zh)+cl;\
-}
-
 
 /* besides we don't care anymore about overflows in the mult  */
 #define Mul12Cond Mul12    
@@ -374,7 +368,6 @@ double ph, pl;                                        \
 extern void Mul12(double *rh, double *rl, double u, double v);
 extern void Mul12Cond(double *rh, double *rl, double a, double b);
 extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl);
-extern void Div22(double *z, double *zz, double x, double xx, double y, double yy);
 #else /* if DEKKER_AS_FUNCTIONS  */
 /*
  * computes rh and rl such that rh + rl = a * b with rh = a @* b exactly
@@ -444,18 +437,24 @@ double mh, ml;                                        \
   *zl = mh - (*zh) + ml;                              \
 }
 
-/* Compute the double-double division of (x+xx) over (y+yy) */
-#define  Div22(z,zz,x,xx,y,yy)\
-{double __c,__cc,__u,__uu;  \
-           __c=(x)/(y);   Mul12(&__u,&__uu,__c,y);  \
-           __cc=(((((x)-__u)-__uu)+(xx))-__c*(yy))/(y);   z=__c+__cc;   zz=(__c-z)+__cc;\
-} 
-
 
 
 #endif /* DEKKER_AS_FUNCTIONS */
 
 #endif /* PROCESSOR_HAS_FMA */
+
+
+
+
+#if DEKKER_AS_FUNCTIONS
+extern void Div22(double *z, double *zz, double x, double xx, double y, double yy);
+#else
+#define  Div22(pzh,pzl,xh,xl,yh,yl)\
+{double ch,cl,uh,ul;  \
+           ch=(xh)/(yh);   Mul12(&uh,&ul,ch,(yh));  \
+           cl=(((((xh)-uh)-ul)+(xl))-ch*(yl))/(yh);   *(pzh)=ch+cl;   *(pzl)=(ch-(*pzh))+cl;\
+}
+#endif /* DEKKER_AS_FUNCTIONS */
 
 /* A few prototypes that are not worth being in crlibm.h */
 

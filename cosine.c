@@ -61,7 +61,7 @@ void cosine(scs_ptr x){
  *               ROUNDED  TO NEAREST			     *
  *************************************************************
  *************************************************************/
-double cos_rn(double x){ 
+double scs_cos_rn(double x){ 
   scs_t sc1, sc2;
   double resd;
   int N;
@@ -98,7 +98,7 @@ double cos_rn(double x){
  *               ROUNDED  TOWARD  -INFINITY		     *
  *************************************************************
  *************************************************************/
-double cos_rd(double x){ 
+double scs_cos_rd(double x){ 
   scs_t sc1, sc2;
   double resd;
   int N;
@@ -135,7 +135,7 @@ double cos_rd(double x){
  *               ROUNDED  TOWARD  +INFINITY		     *	
  *************************************************************
  *************************************************************/
-double cos_ru(double x){ 
+double scs_cos_ru(double x){ 
   scs_t sc1, sc2;
   double resd;
   int N;

@@ -12,6 +12,9 @@ extern double scs_sin_rd(double);
 extern double scs_cos_rn(double);
 extern double scs_cos_ru(double);
 extern double scs_cos_rd(double);
+extern double scs_tan_rn(double); /* to nearest  */
+extern double scs_tan_rd(double); /* toward -inf */ 
+extern double scs_tan_ru(double); /* toward +inf */ 
 
 #define DEBUG 0
 

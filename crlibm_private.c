@@ -138,6 +138,15 @@ double mh, ml;
   *zl = mh - (*zh) + ml;
 }
 
+
+
+void Div22(double* pzh, double* pzl, double xh, double xl, double yh, double yl){
+  double ch,cl,uh,ul;  
+  ch=(xh)/(yh);   Mul12(&uh,&ul,ch,(yh));  
+  cl=(((((xh)-uh)-ul)+(xl))-ch*(yl))/(yh);   
+  *pzh=ch+cl;   *pzl=(ch-(*pzh))+cl;
+}
+
 #endif /* DEKKER_AS_FUNCTIONS && (!defined PROCESSOR_HAS_FMA)  */
 
 

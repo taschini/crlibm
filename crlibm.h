@@ -48,6 +48,10 @@ extern double sin_ru(double); /* toward +inf */
 extern double tan_rn(double); /* to nearest  */
 extern double tan_rd(double); /* toward -inf */ 
 extern double tan_ru(double); /* toward +inf */ 
+/* For debugging purpose */
+extern double scs_tan_rn(double); /* to nearest  */
+extern double scs_tan_rd(double); /* toward -inf */ 
+extern double scs_tan_ru(double); /* toward +inf */ 
 
 extern double atan_rn(double);
 
