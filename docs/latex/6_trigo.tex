@@ -216,24 +216,22 @@ accurate.
 
 \subsection{Organisation of the code}
 
-There are four procedures, respectively called \verb!do_sin_k_zero!,
-\verb!do_sin_k_notzero!, \verb!do_cos_k_zero!,
-\verb!do_cos_k_notzero!, which are called after argument reduction in
-many points of each function. These procedures are studied in section
-\ref{trigo:auxilliary}.
 
-The code for argument reduction is mostly shared by the three
-functions, but with variations (mostly, which of the four previous
-functions is called) which makes it difficult to share it efficiently
-as one procedure. Therefore it is mostly duplicated, but the same
-proof applies to the three copies. This proof is detailed in
+The code for argument reduction is shared by the three
+trigonometric functions. It is detailed and proven in
 Section~\ref{trigo:argred}.
 
-Then each of the three functions come in four variants for the four
+Then there are four procedures, respectively called \verb!do_sin_k_zero!,
+\verb!do_sin_k_notzero!, \verb!do_cos_k_zero!, \verb!do_cos_k_notzero!
+which do the actual computation after argument reduction. The tangent
+function is computed by dividing \verb!do_sin! by \verb!do_cos!. These
+procedures are studied in section \ref{trigo:auxilliary}.
+
+Finally, each of the three trigonometric functions come in four variants for the four
 rounding modes. These four variants differ in the beginning (special
 cases) and in the end (rounding), but share the bulk of the
 computation. The shared computation is  called
-\verb!compute_sine_with_argred!, etc.
+\verb!compute_trig_with_argred!, etc.
 
 
 
@@ -248,7 +246,7 @@ We have 4 possible range reductions, depending on the magnitude of the input num
 \item Cody and Waite with 2 constants (the fastest),
 \item Cody and Waite with 3 constants (almost as fast),
 \item Cody and Waite with 3 constants in double-double and $k$ a
-  64-bit int,
+  64-bit int, and 
 \item Payne and Hanek, implemented in SCS (the slowest).
 \end{itemize}
 Each of these range reductions except Payne and Hanek is valid for $x$
@@ -266,13 +264,189 @@ error.  Only in the cases when $k \mod 128=0$ do we need to have 62
 extra bits to compute with. This is ensured by using a slower, more
 accurate range reduction. As a compensation, in this case when $k \mod
 128=0$, there is no table to read and no reconstruction to perform: a
-simple polynomial approximation to the function suffices.
+simple polynomial approximation to the function suffices. 
 
+Section \ref{trigo:structargred} details the organization of this
+multi-level argument reduction, and is followed by a detailed proof of
+each level.
 
 
 In the following we note $$C=\frac{\pi}{256}$$
 
+
+\subsection{Structure of the argument reduction
+  \label{trigo:structargred}}
+The code for the sine is detailed below (from function \verb!compute_sine_with_argred!).
+
+\begin{lstlisting}[caption={Multilevel argument reduction},firstnumber=1]
+static void compute_trig_with_argred(double* prh, double* prl,  double x, int absxhi, int function){ 
+  double sah,sal,cah,cal, yh, yl, ts,tc, kd; 
+  double kch_h,kch_l, kcm_h,kcm_l,  th, tl,sh,sl,ch,cl;
+  int k, quadrant, index;
+  long long int kl;
+
+  if  (absxhi < XMAX_CODY_WAITE_3) {
+    /* Compute k, deduce the table index and the quadrant */
+    DOUBLE2INT(k, x * INV_PIO256);
+    kd = (double) k;
+    quadrant = (k>>7)&3;      
+    index=(k&127)<<2;
+    if((index == 0)) { 
+      /* Here we risk a large cancellation on yh+yl: use double-double RR */
+      /* all this is exact */
+      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+      Add12 (th,tl,  kch_l, kcm_h) ;
+      /* only rounding error in the last multiplication and addition */ 
+      Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+      goto trigzero;
+    } 
+    else {      
+      /* index <> 0, don't worry about cancellations on yh+yl */
+      if (absxhi < XMAX_CODY_WAITE_2) {
+	/* CW 2: all this is exact but the rightmost multiplication */
+	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ; 
+      }
+      else { 
+	/* CW 3: all this is exact but the rightmost multiplication */
+	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
+      }
+    }
+    goto trignotzero;
+  }
+
+  else if ( absxhi < XMAX_DDRR ) {
+    /* x sufficiently small for a Cody and Waite in double-double */
+    DOUBLE2LONGINT(kl, x*INV_PIO256);
+    kd=(double)kl;
+    quadrant = (kl>>7)&3;
+    index=(kl&127)<<2;
+    if(index == 0) { /* In this case cancellation may occur, so we
+			  do the accurate range reduction */
+      scs_range_reduction(); 
+      /* Now it may happen that the new k differs by 1 of kl, so check that */
+      if(index==0) {  /* no surprise */
+	goto trigzero;      }
+      else { /*recompute index and quadrant */
+	if (index==4) kl++;   else kl--; /* no more than one bit difference */
+	kd=(double)kl;
+	quadrant = (kl>>7)&3;
+      }
+    }
+    /* arrive here if index<>0 */
+    /* double-double argument reduction*/
+    /* all this is exact */
+    Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+    Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+    Add12 (th,tl,  kch_l, kcm_h) ;
+    /* only rounding error in the last multiplication and addition */ 
+    Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+    goto trignotzero;
+  }
+  else {
+    /* Worst case : x very large, sin(x) probably meaningless, we return
+       correct rounding but do't mind taking time for it */
+    scs_range_reduction(); 
+    quadrant = (k>>7)&3;                                       
+    if(index == 0)
+      goto trigzero;
+    else 
+      goto trignotzero;
+  }
+
+ trigzero:
+  switch(function) {
+  case SIN: goto sinzero;
+  case COS: goto coszero;
+  case TAN: goto tanzero;
+  }
+ trignotzero:
+  switch(function) {
+  case SIN: goto sinnotzero;
+  case COS: goto cosnotzero;
+  case TAN: goto tannotzero;
+  }
+  
+ sinzero:
+  if (quadrant&1)
+    do_cos_k_zero(prh, prl, yh,yl);
+  else 
+    do_sin_k_zero(prh, prl, yh,yl);
+  if ((quadrant==2)||(quadrant==3)) {
+    *prl=-*prl; *prh=-*prh;
+  }
+  return;
+
+ sinnotzero:
+    LOAD_TABLE_SINCOS();
+    if (quadrant&1)   
+      do_cos_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
+    else 
+      do_sin_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
+    if ((quadrant==2)||(quadrant==3)) {
+      *prl=-*prl; *prh=-*prh;
+    }
+    return;
+ coszero:
+  if (quadrant&1)
+    do_sin_k_zero(prh, prl, yh,yl);
+  else 
+    do_cos_k_zero(prh, prl, yh,yl);
+  if ((quadrant==1)||(quadrant==2)) {
+    *prl=-*prl; *prh=-*prh;
+  }
+  return;
+ cosnotzero:
+    LOAD_TABLE_SINCOS();
+    if (quadrant&1)   
+      do_sin_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
+    else 
+      do_cos_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
+    if ((quadrant==1)||(quadrant==2)) {
+      *prl=-*prl; *prh=-*prh;
+    }
+    return;
+
+ tanzero:
+  if (quadrant&1) {
+    do_sin_k_zero(&ch, &cl, yh,yl);
+    do_cos_k_zero(&sh, &sl, yh,yl);
+    sh=-sh; sl=-sl;
+  } else {
+    do_sin_k_zero(&sh, &sl, yh,yl);
+    do_cos_k_zero(&ch, &cl, yh,yl);
+  }
+  Div22(prh, prl, sh, sl, ch, cl);
+  return;
+
+ tannotzero:
+  LOAD_TABLE_SINCOS();
+  if (quadrant&1) {
+    do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+    do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+    sh=-sh; sl=-sl;
+  } else {
+    do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+    do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+  }
+  Div22(prh, prl, sh, sl, ch, cl);
+  return;
+}
+
+\end{lstlisting}
+ 
+
+There is one subtlety at lines 46 and following. There we take the
+decision of computing a more accurate range reduction depending on the
+value of $k\mod 256$. However, in the case when
+$x\times\frac{256}{\pi}$ is very close to the middle between two
+integers, it may happen (very rarely) that the value of $k\mod 256$
+computed by this second range reduction is equal to $\pm 1$. In such
+cases, both values work, but we have to design the algorithm
+accordingly.
+
 \subsection{Cody and Waite argument reduction with two constants}
+
 Here we split $C$ into two floating-point constants $C_h$ and $C_l$
 such that $C_h$ holds 21 bits of the mantissa of $C$ (the rest being
 zeroes), and $C_l=\round(C-C_h)$.  The following is an excerpt of the
@@ -282,6 +456,7 @@ bound on which this argument reduction is valid.
 \begin{lstlisting}[caption={Computing constants for Cody and Waite 2},
   firstnumber=1,  language={sh}]% of course it's maple
 %Skip a line here, I don't know why, otherwise latex eats the first line
+
 bitsCh_0:=32:  # ensures at least 53+11 bits
 
 # 1/2 <= C/2^(expC+1) <1

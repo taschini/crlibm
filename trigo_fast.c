@@ -360,60 +360,53 @@ do {                                                                \
 
 /************************************************************************/
 /*                                                                      */
-/*                            SINE                                      */
+/*                       Argument Reduction                             */
 /*                                                                      */
 /************************************************************************/
 
-static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  double x, int absxhi){ 
+
+#define SIN 0
+#define COS 1
+#define TAN 2
+
+static void compute_trig_with_argred(double* prh, double* prl,  double x, int absxhi, int function){ 
   double sah,sal,cah,cal, yh, yl, ts,tc, kd; 
-  double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
+  double kch_h,kch_l, kcm_h,kcm_l,  th, tl,sh,sl,ch,cl;
   int k, quadrant, index;
   long long int kl;
 
-
-  /* Case 3 : x sufficiently small for Cody and Waite argument reduction */
   if  (absxhi < XMAX_CODY_WAITE_3) {
+    /* Compute k, deduce the table index and the quadrant */
     DOUBLE2INT(k, x * INV_PIO256);
     kd = (double) k;
     quadrant = (k>>7)&3;      
     index=(k&127)<<2;
-    *pquadrant=quadrant;
     if((index == 0)) { 
-      /* Here we risk a large cancellation on yh+yl; 
-	 on the other hand we will have sa=0 and ca=1*/
+      /* Here we risk a large cancellation on yh+yl: use double-double RR */
       /* all this is exact */
       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
       Add12 (th,tl,  kch_l, kcm_h) ;
       /* only rounding error in the last multiplication and addition */ 
       Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-      if (quadrant&1)
-	do_cos_k_zero(psh, psl, yh,yl);
-      else 
-	do_sin_k_zero(psh, psl, yh,yl);
-      return;
+      goto trigzero;
     } 
     else {      
-      LOAD_TABLE_SINCOS();
-      /* Argument reduction  by Cody & Waite algorithm */ 
-      /* Here we do not care about cancellations on yh+yl */
-      if (absxhi < XMAX_CODY_WAITE_2) { 
-	/* all this is exact but the rightmost multiplication */
-	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
+      /* index <> 0, don't worry about cancellations on yh+yl */
+      if (absxhi < XMAX_CODY_WAITE_2) {
+	/* CW 2: all this is exact but the rightmost multiplication */
+	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ; 
       }
-      else 
-	/* all this is exact but the rightmost multiplication */
+      else { 
+	/* CW 3: all this is exact but the rightmost multiplication */
 	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
+      }
     }
-    if (quadrant&1) 
-      do_cos_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
-    else 
-      do_sin_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
-    return;
+    goto trignotzero;
   }
 
-  /* Case 4 : x sufficiently small for a Cody and Waite in double-double */
-  if ( absxhi < XMAX_DDRR ) {
+  else if ( absxhi < XMAX_DDRR ) {
+    /* x sufficiently small for a Cody and Waite in double-double */
     DOUBLE2LONGINT(kl, x*INV_PIO256);
     kd=(double)kl;
     quadrant = (kl>>7)&3;
@@ -423,13 +416,7 @@ static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  
       scs_range_reduction(); 
       /* Now it may happen that the new k differs by 1 of kl, so check that */
       if(index==0) {  /* no surprise */
-	*pquadrant=quadrant;
-	if (quadrant&1)
-	  do_cos_k_zero(psh, psl, yh,yl);
-	else 
-	  do_sin_k_zero(psh, psl, yh,yl);
-      	return;
-      }
+	goto trigzero;      }
       else { /*recompute index and quadrant */
 	if (index==4) kl++;   else kl--; /* no more than one bit difference */
 	kd=(double)kl;
@@ -437,44 +424,104 @@ static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  
       }
     }
     /* arrive here if index<>0 */
-    *pquadrant=quadrant;
-    LOAD_TABLE_SINCOS(); /* in advance */
+    /* double-double argument reduction*/
     /* all this is exact */
     Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
     Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
     Add12 (th,tl,  kch_l, kcm_h) ;
     /* only rounding error in the last multiplication and addition */ 
     Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-    if (quadrant&1)
-      do_cos_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
-    else 
-      do_sin_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
-    return;
-  }
-
-  
-  /* Worst case : x very large, sin(x) probably meaningless, we return
-     correct rounding but do't mind taking time for it */
-  scs_range_reduction(); 
-  quadrant = (k>>7)&3;                                    	\
-  *pquadrant=quadrant;
-  if(index == 0) { 
-    if (quadrant&1)
-      do_cos_k_zero(psh, psl, yh,yl);
-    else
-      do_sin_k_zero(psh, psl, yh,yl);
+    goto trignotzero;
   }
   else {
+    /* Worst case : x very large, sin(x) probably meaningless, we return
+       correct rounding but do't mind taking time for it */
+    scs_range_reduction(); 
+    quadrant = (k>>7)&3;                                       
+    if(index == 0)
+      goto trigzero;
+    else 
+      goto trignotzero;
+  }
+
+ trigzero:
+  switch(function) {
+  case SIN: goto sinzero;
+  case COS: goto coszero;
+  case TAN: goto tanzero;
+  }
+ trignotzero:
+  switch(function) {
+  case SIN: goto sinnotzero;
+  case COS: goto cosnotzero;
+  case TAN: goto tannotzero;
+  }
+  
+ sinzero:
+  if (quadrant&1)
+    do_cos_k_zero(prh, prl, yh,yl);
+  else 
+    do_sin_k_zero(prh, prl, yh,yl);
+  if ((quadrant==2)||(quadrant==3)) {
+    *prl=-*prl; *prh=-*prh;
+  }
+  return;
+
+ sinnotzero:
     LOAD_TABLE_SINCOS();
     if (quadrant&1)   
-      do_cos_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+      do_cos_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
     else 
-      do_sin_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+      do_sin_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
+    if ((quadrant==2)||(quadrant==3)) {
+      *prl=-*prl; *prh=-*prh;
+    }
     return;
+ coszero:
+  if (quadrant&1)
+    do_sin_k_zero(prh, prl, yh,yl);
+  else 
+    do_cos_k_zero(prh, prl, yh,yl);
+  if ((quadrant==1)||(quadrant==2)) {
+    *prl=-*prl; *prh=-*prh;
   }
+  return;
+ cosnotzero:
+    LOAD_TABLE_SINCOS();
+    if (quadrant&1)   
+      do_sin_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
+    else 
+      do_cos_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
+    if ((quadrant==1)||(quadrant==2)) {
+      *prl=-*prl; *prh=-*prh;
+    }
+    return;
+
+ tanzero:
+  if (quadrant&1) {
+    do_sin_k_zero(&ch, &cl, yh,yl);
+    do_cos_k_zero(&sh, &sl, yh,yl);
+    sh=-sh; sl=-sl;
+  } else {
+    do_sin_k_zero(&sh, &sl, yh,yl);
+    do_cos_k_zero(&ch, &cl, yh,yl);
+  }
+  Div22(prh, prl, sh, sl, ch, cl);
+  return;
+
+ tannotzero:
+  LOAD_TABLE_SINCOS();
+  if (quadrant&1) {
+    do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+    do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+    sh=-sh; sl=-sl;
+  } else {
+    do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+    do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+  }
+  Div22(prh, prl, sh, sl, ch, cl);
+  return;
 }
-
-
 
 
 
@@ -486,7 +533,7 @@ static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  
 
 double sin_rn(double x){ 
   double ts,sh,sl,rncst; 
-  int  absxhi, quadrant;
+  int  absxhi;
   db_number x_split;
   
   x_split.d=x;
@@ -512,10 +559,10 @@ double sin_rn(double x){
   /* CASE 3 : Need argument reduction */ 
   else {
     rncst= RN_CST_SIN_CASE3;
-    compute_sine_with_argred(&sh,&sl,&quadrant,x,absxhi);
+    compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
   }
   if(sh == (sh + (sl * rncst)))	
-    return ((quadrant==2)||(quadrant==3))? -sh : sh;
+    return sh;
   else
     return scs_sin_rn(x); 
 }
@@ -534,7 +581,7 @@ double sin_rn(double x){
 
 double sin_ru(double x){
   double xx, ts,sh,sl, epsilon; 
-  int  absxhi, quadrant;
+  int  absxhi;
   db_number x_split,  absyh, absyl, u, u53;
   
   x_split.d=x;
@@ -577,7 +624,7 @@ double sin_ru(double x){
   }
 
   /* CASE 3 : Need argument reduction */ 
-  compute_sine_with_argred(&sh,&sl,&quadrant,x,absxhi);
+  compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
   epsilon=EPS_SIN_CASE3;
   /* Rounding test to + infinity */
   absyh.d=sh;
@@ -588,9 +635,6 @@ double sin_ru(double x){
   u.l   = u53.l - 0x0350000000000000LL;
    
   if(absyl.d > epsilon * u53.d){ 
-    if ((quadrant==2)||(quadrant==3)) {
-      sl=-sl; sh=-sh;
-    }
     if(sl>0)  return sh+u.d;
     else      return sh;
   }
@@ -608,7 +652,7 @@ double sin_ru(double x){
  *************************************************************/
 double sin_rd(double x){ 
   double xx, ts,sh,sl, epsilon; 
-  int  absxhi, quadrant;
+  int  absxhi;
   db_number x_split,  absyh, absyl, u, u53;
   
   x_split.d=x;
@@ -651,7 +695,7 @@ double sin_rd(double x){
   }
 
   /* CASE 3 : Need argument reduction */ 
-  compute_sine_with_argred(&sh,&sl,&quadrant,x,absxhi);
+  compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
   epsilon=EPS_SIN_CASE3;
   /* Rounding test to + infinity */
   absyh.d=sh;
@@ -662,9 +706,6 @@ double sin_rd(double x){
   u.l   = u53.l - 0x0350000000000000LL;
    
   if(absyl.d > epsilon * u53.d){ 
-    if ((quadrant==2)||(quadrant==3)) {
-      sl=-sl; sh=-sh;
-    }
     if(sl>0)  return sh;
     else      return sh-u.d;
   }
@@ -682,7 +723,7 @@ double sin_rd(double x){
  *************************************************************/
 double sin_rz(double x){ 
   double xx, ts,sh,sl, epsilon; 
-  int  absxhi, quadrant;
+  int  absxhi;
   db_number x_split,  absyh, absyl, u, u53;
   
   x_split.d=x;
@@ -727,7 +768,7 @@ double sin_rz(double x){
   }
 
   /* CASE 3 : Need argument reduction */ 
-  compute_sine_with_argred(&sh,&sl,&quadrant,x,absxhi);
+  compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
   epsilon=EPS_SIN_CASE3;
   /* Rounding test to + infinity */
   absyh.d=sh;
@@ -738,9 +779,6 @@ double sin_rz(double x){
   u.l   = u53.l - 0x0350000000000000LL;
    
   if(absyl.d > epsilon * u53.d){ 
-    if ((quadrant==2)||(quadrant==3)) {
-      sl=-sl; sh=-sh;
-    }
     if(sh>0) {
       if (sl>0) return sh;
       else      return sh-u.d;
@@ -756,125 +794,6 @@ double sin_rz(double x){
 
 
 
-/************************************************************************/
-/*                                                                      */
-/*                            COSINE                                    */
-/*                                                                      */
-/************************************************************************/
-
-static void compute_cos_with_argred(double* pch, double* pcl, int* pquadrant,  double x, int absxhi){ 
-  double sah,sal,cah,cal, yh, yl, ts,tc, kd; 
-  double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
-  int k, quadrant, index;
-  long long int kl;
-
-
-  /* Case 3 : x sufficiently small for Cody and Waite argument reduction */
-  if  (absxhi < XMAX_CODY_WAITE_3) {
-    DOUBLE2INT(k, x * INV_PIO256);
-    kd = (double) k;
-    quadrant = (k>>7)&3;      
-    index=(k&127)<<2;
-    *pquadrant=quadrant;
-    if((index == 0)) { 
-      /* Here we risk a large cancellation on yh+yl; 
-	 on the other hand we will have sa=0 and ca=1*/
-      /* all this is exact */
-      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
-      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
-      Add12 (th,tl,  kch_l, kcm_h) ;
-      /* only rounding error in the last multiplication and addition */ 
-      Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-      if (quadrant&1)
-	do_sin_k_zero(pch, pcl, yh,yl);
-      else 
-	do_cos_k_zero(pch, pcl, yh,yl);
-      return;
-    } 
-    else {      
-      LOAD_TABLE_SINCOS();
-      /* Argument reduction  by Cody & Waite algorithm */ 
-      /* Here we do not care about cancellations on yh+yl */
-      if (absxhi < XMAX_CODY_WAITE_2) { 
-	/* all this is exact but the rightmost multiplication */
-	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
-      }
-      else 
-	/* all this is exact but the rightmost multiplication */
-	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
-    }
-    if (quadrant&1) 
-      do_sin_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
-    else 
-      do_cos_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
-    return;
-  }
-
-  /* Case 4 : x sufficiently small for a Cody and Waite in double-double */
-  if ( absxhi < XMAX_DDRR ) {
-    DOUBLE2LONGINT(kl, x*INV_PIO256);
-    kd=(double)kl;
-    quadrant = (kl>>7)&3;
-    index=(kl&127)<<2;
-    if(index == 0) { /* In this case cancellation may occur, so we
-			  do the accurate range reduction */
-      scs_range_reduction(); 
-      /* Now it may happen that the new k differs by 1 of kl, so check that */
-      if(index==0) {  /* no surprise */
-	*pquadrant=quadrant;
-	if (quadrant&1)
-	  do_sin_k_zero(pch, pcl, yh,yl);
-	else 
-	  do_cos_k_zero(pch, pcl, yh,yl);
-      	return;
-      }
-      else { /*recompute index and quadrant */
-	if (index==4) kl++;   else kl--; /* no more than one bit difference */
-	kd=(double)kl;
-	quadrant = (kl>>7)&3;
-      }
-    }
-    /* arrive here if index<>0 */
-    *pquadrant=quadrant;
-    LOAD_TABLE_SINCOS(); /* in advance */
-    /* all this is exact */
-    Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
-    Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
-    Add12 (th,tl,  kch_l, kcm_h) ;
-    /* only rounding error in the last multiplication and addition */ 
-    Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-    if (quadrant&1)
-      do_sin_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
-    else 
-      do_cos_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
-    return;
-  }
-
-  
-  /* Worst case : x very large, sin(x) probably meaningless, we return
-     correct rounding but do't mind taking time for it */
-  scs_range_reduction(); 
-  quadrant = (k>>7)&3;                                    	\
-  *pquadrant=quadrant;
-  if(index == 0) { 
-    if (quadrant&1)
-      do_sin_k_zero(pch, pcl, yh,yl);
-    else
-      do_cos_k_zero(pch, pcl, yh,yl);
-  }
-  else {
-    LOAD_TABLE_SINCOS();
-    if (quadrant&1)   
-      do_sin_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
-    else 
-      do_cos_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
-    return;
-  }
-}
-
-
-
-
 /*************************************************************
  *************************************************************
  *              COS ROUNDED  TO NEAREST			     *
@@ -882,7 +801,7 @@ static void compute_cos_with_argred(double* pch, double* pcl, int* pquadrant,  d
  *************************************************************/
 double cos_rn(double x){ 
   double ch, cl, xx, tc, rncst;
-  int quadrant, absxhi;
+  int absxhi;
   db_number x_split;
 
   x_split.d=x;
@@ -909,10 +828,10 @@ double cos_rn(double x){
   /* CASE 3 : Need argument reduction */ 
   else {
     rncst= RN_CST_COS_CASE3;
-    compute_cos_with_argred(&ch,&cl,&quadrant,x,absxhi);
+    compute_trig_with_argred(&ch,&cl,x,absxhi,COS);
   }
   if(ch == (ch + (cl * rncst)))	
-    return ((quadrant==1)||(quadrant==2))? -ch : ch;
+    return ch;
   else
     return scs_cos_rn(x); 
 }
@@ -926,7 +845,7 @@ double cos_rn(double x){
  *************************************************************/
 double cos_ru(double x){ 
   double xx, tc,ch,cl, epsilon; 
-  int  absxhi, quadrant;
+  int  absxhi;
   db_number x_split,  absyh, absyl, u, u53;
 
   x_split.d=x;
@@ -961,7 +880,7 @@ double cos_ru(double x){
   /* CASE 3 : Need argument reduction */ 
   else {
     epsilon=EPS_COS_CASE3;
-    compute_cos_with_argred(&ch,&cl,&quadrant,x,absxhi);
+    compute_trig_with_argred(&ch,&cl,x,absxhi,COS);
     /* Rounding test to + infinity */
     absyh.d=ch;
     absyl.d=cl;
@@ -971,9 +890,6 @@ double cos_ru(double x){
     u.l   = u53.l - 0x0350000000000000LL;
    
     if(absyl.d > epsilon * u53.d){ 
-      if ((quadrant==1)||(quadrant==2)) {
-	cl=-cl; ch=-ch;
-      }
       if(cl>0)  return ch+u.d;
       else      return ch;
   }
@@ -989,7 +905,7 @@ double cos_ru(double x){
  *************************************************************/
 double cos_rd(double x){ 
   double xx, tc,ch,cl, epsilon; 
-  int  absxhi, quadrant;
+  int  absxhi;
   db_number x_split,  absyh, absyl, u, u53;
 
   x_split.d=x;
@@ -1025,7 +941,7 @@ double cos_rd(double x){
   /* CASE 3 : Need argument reduction */ 
   else {
     epsilon=EPS_COS_CASE3;
-    compute_cos_with_argred(&ch,&cl,&quadrant,x,absxhi);
+    compute_trig_with_argred(&ch,&cl,x,absxhi,COS);
     /* Rounding test to - infinity */
     absyh.d=ch;
     absyl.d=cl;
@@ -1035,9 +951,6 @@ double cos_rd(double x){
     u.l   = u53.l - 0x0350000000000000LL;
    
     if(absyl.d > epsilon * u53.d){ 
-      if ((quadrant==1)||(quadrant==2)) {
-	cl=-cl; ch=-ch;
-      }
       if(cl>=0)  return ch;
       else       return ch-u.d;
   }
@@ -1054,7 +967,7 @@ double cos_rd(double x){
  *************************************************************/
 double cos_rz(double x){ 
   double xx, tc,ch,cl, epsilon; 
-  int  absxhi, quadrant;
+  int  absxhi;
   db_number x_split,  absyh, absyl, u, u53;
 
   x_split.d=x;
@@ -1090,7 +1003,7 @@ double cos_rz(double x){
   /* CASE 3 : Need argument reduction */ 
   else {
     epsilon=EPS_COS_CASE3;
-    compute_cos_with_argred(&ch,&cl,&quadrant,x,absxhi);
+    compute_trig_with_argred(&ch,&cl,x,absxhi,COS);
     /* Rounding test to zero */
     absyh.d=ch;
     absyl.d=cl;
@@ -1100,9 +1013,6 @@ double cos_rz(double x){
     u.l   = u53.l - 0x0350000000000000LL;
    
     if(absyl.d > epsilon * u53.d){ 
-      if ((quadrant==1)||(quadrant==2)) {
-	cl=-cl; ch=-ch;
-      }
     if(ch>0) {
       if (cl>0) return ch;
       else      return ch-u.d;
@@ -1118,150 +1028,6 @@ double cos_rz(double x){
 
 
 
-
-
-
-/************************************************************************/
-/*                                                                      */
-/*                            TANGENT                                   */
-/*                                                                      */
-/************************************************************************/
-
-static void compute_tan_with_argred(double* pth, double* ptl,  double x, int absxhi){ 
-  double sah,sal,cah,cal, yh, yl, ts,tc, kd; 
-  double ch,cl,sh,sl;
-  double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
-  int k, quadrant, index;
-  long long int kl;
-
-
-  /* Case 3 : x sufficiently small for Cody and Waite argument reduction */
-  if  (absxhi < XMAX_CODY_WAITE_3) {
-    DOUBLE2INT(k, x * INV_PIO256);
-    kd = (double) k;
-    quadrant = (k>>7)&3;      
-    index=(k&127)<<2;
-    if((index == 0)) { 
-      /* Here we risk a large cancellation on yh+yl; 
-	 on the other hand we will have sa=0 and ca=1*/
-      /* all this is exact */
-      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
-      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
-      Add12 (th,tl,  kch_l, kcm_h) ;
-      /* only rounding error in the last multiplication and addition */ 
-      Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-      if (quadrant&1) {
-	do_sin_k_zero(&ch, &cl, yh,yl);
-	do_cos_k_zero(&sh, &sl, yh,yl);
-	sh=-sh; sl=-sl;
-      } else {
-	do_sin_k_zero(&sh, &sl, yh,yl);
-	do_cos_k_zero(&ch, &cl, yh,yl);
-      }
-      Div22(pth, ptl, sh, sl, ch, cl);
-      return;
-    } 
-    else {      
-      LOAD_TABLE_SINCOS();
-      /* Argument reduction  by Cody & Waite algorithm */ 
-      /* Here we do not care about cancellations on yh+yl */
-      if (absxhi < XMAX_CODY_WAITE_2) { 
-	/* all this is exact but the rightmost multiplication */
-	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
-      }
-      else 
- 	/* all this is exact but the rightmost multiplication */
-	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
-    }
-    if (quadrant&1) {
-      do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
-      do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      sh=-sh; sl=-sl;
-    } else {
-      do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
-    }
-    Div22(pth, ptl, sh, sl, ch, cl);
-    return;
-  }
-
-  /* Case 4 : x sufficiently small for a Cody and Waite in double-double */
-  if ( absxhi < XMAX_DDRR ) {
-    DOUBLE2LONGINT(kl, x*INV_PIO256);
-    kd=(double)kl;
-    quadrant = (kl>>7)&3;
-    index=(kl&127)<<2;
-    if(index == 0) { /* In this case cancellation may occur, so we
-			  do the accurate range reduction */
-      scs_range_reduction(); 
-      /* Now it may happen that the new k differs by 1 of kl, so check that */
-      if(index==0) {  /* no surprise */
-	if (quadrant&1) {
-	  do_sin_k_zero(&ch, &cl, yh,yl);
-	  do_cos_k_zero(&sh, &sl, yh,yl);	
-	  sh=-sh; sl=-sl;
-	} else {
-	  do_sin_k_zero(&sh, &sl, yh,yl);
-	  do_cos_k_zero(&ch, &cl, yh,yl);
-	}
-	Div22(pth, ptl, sh, sl, ch, cl);
-	return;
-      }
-      else { /*recompute index and quadrant */
-	if (index==4) kl++;   else kl--; /* no more than one bit difference */
-	kd=(double)kl;
-	quadrant = (kl>>7)&3;
-      }
-    }
-    /* arrive here if index<>0 */
-    LOAD_TABLE_SINCOS(); /* in advance */
-    /* all this is exact */
-    Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
-    Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
-    Add12 (th,tl,  kch_l, kcm_h) ;
-    /* only rounding error in the last multiplication and addition */ 
-    Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-    if (quadrant&1) {
-      do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
-      do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      sh=-sh; sl=-sl;
-    } else {
-      do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
-    }
-    Div22(pth, ptl, sh, sl, ch, cl);
-    return;
-  }
-
-  
-  /* Worst case : x very large, sin(x) probably meaningless, we return
-     correct rounding but do't mind taking time for it */
-  scs_range_reduction(); 
-  quadrant = (k>>7)&3;                                    	\
-  if(index == 0) {
-    if (quadrant&1) {
-      do_sin_k_zero(&ch, &cl, yh,yl);
-      do_cos_k_zero(&sh, &sl, yh,yl);
-      sh=-sh; sl=-sl;
-    } else {
-      do_sin_k_zero(&sh, &sl, yh,yl);
-      do_cos_k_zero(&ch, &cl, yh,yl);
-    }
-  }
-  else {
-    LOAD_TABLE_SINCOS();
-    if (quadrant&1) {
-      do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
-      do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      sh=-sh; sl=-sl;
-    } else {
-      do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
-    }
-  }
-  Div22(pth, ptl, sh, sl, ch, cl);
-  return;
-}
 
 
 /*************************************************************
@@ -1283,7 +1049,7 @@ double tan_rn(double x){
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (absxhi>=0x7ff00000) return x-x;   
 
-  if (absxhi < XMAX_TAN_CASE2){ /* TODO better |x|<2^-3 */
+  if (absxhi < XMAX_TAN_CASE2){ /* |x|<2^-3 TODO this tradeoff has not been studied */
     if (absxhi < XMAX_RETURN_X_FOR_TAN) 
       return x;
 
@@ -1311,7 +1077,7 @@ double tan_rn(double x){
     }
   }
   /* Otherwise : Range reduction then standard evaluation */
-  compute_tan_with_argred(&th,&tl,x,absxhi);
+  compute_trig_with_argred(&th,&tl,x,absxhi,TAN);
  
   /* Test if round to nearest achieved */ 
   if(th == (th + (tl * RN_CST_TAN_CASE3))){
@@ -1319,6 +1085,83 @@ double tan_rn(double x){
   }else{ 
     return scs_tan_rn(x); 
   } 
+}
+
+
+
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TOWARD  +INFINITY
+ *************************************************************
+ *************************************************************/
+double tan_ru(double x){  
+  double sh, sl, ch, cl, epsilon;
+  double p7, t, th, tl, xx;
+  int absxhi;
+  db_number x_split,  absyh, absyl, u, u53;
+
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;   
+  
+  if (absxhi < XMAX_TAN_CASE2){
+    if (absxhi < XMAX_RETURN_X_FOR_TAN) {
+      if(x<=0.)
+	return x;
+      else {
+	x_split.l ++;
+	return x_split.d;
+      }
+    }
+    /* Fast Taylor series */
+    xx = x*x;
+    p7 = t7.d + xx*(t9.d + xx*(t11.d + xx*(t13.d + xx*t15.d)));
+    t  = xx*(t3l.d +xx*(t5.d + xx*p7));
+    
+    sh = x*(xx*t3h.d + t);
+    Add12(th, tl, x, sh);   
+    
+    /* Rounding test to + infinity */
+    absyh.d=th;
+    absyl.d=tl;
+    absyh.l = absyh.l & 0x7fffffffffffffffLL;
+    absyl.l = absyl.l & 0x7fffffffffffffffLL;
+    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+    u.l   = u53.l - 0x0350000000000000LL;
+    epsilon=EPS_TAN_CASE22; 
+    if(absyl.d > epsilon * u53.d){ 
+      if(tl>0) return th+u.d;
+      else     return th;
+    }
+    else {
+      /* Still relatively fast, but more accurate */
+      Mul12(&sh, &sl, xx, t3h.d);
+      Add12(ch, cl, sh, (t+sl));
+      Mul22(&sh, &sl, x, 0, ch, cl);
+      Add22(&th, &tl, x, 0, sh, sl);
+      epsilon=EPS_TAN_CASE21; 
+    }
+  }
+  else { /* Normal case:
+	    Range reduction then standard evaluation */
+    compute_trig_with_argred(&th,&tl,x,absxhi,TAN);
+    epsilon=EPS_TAN_CASE3; 
+   }
+
+  /* Rounding test to + infinity */
+  absyh.d=th;
+  absyl.d=tl;
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l   = u53.l - 0x0350000000000000LL;
+  if(absyl.d > epsilon * u53.d){ 
+    if(tl>0) return th+u.d;
+    else     return th;
+  }
+  else return scs_tan_ru(x); 
 }
 
 
@@ -1382,7 +1225,7 @@ double tan_rd(double x){
   
   else { /* normal case:
 	    Range reduction then standard evaluation */
-    compute_tan_with_argred(&th,&tl,x,absxhi);
+    compute_trig_with_argred(&th,&tl,x,absxhi,TAN);
     epsilon=EPS_TAN_CASE3; 
   }
 
@@ -1403,85 +1246,9 @@ double tan_rd(double x){
 
 /*************************************************************
  *************************************************************
- *               ROUNDED  TOWARD  +INFINITY
- *************************************************************
- *************************************************************/
-double tan_ru(double x){  
-  double sh, sl, ch, cl, epsilon;
-  double p7, t, th, tl, xx;
-  int absxhi;
-  db_number x_split,  absyh, absyl, u, u53;
-
-  x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
-  
-  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;   
-  
-  if (absxhi < XMAX_TAN_CASE2){
-    if (absxhi < XMAX_RETURN_X_FOR_TAN) {
-      if(x<=0.)
-	return x;
-      else {
-	x_split.l ++;
-	return x_split.d;
-      }
-    }
-    /* Fast Taylor series */
-    xx = x*x;
-    p7 = t7.d + xx*(t9.d + xx*(t11.d + xx*(t13.d + xx*t15.d)));
-    t  = xx*(t3l.d +xx*(t5.d + xx*p7));
-    
-    sh = x*(xx*t3h.d + t);
-    Add12(th, tl, x, sh);   
-    
-    /* Rounding test to + infinity */
-    absyh.d=th;
-    absyl.d=tl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_TAN_CASE22; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(tl>0) return th+u.d;
-      else     return th;
-    }
-    else {
-      /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, xx, t3h.d);
-      Add12(ch, cl, sh, (t+sl));
-      Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&th, &tl, x, 0, sh, sl);
-      epsilon=EPS_TAN_CASE21; 
-    }
-  }
-  else { /* Normal case:
-	    Range reduction then standard evaluation */
-    compute_tan_with_argred(&th,&tl,x,absxhi);
-    epsilon=EPS_TAN_CASE3; 
-   }
-
-  /* Rounding test to + infinity */
-  absyh.d=th;
-  absyl.d=tl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-  if(absyl.d > epsilon * u53.d){ 
-    if(tl>0) return th+u.d;
-    else     return th;
-  }
-  else return scs_tan_ru(x); 
-}
-
-/*************************************************************
- *************************************************************
  *               ROUNDED  TOWARD  ZERO
  *************************************************************
  *************************************************************/
-/* TODO */
 double tan_rz(double x){  
   double sh, sl, ch, cl, epsilon;
   double p7, t, th, tl, xx;
@@ -1534,7 +1301,7 @@ double tan_rz(double x){
   }
   else{  /* Normal case:
 	    Range reduction then standard evaluation */
-    compute_tan_with_argred(&th,&tl,x,absxhi);
+    compute_trig_with_argred(&th,&tl,x,absxhi,TAN);
     epsilon=EPS_TAN_CASE3; 
   }
   /* Rounding test to zero */
