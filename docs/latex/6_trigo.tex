@@ -258,12 +258,12 @@ simple polynomial approximation to the function suffices.
 \section{Detailed examination of the sine}
 
 The sine begins with casting the high part of the absolute value of
-the input number into a 32-bit integer. This will enable faster
-comparisons. However we now compare to integer constants and we have
-to be aware that we lost the lower part of \texttt{x}, which had a
-value up to $(2^{31}-1)\ulp(x)$. This is taken care of in the
-procedure that converts a Maple high-precision number into such an
-integer.
+the input number into a 32-bit integer, to enable faster comparisons.
+However we have to be aware that we lost the lower part of \texttt{x},
+which had a value up to $(2^{31}-1)\ulp(x)$. This is taken care of in
+the procedure that converts a Maple high-precision number into an
+integer to which \texttt{x} will be compared (procedure
+\texttt{outputHighPart} in \texttt{trigo.mpl}).
 
 \begin{lstlisting}[caption={Casting to an int for faster comparisons},firstnumber=1]
   db_number x_split;
