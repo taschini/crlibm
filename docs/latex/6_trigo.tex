@@ -1,0 +1,178 @@
+This chapter is contributed by C. Daramy-Loirat
+and F. de~Dinechin.  
+
+\section*{Introduction}
+This chapter describes the implementations of sine, cosine and
+tangent, as they share much of their code.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Argument reduction}
+We only need to compute sine and cosine over the interval
+$[0;\frac{\Pi}{2}]$ thanks to their periodicity and symmetry properties.
+
+The argument reduction is obtained by an additive Cody \& Waite
+algorithm, according to the following scheme:
+
+$x = y + k*\frac{\Pi}{256}$, such that $ |y| \leq \frac{\Pi}{512}$ and
+$k$ is an integer in $[0,255]$.
+
+
+For every $k$ from 0 to 63, $\sin (k*\frac{\Pi}{256})$ and $\cos
+(k*\frac{\Pi}{256})$ are tabulated in double-double precision. This is
+enough to have all possible values of sine and cosine for every $k$ in
+$[0;255]$, by using the following properties:
+        
+\begin{equation}        \sin(x) = \cos(x - \frac{\Pi}{2})\end{equation}
+
+\begin{equation}        \sin(x) = -\sin(-x)\end{equation}
+
+\begin{equation}        \cos(x) = \cos(-x)\end{equation}
+
+Finally, we compute a table method by the way:
+
+\begin{equation}        
+  \sin(x) = \sin(k*\frac{\Pi}{256} + y) =  \cos(k*\frac{\Pi}{256})* \sin(y) +  \sin(k*\frac{\Pi}{256}) *\cos(y) 
+\end{equation}
+
+\begin{equation}
+        \cos(x) = \cos(k*\frac{\Pi}{256} + y) = \cos(k*\frac{\Pi}{256})* \cos(y) -  \sin(k*\frac{\Pi}{256}) *\sin(y) \end{equation}\\\begin{equation} tan(x) = \frac{\sin(x)}{\cos(x)} = \frac{\cos(k*\frac{\Pi}{256})* \sin(y) +  \sin(k*\frac{\Pi}{256}) *\cos(y)}{\cos(k*\frac{\Pi}{256})* \cos(y) -  \sin(k*\frac{\Pi}{256}) *\sin(y)}
+\end{equation}
+$y$ is small enough so we compute $\sin(y)$ and $\cos(y)$ through a
+polynomial evaluation. (See file trigo\_fast.c, code $do\_cos$ and
+$do\_sin$).
+
+\section{polynomial evaluation}
+Assume $\epsilon \leq 1$ and $y < \frac{\Pi}{512}$ \\
+$\cos(y)$ and $\sin(y)$ are computed in double precision.
+
+\subsection{Sine}
+If $y \leq 2^{-26}$, then $\sin(y)\sim y + \epsilon*2^{-54.5}$ 
+        
+If $y > 2^{-26}$, then $\sin(y) \sim y *(1+ ts) + \epsilon *
+2^{-63.8}$, where $ts = y^2*(s3 + y^2*(s5 + y^2*s7)))$ with $s3$, $s5$ and
+$s7$ the Taylor coefficients.
+
+\subsection{Cosine}
+
+If $y \leq 2^{-27}$, then $\cos(y)\sim y + \epsilon*2^{-55.0}$
+
+If $y > 2^{-27}$, then $\cos(y)\sim 1+ tc + \epsilon * 2^{-71.8}$,
+where $tc = y^2*(c2 + y^2*(c4 + y^2*c6))$ with $c2$, $c4$ and $c6$ the
+Taylor coefficients.
+        
+
+
+\section{Reconstruction}
+Assume $a = k*\frac{\Pi}{256}$, $sa = \sin(a)$, $ca = \cos(a)$ and
+$"_h"$ and $"_l" $ denote "hi" and 'low" parts of a double-double
+floating point number.
+
+\subsection{Sine}
+According to equation (4), we have to compute: 
+ \begin{eqnarray*}
+  \sin(a+y) &=& \sin(a) \cos(y)  + \cos(a)\sin(y)  \\
+  & \approx& (sa_h+sa_l)(1+t_c) + (ca_h+ca_l)(y_h+y_l)(1+t_s)
+\end{eqnarray*}
+
+
+As shown on the following graph, we don't need to take into account the smallest argument $ca_l * y_l * (1+ts)$\\
+And we compute a $2^{-64}$ double-double precision result with only
+one Mul12 and two Add12.
+\begin{center}
+ \small
+ \setlength{\unitlength}{3ex}
+      \framebox{
+        \begin{picture}(22,9)(-3,-4.2)
+        \put(10,4){\line(0,-1){8}}  \put(9.5,4){$\epsilon$}
+  
+          \put(4,3.2){$sa_h$} \put(0.05,3){\framebox(7.9,0.7){}}
+          \put(12,3.2){$sa_l$}  \put(8.05,3){\framebox(7.9,0.7){}}
+
+          \put(6,2.2){$sa_ht_c$} \put(2.05,2){\framebox(7.9,0.7){}}
+          \put(14,2.2){$sa_lt_c$}  \put(10.05,2){\framebox(7.9,0.7){}}
+
+          \put(5,1.2){$ca_hy_h$} \put(1.05,1){\framebox(7.9,0.7){}}
+          \put(13,1.2){$ca_hy_h$}  \put(9.05,1){\framebox(7.9,0.7){}}
+
+          \put(12,0.2){$ca_hy_l $}  \put(8.05,0){\framebox(7.9,0.7){}}
+          \put(12,-0.8){$ca_ly_h $}  \put(8.05,-1){\framebox(7.9,0.7){}}
+
+         \put(7,-1.8){$ca_hy_ht_s$} \put(3.05,-2){\framebox(7.9,0.7){}}
+         \put(14,-2.8){$ca_hy_lt_s $}  \put(10.05,-3){\framebox(7.9,0.7){}}
+         \put(14,-3.8){$ca_ly_ht_s $}  \put(10.05,-4){\framebox(7.9,0.7){}}
+ 
+        \end{picture}
+      }
+  \end{center}
+
+\paragraph{Cancellation}
+
+
+There may be cancellation when $k = 0$, that is to say when $\sin(a) =
+0$, then the computation is simplified automatically. (See in
+trigo\_fast.c, code do\_cos and do\_sin).  We just need to compute
+$\cos(a) * \sin(y)$, wich is reached with the polynomial precision. 
+
+ 
+
+\subsection{Cosine}
+According to equation (5), we have to compute in double-double precision:
+ \begin{eqnarray*}
+  \cos(a+y) &=& \cos(a) \cos(y)  - \sin(a)\sin(y)  \\
+  & \approx& (ca_h+ca_l)(1+t_c) - (sa_h+sa_l)(y_h+y_l)(1+t_s)
+\end{eqnarray*}
+
+As shown on the following graph, we don't need to take into account
+the smallest argument $sa_l*y_l*t_s$.  We compute a $2^{-63}$
+precision result with only one Mul12 and two Add12.
+\begin{center}
+ \small
+ \setlength{\unitlength}{3ex}
+      \framebox{
+        \begin{picture}(22,9)(-3,-4.2)
+        \put(10,4){\line(0,-1){8}}  \put(9.5,4){$\epsilon$}
+  
+          \put(4,3.2){$ca_h$} \put(0.05,3){\framebox(7.9,0.7){}}
+          \put(12,3.2){$ca_l$}  \put(8.05,3){\framebox(7.9,0.7){}}
+
+          \put(6,2.2){$ca_ht_c$} \put(2.05,2){\framebox(7.9,0.7){}}
+          \put(14,2.2){$ca_lt_c$}  \put(10.05,2){\framebox(7.9,0.7){}}
+
+          \put(5,1.2){$-sa_hy_h$} \put(1.05,1){\framebox(7.9,0.7){}}
+          \put(13,1.2){$-sa_hy_h$}  \put(9.05,1){\framebox(7.9,0.7){}}
+
+          \put(12,0.2){$-sa_hy_l $}  \put(8.05,0){\framebox(7.9,0.7){}}
+          \put(12,-0.8){$-sa_ly_h $}  \put(8.05,-1){\framebox(7.9,0.7){}}
+
+         \put(7,-1.8){$-sa_hy_ht_s$} \put(3.05,-2){\framebox(7.9,0.7){}}
+         \put(14,-2.8){$-sa_hy_lt_s $}  \put(10.05,-3){\framebox(7.9,0.7){}}
+         \put(14,-3.8){$-sa_ly_ht_s $}  \put(10.05,-4){\framebox(7.9,0.7){}}
+ 
+        \end{picture}
+      }
+  \end{center}
+
+\paragraph{Cancellation}
+
+There may be cancellation when $k = 0$, that is to say when $\sin(a) =
+0$, then the computation is simplified automatically. (See in
+trigo\_fast.c, code do\_cos and do\_sin)
+
+We just need to compute $\cos(a) * \cos(y)$, wich is reached with the
+polynomial precision.
+
+
+\subsection{Tangent}
+
+The tangent is obtained by the division of the sine by the cosine.
+The procedure "Div22" guarantees a $2^{-104}$ precision result, wich is surely enough to have a precise final result.
+
+If $x < 2^{-26}$, x is returned.
+In other cases, we will compute a $2^{-63}$ precision sine and a $2^{-71}$ precision cosine.
+
+
+So we have a final relative error smaller than $2^{-9}$. This is the
+reason why our rounding constant is equal to $1+2^{-9}$.
+
