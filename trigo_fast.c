@@ -19,6 +19,10 @@ extern double scs_tan_rd(double);
 extern double scs_tan_ru(double);  
 extern double scs_tan_rz(double);  
 
+
+static double sah,sal,cah,cal;
+
+
 #define DEBUG 0
 /* TODO: 
  *
@@ -27,7 +31,9 @@ extern double scs_tan_rz(double);
  *   of the approximation.
  * 
  * - For the Sin and Cos we go into the second step if x<2^-1, bound
- *   that doesn't have any scientific reason. We should put an approx of Pi/4
+ *   that doesn't have any scientific reason. We should put an approx of Pi/sthing
+
+ Get rid of old #defines in the .h
  */
 
 
@@ -49,7 +55,6 @@ extern double scs_tan_rz(double);
     }}
 
 
-static double sah,sal,cah,cal;
 
 
 static void do_sin(double* sh, double* sl, double yh, double yl) {
@@ -114,56 +119,6 @@ static void do_cos(double* ch, double* cl, double yh, double yl) {
   Add12(*ch, *cl,    thi, tlo );
   }
 }
-
-
-static void do_sin_ffast(double* sh, double* sl, double rxh, double rxl, double sx, double cx) {
-  double ts;
-
-  ts = ((((((cal*rxh) + cah*rxl) + sal) + cah*sx) + sah*cx) + cah*rxh);
-  Add12(*sh, *sl, sah, ts);
-
-#if DEBUG
-  printf("do_sin_ffast\n");
-  printf("sah : %.45e \n",sah);
-  printf("ts  : %.45e \n",ts);
-#endif
-}
-
-static void do_sin_fast(double* sh, double* sl, double rxh, double rxl, double sx, double cx) {
-  double th, tl, ts, gh, gl;
-
-#if DEBUG
-  printf("do_sin_fast\n");
-#endif
-  Mul12(&gh, &gl, cah, rxh);
-  ts = ((((gl + cah*rxl) + cal*rxh) + sal) + cah*sx) + sah*cx; 
-  Add12(th, tl, gh, ts);
-  Add22(sh, sl, sah, 0, th, tl);
-}
-
-static void do_cos_ffast(double* sh, double* sl, double rxh, double rxl, double sx, double cx) {
-  double ts;
-
-#if DEBUG
-  printf("do_cos_ffast\n");
-#endif
-  ts = (((((-sah*rxl - sal*rxh) + cal) - sah*sx) + cah*cx) - sah*rxh);
-  Add12(*sh, *sl, cah, ts);
-}
-
-static void do_cos_fast(double* sh, double* sl, double rxh, double rxl, double sx, double cx) {
-  double th, tl, ts, gh, gl;
-
-#if DEBUG
-  printf("do_cos_fast\n");
-#endif
-  Mul12(&gh, &gl, sah, rxh);
-  ts = (((((- gl - sah*rxl) - sal*rxh) + cal) - sah*sx) + cah*cx);
-  Add12(th, tl, -gh, ts);
-  Add22(sh, sl, cah, 0, th, tl);
-}
-
-
 
 int static trig_range_reduction(double* pyh, double* pyl, 
 				double x, int absxhi, 
@@ -261,7 +216,7 @@ int static trig_range_reduction(double* pyh, double* pyl,
  *************************************************************/ 
 double sin_rn(double x){ 
   double sh, sl, yh, yl, xx;
-  double rxh, rxl, sx, cx, ts; 
+  double rxh,rxl, ts; 
   int quadrant;
   int k;
   int absxhi;
@@ -278,7 +233,7 @@ double sin_rn(double x){
     if (absxhi <XMAX_RETURN_X_FOR_SIN)
       return x;
     
-    /* CASE 2 : x < 2^-7
+    /* CASE 2 : x < ???
        Fast polynomial evaluation */
     xx = x*x;
     ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
@@ -289,34 +244,6 @@ double sin_rn(double x){
       return scs_sin_rn(x); 
     } 
   }
-
-  if (absxhi < XMAX_SIN_FAST2){
-    /* CASE3 : 2^-1 > (x) > 2^-7 > Pi/512 
-       easy range reduction (no dramatic cancellation)
-       + table look-up 
-       + fast polynomial evaluation */
-
-    /* Cody and Waite range reduction */
-    DOUBLE2INT(k, x * INV_PIO256);
-    Add12(rxh, rxl, (x - k*RR_CW2_CH), (k*RR_CW2_MCL));
-    
-    LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal);    
-
-    
-    xx = rxh*rxh;
-    sx = rxh * xx * (s3.d + xx*(s5.d + xx*s7.d )); // rx is missing to get sin
-    cx = xx * (c2.d + xx*(c4.d + xx*c6.d));        //  1 is missing to have cos
-
-
-    if (quadrant&1)  do_cos_fast(&sh, &sl, rxh, rxl, sx, cx);
-    else             do_sin_fast(&sh, &sl, rxh, rxl, sx, cx);
-    
-    if (sh == (sh + (sl * RN_CST_SINFAST3)))	
-      return ((quadrant==2)||(quadrant==3))? -sh : sh;
-    else
-      return scs_sin_rn(x); 
-  }
-  /* CASE 4: x>2^(-1) */
 
   /* Otherwise : Range reduction then standard evaluation */
   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_sin_rn);
@@ -367,7 +294,7 @@ return scs_sin_rz(x);
  *************************************************************/
 double cos_rn(double x){ 
   double ch, cl, yh, yl, xx;
-  double rxh, rxl, sx, cx, ts; 
+  double rxh,rxl, ts; 
   int quadrant;
   int k;
   int absxhi;
@@ -397,31 +324,6 @@ double cos_rn(double x){
       return scs_cos_rn(x); 
     } 
   }
-  if (absxhi < XMAX_COS_FAST2){
-    /* CASE3 : 2^-1 > (x) > 2^-7 > Pi/512 
-               easy range reduction (no dramatic cancellation)
-	       + table look-up 
-               + fast polynomial evaluation */
-
-    /* Cody and Waite range reduction */
-    DOUBLE2INT(k, x * INV_PIO256);
-    Add12(rxh, rxl, (x - k*RR_CW2_CH), (k*RR_CW2_MCL));
-
-    LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal);
-
-    xx = rxh*rxh;
-    sx = rxh * xx * (s3.d + xx*(s5.d + xx*s7.d )); // rx is missing to get sin
-    cx = xx * (c2.d + xx*(c4.d + xx*c6.d));       //  1 is missing to have cos
-  
-    if (quadrant&1)  do_sin_fast(&ch, &cl, rxh, rxl, sx, cx);
-    else             do_cos_fast(&ch, &cl, rxh, rxl, sx, cx);
-    
-    if (ch == (ch + (cl * RN_CST_COSFAST3)))	
-      return ((quadrant==1)||(quadrant==2))? -ch: ch; 
-    else
-      return scs_cos_rn(x);   
-  } 
-  /* CASE 4: x>2^(-1) */
 
   /* Otherwise : Range reduction then standard evaluation */
   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
@@ -467,7 +369,6 @@ return scs_cos_rz(x);
 double tan_rn(double x){  
   double reshi, reslo, sh, sl, ch, cl, kd, yh, yl;
   double P7, t, th, tl, xx;
-  db_number y;
   int k, quadrant;
   int absxhi;
   db_number x_split;
