@@ -21,12 +21,109 @@ extern double scs_tan_rz(double);
 
 
 
-  /* Arg red brings y_h in -Pi/512, Pi/512 and k holds the 32 lower
-     bits of an int such that x = yh+yl + kPi/256 */
+/* 
+
+How these functions work:
+
+The trig range reduction in crlibm computes an integer k and a reduced
+argument y such that
+
+x = k.Pi/256 + y
+
+with the reduced argument y directly in -Pi/512, Pi/512.  
+(Pi/512 < 4/512 = 2^-7)
+y is computed as a double-double yh+yl
+
+Then we read off a table 
+
+  sah+sal ~ sin(kPi/256)
+  cah+cal ~ cos(kPi/256)
+
+and we use the reconstruction 
+
+  sin(kPi/256 + y) = sin(kPi/256)cos(y) + cos(kPi/256)sin(y)
+  cos(kPi/256 + y) = cos(kPi/256)cos(y) - sin(kPi/256)sin(y)
+
+where cos(y) and sin(y) are computed as unevaluated 1+tc and (yh+yl)(1+ts)
+respectively, where tc and ts are doubles resulting from a small
+polynomial approximation.
+This gives 14 extra bits of accuracy, so this first step is very accurate.
+
+
+Why not use accurate tables as defined by Gal ?
+
+From a performance point of view we probably lose a few cycles: There
+is 4 values to read in this scheme compared to 3 in Gal's method. The
+reconstruction costs a few floating-point operations more (not that
+many, if you look in details and want to ensure more than 7 extra
+bits).
+ 
+Now for the advantages:
+1/ The whole thing is simpler
+2/ We have much more accuracy in the table, whichsimplifies the proof.  
+3/ We will be able to reuse the same table values to speed up the
+second step (just tabulating a third double such that the three-double
+approx of sin/cos(kPi/256) will be summed exactly into an SCS number)
+
+
+Now a word on range reduction:
+
+We have 4 possible range reductions: 
+
+Cody and Waite with 2 constants (the fastest)
+Cody and Waite with 3 constants (almost as fast)
+Cody and Waite with 3 constants in double-double and k a long-long int
+Payne and Hanek, implemented in SCS (the slowest).
+
+Each of these range reductions except Payne and Hanek is valid for x
+smaller than some bound. 
+
+This range reduction may cancel up to 62 bits according to a program
+by Kahan/Douglas available in Muller's book. However this is not a
+concern unless x is close to a multiple of Pi/2 (that is k&127==0): in
+the general case the reconstruction will add a tabulated non-zero
+value, so the error to consider in the range reduction is the absolute
+error. Only in the cases when k&127==0 do we need to have 62 extra
+bits to compute with. This is ensured by using a slower, more accurate
+range reduction. This test for k&127==0 actually speeds up even these
+cases, because in these cases there is no table to read and no
+reconstruction to do : a simple approximation to the function
+suffices.
+
+ */
+
+
 
 
 #define DEBUG 0
 /* TODO: 
+
+CRLIBM ERROR  x=-2.2251542638769082725048065185546875000000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=-1.5729524025605933740735054016113281250000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=-2.5540268640861604362726211547851562500000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=-3.9923351917707725078798830509185791015625000000000000000000000000000000e+04 
+CRLIBM ERROR  x=-1.2809002411726891994476318359375000000000000000000000000000000000000000e+08 
+CRLIBM ERROR  x=-3.9291891922764916671440005302429199218750000000000000000000000000000000e+04 
+CRLIBM ERROR  x=-2.1098546712775237858295440673828125000000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=-1.7285784178167581558227539062500000000000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=-1.9682750281772460788488388061523437500000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=-1.7347698710955187678337097167968750000000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=8.4395409995793294906616210937500000000000000000000000000000000000000000e+08 
+CRLIBM ERROR  x=4.8270579280006037151906639337539672851562500000000000000000000000000000e+04 
+CRLIBM ERROR  x=5.4183342290542453527450561523437500000000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=6.3198647993576180934906005859375000000000000000000000000000000000000000e+08 
+CRLIBM ERROR  x=-1.3641985957810577005147933959960937500000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=-1.8771292594781842082738876342773437500000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=5.9374255623629140853881835937500000000000000000000000000000000000000000e+08 
+CRLIBM ERROR  x=2.4153120369179297238588333129882812500000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=1.5566842935278899967670440673828125000000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=1.2191057098344024270772933959960937500000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=1.7843636816195774823427200317382812500000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=1.9012764789159167557954788208007812500000000000000000000000000000000000e+07 
+CRLIBM ERROR  x=9.7989607780498242378234863281250000000000000000000000000000000000000000e+08 
+CRLIBM ERROR  x=7.5656291940543294316512401564978063106536865234375000000000000000000000e+00 
+
+
  *
  * In some Cody and Waite there are Mul12 involving k, CH and CM. They
  *	 can be improved by pre-splitting CH, CM (tabulated values)
@@ -36,10 +133,7 @@ extern double scs_tan_rz(double);
  * - The first coefficient of the cosine polynomial is equal exactly
  *   to 1/2 and this should be modified in order to increase to accuracy
  *   of the approximation.
- * 
- * - For the Sin and Cos we go into the second step if x<2^-1, bound
- *   that doesn't have any scientific reason. We should put an approx of Pi/sthing
- *
+
  * Get rid of old #defines in the .h
  */
 
@@ -62,25 +156,25 @@ do { 								\
 }while(0)
 
 
-#define LOAD_TABLE_SINCOS()                              \
-do  {                                                      \
-    if(index<=(64<<2)) {                                     \
-      sah=sincosTable[index+0].d; /* sin(a), high part */    \
-      sal=sincosTable[index+1].d; /* sin(a), low part  */    \
-      cah=sincosTable[index+2].d; /* cos(a), high part */    \
-      cal=sincosTable[index+3].d; /* cos(a), low part  */    \
-    }else { /* cah <= sah */                             \
+#define LOAD_TABLE_SINCOS()                                 \
+do  {                                                       \
+    if(index<=(64<<2)) {                                    \
+      sah=sincosTable[index+0].d; /* sin(a), high part */   \
+      sal=sincosTable[index+1].d; /* sin(a), low part  */   \
+      cah=sincosTable[index+2].d; /* cos(a), high part */   \
+      cal=sincosTable[index+3].d; /* cos(a), low part  */   \
+    }else { /* cah <= sah */                                \
       index=(128<<2) - index;                               \
       cah=sincosTable[index+0].d; /* cos(a), high part */   \
       cal=sincosTable[index+1].d; /* cos(a), low part  */   \
       sah=sincosTable[index+2].d; /* sin(a), high part */   \
       sal=sincosTable[index+3].d; /* sin(a), low part  */   \
-    }                                                    \
+    }                                                       \
   } while(0)
 
 
 #define do_sin_k_zero(psh,psl, yh,  yl)            \
-do{                                                  \
+do{                                                \
   double yh2 ;	              			   \
   yh2 = yh*yh;					   \
   ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));	   \
@@ -90,7 +184,7 @@ do{                                                  \
 } while(0)						   
 
 #define do_sin_k_notzero(psh,psl, yh,  yl, sah, sal, cah, cal)         \
-do {                                                                      \
+do {                                                                   \
   double thi, tlo, cahyh_h, cahyh_l, yh2  ;      		       \
   yh2 = yh*yh;							       \
   Mul12(&cahyh_h,&cahyh_l, cah, yh);				       \
@@ -104,7 +198,7 @@ do {                                                                      \
 } while(0)
 
 #define do_cos_k_zero(pch,pcl, yh,  yl)           \
-do {                                                 \
+do {                                              \
   double yh2;                                     \
   yh2 = yh*yh ;					  \
   tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));	  \
@@ -114,7 +208,7 @@ do {                                                 \
 } while(0)					  
 
 #define do_cos_k_notzero(pch,pcl, yh,  yl, sah, sal, cah, cal)      \
-do {                                                                   \
+do {                                                                \
   double yh2, thi, tlo, sahyh_h,sahyh_l;      			    \
   yh2 = yh*yh ;						            \
   Mul12(&sahyh_h,&sahyh_l, sah, yh);			            \
@@ -127,11 +221,6 @@ do {                                                                   \
   Add12(*pch, *pcl,    thi, tlo);                                   \
 } while(0)
 
-
-
-
-
- 
 
 
 
@@ -307,7 +396,7 @@ double sin_rn(double x){
 
 /*************************************************************
  *************************************************************
- *               ROUNDED  TOWARD  +INFINITY
+ *               SIN ROUNDED  TOWARD  +INFINITY              *
  *************************************************************
  *************************************************************/
 
@@ -350,24 +439,15 @@ double sin_ru(double x){
     u.l   = u53.l - 0x0350000000000000LL;
     epsilon=EPS_SIN_CASE2; 
     if(absyl.d > epsilon * u53.d){ 
-      if(sl>0)
-	return sh+u.d;
-      else
-      return sh;
+      if(sl>0) return sh+u.d;
+      else     return sh;
     }
-    else {
-#if DEBUG
-      printf("Going for Accurate Phase");
-#endif
-      return scs_sin_ru(x); 
-    }
+    else return scs_sin_ru(x); 
   }
 
-   
-    /* CASE 3 : Need argument reduction */ 
+  /* CASE 3 : Need argument reduction */ 
   compute_sine_with_argred(&sh,&sl,&quadrant,x,absxhi);
   epsilon=EPS_SIN_CASE3;
-  
   /* Rounding test to + infinity */
   absyh.d=sh;
   absyl.d=sl;
@@ -378,35 +458,173 @@ double sin_ru(double x){
    
   if(absyl.d > epsilon * u53.d){ 
     if ((quadrant==2)||(quadrant==3)) {
-      sl=-sl;
-      sh=-sh;
+      sl=-sl; sh=-sh;
     }
-    if(sl>0)
-      return sh+u.d;
-    else
-      return sh;
+    if(sl>0)  return sh+u.d;
+    else      return sh;
   }
-  else {
-#if DEBUG
-    printf("Going for Accurate Phase");
-#endif
-    return scs_sin_ru(x); 
-  }
-    
+  else return scs_sin_ru(x);
 }
 
 
 
 
-/* TODO */
+
+/*************************************************************
+ *************************************************************
+ *               SIN ROUNDED  TOWARD  -INFINITY              *
+ *************************************************************
+ *************************************************************/
 double sin_rd(double x){ 
-return scs_sin_rd(x);
+  double xx, ts,sh,sl, epsilon; 
+  int  absxhi, quadrant;
+  db_number x_split,  absyh, absyl, u, u53;
+  
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  
+  /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;    
+  
+  if (absxhi < XMAX_SIN_FAST){
+
+    /* CASE 1 : x small enough, return x suitably rounded */
+    if (absxhi <XMAX_RETURN_X_FOR_SIN) {
+      if(x<=0.)
+	return x;
+      else {
+	x_split.l --;
+	return x_split.d;
+      }
+    }
+
+    /* CASE 2 : x < Pi/512
+       Fast polynomial evaluation */
+    xx = x*x;
+    ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
+    Add12(sh,sl, x, ts);
+    
+    /* Rounding test to - infinity */
+    absyh.d=sh;
+    absyl.d=sl;
+    absyh.l = absyh.l & 0x7fffffffffffffffLL;
+    absyl.l = absyl.l & 0x7fffffffffffffffLL;
+    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+    u.l   = u53.l - 0x0350000000000000LL;
+    epsilon=EPS_SIN_CASE2; 
+    if(absyl.d > epsilon * u53.d){ 
+      if(sl>0) return sh;
+      else     return sh-u.d;
+    }
+    else return scs_sin_rd(x); 
+  }
+
+  /* CASE 3 : Need argument reduction */ 
+  compute_sine_with_argred(&sh,&sl,&quadrant,x,absxhi);
+  epsilon=EPS_SIN_CASE3;
+  /* Rounding test to + infinity */
+  absyh.d=sh;
+  absyl.d=sl;
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l   = u53.l - 0x0350000000000000LL;
+   
+  if(absyl.d > epsilon * u53.d){ 
+    if ((quadrant==2)||(quadrant==3)) {
+      sl=-sl; sh=-sh;
+    }
+    if(sl>0)  return sh;
+    else      return sh-u.d;
+  }
+  else return scs_sin_rd(x);
 }
 
-/* TODO */
+
+
+
+
+/*************************************************************
+ *************************************************************
+ *               SIN ROUNDED  TOWARD  ZERO                   *
+ *************************************************************
+ *************************************************************/
 double sin_rz(double x){ 
-return scs_sin_rz(x);
+  double xx, ts,sh,sl, epsilon; 
+  int  absxhi, quadrant;
+  db_number x_split,  absyh, absyl, u, u53;
+  
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  
+  /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;    
+  
+  if (absxhi < XMAX_SIN_FAST){
+
+    /* CASE 1 : x small enough, return x suitably rounded */
+    if (absxhi <XMAX_RETURN_X_FOR_SIN) {
+      x_split.l --;
+      return x_split.d;
+    }
+
+    /* CASE 2 : x < Pi/512
+       Fast polynomial evaluation */
+    xx = x*x;
+    ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
+    Add12(sh,sl, x, ts);
+    
+    /* Rounding test to zero */
+    absyh.d=sh;
+    absyl.d=sl;
+    absyh.l = absyh.l & 0x7fffffffffffffffLL;
+    absyl.l = absyl.l & 0x7fffffffffffffffLL;
+    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+    u.l   = u53.l - 0x0350000000000000LL;
+    epsilon=EPS_SIN_CASE2; 
+    if(absyl.d > epsilon * u53.d){ 
+      if(sh>0) {
+	if (sl>0) return sh;
+	else      return sh-u.d;
+      }
+      else {
+	if (sl>0) return sh+u.d;
+	else      return sh;
+      }
+    }	
+    else return scs_sin_rz(x); 
+  }
+
+  /* CASE 3 : Need argument reduction */ 
+  compute_sine_with_argred(&sh,&sl,&quadrant,x,absxhi);
+  epsilon=EPS_SIN_CASE3;
+  /* Rounding test to + infinity */
+  absyh.d=sh;
+  absyl.d=sl;
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l   = u53.l - 0x0350000000000000LL;
+   
+  if(absyl.d > epsilon * u53.d){ 
+    if ((quadrant==2)||(quadrant==3)) {
+      sl=-sl; sh=-sh;
+    }
+    if(sh>0) {
+      if (sl>0) return sh;
+      else      return sh-u.d;
+    }
+    else {
+      if (sl>0) return sh+u.d;
+      else      return sh;
+    }	
+  }
+  else return scs_sin_rz(x);
 }
+
+
+
+
 
 /*************************************************************
  *************************************************************
