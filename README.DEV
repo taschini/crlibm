@@ -7,6 +7,10 @@ autoconf
 automake --add-missing
 ./configure 
 
-Remarque : sur mon debian woody l'autoconf de service est trop vieux,
+Remarquou pour faire les tests
+./configure --enable-mpfr -enable-ultim --with-gmp=/usr/local
+
+e : sur mon debian woody l'autoconf de service est trop vieux,
 il faut utiliser la commande autoconf2.50 ...
+
 
