@@ -84,12 +84,14 @@ void Mul12Cond(double *rh, double *rl, double a, double b){
 
 
 
+
+#if ADD22_AS_FUNCTIONS
 /*
  * computes double-double addition: zh+zl = xh+xl + yh+yl
  * relative error is smaller than 2^-103 
  */
   
-void Add22(double *zh, double *zl, double xh, double xl, double yh, double yl)
+void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, double yl)
 {
 double r,s;
 
@@ -99,6 +101,24 @@ s = (ABS(xh) > ABS(yh))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);
 *zl = r - (*zh) + s;
 }
 
+
+/*
+ * computes double-double addition: zh+zl = xh+xl + yh+yl
+ * knowing that xh>yh
+ * relative error is smaller than 2^-103 
+ */
+  
+void Add22(double *zh, double *zl, double xh, double xl, double yh, double yl)
+{
+double r,s;
+
+r = xh+yh;
+s = xh-r+yh+yl+xl;
+*zh = r+s;
+*zl = r - (*zh) + s;
+}
+
+#endif
 
 
 /*

@@ -62,7 +62,7 @@ extern double scs_log_rd(db_number, int);
  *************************************************************/
  double log_rn(double x){ 
  double ln2_times_E_HI, ln2_times_E_LO;
- double res, reshi, reslo, P_hi, P_lo;
+ double res, reshi, reslo, P_hi, P_lo, roundcst;
  db_number y, z;
  int k, i = 0, E = 0;
   
@@ -105,6 +105,11 @@ extern double scs_log_rd(db_number, int);
   z.d = y.d - (middle[i]).d; 	/* evaluate the value of x in the
 				   ii-th interval (exact thanks to
 				   Sterbenz Lemma) */
+
+
+  /* sc_ln2_times_E = E*log(2)  */
+  Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
+
  
   /*
    * Polynomial evaluation of log(1 + R) with an error less than 2^(-60)
@@ -116,35 +121,48 @@ extern double scs_log_rd(db_number, int);
     res += (poly_log_fast_b[i][k]).d;
   }
    
-   /* Multiply S2 by x = P2 */
-  Mul12(&P_hi, &P_lo, res, z.d);
- 
-  /* add S1 = a1_hi + a1_lo to P2 */ 
-  Add22(&reshi, &reslo, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
 
-  /* multiply S1 by x = P1 */ 
-  Mul22(&P_hi, &P_lo, reshi, reslo, z.d, 0.); 
-       
-  /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
-  Add22(&reshi, &reslo, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
-  
-  if (!(E==0)){
-  
-  /* sc_ln2_times_E = E*log(2)  */
-  Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
 
-   /* REBUILDING */
-   Add22(&reshi, &reslo, ln2_times_E_HI, ln2_times_E_LO, reshi, reslo);
-}
-      
-  /* ROUNDING TO NEAREST */
+  if(ABS(ln2_times_E_HI)<512) {
+    /* Multiply S2 by x = P2 */
+    Mul12(&P_hi, &P_lo, res, z.d);
+    
+    /* add S1 = a1_hi + a1_lo to P2 */ 
+    /* */
+    Add22Cond(&reshi, &reslo, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
+    
+    /* multiply S1 by x = P1 */ 
+    Mul22(&P_hi, &P_lo, reshi, reslo, z.d, 0.); 
+    
+    /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
+    Add22Cond(&reshi, &reslo, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
+    
+      /* REBUILDING */
+    /*    if (!(E==0))  commented out, because slows many down to speedup a few */
+    Add22Cond(&reshi, &reslo, ln2_times_E_HI, ln2_times_E_LO, reshi, reslo);
+    
+    /*  
+	if(ABS(ln2_times_E_HI)>32.)
+	roundcst=1.+ (1./64.)*(delta[i]-1.);
+	else 
+    */
+      roundcst=delta[i];
 
-  if(reshi == (reshi + (reslo * (delta[i])))){	
-     return reshi;
-  }else{
-     return scs_log_rn(y, E);
   }
-}
+  else {
+    res=  (poly_log_fast_b[i][0]).d + z.d*((poly_log_fast_b[i][1]).d + z.d*res);
+    /* REBUILDING */
+    /* As ln2_times_E_HI > 512 and res < 0.5 we may use Add22 */
+    Add22(&reshi, &reslo, ln2_times_E_HI, ln2_times_E_LO, res, 0.0);
+    roundcst=(1+1./1024.);
+  }
+  /* ROUNDING TO NEAREST */
+  if(reshi == (reshi + (reslo * roundcst)))
+    return reshi;
+  else
+    return scs_log_rn(y, E);    
+  
+ }
 /*************************************************************
  *************************************************************
  *               ROUNDED  TOWARD  -INFINITY		     *

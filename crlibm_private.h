@@ -27,13 +27,15 @@
 
 
 
-/* Procedures of the Dekker family may be either defined as functions,
-or as #defines.  
-Which one is better depends on the processor/compiler/OS.
-As #define has to be used with more care (not type-safe),
-DEKKER_AS_FUNCTIONS should be set to 1 in the development/debugging
-phase, until no type warning remains.  */
+/* The Add22 and Add22 functions, as well as double-double
+multiplications of the Dekker family may be either defined as
+functions, or as #defines.  Which one is better depends on the
+processor/compiler/OS.  As #define has to be used with more care (not
+type-safe), the two following variables should  be set to 1 in the
+development/debugging phase, until no type warning remains.  */
 
+/* only a small speedup for the log on x86, but it allows to beat Ziv :) */
+#define ADD22_AS_FUNCTIONS 0
 #define DEKKER_AS_FUNCTIONS 1
 
 
@@ -54,7 +56,6 @@ int crlibm_second_step_taken;
 #else
  #define DB_ONE    {{0x00000000 ,0x3ff00000}}
 #endif
-
 
 #ifdef WORDS_BIGENDIAN
 #define HI(x) (*((int*)(&x)))
@@ -191,6 +192,33 @@ static const struct scs
          Fast2Sum(r2, r3, w, v); }
 
 
+#if !ADD22_AS_FUNCTIONS
+#define Add22Cond(zh,zl,xh,xl,yh,yl)\
+{\
+double r,s;\
+r = xh+yh;\
+s = (ABS(xh) > ABS(yh))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);\
+*zh = r+s;\
+*zl = r - (*zh) + s;\
+}
+
+
+/*
+ * computes double-double addition: zh+zl = xh+xl + yh+yl
+ * knowing that xh>yh
+ * relative error is smaller than 2^-103 
+ */
+  
+#define Add22(zh,zl,xh,xl,yh,yl)\
+{\
+double r,s;\
+r = xh+yh;\
+s = xh-r+yh+yl+xl;\
+*zh = r+s;\
+*zl = r - (*zh) + s;\
+}
+#endif
+
 
 #ifdef CRLIBM_TYPECPU_ITANIUM
 /* One of the nice things with the fused multiply-and-add is that it
@@ -204,8 +232,14 @@ static const struct scs
 		       : "f"(u), "f"(v), "f"(*rh)     \
 		       );                             \
 }
-#define Mul12 Mul12Cond
+#define Mul12 Mul12Cond  /* TODO check this ! */
 #endif /*CRLIBM_TYPECPU_ITANIUM*/
+
+
+#if ADD22_AS_FUNCTIONS
+extern void Add22(double *zh, double *zl, double xh, double xl, double yh, double yl);
+extern void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, double yl);
+#endif
 
 
 #if DEKKER_AS_FUNCTIONS
@@ -213,7 +247,6 @@ static const struct scs
 extern void Mul12(double *rh, double *rl, double u, double v);
 extern void Mul12Cond(double *rh, double *rl, double a, double b);
 #endif /* ifndef CRLIBM_TYPECPU_ITANIUM */ 
-extern void Add22(double *zh, double *zl, double xh, double xl, double yh, double yl);
 extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl);
 
 

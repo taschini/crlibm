@@ -87,6 +87,25 @@ propagations with negative numbers.
 
 
 
+\subsection{Methods to raise IEEE-754 flags}
+
+The IEEE standard imposes, in certain cases, to raise flags and/or
+exceptions for the $4$ operators ($+$, $\times$, $\div$, $\sqrt{~}$).
+Therefore, it is legitimate to require the same for elementary
+functions.
+
+In ANSI-C99, the following instructions raise exceptions and
+flags:
+
+\begin{itemize}
+\item {\bf underflow} : the multiplication $\pm smallest \times smallest$ where $smallest$ correspond to the smallest denormalized number,
+\item {\bf overflow} : the multiplication  $\pm largest \times largest$ where $largest$ correspond to the largest normalized number,
+\item {\bf division by zero} : the division $\pm 1.0/0.0$,
+\item {\bf inexact} : the addition $(x + smallest) - smallest$ where $x$ is the result and  $smallest$ the smallest denormalized number,
+\item {\bf invalid} : the division $\pm 0.0/0.0$.
+\end{itemize}
+
+
 
 
 
