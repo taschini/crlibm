@@ -66,10 +66,10 @@ void scs_atan(scs_ptr res_scs, scs_ptr x){
 			     	     
     /* Test if x need to be reduced */
     
-    if( db.i[0] >= borne_I[48]){
-      	if ( db.i[0]  < borne_I[49]){
+    if( db.i[HI_ENDIAN] >= borne_I[48]){
+      	if ( db.i[HI_ENDIAN]  < borne_I[49]){
 	    j = 48;}
-	else if( db.i[0] > borne_I[49]){
+	else if( db.i[HI_ENDIAN] > borne_I[49]){
 	    j = 49;}
 	else {
 	    res_scs =  atan_bi_ptr[49];
@@ -84,28 +84,28 @@ void scs_atan(scs_ptr res_scs, scs_ptr x){
 	scs_sub(X_scs,x,bsc_ptr[ind]);
 	scs_div(X_scs,X_scs,denom2_scs);
     }
-    else if (((int) db.i[0]) == borne_I[48]) {
+    else if (((int) db.i[HI_ENDIAN]) == borne_I[48]) {
 	res_scs = atan_bi_ptr[48];
 	return ;
     }
-    else if ( db.i[0] < borne_I[0]){
+    else if ( db.i[HI_ENDIAN] < borne_I[0]){
 	scs_set(X_scs, x);
 	ind = 60;
     }
     else{	/* First reduction : find the interval including x, "save" j to have b(j)  and then being able to calculate X */
 	j = 32;
 	for (k=1;k<=5;k++){
-	    if (db.i[0] < borne_I[j]){
+	    if (db.i[HI_ENDIAN] < borne_I[j]){
 		j -= (intmid >> k);
             }
-            else if(db.i[0] > borne_I[j]){
+            else if(db.i[HI_ENDIAN] > borne_I[j]){
 		j += (intmid >>  k);	    
 	    }
 	    else {res_scs = atan_bi_ptr[j];
 		  return ;
 	    }
 	}
-	if (db.i[0] < borne_I[j]){
+	if (db.i[HI_ENDIAN] < borne_I[j]){
 	    ind = j-1;
 	}
 	else{
