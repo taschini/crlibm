@@ -42,6 +42,7 @@ int main (int argc, char *argv[])
   char* rounding_mode;
   char* function_name;
   double input;
+  double worstcase;
 
   
   db_number res_crlibm, res_mpfr, res_ibm, res_libm;
@@ -80,6 +81,7 @@ double (*testfun_ibm)   () = NULL;
 	       &testfun_mpfr,
 	       &testfun_libm,
 	       &testfun_ibm,
+	       &worstcase,
 	       /* arguments */
 	       function_name,
 	       rounding_mode ) ;

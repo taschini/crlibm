@@ -151,6 +151,7 @@ void test_init(/* pointers to returned value */
 	       int    (**testfun_mpfr)  (),
 	       double (**testfun_libm)  (),
 	       double (**testfun_ibm)   (),
+	       double* worst_case,
 	       /* arguments */
 	       char *func_name,
 	       char *rnd_mode)  {
@@ -166,10 +167,12 @@ void test_init(/* pointers to returned value */
   *randfun        = rand_generic; /* the default random function */
   *testfun_mpfr   = NULL;
   *testfun_libm   = NULL;
+  *worst_case=0.;
 
   if (strcmp (func_name, "exp") == 0)
     {
       *randfun        = rand_for_exp;
+      *worst_case= .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
       *testfun_libm   = exp;
       switch(crlibm_rnd_mode){
       case 2:
@@ -193,6 +196,7 @@ void test_init(/* pointers to returned value */
   else  if (strcmp (func_name, "log") == 0)
     {
       *randfun        = rand_for_log;
+      *worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
       *testfun_libm   = log;
       switch(crlibm_rnd_mode){
       case 2:

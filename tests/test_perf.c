@@ -26,12 +26,17 @@ Beware to compile without optimizations
 #endif
 
 
+#define N1 4
 
 #define DETAILED_REPORT 0
 
 /* If set, the behaviour of the function with respect to cache memory
    will be tested*/
 #define TEST_CACHE 0
+
+/*
+ * Rounding mode to test
+ */
 
 
 
@@ -66,162 +71,6 @@ double inputs[TESTSIZE];
 
 
 
-void init(char *function){
-  crlibm_init();
-
-  randfun        = rand_generic; /* the default random function */
-  worst_case = 0.0;
-  if (strcmp (function, "exp") == 0)
-    {
-      randfun        = rand_for_exp;
-      worst_case= .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
-      testfun_libm   = exp;
-      testfun_crlibm = exp_rn;
-#ifdef HAVE_MATHLIB_H
-      testfun_ibm    = uexp;
-#endif
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_exp;
-#endif
-    }
-
-  else if (strcmp (function, "log") == 0)
-    {
-      randfun        = rand_for_log;
-      worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
-      testfun_libm   = log;
-      testfun_crlibm = log_rn;
-#ifdef HAVE_MATHLIB_H
-      testfun_ibm    = ulog;
-#endif
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_log;
-#endif
-    }
-
-  else if (strcmp (function, "log2") == 0)
-    {
-      testfun_libm   = NULL /* doesn't exist ? */;
-      testfun_crlibm = log2_rn;
-#ifdef HAVE_MATHLIB_H
-      testfun_ibm    = ulog2;
-#endif
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_log2;
-#endif
-    }
-
-  else if (strcmp (function, "log10") == 0)
-    {
-      testfun_libm   = log10;
-      testfun_crlibm = log10_rn;
-#ifdef HAVE_MATHLIB_H
-      testfun_ibm    = NULL;
-#endif
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_log10;
-#endif
-    }
-
-  else if (strcmp (function, "sin") == 0)
-    {
-      testfun_libm   = sin;
-      testfun_crlibm = sin_rn;
-#ifdef HAVE_MATHLIB_H
-      testfun_ibm    = usin;
-#endif
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_sin;
-#endif
-    }
-
-  else if (strcmp (function, "tan") == 0)
-    {
-      testfun_libm   = tan   ;
-      testfun_crlibm = tan_rn;
-#ifdef HAVE_MATHLIB_H
-      testfun_ibm    = utan;
-#endif
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_tan;
-#endif
-    }
-
-  else if (strcmp (function, "cotan") == 0)
-    {
-      testfun_libm   = NULL;
-      testfun_crlibm = cotan_rn;
-#ifdef HAVE_MATHLIB_H
-/*       testfun_ibm    = ucotan; doesn't exist ?*/
-#endif
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = NULL; /* should check */
-#endif
-    }
-
-    
-  else if (strcmp (function, "log") == 0)
-    {
-      testfun_crlibm = log_rn;
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_log;
-#endif
-      randfun        = rand_generic;
-    }
-  else if (strcmp (function, "log2") == 0)
-    {
-      testfun_crlibm = log2_rn;
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_log2;
-#endif
-      randfun        = rand_generic;
-    }
-  else if (strcmp (function, "log10") == 0)
-    {
-      testfun_crlibm = log10_rn;
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_log10;
-#endif
-      randfun        = rand_generic;
-    }
-  else if (strcmp (function, "sin") == 0)
-    {
-      testfun_crlibm = sin_rn;
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_sin;
-#endif
-      randfun        = rand_generic;
-    }
-  else if (strcmp (function, "cos") == 0)
-    {
-      testfun_crlibm = cos_rn;
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_cos;
-#endif
-      randfun        = rand_generic;
-    }
-  else if (strcmp (function, "tan") == 0)
-    {
-      testfun_crlibm = tan_rn;
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_tan;
-#endif
-    }
-#if 0 /* mpfr has no cotan? */ 
-  else if (strcmp (function, "cotan") == 0)
-    {
-      testfun_crlibm = cotan_rn;
-#ifdef HAVE_MPFR_H
-      testfun_mpfr   = mpfr_cotan;
-#endif
-    }
-#endif
-  else
-    {
-      fprintf (stderr, "Unknown function: %s\n", function);
-      exit (1);
-    }
-}
 
 
 
@@ -235,14 +84,28 @@ void fill_and_flush(int seed) {
 
 
 
+void usage(char *fct_name){
+  fprintf (stderr, "\n\n Performance test for crlibm \n");
+  fprintf (stderr, "Usage: %s name (RN|RU|RD|RZ) iterations \n", fct_name);
+  fprintf (stderr, " name          : name of function to test \n");
+  fprintf (stderr, " (RN/RU/RD/RZ) : rounding mode, \n");
+  fprintf (stderr, " iterations    : integer, seed for the random number generator \n");
+  exit (1);
+}
+
+
 
 
 
 int main (int argc, char *argv[]) 
 { 
   
-  int i, j, k, n=100000;
+  int i, j, k, n;
+  int counter;
   double input, result;
+  char* rounding_mode;
+  char* function_name;
+  double worstcase;
   tbx_tick_t   t1, t2; 
   unsigned long long 
     dt, dtmin, 
@@ -255,25 +118,47 @@ int main (int argc, char *argv[])
   int output_latex=0;
 #ifdef HAVE_MPFR_H  
   mpfr_t mp_res, mp_inpt; 
+mp_rnd_t mpfr_rnd_mode;
 #endif
   short Original_Mode;
 
-  /************  INITIALISATIONS  *********************/
-
-  if ((argc != 3)) {
-    printf("Usage: %s function iterations\n", argv[0]);
-    exit(1);
-  }
- 
-  init(argv[1]);
-
-  sscanf(argv[2],"%d", &n);
 
 
-#ifdef HAVE_MPFR_H
-  mpfr_init2(mp_res,  53);
-  mpfr_init2(mp_inpt, 53);
+
+
+  if ((argc !=4)) usage(argv[0]);
+  else{
+    function_name = argv[1];
+    rounding_mode = argv[2];
+    sscanf(argv[3],"%d", &n);
+    
+    
+    crlibm_init();
+
+    test_init(/* pointers to returned value */
+	       &randfun, 
+	       &testfun_crlibm, 
+	       &testfun_mpfr,
+	       &testfun_libm,
+	       &testfun_ibm,
+	       &worstcase,
+	       /* arguments */
+	       function_name,
+	       rounding_mode ) ;
+    
+#ifdef HAVE_MPFR_H  
+    mpfr_init2(mp_res,  153);
+    mpfr_init2(mp_inpt, 53);
+    if      (strcmp(rounding_mode,"RU")==0) mpfr_rnd_mode = GMP_RNDU;
+    else if (strcmp(rounding_mode,"RD")==0) mpfr_rnd_mode = GMP_RNDD;
+    else if (strcmp(rounding_mode,"RZ")==0) mpfr_rnd_mode = GMP_RNDZ;
+    else {
+      mpfr_rnd_mode = GMP_RNDN; 
+      rounding_mode="RN" ;
+    }
 #endif
+
+
 
 
   crlibm_dtmin=1<<30; crlibm_dtmax=0; crlibm_dtsum=0;
@@ -356,8 +241,9 @@ int main (int argc, char *argv[])
   crlibm_second_step_taken=0; 
 #endif
 
+  counter=0;
 
-  /* take the min of 10 identical calls to leverage interruptions */
+  /* take the min of N1 identical calls to leverage interruptions */
   /* As a consequence, the cache impact of these calls disappear...*/
 
   for(i=0; i< n; i++){ 
@@ -365,7 +251,8 @@ int main (int argc, char *argv[])
 
     /* libm timing */
     dtmin=1<<30;
-    for(j=0; j<5; j++) {
+    /* take the min of N1 consecutive calls */
+    for(j=0; j<N1; j++) {
       TBX_GET_TICK(t1);
 #ifdef CRLIBM_TYPECPU_POWERPC
       for(k=0; k<50;k++)
@@ -384,12 +271,14 @@ int main (int argc, char *argv[])
 
     /* crlibm timing */
     dtmin=1<<30;
-    for(j=0; j<5; j++) {
+    /* take the min of N1 consecutive calls */
+    for(j=0; j<N1; j++) {
+      counter++;
       TBX_GET_TICK(t1);
 #ifdef CRLIBM_TYPECPU_POWERPC
-      for(k=0; k<50;k++)
+      counter+=49; for(k=0; k<50;k++)
 #endif
-      result = testfun_crlibm(input);
+	result = testfun_crlibm(input);
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
       if (dt<dtmin)  dtmin=dt;
@@ -406,14 +295,15 @@ int main (int argc, char *argv[])
 #ifdef HAVE_MPFR_H
     /* mpfr timing */
     dtmin=1<<30;
-    for(j=0; j<5; j++) {
+    /* take the min of N1 consecutive calls */
+    for(j=0; j<N1; j++) {
       TBX_GET_TICK(t1);
 #ifdef CRLIBM_TYPECPU_POWERPC
       for(k=0; k<50;k++) {
 #endif
       mpfr_set_d(mp_inpt, input, GMP_RNDN);
       testfun_mpfr(mp_res, mp_inpt, GMP_RNDN);
-      result = mpfr_get_d1(mp_res);
+      result = mpfr_get_d(mp_res,mpfr_rnd_mode);
 #ifdef CRLIBM_TYPECPU_POWERPC
       }
 #endif
@@ -432,7 +322,8 @@ int main (int argc, char *argv[])
 #ifdef HAVE_MATHLIB_H
     Original_Mode = Init_Lib(); 
     dtmin=1<<30;
-    for(j=0; j<5; j++) {
+    /* take the min of N1 consecutive calls */
+    for(j=0; j<N1; j++) {
       TBX_GET_TICK(t1);
 #ifdef CRLIBM_TYPECPU_POWERPC
       for(k=0; k<50;k++)
@@ -456,7 +347,7 @@ int main (int argc, char *argv[])
 
 #if EVAL_PERF==1  
   printf("\nCRLIBM : Second step taken %d times out of %d\n",
-	 crlibm_second_step_taken/20, n );
+	 crlibm_second_step_taken/N1, counter/N1 );
 #endif
 
 
@@ -465,8 +356,11 @@ int main (int argc, char *argv[])
   input = worst_case;
   /* libm timing */
   dtmin=1<<30;
-  for(j=0; j<10; j++) {
+  for(j=0; j<N1; j++) {
     TBX_GET_TICK(t1);
+#ifdef CRLIBM_TYPECPU_POWERPC
+      for(k=0; k<50;k++)
+#endif
     result = testfun_libm(input);
     TBX_GET_TICK(t2);
     dt = TBX_TICK_RAW_DIFF(t1, t2); 
@@ -475,8 +369,11 @@ int main (int argc, char *argv[])
   libm_dtwc = dtmin;
   /* crlibm timing */
   dtmin=1<<30;
-  for(j=0; j<10; j++) {
+  for(j=0; j<N1; j++) {
     TBX_GET_TICK(t1);
+#ifdef CRLIBM_TYPECPU_POWERPC
+      for(k=0; k<50;k++)
+#endif
     result = testfun_crlibm(input);
     TBX_GET_TICK(t2);
     dt = TBX_TICK_RAW_DIFF(t1, t2); 
@@ -487,11 +384,17 @@ int main (int argc, char *argv[])
 #ifdef HAVE_MPFR_H
     /* mpfr timing */
     dtmin=1<<30;
-    for(j=0; j<10; j++) {
+    for(j=0; j<N1; j++) {
       TBX_GET_TICK(t1);
+#ifdef CRLIBM_TYPECPU_POWERPC
+      for(k=0; k<50;k++){
+#endif
       mpfr_set_d(mp_inpt, input, GMP_RNDN);
       testfun_mpfr(mp_res, mp_inpt, GMP_RNDN);
       result = mpfr_get_d1(mp_res);
+#ifdef CRLIBM_TYPECPU_POWERPC
+      }
+#endif
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
       if (dt<dtmin)  dtmin=dt;
@@ -502,8 +405,11 @@ int main (int argc, char *argv[])
 #ifdef HAVE_MATHLIB_H
     Original_Mode = Init_Lib(); 
     dtmin=1<<30;
-    for(j=0; j<10; j++) {
+    for(j=0; j<N1; j++) {
       TBX_GET_TICK(t1);
+#ifdef CRLIBM_TYPECPU_POWERPC
+      for(k=0; k<50;k++)
+#endif
       result = testfun_ibm(input);
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
@@ -584,5 +490,6 @@ int main (int argc, char *argv[])
 #endif /*HAVE_MPFR_H*/
 
   return 0;
+  }  
 }
 

@@ -184,6 +184,7 @@ int main (int argc, char *argv[])
   char* rounding_mode;
   char* function_name;
   int seed;
+  double worstcase;
 
   if ((argc < 3)||(argc > 4)) usage(argv[0]);
   else{
@@ -203,6 +204,7 @@ int main (int argc, char *argv[])
 	       &testfun_mpfr,
 	       &testfun_libm,
 	       &testfun_ibm,
+	       &worstcase,
 	       /* arguments */
 	       function_name,
 	       rounding_mode ) ;
