@@ -60,7 +60,7 @@ bits).
  
 Now for the advantages:
 1/ The whole thing is simpler
-2/ We have much more accuracy in the table, whichsimplifies the proof.  
+2/ We have much more accuracy in the table, which simplifies the proof.  
 3/ We will be able to reuse the same table values to speed up the
 second step (just tabulating a third double such that the three-double
 approx of sin/cos(kPi/256) will be summed exactly into an SCS number)
@@ -79,16 +79,17 @@ Each of these range reductions except Payne and Hanek is valid for x
 smaller than some bound. 
 
 This range reduction may cancel up to 62 bits according to a program
-by Kahan/Douglas available in Muller's book. However this is not a
-concern unless x is close to a multiple of Pi/2 (that is k&127==0): in
-the general case the reconstruction will add a tabulated non-zero
-value, so the error to consider in the range reduction is the absolute
-error. Only in the cases when k&127==0 do we need to have 62 extra
-bits to compute with. This is ensured by using a slower, more accurate
-range reduction. This test for k&127==0 actually speeds up even these
-cases, because in these cases there is no table to read and no
-reconstruction to do : a simple approximation to the function
-suffices.
+by Kahan/Douglas available in Muller's book and implemented as
+function WorstCaseForAdditiveRangeReduction in common-procedures.mpl
+However this is not a concern unless x is close to a multiple of Pi/2
+(that is k&127==0): in the general case the reconstruction will add a
+tabulated non-zero value, so the error to consider in the range
+reduction is the absolute error. Only in the cases when k&127==0 do we
+need to have 62 extra bits to compute with. This is ensured by using a
+slower, more accurate range reduction. This test for k&127==0 actually
+speeds up even these cases, because in these cases there is no table
+to read and no reconstruction to do : a simple approximation to the
+function suffices.
 
  */
 
@@ -97,14 +98,6 @@ suffices.
 
 #define DEBUG 0
 /* TODO: 
-
-tests/crlibm_testval sin RN -1.2809002411726891994476318359375000000000000000000000000000000000000000e+08 
-tests/crlibm_testval sin RN -1.9682750281772460788488388061523437500000000000000000000000000000000000e+07 
-tests/crlibm_testval sin RN 8.4395409995793294906616210937500000000000000000000000000000000000000000e+08 
-tests/crlibm_testval sin RN 6.3198647993576180934906005859375000000000000000000000000000000000000000e+08 
-tests/crlibm_testval sin RN 5.9374255623629140853881835937500000000000000000000000000000000000000000e+08 
-tests/crlibm_testval sin RN 9.7989607780498242378234863281250000000000000000000000000000000000000000e+08 
-
 
  *
  * In some Cody and Waite there are Mul12 involving k, CH and CM. They
@@ -116,8 +109,7 @@ tests/crlibm_testval sin RN 9.79896077804982423782348632812500000000000000000000
  *   to 1/2 and this should be modified in order to increase to accuracy
  *   of the approximation.
 
- * Get rid of old #defines in the .h
- */
+*/
 
 
 
@@ -126,8 +118,8 @@ do { 								\
   scs_t X, Y,Yh,Yl;						\
       scs_set_d(X, x*128.0); 					\
       k= rem_pio2_scs(Y, X);					\
-      quadrant = (k>>7)&3;                                    	\
       index=(k&127)<<2;                                         \
+      quadrant = (k>>7)&3;                                      \
       /* TODO an optimized procedure for the following */	\
       scs_get_d(&yh, Y);					\
       scs_set_d(Yh, yh);					\
@@ -212,12 +204,14 @@ static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  
   int k, quadrant, index;
   long long int kl;
 
+
   /* Case 3 : x sufficiently small for Cody and Waite argument reduction */
   if  (absxhi < XMAX_CODY_WAITE_3) {
     DOUBLE2INT(k, x * INV_PIO256);
     kd = (double) k;
     quadrant = (k>>7)&3;      
     index=(k&127)<<2;
+    *pquadrant=quadrant;
     if((index == 0)) { 
       /* Here we risk a large cancellation on yh+yl; 
 	 on the other hand we will have sa=0 and ca=1*/
@@ -227,7 +221,6 @@ static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  
       Add12 (th,tl,  kch_l, kcm_h) ;
       /* only rounding error in the last multiplication and addition */ 
       Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-      *pquadrant=quadrant;
       if (quadrant&1)
 	do_cos_k_zero(psh, psl, yh,yl);
       else 
@@ -246,8 +239,6 @@ static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  
 	/* all this is exact but the rightmost multiplication */
 	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
     }
-
-    *pquadrant=quadrant;
     if (quadrant&1) 
       do_cos_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
     else 
@@ -259,36 +250,42 @@ static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  
   if ( absxhi < XMAX_DDRR ) {
     DOUBLE2LONGINT(kl, x*INV_PIO256);
     kd=(double)kl;
-    k = (int) kl;
-    quadrant = (k>>7)&3;
-    index=(k&127)<<2;
+    quadrant = (kl>>7)&3;
+    index=(kl&127)<<2;
     if(index == 0) { /* In this case cancellation may occur, so we
 			  do the accurate range reduction */
       scs_range_reduction(); 
-      *pquadrant=quadrant;
-      if (quadrant&1)
-	do_cos_k_zero(psh, psl, yh,yl);
-      else 
-        do_sin_k_zero(psh, psl, yh,yl);
-      return;
+      /* Now it may happen that the new k differs by 1 of kl, so check that */
+      if(index==0) {  /* no surprise */
+	*pquadrant=quadrant;
+	if (quadrant&1)
+	  do_cos_k_zero(psh, psl, yh,yl);
+	else 
+	  do_sin_k_zero(psh, psl, yh,yl);
+      	return;
+      }
+      else { /*recompute index and quadrant */
+	if (index==4) kl++;   else kl--; /* no more than one bit difference */
+	kd=(double)kl;
+	quadrant = (kl>>7)&3;
+      }
     }
-    else {
-      LOAD_TABLE_SINCOS(); /* in advance */
-      /* all this is exact */
-      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
-      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
-      Add12 (th,tl,  kch_l, kcm_h) ;
-      /* only rounding error in the last multiplication and addition */ 
-      Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-      
-      *pquadrant=quadrant;
-      if (quadrant&1)
-	do_cos_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
-      else 
-	do_sin_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
-      return;
-    }
+    /* arrive here if index<>0 */
+    *pquadrant=quadrant;
+    LOAD_TABLE_SINCOS(); /* in advance */
+    /* all this is exact */
+    Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+    Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+    Add12 (th,tl,  kch_l, kcm_h) ;
+    /* only rounding error in the last multiplication and addition */ 
+    Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+    if (quadrant&1)
+      do_cos_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+    else 
+      do_sin_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+    return;
   }
+
   
   /* Worst case : x very large, sin(x) probably meaningless, we return
      correct rounding but do't mind taking time for it */
@@ -305,6 +302,7 @@ static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  
  UNTIL THEN THE MULTIPLICATION BY 128 OVERFLOWS IN THESE CASES
  */
   scs_range_reduction(); 
+  quadrant = (k>>7)&3;                                    	\
   *pquadrant=quadrant;
 #endif
   if(index == 0) { 
