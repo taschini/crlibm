@@ -371,8 +371,8 @@ constant is $1.000005$.
   /* Filter cases */
   if ( hx >= 0x43500000)           /* x >= 2^54 */
     {
-      if ( (hx & 0x000fffff) == 0x00080000 && x_db.i[LO_ENDIAN] == 0 ) 
-        return 0.0/0.0;                /* NaN */
+      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+        return x+x;                /* NaN */
       else
         return HALFPI.d;           /* \arctan(x) = Pi/2 */
     }
@@ -417,8 +417,8 @@ Then : $\arctan(x) \approx x $
 
   if ( hx >= 0x43500000)           /* x >= 2^54 */
     {
-      if (  (hx & 0x000fffff) == 0x00080000 && x_db.i[LO_ENDIAN] == 0)
-        return 0.0/0.0;                /* NaN */
+      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+        return x+x;                /* NaN */
       else
         if (x>0)
           return HALFPI.d;
@@ -469,8 +469,8 @@ $x<2^(-27)$.
 
   if ( hx >= 0x43500000)           /* x >= 2^54 */
     {
-      if (   (hx & 0x000fffff) == 0x00080000 && x_db.i[LO_ENDIAN]  == 0)
-        return 0.0/0.0;                /* NaN */
+      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+        return x+x;                /* NaN */
       else
         if (x>0)
           return HALFPI.d;

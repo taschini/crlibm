@@ -30,7 +30,7 @@ This is true in all rounding modes.
 
 Concerning denormals, $\cosh(x) \geq 1$, so $\cosh(x)$ can't return
 denormal numbers, even for denormal inputs.  For small inputs ($|x|
-\leq 2^{-40}$), we have $\sinh(x) = x$ with 80 bits of precision, so
+\leq 2^{-26}$), we have $\sinh(x) = x$ with 80 bits of precision, so
 we can return a result without any computation on denormals.
 
 \section{Quick phase}
@@ -541,15 +541,4 @@ operating systems.
 Contributions to this table for new processors/OS/compiler combinations are welcome.
 
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Conclusion and perspectives}
-
-No cosh function exists in Ziv's libultim library, so the only quick
-hyperbolic cosine which was available for testing is in system libm.
-Our hyperbolic cosine is 30\% slower than this cosh, but this drawback
-is compensated by the fact that crlibm can ensure correct rounding,
-and 4 different rounding modes. System libm has only one rounding
-mode, and an average failure ratio of 42\%; most of the time only the
-last bit is false, but sometimes up to  12 bits can be false.
 
