@@ -85,7 +85,8 @@ extern double atan_rn(double x) {
     if ( hx < 0x3E400000 )
       {return sign*x;}                   /* x<2^-27 then atan(x) =~ x */
 
-  _FPU_SETCW(RN_DoubleExt);
+   DOUBLE_EXTENDED_MODE;
+
 
   if (x > MIN_REDUCTION_NEEDED) /* test if reduction is necessary : */
     {
@@ -141,31 +142,13 @@ extern double atan_rn(double x) {
       
       atan = q*x + x;
     
-      atanhi = (double) atan;
-      atanlo = atan-atanhi;
-
     }
-	_FPU_SETCW(RN_Double);
-	return sign*atanhi;
-#if NICOLASTEST
-#define epsilon 2.04221581890623872536809598138553304900554884091659e-19
-      if(atanlo<0) atanlo = -atanlo;
-      u = ((atanhi+(TWO_M_64*atanhi))-atanhi)*TWO_10; // = 1/2 * ulp(atanhi)
-      comp = epsilon*atanhi;
-      atanlo_u = u-atanlo;
-      if( atanlo_u > comp ) {
-	_FPU_SETCW(RN_Double);
-	return sign*atanhi;
-      }
-#else /* test à la Ziv */
-      _FPU_SETCW(RN_Double);
-    if(atanhi==atanhi+(atanlo*1.00368))
-      {     
-	return sign*atanhi;
-      }
-
-#endif
-    else{
+  
+  TEST_AND_RETURN_RN2(atan, sign*atan, 0x7fe);
+  /* or : 
+  TEST_AND_RETURN_RN_ZIV(sign*atan, 1.003);
+  */
+   {
 
     /*Second step, double-double  */
     long double tmphi, tmplo;
@@ -179,15 +162,9 @@ extern double atan_rn(double x) {
     long double atanhi,atanlo;
     int j;
   
-#if NICOLASTEST
-#else
-    _FPU_SETCW(RN_DoubleExt);
-#endif  
-
 #if EVAL_PERF
   crlibm_second_step_taken++;
 #endif
-
   
   if (x > MIN_REDUCTION_NEEDED) /* test if reduction is necessary : */
     {
@@ -269,7 +246,7 @@ extern double atan_rn(double x) {
   printf("             %1.50Le\n",atanhi + atanlo);
 #endif
   
-  _FPU_SETCW(RN_Double);
+   BACK_TO_DOUBLE_MODE;
   return sign*((double) (atanhi+atanlo));
     }
 }
