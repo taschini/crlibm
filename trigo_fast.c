@@ -508,8 +508,8 @@ double sin_rn(double x){
     /* CASE 2 : x < ???
        Fast polynomial evaluation */
     xx = x*x;
-    ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
-    Add12(sh,sl, x, ts);
+    ts = xx * (s3.d + xx*(s5.d + xx*s7.d ));
+    Add12(sh,sl, x, x*ts);
     if(sh == (sh + (sl * RN_CST_SIN_CASE2)))	
       return sh;
     else
@@ -897,11 +897,10 @@ double cos_rn(double x){
 
   if (absxhi < XMAX_COS_CASE2){
     /* CASE 1 : x small enough cos(x)=1. */
-    if (absxhi <XMAX_RETURN_1_FOR_COS)
+    if (absxhi <XMAX_RETURN_1_FOR_COS_RN)
       return 1.;
     
-    /* CASE 2 : x < 2^-7
-       Fast polynomial evaluation */
+    /* CASE 2 : Fast polynomial evaluation */
     xx = x*x;
     tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
     Add12(ch,cl, 1, tc);
@@ -942,11 +941,10 @@ double cos_ru(double x){
 
   if (absxhi < XMAX_COS_CASE2){
     /* CASE 1 : x small enough cos(x)=1. */
-    if (absxhi <XMAX_RETURN_1_FOR_COS)
+    if (absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
       return 1.;
     
-    /* CASE 2 : x < 2^-7
-       Fast polynomial evaluation */
+    /* CASE 2 : Fast polynomial evaluation */
     xx = x*x;
     tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
     Add12(ch,cl, 1, tc);
@@ -1007,15 +1005,14 @@ double cos_rd(double x){
   if (absxhi < XMAX_COS_CASE2){
     if (x==0) return 1;
     /* CASE 1 : x small enough cos(x)=1. */
-    if (absxhi <XMAX_RETURN_1_FOR_COS)
+    if (absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
       return ONE_ROUNDED_DOWN; 
     
-    /* CASE 2 : x < 2^-7
-       Fast polynomial evaluation */
+    /* CASE 2 :  Fast polynomial evaluation */
     xx = x*x;
     tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
     Add12(ch,cl, 1, tc);
-    /* Rounding test to + infinity */
+    /* Rounding test to -infinity */
     absyh.d=ch; 
     absyl.d=cl;
     /* absyh.l = absyh.l & 0x7fffffffffffffffLL; should be positive already */
@@ -1054,11 +1051,75 @@ double cos_rd(double x){
 
 
 
-
-/* TODO */
+/*************************************************************
+ *************************************************************
+ *              COS ROUNDED  TO ZERO      		     *
+ *************************************************************
+ *************************************************************/
 double cos_rz(double x){ 
-return scs_cos_rz(x);
+  double xx, tc,ch,cl, epsilon; 
+  int  absxhi, quadrant;
+  db_number x_split,  absyh, absyl, u, u53;
+
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;   
+
+  if (absxhi < XMAX_COS_CASE2){
+    if (x==0) return 1;
+    /* CASE 1 : x small enough cos(x)=1. */
+    if (absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
+      return ONE_ROUNDED_DOWN; 
+    
+    /* CASE 2 : Fast polynomial evaluation */
+    xx = x*x;
+    tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
+    Add12(ch,cl, 1, tc);
+    /* Rounding test to zero */
+    absyh.d=ch; 
+    absyl.d=cl;
+    /* absyh.l = absyh.l & 0x7fffffffffffffffLL; should be positive already */
+    absyl.l =  absyl.l & 0x7fffffffffffffffLL;
+    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+    u.l   = u53.l - 0x0350000000000000LL;
+    epsilon=EPS_COS_CASE2; 
+    if(absyl.d > epsilon * u53.d){ 
+      if(cl>=0) return ch;
+      else      return ch-u.d;
+    }
+    else return scs_cos_rz(x);  
+  }
+  /* CASE 3 : Need argument reduction */ 
+  else {
+    epsilon=EPS_COS_CASE3;
+    compute_cos_with_argred(&ch,&cl,&quadrant,x,absxhi);
+    /* Rounding test to zero */
+    absyh.d=ch;
+    absyl.d=cl;
+    absyh.l = absyh.l & 0x7fffffffffffffffLL;
+    absyl.l = absyl.l & 0x7fffffffffffffffLL;
+    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+    u.l   = u53.l - 0x0350000000000000LL;
+   
+    if(absyl.d > epsilon * u53.d){ 
+      if ((quadrant==1)||(quadrant==2)) {
+	cl=-cl; ch=-ch;
+      }
+    if(ch>0) {
+      if (cl>0) return ch;
+      else      return ch-u.d;
+    }
+    else {
+      if (cl>0) return ch+u.d;
+      else      return ch;
+    }	
+  }
+  else return scs_cos_rz(x);
+  }
 }
+
 
 /*************************************************************
  *************************************************************
