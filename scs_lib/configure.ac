@@ -27,7 +27,7 @@ powerpc*)
 i*86|k6|k7|pentium*|athlon*)
 	AC_DEFINE_UNQUOTED(SCS_TYPECPU_X86,1,[Processor type]);;
 x86_64|amd64)
-        AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_AMD64,1,[Processor type]);;
+        AC_DEFINE_UNQUOTED(SCS_TYPECPU_AMD64,1,[Processor type]);;
 ia64)
 	AC_DEFINE_UNQUOTED(SCS_TYPECPU_ITANIUM,1,[Processor type]);;
 esac;
