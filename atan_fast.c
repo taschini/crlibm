@@ -19,6 +19,7 @@ static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x)
   double tmphi,tmplo, x0hi,x0lo;
   double q,Xred2,x2;
   double Xredhi,Xredlo;
+  double xmBihi, xmBilo, tmphi2, tmplo2, atanlolo;
   
   int i;
   
@@ -33,7 +34,7 @@ static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x)
        * we choose 62 b(i) so that (x-b(i)) / (1+x*b(i)) < 2^
        */ 
       
-      double xmBihi, xmBilo;
+
       
       if (x > arctan_table[61][B].d) {
         i=61;
@@ -93,8 +94,7 @@ static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x)
                    coef_poly[0]))) ;
 
       /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
-      double atanlolo = Xredlo+ arctan_table[i][ATAN_BLO].d + Xredhi*q;
-      double tmphi2, tmplo2;
+      atanlolo = Xredlo+ arctan_table[i][ATAN_BLO].d + Xredhi*q;
       Add12( tmphi2, tmplo2, arctan_table[i][ATAN_BHI].d, Xredhi);
       Add12( *atanhi, *atanlo, tmphi2, (tmplo2+atanlolo));
       

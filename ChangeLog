@@ -1,4 +1,8 @@
-Changes between version 0.8 and version 0.2:
+Changes between version 0.8 and version 0.8beta:
+       
+        Added crlibm_exit()
+	
+Changes between version 0.8beta and version 0.2:
 
 	Added functions : sin cos tan atan sinh cosh
 

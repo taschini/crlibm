@@ -3,6 +3,9 @@
  using experimental techniques based on  double-extended arithmetic
 
  THIS IS EXPERIMENTAL SOFTWARE
+
+In particular it changes rounding modes all the time without warning
+nor restoring.
  
  *
  * Author : Nicolas Gast, Florent de Dinechin
@@ -24,11 +27,22 @@
 #define DEBUG 0
 #define NICOLASTEST 0
 
+#ifdef HAVE_FENV_H
+#include <fenv.h>
+#endif
+
+
+/* The following seems perfectly harmless */
+
+#ifdef FENV_H
+#pragma STDC FENV_ACCESS ON
+#endif
+
 #include "atan-pentium.h"
 #include <fpu_control.h>
-#ifndef __setfpucw
-#define __setfpucw(cw) __asm__ ("fldcw %0" : : "m" (cw))
-#endif 
+
+static const unsigned short RN_Double=(_FPU_DEFAULT & ~_FPU_EXTENDED)|_FPU_DOUBLE;
+static const unsigned short RN_DoubleExt =_FPU_DEFAULT;
 
 
 /* Dummy functions to compile OK */
@@ -73,7 +87,7 @@ extern double atan_rn(double x) {
     if ( hx < 0x3E400000 )
       {return sign*x;}                   /* x<2^-27 then atan(x) =~ x */
 
-  __setfpucw(0x037f);
+  _FPU_SETCW(RN_DoubleExt);
 
   if (x > MIN_REDUCTION_NEEDED) /* test if reduction is necessary : */
     {
@@ -133,7 +147,7 @@ extern double atan_rn(double x) {
       atanlo = atan-atanhi;
 
     }
-	__setfpucw(0x027f);
+	_FPU_SETCW(RN_Double);
 	return sign*atanhi;
 #if NICOLASTEST
 #define epsilon 2.04221581890623872536809598138553304900554884091659e-19
@@ -142,11 +156,11 @@ extern double atan_rn(double x) {
       comp = epsilon*atanhi;
       atanlo_u = u-atanlo;
       if( atanlo_u > comp ) {
-	__setfpucw(0x027f);
+	_FPU_SETCW(RN_Double);
 	return sign*atanhi;
       }
 #else /* test à la Ziv */
-    __setfpucw(0x027f);
+      _FPU_SETCW(RN_Double);
     if(atanhi==atanhi+(atanlo*1.00368))
       {     
 	return sign*atanhi;
@@ -169,7 +183,7 @@ extern double atan_rn(double x) {
   
 #if NICOLASTEST
 #else
-    __setfpucw(0x037f);
+    _FPU_SETCW(RN_DoubleExt);
 #endif  
 
 #if EVAL_PERF
@@ -192,16 +206,16 @@ extern double atan_rn(double x) {
         }
       
       Mul12_ext(&tmphi,&tmplo, x, arctan_table[i][B]);
-
+      
       if (x > 1)
         Add22_ext(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
       else {Add22_ext( &x0hi , &x0lo , 1.0,0.0,tmphi,tmplo);}
-
+      
       Div22_ext( Xredhi, Xredlo, xmBihi , xmBilo , x0hi,x0lo);
       
       Xred2 = Xredhi*Xredhi;
       Mul22_ext( &Xred2hi,&Xred2lo,Xredhi,Xredlo,Xredhi, Xredlo);
-
+      
       /*poly eval */
       
       q = (coef_poly[4][0]+Xred2*
@@ -230,12 +244,12 @@ extern double atan_rn(double x) {
     {
       /* Polynomial evaluation */
       Mul12_ext( &Xred2hi,&Xred2lo,x,x);
-
+      
       /*poly eval */
       q = Xred2hi*(coef_poly[5][0]+Xred2hi*
-              (coef_poly[6][0]+Xred2hi*
-               (coef_poly[7][0]+Xred2hi*
-                (coef_poly[8][0]))));
+		   (coef_poly[6][0]+Xred2hi*
+		    (coef_poly[7][0]+Xred2hi*
+		     (coef_poly[8][0]))));
       
       Add12_ext(qhi,qlo, coef_poly[4][0],q);
       Mul22_ext(&qhi,&qlo, qhi,qlo, Xred2hi,Xred2lo);
@@ -257,9 +271,7 @@ extern double atan_rn(double x) {
   printf("             %1.50Le\n",atanhi + atanlo);
 #endif
   
-  __setfpucw( 0x027f );
+  _FPU_SETCW(RN_Double);
   return sign*((double) (atanhi+atanlo));
-
-
     }
 }
