@@ -116,16 +116,19 @@ but different polynomials (which compute sin(2Pi*y) and cos(2Pi*y).
 #define DEBUG 0
 /* TODO: 
 
- *
- * In some Cody and Waite there are Mul12 involving k, CH and CM. They
- *	 can be improved by pre-splitting CH, CM (tabulated values)
- *	 and k (as an int) Then you can improve the precision by
- *	 taking kmax into account
- *
- * - The first coefficient of the cosine polynomial is equal exactly
- *   to 1/2 and this should be modified in order to increase to accuracy
- *   of the approximation.
 
+ - In some Cody and Waite there are Mul12 involving k, CH and CM. They
+	 can be improved by pre-splitting CH, CM (tabulated values)
+	 and k (as an int) Then you can improve the precision by
+	 taking kmax into account
+
+ - The first coefficient of the cosine polynomial is equal exactly
+   to 1/2 and this should be modified in order to increase to accuracy
+   of the approximation.
+
+ - The second step should get the reduced argument from the first step
+   (and use the same argument reduction). This should lead to 5x
+   improvement of the worst case.
 */
 
 
