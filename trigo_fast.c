@@ -365,8 +365,6 @@ struct rrinfo_s {double rh; double rl; double x; int absxhi; int function;} ;
 typedef struct rrinfo_s rrinfo;
 #define changesign function
 
-
-
 static void ComputeTrigWithArgred2(rrinfo *rri){ 
   double sah,sal,cah,cal, yh, yl, yh2, ts,tc, kd; 
   double kch_h,kch_l, kcm_h,kcm_l, th, tl,sh,sl,ch,cl;

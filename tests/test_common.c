@@ -143,9 +143,9 @@ double rand_for_trig(){
   result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
 
 #if 1 /* predictive test perf, not soaktest*/
-  /* Now set the exponent  between -30 and 30 */
+  /* Now set the exponent  between -20 and 40 */
   e =  (int) ( (rand_double_normal()-1) * 60 ); 
-  result.i[HI_ENDIAN] += (1023 + e - 30)<<20;
+  result.i[HI_ENDIAN] += (1023 + e - 20)<<20;
 #else
   result.i[LO_ENDIAN]=rand_int();
   result.i[HI_ENDIAN]=rand_int();
