@@ -419,9 +419,9 @@ return scs_cos_rz(x);
  *************************************************************
  *************************************************************/ 
 double tan_rn(double x){  
-  double reshi, reslo, sh, sl, ch, cl, kd, yh, yl, sah, sal, cah, cal;
+  double reshi, reslo, sh, sl, ch, cl, kd, yh, yl;
   db_number y;
-  double rnconstant = 1.00502;
+  double rnconstant = 1.00552;
   int k, quadrant;
 
 
