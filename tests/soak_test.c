@@ -163,9 +163,8 @@ void test_all() {
 	    global_worst_inpt.d  = input.d;
 	    global_worst_inpt2.d = input2.d;
 	  }
-	  printf("Worst relatives error : %e \n",global_worst_err);
-	  printf("for input :\n");
-	  printf(" x =%.50e          (%08x %08x) \n", 
+	  printf("Worst crlibm relative error so far : 2^(%f)\n",global_worst_err);
+	  printf(" for x =%.50e     (%08x %08x) \n", 
 		 global_worst_inpt.d, 
 		 global_worst_inpt.i[HI], 
 		 global_worst_inpt.i[LO]);
@@ -327,6 +326,6 @@ int main (int argc, char *argv[])
 #else
 int main (int argc, char *argv[]) 
 { 
-  printf("Sorry, I need to be compiled against MPFR (get it from www.mpfr.org)\n then configure --enable-mpfr\n");
+  printf("Sorry, I need to be compiled against MPFR\n  (get it from www.mpfr.org, then:   configure --enable-mpfr)\n");
 }
 #endif
