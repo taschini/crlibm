@@ -29,7 +29,7 @@ include_HEADERS = crlibm.h
 
 SUBDIRS = scs_lib . tests
 
-AM_CFLAGS =  -fPIC -std=c99 -Wall -Wshadow -Wpointer-arith  -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
+AM_CFLAGS =  -fPIC -std=c99 -Wall -W -Wshadow -Wpointer-arith  -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
 
 EXTRA_DIST = VERSION\
 	maple/Common_Maple_Procedures.mpl \

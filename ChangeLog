@@ -1,19 +1,33 @@
-Changes between version 0.8 and version 0.8beta:
+Summary of changes between version 0.8 and version 0.8beta
+==========================================================
        
+<David Defour and Florent de Dinechin>
+	Rewritten faster trigonometric functions
+<Florent de Dinechin>
         Added crlibm_exit()
+	crlibm_init() now returns the old processor status flag
+	Proof for the trigonometric functions
+<Philippe Defert>
+	Added crlibm.spec file to build rpms
 	
-Changes between version 0.8beta and version 0.2:
+Summary of changes between version 0.8beta and version 0.2:
+==========================================================
 
-	Added functions : sin cos tan atan sinh cosh
+<Catherine Daramy & Florent de Dinechin>
+	Added functions : sin cos tan
 
+<Nicolas Gast>
+	Added function atan 
+	Added function atan specialized for pentium (atan-pentium.c)
+
+<Matthieu Gallet>
+	Added functions sinh cosh
+
+<Florent de Dinechin>
 	Changed Maple files from .mw and .mws to .mpl
-
 	Added FMA support in crlibm_private.h
-
 	Added polish to some of the proofs
-
 	Improved performance tests for tighter timing, 
-
 	Fairer speed comparison to mpfr: We now compare to mpfr with
 	 53-bit mantissa, although this doesnot provide correct rounding
 	 if the result is a denormal (double rounding). Previously we

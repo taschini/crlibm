@@ -141,9 +141,15 @@ double rand_for_trig(){
   result.i[LO_ENDIAN]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
   result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
+
+#if 1 /* predictive test perf, not soaktest*/
   /* Now set the exponent  between -30 and 30 */
   e =  (int) ( (rand_double_normal()-1) * 60 ); 
   result.i[HI_ENDIAN] += (1023 + e - 30)<<20;
+#else
+  result.i[LO_ENDIAN]=rand_int();
+  result.i[HI_ENDIAN]=rand_int();
+#endif
   return result.d;
 
 }
