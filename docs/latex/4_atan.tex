@@ -237,7 +237,7 @@ improve performances. We will compute the error separately.
 
 An accurate computation is done in \texttt{maple/arctan\_coef.mw} 
 
-\subsubsubsection{Notes on $b_i$, $a_i$ and $\arctan(b_i)$}
+\paragraph{Notes on $b_i$, $a_i$ and $\arctan(b_i)$}
 The $b_i$ and $a_i$ are computed thanks to the \texttt{allbi} maple
 procedure (see \texttt{maple/arctan\_coef.mw}). There is no approximation
 error on $b_i$ since they are computed (in the maple procedure) as
@@ -246,8 +246,8 @@ approximation of $2^{-105}$ on them. We have a possible error about $a_i$
 because they are real number stored as double but we have a margin on $a_i$
 that prove us that $\xred$ is always smaller than $e$.
 
-\\
 \subsubsection{Error about argument reduction}
+
 \begin{lstlisting}[caption={Reduction part 1},firstnumber=1]
 
       if (x > arctan_table[61][B].d) {
@@ -295,8 +295,9 @@ Line 6 & DIV2 makes $\epsilon_{104}$ (according to Ziv ... ref) error so we have
          & = \xred . (1+\epsilon_{102.6})\nonumber
 \end{split}
 \end{equation}
+So: 
 \begin{equation}
-So: \epsilon_{\xred} & = \epsilon_{102.6} \label{eps:equation}
+\epsilon_{\xred} = \epsilon_{102.6} \label{eps:equation}
 \end{equation}
 \subsubsection{Error about polynomial evaluation}
 \begin{lstlisting}[caption={Polynomial Evaluation},firstnumber=1]
@@ -369,7 +370,6 @@ rounding constant of $1.000876$.
 
 And when $i > 10$ the relative error is $\epsilon_{70.27}$ that leads to a
 rounding constant of $1.00000126$.
-\end{tabular}
 
 \subsubsection{Error when there is no reduction}
 \begin{lstlisting}[caption={No reduction},firstnumber=1]
@@ -452,7 +452,7 @@ So:
 Then : $\arctan(x) \approx x $
 \bigskip
 
-\subsubsection{Rounding toward $-\infnty$}
+\subsubsection{Rounding toward $-\infty$}
 \begin{lstlisting}[caption={Exceptional cases : rounding up},firstnumber=1]
 
   if ( hx >= 0x43500000)           /* x >= 2^54 */
@@ -480,7 +480,7 @@ Then : $\arctan(x) \approx x $
 The differences with rounding to nearest mode are for $frac{pi}{2}$ for
 $x<2^(-27)$.
 
-\subsubsection{Rounding toward $-\infnty$}
+\subsubsection{Rounding toward $-\infty$}
 
 \begin{lstlisting}[caption={Exceptional cases : rounding up},firstnumber=1]
 
@@ -513,7 +513,7 @@ There are the same differences for rounding down.
 This function is quite simple: it call one of the two function defineded
 before.
 
-\begin{lstlisting}[caption={Rounding to zero},firstnumber=&]
+\begin{lstlisting}[caption={Rounding to zero},firstnumber=1]
 
 extern double atan_rz(double x) {
   if (x>0)
