@@ -233,7 +233,7 @@ void test_init(/* pointers to returned value */
   else if (strcmp (func_name, "atan") == 0)
     {
       *randfun        = rand_for_atan;
-      *worst_case= .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
+      *worst_case= 9.54714164331460501955461950274184346199035644531250e-02; 
       *testfun_libm   = atan;
       switch(crlibm_rnd_mode){
       case 2:
