@@ -1,2 +1,7 @@
-2003-04-18 : Florent de Dinechin
-	* initial autoconf/automake obsfuscation
+Changes between version 0.8 and version 0.2:
+	added functions : sin cos tan atan sinh cosh
+	changed Maple files from .mw to .mpl
+	added FMA support in crlibm_private.h
+	added polish to some of the proofs
+Version 0.2 : exp and log
+
