@@ -4,16 +4,15 @@
 
 \section{Overview}
 
-The goal is to compute logarithm function so that it provides
-correctly rounded result in double precision. The worst-case accuracy
-required for this purpose is $118$ bits according to Lefèvre and
-Muller \cite{LefMul2004}.
+The worst-case accuracy required to compute a logarithm function
+correctly rounded in double precision is $118$ bits according to
+Lefèvre and Muller \cite{LefMul2004}.
 
-We therefore proceed in two phases \cite{Ziv91}.  The first, quick phase
-(program \texttt{log\_fast.c}) is  accurate only to $59-63$
-bits.  If this is not enough to decide correct rounding, a second step
-accurate to $120$ bits using the SCS library is lauched (program
-\texttt{log.c}).
+We therefore proceed in two phases \cite{Ziv91}.  The first, quick
+phase (program \texttt{log\_fast.c}) is accurate only to $57-64$ bits,
+depending on the execution path as detailed below.  If this is not
+enough to decide correct rounding, a second phase, accurate to $120$
+bits using the SCS library is launched (program \texttt{log.c}).
 
 
 \subsubsection*{Definition interval and exceptional cases}
@@ -27,34 +26,35 @@ The natural logarithm is defined over positive floating point numbers.
 
 This is true in all rounding modes.
 
-\subsubsection*{Avoiding denormals} 
-
-If $x < 2^{-1022}$ , ie if x is a subnormal number, then we use the equation
-$$\log(x) = -52 * \log(2) + \log\left(\frac{x}{2^{-52}}\right)$$ where
-$\displaystyle \frac{x}{2^{-52}}$ is now a normalized number.
-
-As $\log(1+\epsilon) \approx \epsilon$ when $\epsilon\rightarrow 0$,
-the smallest exponent of a logarithm for a double-precision input
-number will be for the input values $\log(1+2^{-52})$ and
-$\log(1-2^{-52})$. This ensures that the output will never be a
-denormal. This will allow us to ensure that no denormal ever appears
-in the computation of the logarithm of a double-precision input
-number.
-
-
-
+Concerning denormals, the smallest exponent of the logarithm of a
+double-precision input number is $-53$ (for the input values
+$\log(1+2^{-52})$ and $\log(1-2^{-52})$, as $\log(1+\epsilon) \approx
+\epsilon$ when $\epsilon\rightarrow 0$). This will make it easy to
+ensure that no denormal ever appears in the computation of the
+logarithm of a double-precision input number.
 
 \section{Quick phase}
 
-\subsection{Description of the algorithm}
+\subsection{Overview of the algorithm}
 
 The algorithm consists of an argument reduction using the well-known
 property of the logarithm, and a polynomial evaluation using a degree
 12 polynomial.
 
-\subsubsection{Argument reduction and reconsruction}
 
-It is based around the equation 
+First we need to handle denormal inputs: If $x < 2^{-1022}$ , ie if x
+is a subnormal number, then we use the equation
+$$\log(x) = -52 * \log(2) + \log\left(\frac{x}{2^{-52}}\right)$$
+where
+$\displaystyle \frac{x}{2^{-52}}$ is now a normalized number.
+
+
+Argument reduction starts with the decomposition of $x$ into its
+mantissa $m$ and its exponent $E$. This decomposition can be computed
+exactly. The mantissa is in $[1,2[$ and we prefer an interval centered
+around $1$, so if needed the mantissa is possibly divided by 2 (and
+the exponent incremented) to get
+  
 \begin{equation}
 x = 2^{E} * y \label{eq:argred}
 \end{equation}
@@ -63,10 +63,11 @@ where $E$ is an integer, and $y$ satisfies
 \frac{11}{16}<\frac{\sqrt{2}}{2} < y < \sqrt{2}<\frac{23}{16} \quad.
 \end{equation}
 
-The final reconstruction will then use the equation
+The final reconstruction will use the equation
  \begin{equation}
 \log(x) = E * \log(2) + \log(y) \quad.
 \end{equation}
+
 
 The interval $[\frac{11}{16},\frac{23}{16}]$ being too large for a
 polynomial approximation of acceptable degree, it is broken down into
@@ -76,67 +77,46 @@ size $2^{-3}$.  The value of $i$, the index of the interval $X[i]$ to
 which $y$ belongs, will be computed out of a few bits of $y$.
 
 Noting $\middlei$ the middle of the $i$-th interval, the final range
-reduction consists in computing $z = y - \middlei$. On each interval, a
-polynomial $P[i](z)$ approximates $\log(y)$. In the following $P[i]$
-will be noted $P$ when no ambiguity arises.
+reduction consists in computing $z = y - \middlei$. Again this range
+reduction can be computed exactly thanks to Sterbenz lemma.  On each
+interval, a polynomial $P[i](z)$ approximates $\log(y)$. In the
+following $P[i]$ will be noted $P$ when no ambiguity arises.
+
+Each polynomial has coefficients which are exactly representable as
+IEEE doubles, with the two first coefficients being exactly
+representable as the sum of two doubles: $c_0 = c_0^{hi} + c_0^{lo}$
+and $c1 = c_1^{hi} + c_1^{lo}$. Their relative approximation error is
+also given in Table~\ref{table:TablePolysLog1}.
 
 
-
-\begin{table}[htdp]\caption{polynomial precision\label{table:TablePolysLog1}}
+\begin{table}[htdp]\caption{The polynomials and their intervals \label{table:TablePolysLog1}}
 \renewcommand{\arraystretch}{1.3}
 \begin{center}
-\begin{tabular}{|c|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|c|}
 \hline
-polynomial &   definition interval     &   $\middlei$   & max value of $|z|$\\
+polynomial &    interval     &   $\middlei$   & $\max(|z|)$ & $\log_2(\maxrelerr{approx}[i])$\\
 \hline  
-P[0] & $[\frac{11}{16},\frac{12}{16}]$ &  $\frac{23}{32}$ & $2^{-5}$  \\ 
+P[0] & $[\frac{11}{16},\frac{12}{16}]$ &  $\frac{23}{32}$ & $2^{-5}$  &  68.38 \\ 
 \hline 
-P[1] & $[\frac{12}{16},\frac{13}{16}]$ &  $\frac{25}{32}$ & $2^{-5}$  \\
+P[1] & $[\frac{12}{16},\frac{13}{16}]$ &  $\frac{25}{32}$ & $2^{-5}$  &  70.79 \\
 \hline 
-P[2] & $[\frac{13}{16},\frac{14}{16}]$ &  $\frac{27}{32}$ & $2^{-5}$  \\ 
+P[2] & $[\frac{13}{16},\frac{14}{16}]$ &  $\frac{27}{32}$ & $2^{-5}$  &  67.49 \\ 
 \hline 
-P[3] & $[\frac{14}{16},\frac{15}{16}]$ &  $\frac{29}{32}$ & $2^{-5}$  \\ 
+P[3] & $[\frac{14}{16},\frac{15}{16}]$ &  $\frac{29}{32}$ & $2^{-5}$  &  66.47  \\ 
 \hline
-P[4] & $[\frac{15}{16},\frac{17}{16}]$ &  $1$             & $2^{-4}$ \\ 
+P[4] & $[\frac{15}{16},\frac{17}{16}]$ &  $1$             & $2^{-4}$  &  61.72\\ 
 \hline 
-P[5] & $[\frac{17}{16},\frac{19}{16}]$ &  $\frac{18}{16}$ & $2^{-4}$  \\ 
+P[5] & $[\frac{17}{16},\frac{19}{16}]$ &  $\frac{18}{16}$ & $2^{-4}$  &  64.54  \\ 
 \hline 
-P[6] & $[\frac{19}{16},\frac{21}{16}]$ &  $\frac{20}{16}$ & $2^{-4}$  \\ 
+P[6] & $[\frac{19}{16},\frac{21}{16}]$ &  $\frac{20}{16}$ & $2^{-4}$  &  65.77\\ 
 \hline 
-P[7] & $[\frac{21}{16},\frac{23}{16}]$ &  $\frac{22}{16}$ & $2^{-4}$  \\ 
+P[7] & $[\frac{21}{16},\frac{23}{16}]$ &  $\frac{22}{16}$ & $2^{-4}$  &  70.51 \\ 
 \hline
 \end{tabular}\end{center}\end{table}
 
-\subsubsection{Polynomial approximation}
-
-On each interval, we have a polynomial $P(z)$ of degree 12 which
-approximates $\log(y)$ with an error less than $2^{-60}$.  Each
-polynomial has coefficients which are exactly representable as IEEE
-doubles, with the two first coefficients being exactly representable
-as the sum of two doubles: $c_0 = c_0^{hi} + c_0^{lo}$ and $c1 =
-c_1^{hi} + c_1^{lo}$. 
 
 
-The polynomials are produced by a program in
-\texttt{maple/coef\_log.mw}, which directly produces the file
-\texttt{log\_fast.h}.
-
-
-\subsubsection{Reconstruction}
-
-The reconstruction computes: 
-$$\log(x) \approx E\times \log(2) + P(z)$$
-where $P(z)$ has been
-computed by the previous step as the sum of two double-precision
-numbers.  The constant $\log(2)$ is also stored as the sum of two
-double-precision numbers, and $E$ is a relatively small integer. This
-computation uses double-double arithmetic.
-
-
-\subsubsection{Error analysis}
-
-
-The polynomials are evaluated thanks to a Horner scheme:
+The polynomials  are evaluated thanks to a Horner scheme:
 
 $$P(z) = c_0^{hi}+c_0^{lo} + z .(c_1^{hi} +c_1^{lo} + z .(c_2 + z
   .(c_3 + ...
@@ -145,61 +125,146 @@ $$
 where the two last iterations may use double-double arithmetic if
 required by the overall target accuracy, as detailed below.
 
-
-The reconstruction adds another small error.  As $|E|<1024+52$, we have
-$|E|\log(2)<746$, and the maximum absolute error of storing $\log(2)$
-as two doubles and multiplying by $E$ is smaller than $2^{-90}$.
-
-
-The program in \texttt{maple/coef\_log.mw} computes, on each interval,
-the maximum approximation error $\deltapprox$ (this is a relative
-error), the accumulated rounding error of the Horner scheme
-$\deltaround$ (this is an absolute error) and the maximum value of the
-polynomial on the interval $\maxp$. This Maple script directly outputs
-the values of the rounding constants required by theorems of section
-\ref{section:testrounding}.
+Also note that the range of $z$ makes it easy to prove that no
+denormal ever appear in the Horner evaluation of a polynomial. This
+will be checked by the Maple procedure computing the rounding error of
+the Horner scheme.
 
 
-Error analysis distinguishes four cases, corresponding to four
-execution paths in the program.
-\begin{enumerate}
-\item {If $|E\log(2)| > \mathtt{MIN\_FASTPATH}=128.5$} then the whole
-  polynomial evaluation may be performed in double-precision, with a
-  total (approximation and rounding) absolute error smaller than
-  $2^{-55.7}$. As the absolute value of $P(x)$ in this scheme is
-  always smaller than $0.38$, this ensures a relative error on
-  $E\log(2)+P(x)$ smaller than $2^{-62.8}$. This case represents a
-  trade-off between accuracy (which impacts the percentage of calls to
-  the \accurate\ phase), and speed.
+The reconstruction computes in double-double arithmetic: 
+$$\log(x) \approx E\times \log(2) + P(z)$$
+where $P(z)$ has been
+computed by the previous step as the sum of two double-precision
+numbers.  
 
+The computation of $E\times \log(2)$ as a double-double exploits the
+fact that $E$ is a small integer: The constant $\log(2)$ is stored as
+the sum of two double-precision numbers
+$l_h+l_l=\log(2)(1+\epsilon_{-101})$, with $l_h$ having the 11 lower
+bits of its mantissa equal to zero. Therefore, the computation of
+$E\otimes l_h$ is exact. Now $E\times \log(2)$ may be computed as
+Add12$(E\otimes l_h, E\otimes l_l)$.  There the Add12 procedure is
+exact as well as the computation of $E\otimes l_h$, so the only errors
+are the representation error in $l_l$ and the rounding error in
+$E\otimes l_l$, the sum of which amounts to a total relative error
+smaller than $\maxrelerr{reconstruction}=2^{-100}$ for the computation of $E\times \log(2)$.
+
+
+\subsection{Error analysis}
+
+Bounds on the polynomial approximation errors (both relative
+$\maxrelerr{approx}[i]$ and absolute $\maxabserr{approx}[i]$) are easily computed under Maple
+as infinite norms.
+
+The rounding tests need a bound on the relative error, which can be computed as follows:
+
+\begin{itemize}
+\item If $E\ne0$, then the result is computed as $E\times \log(2) +
+  P(z)$. We compute a bound on the relative error by dividing the sum
+  of all absolute errors in the approximation scheme by the minimum
+  value attainable value of the result:
+  $$\maxrelerr{total} = \frac{\maxabserr{approx} +
+    \maxabserr{rounding-poly} +
+    \maxabserr{reconstruction}}{\min(|E\log(2)+P(x)|)}$$
   
-\item {If $16.5<|E\log(2)|\le 128.5$} then the last two additions and
-  the last multiplication of the Horner polynomial evaluation are
-  performed in double-double-precision. The total relative error in
-  this case is smaller than $2^{-64.8}$.
+  Here,
+  $\maxabserr{reconstruction}=\max(E\log(2))\times\maxrelerr{reconstruction}$
+  as computed previously, and $\maxabserr{approx}$ and
+  $\maxabserr{rounding-poly}$ can be computed by generic Maple
+  procedures of 
+  \ref{section:commonMaple} for several variants of the polynomial evaluation which are
+  detailed below.
   
-\item {If $0<|E\log(2)| < 16.5$} then we use double-double arithmetic
-  as in the previous case, and the bound on the relative error is
-  $2^{-60.2}$.
+  In this formula one sees several ways to handle the tradeoff between
+  accuracy (which translates as percentage of cases where the slow,
+  accurate phase will be needed) and performance of the quick phase:
+\begin{itemize}
+\item The absolute value of $P(z)$ is bounded by $0.37$. A bound on
+  the denominator can therefore easily be deduced from the value of
+  $|E|$.  In other terms, all things being equal, there will be less
+  chances to go to the accurate phase for larger $E$.  It is therefore
+  worth adding a test to the code which selects a rounding constant
+  according to the value of $|E|$.
   
-\item {If E=0} then the last two additions and the last two
-  multiplications of the Horner polynomial evaluation are performed in
-  double-double-precision. The total relative error in this case is
-  smaller than $2^{-57.7}$. This is the error for the fifth
-  polynomial, which has $\middlei=1$ and therefore approximates
-  $\log(1+z)$. Therefore its first coefficient is exactly zero. In the
-  case when $E\ne0$ it only means a smaller absolute error, and
-  therefore a smaller relative error of $E\log(2)+P(x)$. However, for
-  $E=0$, the overall relative error is the relative error in
-  evaluating $P(x)$, and has to be computed specifically as shown in
-  \ref{sec:error_maple}.
-\end{enumerate}
+  The ``normal'' execution path of our algorithm performs the
+  Horner polynomial evaluation with the three last operations (two additions
+  and one multiplication) performed in double-double arithmetic. This
+  leads to two values of $\maxrelerr{total}$: 
+  \begin{itemize}
+  \item {If $|E| \ge 24$} then we have  $\maxrelerr{total} = 2^{-64.8}$.
+  \item {If $0<|E| < 24$} then we have $\maxrelerr{total} = 2^{-60.2}$.
+  \end{itemize}
+  
+\item For even larger values of $|E|$, we can afford to have a large
+  $\maxabserr{rounding-poly}$ and still get an acceptable
+  $\maxrelerr{total}$. This allows us to evaluate the polynomial
+  faster, without using double-double arithmetic. This situation will
+  be referred to as the \emph{fast path} in the following. 
+  
+  Actually, performing only the last Horner addition in double-double
+  on the fast path turns out to improve the average performance: It
+  slows down the quick phase only a little, and greatly reduces
+  $\maxabserr{rounding-poly}$, hence the chance of taking the slow,
+  accurate phase. This in turn allows to take the fast path more
+  often, \emph{i.e} for more values of $E$.
+\end{itemize}
+
+\item If $E=0$ then the reconstruction step is skipped, and the error
+  $\maxrelerr{total}$ is given by the Maple procedures of
+  \ref{section:commonMaple}. 
+  
+  It turns out that the polynomial $P[5]$ (the one which is centered
+  on $1$ and has therefore a null coefficient of degree 0) leads to a
+  relative rounding error which is much worse than that of the other
+  polynomials. To still get an acceptable percentage of accurate phase
+  in this case, and as the code contains a test if $E=0$ anyway, we
+  chose to perform the polynomial evaluation in this case with one
+  double-double multiplication more than in the normal case.
+
+\end{itemize}
+
+
+Actual values for this error analysis are summed up in
+Table~\ref{tab:logerror}. In the implementation, we take as rounding
+constant the worst case in each column. One remarks that the worst
+case for the three first columns is for $P[5]$, which would suggest
+yet another improvement: having specific rounding constants for $i=5$.
+A closer look  at the average expected improvement shows that the
+benefit will be minimal.
+
+
+\begin{table}[!h]
+  \begin{center}
+    \begin{tabular}{|c|c||c|c|c|c|}
+      \hline
+      $P$ & $\infnorm{P}$ &  $E=0$ & $1 \le E < 24$ & $24\le E < 186$ & fast path\\ 
+      \hline
+      \hline
+      P[1] & 0.375 & 61.10& 61.26 & 66.93 & 63.30\\ 
+      \hline                             
+      P[2] & 0.288 & 60.89& 61.87 & 67.20 & 63.46\\ 
+      \hline                             
+      P[3] & 0.208 & 60.47& 62.35 & 67.43 & 63.39\\ 
+      \hline                             
+      P[4] & 0.134 & 59.62& 62.77 & 67.65 & 63.73\\ 
+      \hline                             
+      P[5] & 0.065 & 57.68& 60.16 & 64.88 & 62.91\\ 
+      \hline                             
+      P[6] & 0.172 & 58.12& 61.22 & 66.20 & 62.78\\ 
+      \hline                             
+      P[7] & 0.272 & 59.93& 61.22 & 66.50 & 62.94\\ 
+      \hline                             
+      P[8] & 0.363 & 60.90& 61.19 & 66.81 & 63.23\\
+      \hline
+    \end{tabular}
+  \end{center}
+  \caption{Error analysis for the various path in the algorithm. The table gives $-\log_2(\maxrelerr{total})$ in the different execution path.}
+  \label{tab:logerror}
+\end{table}
 
  
 
-
-
-
+\newpage
 \subsection{Details of computer program}
 
 A procedure \texttt{log\_quick} contains the computation shared by the
@@ -214,11 +279,11 @@ the rounding constant computed as per Theorem~\ref{th:roundingRN1}
 p.~\pageref{th:roundingRN1} for round-to nearest.
 
 
+\newpage
 \subsubsection{Exceptional cases and argument reduction}
 
 This part  is shown for \texttt{log\_rn}, but it is identical for the three functions.
 
-\newpage
 \begin{lstlisting}[caption={Exceptional cases},firstnumber=1]
  double log_rn(double x) { 
    db_number y;
@@ -275,6 +340,7 @@ Line 29-31 & Now, we have: $ 1 \leq y.d < 2$ and we want $ \frac{1}{\sqrt2} \leq
 
 
 \newpage
+
 \begin{lstlisting}[caption={Procedure \texttt{log\_quick}},firstnumber=1]
 static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_number * py, int E) {
    double ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo;
@@ -292,7 +358,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
     
 
     /* Compute ln2_times_E = E*log(2)   in double-double */
-    Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, (double)E, 0.);
+    Add12( ln2_times_E_HI, ln2_times_E_LO, ((double)E)*ln2hi.d, ((double)E)*ln2lo.d); 
 
 
     /* Now begin the polynomial evaluation of log(1 + z)      */
@@ -353,8 +419,8 @@ Line 13 & Let us prove that z.d is computed exactly, without rounding error: \\
 & \vspace{1ex}Therefore ${\middlei}/{2} \leq \frac{22}{32} < \frac{23}{32} \leq \middlei - \frac{1}{16} \leq y.d$\\
 & and $y.d \leq \middlei + \frac{1}{16} \leq \frac{23}{16} < \frac{25}{16} \leq \middlei\times 2$\\
 Line 17 & The computation of $E\log(2)$ is done as early as possible. \\
-        & Neither $E$ nor  $E\log(2)$ is greater than $2^{970}$ so we may use the unconditional Mul22. \\
-Lines 24-27 & Begin of Horner evaluation in double arithmetic\\
+        & As stated previously, the relative error here is smaller than $2^{-100}$\\
+Lines 22-27 & Begin of Horner evaluation in double arithmetic\\
 Line 29 & This test is equivalent to $|ln2\_times\_E_HI| < \mathtt{MIN\_FASTPATH}$\\
         & Currently $\mathtt{MIN\_FASTPATH}=128.5$ but the Maple programs in \texttt{coef\_log.mw}\\
         & allow to change this value.\\
@@ -525,25 +591,27 @@ in the required mode by one of \texttt{scs\_get\_d}, \texttt{scs\_get\_d\_pinf} 
 \subsection{Speed}
 Table \ref{tbl:log_abstime} (produced by the \texttt{crlibm\_testperf}
 executable) gives absolute timings for a variety of processors and
-operating systems. Contributions to this table for new
-processors/OS/compiler combinations are welcome.
+operating systems.  The input numbers for these tests are random
+positive double-precision numbers with a normal distribution on the
+exponents. More precisely, we take random 63-bit integers and casted
+them into double-precision numbers.  
 
 \begin{table}[!htb]
 \begin{center}
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{|l|r|r|r||r|}
-\hline\hline
+\hline
  \multicolumn{4}{|c|}{Pentium 4 Xeon / Linux Debian sarge / gcc 3.3}   \\ 
  \hline
                          & min time      & max time      & avg time \\ 
  \hline
- \texttt{libm}           & 724          & 7088          &        732 \\ 
+ \texttt{libm}           & 724          & 9808          &        733 \\ 
  \hline
-  \texttt{mpfr}          & 568          & 290924        &      83827 \\ 
+  \texttt{mpfr}          & 496          & 288676        &      84955 \\ 
  \hline
-  \texttt{libultim}      & 784          & 485320        &       1062 \\ 
- \hline\hline
- \texttt{crlibm}         & 968          & 51392         &       1147 \\ 
+  \texttt{libultim}      & 784          & 524756        &       1049 \\ 
+ \hline
+ \texttt{crlibm}         & 896          & 60832         &       1080 \\ 
  \hline
  \hline
  \multicolumn{4}{|c|}{Pentium III / Linux Debian woody / gcc 3.2}   \\
@@ -555,14 +623,32 @@ processors/OS/compiler combinations are welcome.
   \texttt{mpfr}          & 431          & 315982        &      92250 \\
  \hline
   \texttt{libultim}      & 376          & 217005        &        534 \\
- \hline\hline
- \texttt{crlibm}         & 383          & 22861         &        654 \\
  \hline
+ \texttt{crlibm}         & 383          & 22861         &        634 \\
+ \hline
+ \hline
+  \multicolumn{4}{|c|}{PowerPC G4 / MacOS X / gcc2.95}   \\
+ \hline
+                         & min time      & max time      & avg time \\
+ \hline
+ \texttt{libm}           & 14           & 16            &         15 \\
+ \hline
+  \texttt{mpfr}          & 4610         & 8620          &       4895 \\
+ \hline
+  \texttt{libultim}      & 20           & 19890         &         22 \\
+ \hline
+ \texttt{crlibm} (using FMA)         & 5            & 1241          &         32 \\
+\hline
+ \texttt{crlibm} (without FMA)        & 5           & 1144          &         26 \\
+
+\hline
 \end{tabular}
 \end{center}
-\caption{Absolute timings for the logarithm
+\caption{Absolute timings for the logarithm (arbitrary units)
   \label{tbl:log_abstime}}
 \end{table}
+
+Contributions to this table for new processors/OS/compiler combinations are welcome.
 
 
 In average, the second step is taken in 0.23\% of the calls, which
@@ -594,389 +680,28 @@ Table size is
 
 In the log we have a fairly good balance between both evaluation
 phases, which was obtained thanks to automated testing of various
-sceniarii. Here, designing a rigorous proof along with the code helped
-tuning performance.
+sceniarii. The main lesson learned here was that designing a rigorous
+proof along with the code helped tuning performance, by helping
+managing the tradeoff between speed and accuracy of the first path.
 
 Our log is a few percent slower in average than Ziv/IBM's, but if we
-inline the code of \texttt{log\_quick} then the speed becomes similar
-or better: Inlining saves a function call, but also allows other minor
+inline the code of \texttt{log\_quick} then it becomes faster than
+Ziv's: Inlining saves a function call, but also allows other minor
 improvements, like removing the need for the constant index, and
-loading the constants for rounding test in advance to hide its loading
+loading the constants for the rounding test in advance to hide their loading
 time. However, as it increases the size of the code and degrades its
-maintainability we chose to keep our current approach for the initial
-release.
+maintainability, we believe the current approach makes more sense in
+\crlibm.
 
+It might be interesting for some applications to add a fast execution
+paths for values around $1$, as Ziv does: This is the situation
+where our quick phase is slowest and our second phase most often
+taken. However it will not show any improvement in our test protocol.
+Besides, it is probably more important to implement the standard $\log(1+x)$
+function, which is designed specifically for this case.
 
-To improve performance further we should derive specific code for 
-the cases when $x$ is close to $1$, as does the Ziv/IBM Library. This
-could bring a further 50\% performance improvement in average, at the
-cost of a more complicated proof.
-
-
-
-
-
-
-%% \section{Second step polynomial coefficients.}
-
-%% \begin{table}
-%% \caption{Polynomial P 0} 
-%% \begin{tabular}{|c|c|c|c|}
-%% \hline &&& \\
-%% coeff n° & exponent & mantissa & binary number \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 HI &$ -2 $ & $\frac{-743638168966267}{562949953421312}$ & $ -.10101001000101010111000000111001110001010001111011000e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 LO &$ -57 $ & $\frac{7027957893218633}{4503599627370496}$ & $ .11000111101111110001111110101101110001100000101001000e-56 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 HI &$ 0 $ & $\frac{1566469435607129}{1125899906842624}$ & $ 1.0110010000101100100001011001000010110010000101100100 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 LO &$ -55 $ & $\frac{3075156854129589}{2251799813685248}$ & $ .10101110110011010110101111111110101101000011101101001e-54 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 2 &$ -1 $ & $\frac{-8717742945987501}{4503599627370496}$ & $ -.11110111110001011110110110011100010011110101110101101 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 3 &$ -1 $ & $\frac{8086022442655257}{4503599627370496}$ & $ .11100101110100011000111001111010101110001111000011001 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 4 &$ -1 $ & $\frac{-1054698579476787}{562949953421312}$ & $ -.11101111110011111000100110001011001100000100110011000 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 5 &$ 0 $ & $\frac{4695701500917009}{4503599627370496}$ & $ 1.0000101011101011011100110011111011101111010100010001 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 6 &$ 0 $ & $\frac{-5444291595459813}{4503599627370496}$ & $ -1.0011010101111000110111101010100110011101110011100101 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 7 &$ 0 $ & $\frac{3246286994737197}{2251799813685248}$ & $ 1.0111000100001111011000101110010100100001000001011010 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 8 &$ 0 $ & $\frac{-1976000318188175}{1125899906842624}$ & $ -1.1100000101001010010110110100001010101010101000111100 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 9 &$ 1 $ & $\frac{4885240473419053}{4503599627370496}$ & $ 10.001010110110001100110101111000011110111110100101101 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 10 &$ 1 $ & $\frac{-382458832789537}{281474976710656}$ & $ -10.101101111011000001000101101111010100000001000010000 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 11 &$ 2 $ & $\frac{299676142110095}{281474976710656}$ & $ 100.01000010001101110010011111111110000101100011110000 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 12 &$ 2 $ & $\frac{-5063189123827543}{4503599627370496}$ & $ -100.01111111001111000110010101001010000000011101010111 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 13 &$ 7 $ & $\frac{-8903658134248167}{4503599627370496}$ & $ -11111101.000011101010001110100010010110001101011100111 $ \\ 
-%% &&&\\ \hline
-%% \end{tabular}
-%% \end{table}
-
-%% \begin{table}
-%% \caption{Polynomial P 1} 
-%% \begin{tabular}{|c|c|c|c|}
-%% \hline &&&\\
-%% coeff n°& exponent & mantissa & binary number \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 HI &$ -3 $ & $\frac{-8894071639880569}{4503599627370496}$ & $ -.11111100110010001110001101100101100111011001101111000e-2 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 LO &$ -57 $ & $\frac{-552389204741253}{281474976710656}$ & $ -.11111011001100101001000100101001110001100100001001111e-56 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 HI &$ 0 $ & $\frac{5764607523034235}{4503599627370496}$ & $ 1.0100011110101110000101000111101011100001010001111011 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 LO &$ -56 $ & $\frac{-4361576903664429}{2251799813685248}$ & $ -.11110111111011010100110000100000000011100011001011001e-55 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 2 &$ -1 $ & $\frac{-7378697629483821}{4503599627370496}$ & $ -.11010001101101110001011101011000111000100001100101101 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 3 &$ -1 $ & $\frac{3148244321913127}{2251799813685248}$ & $ .10110010111101001111110000000111100101001001001001110 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 4 &$ -1 $ & $\frac{-6044629098073239}{4503599627370496}$ & $ -.10101011110011000111011100010001100001000110010010111 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 5 &$ -1 $ & $\frac{1547425048982465}{1125899906842624}$ & $ .10101111111010111111111100001011100011100111100000100 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 6 &$ -1 $ & $\frac{-3301173437887807}{2251799813685248}$ & $ -.10111011101001100110010101100001101101110101001111110 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 7 &$ -1 $ & $\frac{7243719460619263}{4503599627370496}$ & $ .11001101111000001111111011101010011011000001111111111 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 8 &$ -1 $ & $\frac{-4056482338782501}{2251799813685248}$ & $ -.11100110100101011001011001001101011100111101001001010 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 9 &$ 0 $ & $\frac{144183934662417}{140737488355328}$ & $ 1.0000011001000100111000000110101001101110001000100000 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 10 &$ 0 $ & $\frac{-664564121389669}{562949953421312}$ & $ -1.0010111000110101011100100011000101100101001100101000 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 11 &$ 0 $ & $\frac{7406777826722191}{4503599627370496}$ & $ 1.1010010100000110110011011001010010101100000110001111 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 12 &$ 0 $ & $\frac{-1853617081185135}{1125899906842624}$ & $ -1.1010010101110110101101101110101100011100110110111100 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 13 &$ 6 $ & $\frac{-1467725186095279}{1125899906842624}$ & $ -1010011.0110111000110110011001011000010110001010111100 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% \end{tabular}
-%% \end{table}
-
-%% \begin{table}
-%% \caption{Polynomial P 2} 
-%% \begin{tabular}{|c|c|c|c|}
-%% \hline &&& \\
-%% coeff n°& exponent & mantissa & binary number \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 HI &$ -3 $ & $\frac{-3060628955209433}{2251799813685248}$ & $ -.10101101111110100000001101011010101000011110110110001e-2 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 LO &$ -61 $ & $\frac{2527594736042079}{2251799813685248}$ & $ .10001111101011010101100000100110000011000000010111110e-60 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 HI &$ 0 $ & $\frac{667199944795629}{562949953421312}$ & $ 1.0010111101101000010010111101101000010010111101101000 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 LO &$ -54 $ & $\frac{1332688516023975}{1125899906842624}$ & $ .10010111100000100101011100110011000000001101010011100e-53 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 2 &$ -1 $ & $\frac{-6326043921025223}{4503599627370496}$ & $ -.10110011110011000000011100000101111110000100011000111 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 3 &$ -1 $ & $\frac{2499177845343309}{2251799813685248}$ & $ .10001110000011111101001011111011001111000100010011010 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 4 &$ -2 $ & $\frac{-8885965672331789}{4503599627370496}$ & $ -.11111100100011011110100011011011000101011101000001100e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 5 &$ -2 $ & $\frac{8425211896372323}{4503599627370496}$ & $ .11101111011101010111110000010001111011001110001100011e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 6 &$ -2 $ & $\frac{-8321196934766279}{4503599627370496}$ & $ -.11101100100000001010110100011011001110001111011000111e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 7 &$ -2 $ & $\frac{8453280679506371}{4503599627370496}$ & $ .11110000010000011011011001000000101101011000111000011e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 8 &$ -2 $ & $\frac{-4383182203135729}{2251799813685248}$ & $ -.11111001001001111011001000100011010000100110111100010e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 9 &$ -1 $ & $\frac{4616603552660769}{4503599627370496}$ & $ .10000011001101100011011000110110100110011110100100001 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 10 &$ -1 $ & $\frac{-4925251927700411}{4503599627370496}$ & $ -.10001011111110111110110010011100101000111001110111011 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 11 &$ -1 $ & $\frac{6183144258300187}{4503599627370496}$ & $ .10101111101111000100101110101000111000110100100011011 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 12 &$ -1 $ & $\frac{-366830079310573}{281474976710656}$ & $ -.10100110110100001010010001001000111111010111011010000 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 13 &$ 4 $ & $\frac{-2107375484601665}{1125899906842624}$ & $ -11101.111100101001011001011100101011000001010100000100 $ \\ 
-%% &&&\\ \hline 
-%% \end{tabular}
-%% \end{table}
-
-
-%% \begin{table}
-%% \caption{Polynomial P 3} 
-%% \begin{tabular}{|c|c|c|c|}
-%% \hline &&& \\
-%% coeff n°& exponent & mantissa & binary number \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 HI &$ -4 $ & $\frac{-7093354803841417}{4503599627370496}$ & $ -.11001001100110101111001011101010110010100100110001000e-3 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 LO &$ -58 $ & $\frac{180242050465785}{140737488355328}$ & $ .10100011111011011101111101100100001111111111100011111e-57 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 HI &$ 0 $ & $\frac{2484744621997515}{2251799813685248}$ & $ 1.0001101001111011100101100001000110100111101110010110 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 LO &$ -56 $ & $\frac{4960769888924131}{4503599627370496}$ & $ .10001100111111100101100111111000010101011000111100011e-55 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 2 &$ -1 $ & $\frac{-5483574338201415}{4503599627370496}$ & $ -.10011011110110100100000100100100001110010011101000111 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 3 &$ -2 $ & $\frac{1008473441508307}{562949953421312}$ & $ .11100101010011001110000101001111110001101111010011000e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 4 &$ -2 $ & $\frac{-3338394840820967}{2251799813685248}$ & $ -.10111101110001000000100111101001101101101100111001110e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 5 &$ -2 $ & $\frac{5893993650002925}{4503599627370496}$ & $ .10100111100001000111001010101110100010001101111101100e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 6 &$ -2 $ & $\frac{-2709882287004295}{2251799813685248}$ & $ -.10011010000010011111101000110001100110011010100001110e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 7 &$ -2 $ & $\frac{5126082608473109}{4503599627370496}$ & $ .10010001101100010010100011100111101111010010000010100e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 8 &$ -2 $ & $\frac{-2474366161612937}{2251799813685248}$ & $ -.10001100101001101100010001000001101101110000100010010e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 9 &$ -2 $ & $\frac{606794337740459}{562949953421312}$ & $ .10001001111110000001010000111100111110011010101011000e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 10 &$ -2 $ & $\frac{-2678423821842551}{2251799813685248}$ & $ -.10011000010000000011001001000111010101111000011101110e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 11 &$ -2 $ & $\frac{4901274782692199}{4503599627370496}$ & $ .10001011010011010111011110110010111100111001101100111e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 12 &$ 3 $ & $\frac{5562257110400349}{4503599627370496}$ & $ 1001.1110000101101011111100111001101101111110101011101 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 13 & $ 0 $ & $ 0 $ & $ 0 $ \\ 
-%% &&&\\ \hline 
-%% \end{tabular}
-%% \end{table}
-
-
-
-%% \begin{table}
-%% \caption{Polynomial P 4} 
-%% \begin{tabular}{|c|c|c|c|}
-%% \hline &&& \\
-%% coeff n°& exponent & mantissa & binary number \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 HI & $ 0 $ & $ 0 $ & $ 0 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 LO & $ 0 $ & $ 0 $ & $ 0 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 HI & $ 0 $ & $ 1 $ & $ 1. $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 LO &$ -73 $ & $\frac{4866424671436317}{4503599627370496}$ & $ .10001010010011111110011001001110111011111111000011100e-72 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 2 & $ -1 $ & $ -1 $ & $ -.10000000000000000000000000000000000000000000000000000 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 3 &$ -2 $ & $\frac{6004799503160661}{4503599627370496}$ & $ .10101010101010101010101010101010101010101010101010100e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 4 &$ -2 $ & $\frac{-4503599627370601}{4503599627370496}$ & $ -.10000000000000000000000000000000000000000000001101000e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 5 &$ -3 $ & $\frac{7205759403793217}{4503599627370496}$ & $ .11001100110011001100110011001100110011001101101000000e-2 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 6 &$ -3 $ & $\frac{-1501199875682485}{1125899906842624}$ & $ -.10101010101010101010101010101010011101100001011010100e-2 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 7 &$ -3 $ & $\frac{5146971002059239}{4503599627370496}$ & $ .10010010010010010010010010010001111110011100111100111e-2 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 8 &$ -3 $ & $\frac{-1125900001289929}{1125899906842624}$ & $ -.10000000000000000000000010110100001001001101100100100e-2 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 9 &$ -4 $ & $\frac{8006400287554951}{4503599627370496}$ & $ .11100011100011100011101010101000100011011110110000110e-3 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 10 &$ -4 $ & $\frac{-3602718697199167}{2251799813685248}$ & $ -.11001100110010100111010100000010110000010110001111110e-3 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 11 &$ -4 $ & $\frac{818791763735267}{562949953421312}$ & $ .10111010001010111111010000001110001111001011100011000e-3 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 12 &$ -4 $ & $\frac{-6070595428018661}{4503599627370496}$ & $ -.10101100100010010110010100100000011111110100111100100e-3 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 13 &$ -4 $ & $\frac{2804528659819663}{2251799813685248}$ & $ .10011111011010110100001101101000011111101100100011110e-3 $ \\ 
-%% &&&\\ \hline
-%% \end{tabular}
-%% \end{table}
-
-
-%% \begin{table}
-%% \caption{Polynomial P 5} 
-%% \begin{tabular}{|c|c|c|c|}
-%% \hline &&& \\
-%% coeff n°& exponent & mantissa & binary number \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 HI &$ -4 $ & $\frac{4243581083941235}{2251799813685248}$ & $ .11110001001110000011101101110001010101111001011100110e-3 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 LO &$ -60 $ & $\frac{-194419322244045}{140737488355328}$ & $ -.10110000110100101100011010100011110010111100110100000e-59 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 HI &$ -1 $ & $\frac{2001599834386887}{1125899906842624}$ & $ .11100011100011100011100011100011100011100011100011100 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 LO &$ -55 $ & $\frac{6780843324223619}{4503599627370496}$ & $ .11000000101110010010000011101100111100011000010000011e-54 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 2 &$ -2 $ & $\frac{-222399981598543}{140737488355328}$ & $ -.11001010010001011000011111100110101101110100111100000e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 3 &$ -3 $ & $\frac{4217362614017791}{2251799813685248}$ & $ .11101111101110101011010000000111111101011110111111110e-2 $ \\ 
-%% &&&\\ \hline &&&\\ 
-%% 4 &$ -3 $ & $\frac{-2811575076012255}{2251799813685248}$ & $ -.10011111110100011100110101011010101001000000110111110e-2 $ \\ 
-%% &&&\\ \hline &&&\\ 
-%% 5 &$ -4 $ & $\frac{3998684548554481}{2251799813685248}$ & $ .11100011010011001000010011000001010111011110111100001e-3 $ \\ 
-%% &&&\\ \hline &&&\\ 
-%% 6 &$ -4 $ & $\frac{-2961988555123393}{2251799813685248}$ & $ -.10101000010111101001101100111010100000101010110000001e-3 $ \\ 
-%% &&&\\ \hline &&&\\ 
-%% 7 &$ -4 $ & $\frac{4513513385732155}{4503599627370496}$ & $ .10000000010010000010000111010000010111010100000111011e-3 $ \\ 
-%% &&&\\ \hline &&&\\ 
-%% 8 &$ -5 $ & $\frac{-7021014623365341}{4503599627370496}$ & $ -.11000111100011001001101011010100101101010100011011101e-4 $ \\ 
-%% &&&\\ \hline &&&\\ 
-%% 9 &$ -5 $ & $\frac{5541480771625565}{4503599627370496}$ & $ .10011101011111111001010001000111011000010001001011101e-4 $ \\ 
-%% &&&\\ \hline &&&\\ 
-%% 10 &$ -6 $ & $\frac{-138651326119215}{70368744177664}$ & $ -.11111100001101001000111000010100111110100101111000000e-5 $ \\ 
-%% &&&\\ \hline &&&\\ 
-%% 11 &$ -5 $ & $\frac{2405838712720693}{2251799813685248}$ & $ .10001000110000011000111110011101101111001101001101001e-4 $ \\ 
-%% &&&\\ \hline &&&\\ 
-%% 12 &$ -6 $ & $\frac{-3033201869659221}{2251799813685248}$ & $ -.10101100011010101110010101111111100100011100010101010e-5 $ \\ 
-%% &&&\\ \hline &&&\\ 
-%% 13 &$ -1 $ & $\frac{-5882258564419063}{4503599627370496}$ & $ -.10100111001011110001000001100001101011000110111110111 $ \\ 
-%% &&&\\ \hline 
-%% \end{tabular}
-%% \end{table}
-
-
-%% \begin{table}
-%% \caption{Polynomial P 6} 
-%% \begin{tabular}{|c|c|c|c|}
-%% \hline &&& \\
-%% coeff n°& exponent & mantissa & binary number \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 HI &$ -3 $ & $\frac{4019796858195217}{2251799813685248}$ & $ .11100100011111111011111000111100110101001101000100001e-2 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 LO &$ -57 $ & $\frac{-2950359927797621}{2251799813685248}$ & $ -.10100111101101010110001100110111010010110111011101001e-56 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 HI &$ -1 $ & $\frac{3602879701896397}{2251799813685248}$ & $ .11001100110011001100110011001100110011001100110011010 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 LO &$ -55 $ & $\frac{-3752959905019767}{2251799813685248}$ & $ -.11010101010101001100000100011111111010110111011101110e-54 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 2 &$ -2 $ & $\frac{-5764607523034235}{4503599627370496}$ & $ -.10100011110101110000101000111101011100001010001111011e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 3 &$ -3 $ & $\frac{6148914691236995}{4503599627370496}$ & $ .10101110110000110011111000011111011001110010010000011e-2 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 4 &$ -4 $ & $\frac{-7378697629484743}{4503599627370496}$ & $ -.11010001101101110001011101011000111000100011011000110e-3 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 5 &$ -4 $ & $\frac{4722366480912847}{4503599627370496}$ & $ .10000110001101111011110100000100110000001000111001111e-3 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 6 &$ -5 $ & $\frac{-393530540111015}{281474976710656}$ & $ -.10110010111101001111110000000110100110100101001110000e-4 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 7 &$ -6 $ & $\frac{4317595647888997}{2251799813685248}$ & $ .11110101011011010100100100101110000001001110011001010e-5 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 8 &$ -6 $ & $\frac{-6044631180159527}{4503599627370496}$ & $ -.10101011110011000111101011110010010101010101000100111e-5 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 9 &$ -7 $ & $\frac{8590943574074681}{4503599627370496}$ & $ .11110100001010110101011101100000001001010010100111000e-6 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 10 &$ -7 $ & $\frac{-6188699963576117}{4503599627370496}$ & $ -.10101111111001001011011111110111100110100111100110101e-6 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 11 &$ -7 $ & $\frac{5702144446736261}{4503599627370496}$ & $ .10100010000100001000111110110001101001010011110000100e-6 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 12 &$ -8 $ & $\frac{-424997866135913}{281474976710656}$ & $ -.11000001010001000100001101101011101100001011010001111e-7 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 13 &$ -3 $ & $\frac{-5757341135212823}{4503599627370496}$ & $ -.10100011101000100010101110001001101110001000100010111e-2 $ \\ 
-%% &&&\\ \hline 
-%% \end{tabular}
-%% \end{table}
-
-
-%% \begin{table}
-%% \caption{Polynomial P 7} 
-%% \begin{tabular}{|c|c|c|c|}
-%% \hline &&& \\
-%% coeff n°& exponent & mantissa & binary number \\ 
-%% &&&\\ \hline &&& \\
-%% 0 HI &$ -2 $ & $\frac{2868376209600353}{2251799813685248}$ & $ .10100011000011000101111000010000111000101111011000010e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 0 LO &$ -56 $ & $\frac{8799248525173221}{4503599627370496}$ & $ .11111010000101101111010110010101000100010000111100100e-55 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 HI &$ -1 $ & $\frac{3275345183542179}{2251799813685248}$ & $ .10111010001011101000101110100010111010001011101000110 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 1 LO &$ -56 $ & $\frac{-6555200597316529}{4503599627370496}$ & $ -.10111010010011110101110010011000010001101001110110001e-55 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 2 &$ -2 $ & $\frac{-297758653049289}{281474976710656}$ & $ -.10000111011001111010101101011111001101001110010010000e-1 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 3 &$ -3 $ & $\frac{2309885308503577}{2251799813685248}$ & $ .10000011010011010100000101010100100100000110000110001e-2 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 4 &$ -4 $ & $\frac{-5039749764007811}{4503599627370496}$ & $ -.10001111001111010000000101110011100001100011110000011e-3 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 5 &$ -5 $ & $\frac{1466109022249467}{1125899906842624}$ & $ .10100110101011010110001101101111001001000011111101100e-4 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 6 &$ -6 $ & $\frac{-7108407380574949}{4503599627370496}$ & $ -.11001010000010000111100010000110101101000001011100101e-5 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 7 &$ -7 $ & $\frac{8862430084207537}{4503599627370496}$ & $ .11111011111000101010101001101000001000001001110110001e-6 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 8 &$ -7 $ & $\frac{-5639728263573257}{4503599627370496}$ & $ -.10100000010010100110110001111110001111010111100001000e-6 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 9 &$ -8 $ & $\frac{3645840892850449}{2251799813685248}$ & $ .11001111001111011111011110110101001101110001000100010e-7 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 10 &$ -8 $ & $\frac{-2386362174521563}{2251799813685248}$ & $ -.10000111101001100010001111011011011111000000110110110e-7 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 11 &$ -9 $ & $\frac{3173561151701001}{2251799813685248}$ & $ .10110100011001010110010010010001111011000000000010010e-8 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 12 &$ -10 $ & $\frac{-8467205555863361}{4503599627370496}$ & $ -.11110000101001110000011101011011001011011111101000000e-9 $ \\ 
-%% &&&\\ \hline &&& \\ 
-%% 13 & $ 0 $ & $ 0 $ & $ 0 $ \\ 
-%% &&&\\ \hline 
-%% \end{tabular}
-%% \end{table}
-
-%% Erreurs approx
-
-%% P0:
-%% -63.0335561543503153519561060236275821115193176282828598936000091969791396082118533396$
-
-%% P1:
-%% -62.1442297174139549747120885846224119378071897891851912972827117256112491790838501306$
-
-%% P2:
-%% -61.2333262205549290003996733087260577169790459154067176452546458667687388357147177354$
-
-%% P3:
-%% -60.4190986335205152072260108229699448188586300049015401437646252096816380253547811958$
-
-%% P4:
-%% -62.9461911106917443178043861037065674873169791834709346433334048487967658174065656673$
-
-%% P5:
-%% -60.2165945189274221232763599838279416602051132104701245665550547127176437549725373247$
-
-%% P6:
-%% -61.6071069727527318902661883152800182616307327795335555694099125712238629376830307421$
-
-%% P7:
-%% -63.0374421600999012862137048917495991411594406510710431721052393396795383773111066083$
-
+Finally, we did not try to implement the argument reduction used in
+the accurate phase for the quick phase, mostly because it is not
+exact (contrary to the one we used), which complicates error analysis. This is, however, another
+obvious path to explore.
 

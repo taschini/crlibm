@@ -24,23 +24,33 @@
 \newcommand{\quick}{{quick}}
 \newcommand{\accurate}{{accurate}}
 \newcommand{\ulp}{\mbox{ulp}}
-\newcommand{\round}{\circ}
-\newcommand{\roundup}{\bigtriangleup}
-\newcommand{\rounddown}{\bigtriangledown}
 \newcommand{\crlibm}{\texttt{crlibm}}
 \newcommand{\scslib}{\texttt{scslib}}
 
 \renewcommand{\epsilon}{\varepsilon}
 
-\newcommand{\maxx}{{\overline{|x|}}}
-\newcommand{\maxz}{{\overline{|z|}}}
-\newcommand{\maxs}[1]{\overline{|s_{#1}|}}
-\newcommand{\mins}[1]{\underline{|s_{#1}|}}
+\newcommand{\round}{\circ}
+\newcommand{\roundup}{\bigtriangleup}
+\newcommand{\rounddown}{\bigtriangledown}
+\newcommand{\maxv}[1]{{\overline{#1}}}
+\newcommand{\maxx}{\maxv{x}}
+\newcommand{\maxeps}{\maxv{\epsilon}}
+\newcommand{\maxdelta}{\maxv{\delta}}
+\newcommand{\maxz}{{\overline{z}}}
+\newcommand{\maxs}[1]{\overline{s}_{#1}}
+\newcommand{\mins}[1]{\underline{s}_{#1}}
 \newcommand{\maxp}{\overline{|P|}}
 \newcommand{\minp}{\underline{|P|}}
 \newcommand{\infnorm}[1]{||{#1}||^{\infty}}
-\newcommand{\deltapprox}{\delta_{\mathrm{approx}}}
-\newcommand{\deltaround}{\delta_{\mathrm{round}}}
+
+\newcommand{\abserr}[1]{\delta_{\mathrm{#1}}}
+\newcommand{\relerr}[1]{\epsilon_{\mathrm{#1}}}
+\newcommand{\maxabserr}[1]{\maxv{\delta}_{\mathrm{#1}}}
+\newcommand{\maxrelerr}[1]{\maxv{\epsilon}_{\mathrm{#1}}}
+
+
+%\newcommand{\deltapprox}{\delta_{\mathrm{approx}}}
+%\newcommand{\deltaround}{\delta_{\mathrm{round}}}
 
 
 
@@ -134,11 +144,10 @@ the code.
 \chapter{Common notations, theorems and procedures \label{chap:common}}
 \input{1_common.tex}
 
-\chapter{The exponential \label{chap:exp}}
-\input{2_exp.tex}
-
-\chapter{The natural logarithm \label{chap:log}}
-\input{3_log.tex}
+%% \chapter{The exponential \label{chap:exp}}
+%% \input{2_exp.tex}
+ \chapter{The natural logarithm \label{chap:log}}
+ \input{3_log.tex}
 
 
 \appendix

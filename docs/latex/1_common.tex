@@ -15,11 +15,12 @@ in the IEEE-754 \emph{round to nearest} mode.
 
 \item $\round(x)$, $\roundup(x)$ and $\rounddown(x)$ denote the value
   of $x$ rounded to the nearest, resp. rounded up and down.
+  
+\item $\epsilon$ (usually with some index) denotes a relative error,
+  $\delta$ denotes an absolute error. Upper bounds on the absolute value of these errors
+  will be denoted $\maxeps$ and $\maxdelta$.
 
-\item $\epsilon$ (usually with some index) denotes an error and
-  $\delta$ (with the same index) denotes a bound on this error.
-
-\item $\epsilon_{-k}$ -- with a negative index -- denotes an error bounded by $2^{-k}$.
+\item $\maxeps_{-k}$ -- with a negative index -- denotes an error bounded by $2^{-k}$.
   
 \item For a floating-point number $x$, the value of the least
   significant bit of its mantissa is classically denoted $\ulp(x)$.
@@ -1011,89 +1012,119 @@ Error terms to consider are the following:
 
 
 
-Here is how we compute bounds on the absolute and relative errors. Let
-us take the example of a polynomial of degree 4. We note 
+Here is how we compute bounds on the absolute and relative errors. We note 
 \begin{itemize}
+
 \item $P$ the polynomial, $d$ its degree
-\item $p$ the relative precision of an atomic $+$ or $\times$. It
-  can change during a Horner evaluation, typically if the evaluation
-  begins in double-precision ($p=53$) and ends in double-double ($p=103$).
-\item $c_j$ the coefficient of $P$ of degree $j$
-\item $S_j(x)$ the intermediate polynomial in the Horner evaluation:
-  $S_d=c_d$ and $S_j(x) = c_j+xS_{j+1}$ for $1\le j <d$
+  
+\item $\nu$ the relative precision of an atomic $\oplus$ or $\otimes$.
+  It can change during a Horner evaluation, typically if the
+  evaluation begins in double-precision ($\nu=53$) and ends in
+  double-double ($\nu=102$) for performance reason.
+
+\item $c_j$ the coefficient of $P$ of degree $j$, considered exactly
+  representable (if $c_j$ is an approximation to some exact value
+  $\hat{c_j}$, the corresponding error is taken into account in the
+  computation of the approximation error for this polynomial)
+
 \item $\maxx$ the maximum value of $|x|$ over the considered interval
-\item $p_j = x \otimes s_j $ 
-\item $s_j =   c_j \oplus p_{j+1}$ with $s_d = c_d$ 
+  
+\item $\maxeps_x$ is a bound on the relative error of the input $x$
+  with respect to the exact mathematical value $\hat{x}$ it
+  represents. Note that sometimes argument reduction is exact, and
+  will yield $\maxeps_x=0$ (see for instance the logarithhm). Also
+  note that $\maxeps_x$ may change during the evaluation: Typically,
+  if $\hat{x}$ is approximated as a double-double
+  $x_h+x_l=\hat{x}(1+\epsilon)$, then the first iterations will be
+  computed in double-precision only, and the error will be
+  $\maxeps_x=2^{-53}$ (if one is able to prove that
+  $x_h=\round(\hat{x})$. For the last steps of the evaluation, using
+  double-double arithmetic on $x_h+x_l$, the error will be improved to
+  $\maxeps_x=\maxeps$.
+
+\item $P_k(x)$ and $S_k(x)$ the intermediate polynomials in the Horner evaluation:
+  $S_d=c_d$, $P_k(x)=xS_{k+1}(x)$ and $S_k(x) = c_k+P_{k}(x) = c_k+xS_{k+1}$ for $1\le k <d$
+
+\item $p_j = x \otimes s_j $ is the result of a multiplication step in the Horner scheme
+
+\item $s_j = c_j \oplus p_{j+1}$ (with $s_d = c_d$) is the result of
+  an addition step in the Horner scheme. We recursively evaluate its
+  error $\maxeps_j$ with respect to the exact mathematical value $S_j(\hat{x})$.
+
 \item $\maxs{j}$ the  maximum value that $s_j$ may take for $|x|
   \le \maxx$.
-\item $\infnorm{S_j}$ the infinite norm of $S_j$ for $-\maxx \le
-  x\le \maxx$.
-\item $\delta$ and $\delta'$ are upper bounds on the \emph{absolute} error.
+
+\item $\infnorm{S_j}$ the infinite norm of $S_j$ for $|x| \leq \maxx$.
+
 \end{itemize}
 
 Given $ |x| \leq \maxx$, we have
 
-\begin{align*}
-  s_4 & \ = \ c_4\\
-  \maxs{4} & \ = \  |c_4|\\
-  p_3 & \ = \  x \otimes s_4 \ = \  x c_4 + \epsilon_{-p} x c_4 \\
-      & \ = \  xc_4 + \epsilon_3 \quad \mathrm{with} \quad |\epsilon_3| \le \delta_3 = 2^{-p}\maxx \maxs{4}\\
-  s_3 & \ = \  c_3 \oplus p_3 \ = \  c_3 + p_3 + \epsilon_{-p}(c_3 + p_3) \\
-      & \ = \  c_3 +  xc_4 + \epsilon_3 + \epsilon_{-p}(c_3 + xc_4 + \epsilon_3) \\
-      & \ = \  c_3 +  xc_4 + \epsilon'_3  
-      \quad \mathrm{with} |\epsilon'_3| \le \delta'_3\\
-  \delta'_3 & \ =\  \delta_3 + 2^{-p}(\infnorm{c_3 + xc_4} + \delta_3)\  =\  \delta_3 + 2^{-p}(\infnorm{S_3} + \delta_3)\\
-  \maxs{3} & \ = \  \infnorm{c_3 + xc_4} + \delta'_3 \ = \  \infnorm{S_3} + \delta'_3\\
-  p_2 & \ = \  x \otimes s_3 \ = \  x s_3 + \epsilon_{-p} x s_3 \\
-      & \ = \  x(c_3 +  xc_4 + \epsilon'_3) + \epsilon_{-p} x s_3\\
-      & \ = \  x(c_3 +  xc_4) + x\epsilon'_3 + \epsilon_{-p} x s_3\\
-      & \ = \  x(c_3 +  xc_4) +  \epsilon_3 \quad \mathrm{with} \quad 
-      |\epsilon_2| \le \delta_2\\
-  \delta_2 & \ =\ \maxx\delta'_3 + 2^{-p} \maxx \maxs{3}\\
-...\\
-\end{align*}
-
-Or, in a generic way, 
-
-\begin{align*}
-\delta'_d &\ = \ 0 \\
-s_d & \ = \ c_d\\
-\maxs{d} & \ = \  |c_d|\\
-p_{k}  & \ = \  x \otimes s_{k+1} \ = \ xS_{k+1}(x) + \epsilon_{k+1}         \quad \mathrm{with} \quad  |\epsilon_{k+1}| \le \delta_{k}\\
-\delta_k & \ =\ \maxx\delta'_{k+1} + 2^{-p} \maxx \maxs{k+1}\\
-s_{k}  & \ = \  c_k \oplus p_k \  = \  S_{k}(x) + \epsilon'_k      \quad \mathrm{with} |\epsilon'_k| \le \delta'_k\\
-\delta'_k & \ =\  \delta_k + 2^{-p}(\infnorm{S_{k+1}} + \delta_{k})\\
-\maxs{k} & \ = \   \infnorm{S_k} + \delta'_k\\
-\end{align*}
-
-To compute a  relative error out of the absolute error
-$\delta'_0$, there are several cases to consider.
 \begin{itemize}
-\item If $c_0\ne 0$, for small values of $x$, a good approximation to
-  the overall relative error is to divide $\delta'_0$ by the minimum
-  of $|S_0|$, which -- provided $\maxx$ is sufficiently small --  is well approximated by 
-$$\mins{0}=|c_0| - \maxx . \maxs{1}$$
+\item Initialization/degree 0 polynomial: 
+  $$ \left\{
+    \begin{array}{rl}
+      s_d & \ = \ c_d\\
+      \maxs{d} & \ = \ \mins{d} \ = \ |c_d|\\
+      \maxeps_d &\ = \ 0\\
+    \end{array}
+  \right.
+  $$
+
+\item Horner steps: 
+  \begin{itemize}
+  \item multiplication step:%  $p_{k}  \ = \ x \otimes s_{k+1} \ = \ P_{k}(\hat{x})(1+\epsilon'_k)$
+    \begin{eqnarray*}
+      p_{k}  &=& x \otimes s_{k+1} \\
+             &=& \hat{x}(1+\epsilon_x)\ \otimes \ S_{k+1}(\hat{x})(1 + \epsilon_{k+1})\\
+             &=& \hat{x}.S_{k+1}(\hat{x})(1+\epsilon_x)(1 + \epsilon_{k+1})(1+\epsilon_{-\nu})\\
+    \end{eqnarray*}
+    We therefore get 
+    \begin{equation}
+      p_{k} \ = \ P_{k}(\hat{x})(1+\epsilon'_k)\label{eq:pk}
+    \end{equation}
+    with 
+    \begin{equation}
+      \maxeps'_k \ = \ (1+\maxeps_x)(1 + \maxeps_{k+1})(1+\maxeps_{-\nu})\label{eq:maxepsp}
+    \end{equation}
+    
+  \item addition step 
+      \begin{eqnarray*}
+        s_{k} &=&  c_k \oplus p_k \\
+              &=& (c_k + p_k)(1+\epsilon_{-\nu})\\
+              &=&  (c_k + P_k(\hat{x})(1+\epsilon'_k))(1+\epsilon_{-\nu})\\
+              &=&  (c_k + P_k(\hat{x}) + \epsilon'_k P_k(\hat{x}))(1+\epsilon_{-\nu})\\
+              &=&  S_{k}(\hat{x})\  +\  \epsilon'_k P_k(\hat{x}) + \epsilon_{-\nu}(S_k(\hat{x}) + \epsilon'_k P_k(\hat{x}))  \\
+      \end{eqnarray*}
+
+    We therefore get 
+      \begin{equation}
+        s_{k} \ = \  S_{k}(\hat{x}) + \delta_k \label{eq:sk}
+      \end{equation}
+      
+      \begin{equation}
+        \maxdelta_k  \ = \  \maxeps'_k\infnorm{P_{k}} + 2^{-\nu}(\infnorm{S_{k}} + \maxeps'_k\infnorm{P_{k}})\label{eq:maxdelta}
+      \end{equation}
+    \end{itemize}
+  \end{itemize}
+  
+
+  To compute a  relative error out of the absolute error
+  $\maxdelta_0$, there are two cases to consider.
+\begin{itemize}
+\item If $c_0\ne 0$, for small values of $x$, a good bound on the
+  overall relative error is to divide $\delta_0$ by the minimum of
+  $|s_0|$, which -- provided $\maxx$ is sufficiently small compared to
+  $c_0$ -- is well approximated by
+  $$\mins{0}=|c_0| - \maxx . \maxs{1}$$ 
+  where $\maxs{1}=\infnorm{S_1} + \delta_1$
   An upper bound on the total
   relative error is then
-$$\rho = \frac{\delta'_0}{|c_0| - \maxx . \maxs{1}}$$
-
-\item If $c_0=0$, then the last addition is exact (in double as well
-  as double-double) and the overall relative error is that of the last
-  multiplication. Rewriting the error analysis above, we get:
-\begin{align*}
-p_{0}  & \ = \  x \otimes s_{1} \ = \ xs_1(1 + \epsilon^r_{1})         \quad \mathrm{with} \quad  |\epsilon^r_{1}| < 2^{-p}\\
-       & \ = \  x (S_1(x) + \epsilon'_1)(1 + \epsilon^r_{1}) \\
-\end{align*}
-so 
-\begin{align*}
-\frac{p_{0} - xS_1(x)}{xS_1(x)}  & \ = \ \frac{ \epsilon'_1 + S_1(x)\epsilon^r_{1} + \epsilon'_1\epsilon^r_{1}}{S_1(x)}\\
-     & \ < \frac{2^{-p}(1+\maxs{1})}{\mins{1}}  
-\end{align*}
-
-with $\mins{1}  =|c_1| - \maxx . \maxs{2}$
-(again, provided $\maxx$ is sufficiently small). Finally a bound on the relative error in this case is:
-$$\rho = \frac{2^{-p}(1+\maxs{1})}{\mins{1}} $$
-
+  $$\rho = \frac{\delta_0}{|c_0| - \maxx . \maxs{1}}$$
+  
+\item If $c_0=0$, then the last addition is exact in double as well as
+  double-double, and an efficient implementation will skip it anyway.
+  The overall relative error is that of the last multiplication, and is given as $\maxeps'_0$.
 \end{itemize}
 
 
@@ -1102,13 +1133,12 @@ The following  Maple procedures implement these computations.
 Procedure \texttt{compute\_abs\_rounding\_error} computes a bound on
 the accumulated rounding error caused by the Horner evaluation of a
 truncated polynomial. P is the polynomial,  xmax is the max
-value of |x|,  n is the degree when P is computed in double double, and the first double-double operation is an addition.
+value of $|x|$,  n is the degree when P is computed in double double, and the first double-double operation is an addition.
 
 This procedure returns the maximum absolute error, and safe bounds on the
 minimum and maximum values of the function. It also checks on the fly
 that the fast (test-free) versions of the double-double addition can
-be used, i.e. that for all x, at each Horner step i computing ci+x*Si,
-we have |ci|>|x*Si|. It prints warnings if it not the case.
+be used, and prints warnings if it not the case.
 
 \begin{lstlisting}[caption={compute\_abs\_rounding\_error},firstnumber=1]
 compute_abs_rounding_error:=proc(poly,xmax, nn)
