@@ -21,15 +21,52 @@ mkdir("TEMPTRIG"):
 # When do we return x ?
 xmax_return_x_for_sin := 2^(-26):
 xmax_return_1_for_cos := 2^(-27):
+xmax_return_x_for_tan := 2^(-26):
+
+#################################### Fast Tangent #########################
+#
+xmaxTanFast   := 2**(-3);
+degreeTanFast := 16;
+rnconstantTanFast1 := evalf(compute_rn_constant(2**(-62)));
+rnconstantTanFast2 := evalf(compute_rn_constant(2**(-59)));
+
+# Compute the Taylor series
+with(orthopoly):
+Poly_P := convert(series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, degreeTanFast*4),polynom):
+Poly_cheb := numapprox[chebpade](Poly_P, x=0..xmaxTanFast^2, [degreeTanFast/2-2,0]):
+polyTanFast :=  poly_exact2(expand(x + x^3 * subs(x=x^2, Poly_cheb)), 4);
+
+
+
+approx_errorTanFast:=numapprox[infnorm](1 - polyTanFast / tan(x), x=0..xmaxTanFast):
+log2(approx_errorTanFast);
 
 
 ##################################### Fast sine ###########################
+# - Evaluation scheme :
+# - x < 2^-7 : Polynomial evaluation of degree 7 (give a precision of 2^-67
+# - x < 2^-1 : Split the evaluation to use table and simple polynomial evaluation.
+#
 # These are the parameters to vary
-xmaxSinFast:=2**(-4);
-degreeSinFast:=10;
+xmaxSinFast   := 2**(-7);
+xmaxSinFast2  := 2**(-1); # range for the second step
+degreeSinFast := 8;
+
 
 # Compute the Taylor series
 polySinFast:=  poly_exact2 (convert( series(sin(x), x=0, degreeSinFast), polynom),2);
+
+# If we need extra precision for the polynomial evaluation use Chebpade as follow:
+#with(orthopoly):
+#Poly_P := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, degreeSinFast*4):
+#Poly_Q := convert(Poly_P,polynom):
+#Poly_cheb := numapprox[chebpade](Poly_Q, x=0..xmaxSinFast^2, [degreeSinFast/2-2,0]):
+#polySinFast :=  expand(x + x^3 * subs(x=x^2, Poly_cheb));
+#
+#If you use this technique, don't forget to make the interval  
+#of the form 0..xmaxSinFast when looking for the 'infnorm' !
+
+
 approx_errorSinFast:=numapprox[infnorm](1 - polySinFast / sin(x), x=-xmaxSinFast..xmaxSinFast):
 log2(approx_errorSinFast);
 
@@ -61,37 +98,41 @@ log2(maxeps3);
 
 
 maxepstotalSinFast := (1+maxeps3) * (1+approx_errorSinFast) - 1 ;
-rnconstantSinFast := evalf(compute_rn_constant(maxepstotalSinFast));
-
-
+rnconstantSinFast1 := evalf(compute_rn_constant(maxepstotalSinFast));
+rnconstantSinFast2 := evalf(compute_rn_constant(2**(-61))): 
+rnconstantSinFast3 := evalf(compute_rn_constant(2**(-67))):
 
 
 
 ##################################### Fast cos ###########################
 # These are the parameters to vary
-xmaxCosFast:=2**(-5);
-degreeCosFast:=10;
+xmaxCosFast   := 2**(-7);
+xmaxCosFast2  := 2**(-1); # range for the second step
+degreeCosFast := 7;
+
 
 # Compute the Taylor series
-polyCosFast:=  poly_exact2 (convert( series(cos(x), x=0, degreeCosFast), polynom),2);
+polyCosFast  := poly_exact2 (convert( series(cos(x), x=0, degreeCosFast), polynom),2);
 delta_approx := numapprox[infnorm](polyCosFast - cos(x), x=-xmaxCosFast..xmaxCosFast):
 log2(%);
 
 # remove the first 1 and compute the polynomial of x**2
-polyCosFast2 :=  subs(x=sqrt(y), expand(polyCosFast-1));
-x2maxCosFast:= xmaxCosFast**2;
+polyCosFast2 := subs(x=sqrt(y), expand(polyCosFast-1));
+x2maxCosFast := xmaxCosFast**2;
 
 # evaluate this polynomial in double. The error on x*x is at most half an ulp
-errlist:=errlist_quickphase_horner(degree(polyCosFast2),0,0,2**(-53), 0):
-rounding_error1:=compute_horner_rounding_error(polyCosFast2,y,x2maxCosFast, errlist, true):
-delta_round := rounding_error1[2]:
+errlist        := errlist_quickphase_horner(degree(polyCosFast2),0,0,2**(-53), 0):
+rounding_error1:= compute_horner_rounding_error(polyCosFast2,y,x2maxCosFast, errlist, true):
+delta_round    := rounding_error1[2]:
 log2(%);
 
 # Then we have an Add12 which is exact. The result is greater then cos(xmaxCosFast):
 miny := cos(xmaxCosFast);
 maxepstotalCosFast :=  (delta_round + delta_approx) / miny ;
 log2(%);
-rnconstantCosFast := evalf(compute_rn_constant(maxepstotalCosFast));
+rnconstantCosFast1 := evalf(compute_rn_constant(maxepstotalCosFast));
+rnconstantCosFast2 := evalf(compute_rn_constant(2**(-61))): 
+rnconstantCosFast3 := evalf(compute_rn_constant(2**(-67))):
 
 
 
@@ -146,8 +187,8 @@ RR_CW2_MCL := -Cl:
 XMAX_CODY_WAITE_2 := nearest(kmax_cw2*C):
 
 # The error in this case (we need absolute error)
-delta_repr_C_cw2 := abs(C-Ch-Cl);
-delta_round_cw2 := kmax_cw2* 1/2 * ulp(Cl) ;
+delta_repr_C_cw2   := abs(C-Ch-Cl);
+delta_round_cw2    := kmax_cw2* 1/2 * ulp(Cl) ;
 delta_cody_waite_2 := kmax_cw2 * delta_repr_C_cw2 + delta_round_cw2;
 # This is the delta on y, the reduced argument
 
@@ -174,14 +215,14 @@ kmax_cw3 := 2^31:# Otherwise we have integer overflow
 
 
 # The constants to move to the .h file
-RR_CW3_CH := Ch;
-RR_CW3_CM := Cmed:
+RR_CW3_CH  := Ch;
+RR_CW3_CM  := Cmed:
 RR_CW3_MCL := -Cl:
 XMAX_CODY_WAITE_3 := nearest(kmax_cw3*C):
 
 # The error in this case (we need absolute error)
-delta_repr_C_cw3 := abs(C - Ch - Cmed - Cl):
-delta_round_cw3 := kmax_cw3 * 1/2 * ulp(Cl) :
+delta_repr_C_cw3   := abs(C - Ch - Cmed - Cl):
+delta_round_cw3    := kmax_cw3 * 1/2 * ulp(Cl) :
 delta_cody_waite_3 := kmax_cw3 * delta_repr_C_cw3 + delta_round_cw3:
 # This is the delta on y, the reduced argument
 
@@ -198,13 +239,13 @@ kmax:=2^51-1:
 XMAX_DDRR:=nearest(kmax*C);
 
 #in this case we have C stored as 3 doubles
-Ch := nearest(C):
+Ch   := nearest(C):
 Cmed := nearest(C-Ch):
-Cl := nearest(C-Ch-Cmed):
+Cl   := nearest(C-Ch-Cmed):
 
 RR_DD_MCH := -Ch:
 RR_DD_MCM := -Cmed:
-RR_DD_CL := Cl:
+RR_DD_CL  := Cl:
 
 delta_repr_C := abs(C - Ch - Cmed - Cl):
 
@@ -272,8 +313,8 @@ log2(eps_ArgRed);
 
 ################################## Polynomials for do_sine and do_cos
 
-ymax:=Pi/512;
-y2max:= ymax**2;
+ymax  := Pi/512;
+y2max := ymax**2;
 
 # The error on yh*yh
 # we had $y_h+y_l = y + \abserr{CodyWaite}$.
@@ -287,8 +328,8 @@ epsy2 := evalf(((1+eps_ArgRed)**2) *  (1+2**(-53))**2 - 1):
 polySin:=  poly_exact (convert( series(sin(x), x=0, 9), polynom),x):
 polyTs :=  expand(polySin/x-1):
 delta_approx_Ts := numapprox[infnorm](polyTs - (sin(x)/x-1), x=-ymax..ymax):
-maxTs := numapprox[infnorm](polyTs, x=-ymax..ymax):
-polyTs2 :=  subs(x=sqrt(y),polyTs):
+maxTs   := numapprox[infnorm](polyTs, x=-ymax..ymax):
+polyTs2 := subs(x=sqrt(y),polyTs):
 
 errlist:=errlist_quickphase_horner(degree(polyTs2),0,0, epsy2 , 0):
 (eps_rounding_Ts, delta_rounding_Ts, minTs, maxTs):=
@@ -303,8 +344,8 @@ polyCos:= polyCosFast -x^8*coeff(polyCosFast,x,8):
 
 polyTc:=polyCos - 1:
 delta_approx_Tc:= numapprox[infnorm](polyCos -  cos(x), x=-ymax..ymax):
-maxTc := numapprox[infnorm](polyTc, x=-ymax..ymax):
-polyTc2 :=  subs(x=sqrt(y),polyTc):
+maxTc   := numapprox[infnorm](polyTc, x=-ymax..ymax):
+polyTc2 := subs(x=sqrt(y),polyTc):
 
 errlist:=errlist_quickphase_horner(degree(polyTc2),0,0, epsy2 , 0):
 (eps_rounding_Tc, delta_rounding_Tc, minTc, maxTc):=compute_horner_rounding_error(polyTc2,y,y2max, errlist, true):
@@ -346,13 +387,27 @@ fprintf(fd, "\n/*File generated by maple/coef_sine.mw*/\n"):
 
 
 fprintf(fd, "#define XMAX_RETURN_X_FOR_SIN 0x%s\n", ieeehexa(xmax_return_x_for_sin)[1]):
-fprintf(fd, "#define XMAX_SIN_FAST 0x%s\n", ieeehexa(xmaxSinFast)[1]):
+fprintf(fd, "#define XMAX_SIN_FAST  0x%s\n", ieeehexa(xmaxSinFast)[1]):
+fprintf(fd, "#define XMAX_SIN_FAST2 0x%s\n", ieeehexa(xmaxSinFast2)[1]):
+
 fprintf(fd, "#define XMAX_RETURN_1_FOR_COS 0x%s\n", ieeehexa(xmax_return_1_for_cos)[1]):
-fprintf(fd, "#define XMAX_COS_FAST 0x%s\n", ieeehexa(xmaxCosFast)[1]):
+fprintf(fd, "#define XMAX_COS_FAST  0x%s\n", ieeehexa(xmaxCosFast)[1]):
+fprintf(fd, "#define XMAX_COS_FAST2 0x%s\n", ieeehexa(xmaxCosFast2)[1]):
+
+fprintf(fd, "#define XMAX_RETURN_X_FOR_TAN 0x%s\n", ieeehexa(xmax_return_x_for_tan)[1]):
+fprintf(fd, "#define XMAX_TAN_FAST  0x%s\n", ieeehexa(xmaxTanFast)[1]):
+
+
 fprintf(fd, "\n"):
 
-fprintf(fd, "#define RN_CST_SINFAST %f \n", rnconstantSinFast);
-fprintf(fd, "#define RN_CST_COSFAST %f \n", rnconstantCosFast);
+fprintf(fd, "#define RN_CST_SINFAST1 %f \n", rnconstantSinFast1);
+fprintf(fd, "#define RN_CST_SINFAST2 %f \n", rnconstantSinFast2);
+fprintf(fd, "#define RN_CST_SINFAST3 %f \n", rnconstantSinFast3);
+fprintf(fd, "#define RN_CST_COSFAST1 %f \n", rnconstantCosFast1);
+fprintf(fd, "#define RN_CST_COSFAST2 %f \n", rnconstantCosFast2);
+fprintf(fd, "#define RN_CST_COSFAST3 %f \n", rnconstantCosFast3);
+fprintf(fd, "#define RN_CST_TANFAST1 %f \n", rnconstantTanFast1);
+fprintf(fd, "#define RN_CST_TANFAST2 %f \n", rnconstantTanFast2);
 fprintf(fd, "\n"):
 
 fprintf(fd, "#define INV_PIO256 %1.50f \n", 1/C);
@@ -399,14 +454,10 @@ for isbig from 1 to 0 by -1 do
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const s7 = "):
   printendian(fd, coeff(polySinFast,x,7), isbig):
-  fprintf(fd, ";\n"):
-  fprintf(fd, "static db_number const s9 = "):
-  printendian(fd, coeff(polySinFast,x,9), isbig):
   fprintf(fd, ";\n\n"):
 
 
   # the cos polynomial
-
 
   fprintf(fd, "static db_number const c2 = "):
   printendian(fd, coeff(polyCosFast,x,2), isbig):
@@ -416,10 +467,37 @@ for isbig from 1 to 0 by -1 do
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const c6 = "):
   printendian(fd, coeff(polyCosFast,x,6), isbig):
+  fprintf(fd, ";\n\n"):
+
+
+  # the tan polynomial
+
+  t3h, t3l := hi_lo(coeff(polyTanFast,x,3)):
+  fprintf(fd, "static db_number const t3h = "):
+  printendian(fd, t3h, isbig):
   fprintf(fd, ";\n"):
-  fprintf(fd, "static db_number const c8 = "):
-  printendian(fd, coeff(polyCosFast,x,8), isbig):
+  fprintf(fd, "static db_number const t3l = "):
+  printendian(fd, t3l, isbig):
   fprintf(fd, ";\n"):
+  fprintf(fd, "static db_number const t5 = "):
+  printendian(fd, coeff(polyTanFast,x,5), isbig):
+  fprintf(fd, ";\n"):
+  fprintf(fd, "static db_number const t7 = "):
+  printendian(fd, coeff(polyTanFast,x,7), isbig):
+  fprintf(fd, ";\n"):
+  fprintf(fd, "static db_number const t9 = "):
+  printendian(fd, coeff(polyTanFast,x,9), isbig):
+  fprintf(fd, ";\n"):
+  fprintf(fd, "static db_number const t11 = "):
+  printendian(fd, coeff(polyTanFast,x,11), isbig):
+  fprintf(fd, ";\n"):
+  fprintf(fd, "static db_number const t13 = "):
+  printendian(fd, coeff(polyTanFast,x,13), isbig):
+  fprintf(fd, ";\n"):
+  fprintf(fd, "static db_number const t15 = "):
+  printendian(fd, coeff(polyTanFast,x,15), isbig):
+  fprintf(fd, ";\n\n"):
+
 
   fprintf(fd, "\n\n"):
 
@@ -486,10 +564,10 @@ fi:
 #Old stuff for SCS, cut from various old maple worksheets, not checked
 
 if(1+2=4) then
-Poly_P := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, 40):
-Poly_Q := convert(Poly_P,polynom):
+Poly_P    := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, 40):
+Poly_Q    := convert(Poly_P,polynom):
 Poly_cheb := chebpade(Poly_Q, x=0..evalf(Pi/4), [17,0]);
-Poly_Res := x + x^3 * subs(x=x^2, Poly_cheb);
+Poly_Res  := x + x^3 * subs(x=x^2, Poly_cheb);
 log(infnorm( 1 - (Poly_Res)/sin(x),x=0..evalf(Pi/4), err))/log(2.);
 
 fi:
