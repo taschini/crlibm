@@ -365,9 +365,12 @@ int main (int argc, char *argv[])
 
     /* libm timing */
     dtmin=1<<30;
-    for(j=0; j<10; j++) {
+    for(j=0; j<5; j++) {
       TBX_GET_TICK(t1);
-      result = testfun_libm(input);
+#ifdef CRLIBM_TYPECPU_POWERPC
+      for(k=0; k<50;k++)
+#endif
+	result = testfun_libm(input);
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
       if (dt<dtmin)  dtmin=dt;
@@ -381,8 +384,11 @@ int main (int argc, char *argv[])
 
     /* crlibm timing */
     dtmin=1<<30;
-    for(j=0; j<10; j++) {
+    for(j=0; j<5; j++) {
       TBX_GET_TICK(t1);
+#ifdef CRLIBM_TYPECPU_POWERPC
+      for(k=0; k<50;k++)
+#endif
       result = testfun_crlibm(input);
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
@@ -400,11 +406,17 @@ int main (int argc, char *argv[])
 #ifdef HAVE_MPFR_H
     /* mpfr timing */
     dtmin=1<<30;
-    for(j=0; j<10; j++) {
+    for(j=0; j<5; j++) {
       TBX_GET_TICK(t1);
+#ifdef CRLIBM_TYPECPU_POWERPC
+      for(k=0; k<50;k++) {
+#endif
       mpfr_set_d(mp_inpt, input, GMP_RNDN);
       testfun_mpfr(mp_res, mp_inpt, GMP_RNDN);
       result = mpfr_get_d1(mp_res);
+#ifdef CRLIBM_TYPECPU_POWERPC
+      }
+#endif
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
       if (dt<dtmin)  dtmin=dt;
@@ -420,8 +432,11 @@ int main (int argc, char *argv[])
 #ifdef HAVE_MATHLIB_H
     Original_Mode = Init_Lib(); 
     dtmin=1<<30;
-    for(j=0; j<10; j++) {
+    for(j=0; j<5; j++) {
       TBX_GET_TICK(t1);
+#ifdef CRLIBM_TYPECPU_POWERPC
+      for(k=0; k<50;k++)
+#endif
       result = testfun_ibm(input);
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
