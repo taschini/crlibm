@@ -14,6 +14,7 @@
  
 */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <crlibm.h>
@@ -21,6 +22,7 @@
 #include "double-extended.h"
 
 #define DEBUG 0
+#define NICOLASTEST 1
 
 #include "atan-pentium.h"
 #include <fpu_control.h>
@@ -131,14 +133,25 @@ extern double atan_rn(double x) {
       atanlo = atan-atanhi;
 
     }
-
+#if NICOLASTEST
+#define epsilon 2.04221581890623872536809598138553304900554884091659e-19
+      if(atanlo<0) atanlo = -atanlo;
+      u = ((atanhi+(TWO_M_64*atanhi))-atanhi)*TWO_10; // = 1/2 * ulp(atanhi)
+      comp = epsilon*atanhi;
+      atanlo_u = u-atanlo;
+      if( atanlo_u > comp ) {
+	__setfpucw(0x027f);
+	return sign*atanhi;
+      }
+#else /* test à la Ziv */
     __setfpucw(0x027f);
     if(atanhi==atanhi+(atanlo*1.00368))
-      {      return sign*atanhi;}
+      {     
+	return sign*atanhi;
+      }
 
-
+#endif
     else{
-	__setfpucw(0x037f);
 
     /*Second step, double-double  */
     long double tmphi, tmplo;
@@ -151,11 +164,17 @@ extern double atan_rn(double x) {
     long double Xred2hi,Xred2lo;
     long double atanhi,atanlo;
     int j;
-    
+  
+#if NICOLASTEST
+#else
+    __setfpucw(0x037f);
+#endif  
+
 #if EVAL_PERF
   crlibm_second_step_taken++;
 #endif
 
+  
   if (x > MIN_REDUCTION_NEEDED) /* test if reduction is necessary : */
     {
       /* 1) Argument reduction :  */
