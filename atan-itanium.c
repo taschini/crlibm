@@ -4,14 +4,140 @@
  * Author : Nicolas Gast, Florent de Dinechin
  * nicolas.gast@ens.fr
  *
-To use within crlibm, use
-icc  -mcpu=itanium  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c atan_itanium.c; mv atan_itanium.o atan_fast.o; make
+
+WARNING : This code is dirty and experimental, and remains here for
+history. A cleaner, portable version of an exponential using
+double-extended arithmetic will be available as atan-de.c
+
+   To test within crlibm: (tested with Intel icc compiler version 8.1)
+icc  -mcpu=itanium  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c atan-itanium.c; mv atan-itanium.o atan_fast.o; make
+
+icc -D__ICC__ -DHAVE_CONFIG_H  -mcpu=itanium2  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c atan-itanium.c;
+mv atan-itanium.o atan_fast.o; rm -f libcrlibm.a;
+ar cru libcrlibm.a crlibm_private.o exp_fast.o exp_accurate.o log_fast.o log_accurate.o \
+log10_accurate.o log2_accurate.o rem_pio2_accurate.o trigo_fast.o trigo_accurate.o atan_fast.o \
+atan_accurate.o csh_fast.o scs_lib/scs_private.o scs_lib/addition_scs.o scs_lib/division_scs.o \
+scs_lib/print_scs.o  scs_lib/double2scs.o scs_lib/zero_scs.o scs_lib/multiplication_scs.o scs_lib/scs2double.o;\
+ranlib libcrlibm.a; cd tests; make ; cd ..
+
+
+
+This file is completely self-contained so that we can change the crlibm infrastructure without bothering maintaining it.
+
+
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include "crlibm.h"
-#include "crlibm_private.h"
-#include "double-extended.h"
+
+
+
+typedef enum {
+    _PC_S        = 1        /* single .s */
+   ,_PC_D        = 2        /* double .d */
+   ,_PC_NONE     = 3        /* dynamic   */
+} _Asm_pc;
+
+/* Table 1-22: legal getf/setf floating-point register access completers */
+typedef enum {
+    _FR_S        = 1        /* single form      .s   */
+   ,_FR_D        = 2        /* double form      .d   */
+   ,_FR_EXP      = 3        /* exponent form    .exp */
+   ,_FR_SIG      = 4        /* significand form .sig */
+} _Asm_fr_access;
+
+/* Table 1-24: legal floating-point FPSR status field completers (.sf) */
+typedef enum {
+    _SF0         = 0        /* FPSR status field 0 .s0 */
+   ,_SF1         = 1        /* FPSR status field 1 .s1 */
+   ,_SF2         = 2        /* FPSR status field 2 .s2 */
+   ,_SF3         = 3        /* FPSR status field 3 .s3 */
+} _Asm_sf;
+
+
+#define Add12_ext(s, r, a, b)         \
+        { long double _z, _a=a, _b=b;    \
+         s = _a + _b;             \
+         _z = s - _a;              \
+         r = _b - _z; }            
+
+#define Add22_ext(zh,zl,xh,xl,yh,yl) \
+do {\
+long double r,s;\
+r = (xh)+(yh);\
+s = (xh)-r+(yh)+(yl)+(xl);\
+*zh = r+s;\
+*zl = r - (*zh) + s;\
+} while(0)
+
+
+#define Mul12_ext(_prh,_prl,_u,_v)                    \
+{                                                     \
+  *_prh = _u*_v;                                      \
+  *_prl = *_prh - _u*_v;                              \
+}
+
+
+#define Mul22_ext(pzh,pzl, xh,xl, yh,yl)              \
+{                                                     \
+long double ph, pl;                                   \
+  ph = xh*yh;                                         \
+  pl = xh*yh - ph;                                    \
+  pl = xh*yl + pl;                                    \
+  pl = xl*yh + pl;                                    \
+  *pzh = ph+pl;					      \
+  *pzl = ph - (*pzh);                                 \
+  *pzl += pl;                                         \
+}
+
+
+#define  Div22_ext(pzh,pzl,xh,xl,yh,yl)\
+{long double ch,cl,uh,ul;  \
+           ch=(xh)/(yh);   Mul12_ext(&uh,&ul,ch,(yh));  \
+           cl=(((((xh)-uh)-ul)+(xl))-ch*(yl))/(yh);   *(pzh)=ch+cl;   *(pzl)=(ch-*(pzh))+cl;\
+}
+
+
+
+
+
+typedef          __int64  INT64;
+typedef   signed __int64 SINT64;
+typedef unsigned __int64 UINT64;
+
+/* FP register type */
+typedef __fpreg L_FLOAT_TYPE;
+
+/* Almost the same as the previous, except exponent field smaller, and morally in memory */
+typedef long double LC_FLOAT_TYPE;
+
+/* The double-double-ext type, using registers */
+typedef struct __X_FLOAT_TYPE_TAG {
+    L_FLOAT_TYPE hi,lo; /* order is critical! */
+} X_FLOAT_TYPE;
+
+/* The double-double-ext type, in memory */
+typedef struct __XC_FLOAT_TYPE_TAG {
+    LC_FLOAT_TYPE hi,lo; /* order is critical! */
+} XC_FLOAT_TYPE;
+
+
+
+#define ULL(bits) 0x##bits##uLL
+
+#if (!defined(EM64T) && defined(__linux__) && defined(IA32))
+# define LDOUBLE_ALIGN 12   /* IA32 Linux: 12-byte alignment */
+#else
+# define LDOUBLE_ALIGN 16   /* EM64T, IA32 Win or IPF Win/Linux: 16-byte alignm\
+			       ent */
+#endif
+
+#if (LDOUBLE_ALIGN == 16)
+#define _XPD_ ,0x0000,0x0000,0x0000
+#else /*12*/
+#define _XPD_ ,0x0000
+#endif
+
+#define LDOUBLE_HEX(w4,w3,w2,w1,w0) 0x##w0,0x##w1,0x##w2,0x##w3,0x##w4 _XPD_ /*LITTLE_ENDIAN*/
+
+
 
 #define DEBUG 0
 double dde_atan_rn(double x) {
@@ -30,7 +156,6 @@ double atan_rz(double x) {
   return 0;
 }
 
-#include "double-extended.h"
 
 static const double  HALFPI = 1.57079632679489655799898173427209258079528808593750e+00;
 #define MIN_REDUCTION_NEEDED ULL(3F89FDF8BCCE533D)
@@ -171,6 +296,7 @@ static const struct{long long int a; double b;} ab_table[62] = {
  { /*a[61] ~= 1.01699461607316896213e+02   */   ULL(40596CC3FA9E0EF4),
    /*b[61] = */   8.27932424540746438879068591631948947906494140625000e+01}
 };
+
 
 #define atanb_table ((const XC_FLOAT_TYPE *)_atanb_table)
 __declspec(align(16)) static const unsigned short _atanb_table[] = {
@@ -383,7 +509,7 @@ extern double atan_rn(double xd) {
   double u;
   double comp;
 
-  int i;
+  int i, i1, m;
   UINT64 x_val,x_abs,sign_mask;
   L_FLOAT_TYPE xe, tmp, bi, atanbhi, xred, xred2,q;
   L_FLOAT_TYPE res,reshi,reslo,rn_constant,test;
@@ -510,8 +636,6 @@ extern double atan_rn(double xd) {
     /* no reduction needed */
     {
 
-      /* This constant was found by dichotomy. I am very ashamed */
-      rn_constant = 1.01;
 
       /* Polynomial evaluation */
       
@@ -537,7 +661,20 @@ extern double atan_rn(double xd) {
     return reshi;
 #endif
   
+#if 1
+    i1 = _Asm_getf( _FR_SIG, res);
+    m =  i1 & (0xff<<3);
+    if(__builtin_expect((m!=(0x7f<<3) && m!=(0x80<<3)), 1+1==2)) {
+    //if(__builtin_expect(   ((unsigned long long)(m - (0x7f<<3))) > 1<<3) , 1+1==2)) {
+      if(sign_mask) 
+	return -reshi; 
+      else 
+	return reshi;
+    }      
+#else
   /* ROUNDING TEST à la Ziv */
+      /* This constant was found by dichotomy. I am very ashamed */
+      rn_constant = 1.01;
   reslo = res - reshi;
   test=_Asm_fma( _PC_D, reslo, rn_constant, reshi, _SF0 );
   
@@ -548,6 +685,9 @@ extern double atan_rn(double xd) {
     else 
       return reshi;
   }
+#endif
+
+
   else {
 
     /******************************************************************/
@@ -560,6 +700,8 @@ extern double atan_rn(double xd) {
     crlibm_second_step_taken++;
 #endif
 
+    //   printf("Toto\n");
+
   if (__builtin_expect(x_abs > MIN_REDUCTION_NEEDED, 0))  {/* test if reduction is necessary : */
     if(i==61){
       Add12_ext( xmBihi , xmBilo , xe , -ab_table[61].b);
@@ -569,16 +711,16 @@ extern double atan_rn(double xd) {
       xmBilo = 0.0;
     }
     
-    Mul12_ext(tmphi,tmplo, xe, (ab_table[i].b));
+    Mul12_ext(&tmphi,&tmplo, xe, (ab_table[i].b));
 
     if (xe > 1) /* TODO remplacer par xabs */
-      Add22_ext(x0hi,x0lo,tmphi,tmplo, 1.0,0.0);
+      Add22_ext(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
     else {
-      Add22_ext( x0hi , x0lo , 1.0,0.0,tmphi,tmplo);
+      Add22_ext( &x0hi , &x0lo , 1.0,0.0,tmphi,tmplo);
     }
     
 #if 1
-    Div22_ext( Xredhi, Xredlo, xmBihi , xmBilo , x0hi,x0lo);
+    Div22_ext( &Xredhi, &Xredlo, xmBihi , xmBilo , x0hi,x0lo);
 #else
     Xredhi=1; Xredlo=0; /* to time the Div22*/
 #endif
@@ -589,7 +731,7 @@ extern double atan_rn(double xd) {
 #endif
 
     Xred2 = Xredhi*Xredhi;
-    Mul22_ext( Xred2hi,Xred2lo,Xredhi,Xredlo,Xredhi, Xredlo);
+    Mul22_ext( &Xred2hi,&Xred2lo,Xredhi,Xredlo,Xredhi, Xredlo);
     
       /*poly eval */
       
@@ -599,25 +741,25 @@ extern double atan_rn(double xd) {
 	   (coef_poly[7][0]+
 	    (Xred2*coef_poly[8][0])))));
       
-    Mul12_ext(qhi, qlo, q, Xred2);
+    Mul12_ext(&qhi, &qlo, q, Xred2);
     
     for(j=3;j>=0;j--)
       {
-	Add22_ext(qhi,qlo, (coef_poly[j][0]), (coef_poly[j][1]), qhi,qlo);
-	Mul22_ext(qhi,qlo, qhi,qlo, Xred2hi,Xred2lo);
+	Add22_ext(&qhi,&qlo, (coef_poly[j][0]), (coef_poly[j][1]), qhi,qlo);
+	Mul22_ext(&qhi,&qlo, qhi,qlo, Xred2hi,Xred2lo);
       }
       
-    Mul22_ext(qhi,qlo, Xredhi,Xredlo, qhi,qlo);
-    Add22_ext(qhi,qlo, Xredhi,Xredlo, qhi,qlo);
+    Mul22_ext(&qhi,&qlo, Xredhi,Xredlo, qhi,qlo);
+    Add22_ext(&qhi,&qlo, Xredhi,Xredlo, qhi,qlo);
     
     /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
-    Add22_ext(atanhi,atanlo, atanb_table[i].hi, atanb_table[i].lo, qhi,qlo);
+    Add22_ext(&atanhi,&atanlo, atanb_table[i].hi, atanb_table[i].lo, qhi,qlo);
   }
   else
     // no reduction needed
     {
       /* Polynomial evaluation */
-      Mul12_ext( Xred2hi,Xred2lo,xe,xe);
+      Mul12_ext( &Xred2hi,&Xred2lo,xe,xe);
 
       /*poly eval - don't take risks, keep plain Horner */
       q = Xred2hi*(coef_poly[5][0]+Xred2hi*
@@ -626,15 +768,15 @@ extern double atan_rn(double xd) {
                 (coef_poly[8][0]))));
       
       Add12_ext(qhi,qlo, (coef_poly[4][0]),q);
-      Mul22_ext(qhi,qlo, qhi,qlo, Xred2hi,Xred2lo);
+      Mul22_ext(&qhi,&qlo, qhi,qlo, Xred2hi,Xred2lo);
       
       for(j=3;j>=0;j--)
         {
-          Add22_ext(qhi,qlo, (coef_poly[j][0]), (coef_poly[j][1]), qhi,qlo);
-          Mul22_ext(qhi,qlo, qhi,qlo, Xred2hi,Xred2lo);
+          Add22_ext(&qhi,&qlo, (coef_poly[j][0]), (coef_poly[j][1]), qhi,qlo);
+          Mul22_ext(&qhi,&qlo, qhi,qlo, Xred2hi,Xred2lo);
         }
       
-      Mul22_ext (qhi,qlo, xe,0, qhi,qlo);
+      Mul22_ext (&qhi,&qlo, xe,0, qhi,qlo);
       Add12_ext (atanhi,atanlo,xe,qhi);
       atanlo += qlo;
 
@@ -645,7 +787,10 @@ extern double atan_rn(double xd) {
   printf("             %1.50Le\n",(long double)(atanhi + atanlo));
 #endif
   
-  return _Asm_fadd( _PC_D, atanhi, atanlo, _SF0 );
+    if(sign_mask) 
+      return -(double) (atanhi+atanlo);
+    else 
+      return (double) (atanhi+atanlo);
 
     
   }
