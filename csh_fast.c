@@ -16,6 +16,9 @@
 #define DEBUG 0
 extern void  exp_SC(scs_t,double);
 
+
+
+
 void scs_div_2(scs_t num) {
   /* small function to divide by 2 any SCS number */
   unsigned int carry, new_value, mask, old_value;
@@ -47,13 +50,11 @@ void scs_div_2(scs_t num) {
 }
 
 
-/*************************************************************
- *************************************************************
- *               ROUNDED  TO NEAREST			     *
- *************************************************************
- *************************************************************/
- enum {RN, RZ, RD, RU};
-double cosh_quick(double x, int rounding_mode){
+
+enum {RN, RZ, RD, RU};
+
+
+double do_cosh(double x, int rounding_mode){
 
   /*some variable declarations */
   int k;
@@ -260,6 +261,7 @@ double cosh_quick(double x, int rounding_mode){
   return(res_hi); 
 }
 
+
 double cosh_rn(double x){ 
   db_number y;
   y.d = x;
@@ -270,8 +272,10 @@ double cosh_rn(double x){
   if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
    return (y.d);
   }
-  return(cosh_quick(x, RN));
+  return(do_cosh(x, RN));
 }
+
+
 double cosh_rz(double x){ 
   db_number y;
   y.d = x;
@@ -282,8 +286,10 @@ double cosh_rz(double x){
   if (y.d > max_input_ch.d) { /* out of range */
     y.i[LO_ENDIAN] = 0xFFFFFFFF; y.i[HI_ENDIAN] = 0x7FEFFFFF; return (y.d);
   }
-  return(cosh_quick(x, RD));/* cosh is always positive, so rounding to -infinite is equal to rounding to zero */
+  return(do_cosh(x, RD));/* cosh is always positive, so rounding to -infinite is equal to rounding to zero */
 }
+
+
 double cosh_ru(double x){ 
   db_number y;
   y.d = x;
@@ -294,8 +300,10 @@ double cosh_ru(double x){
   if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
    return (y.d);
   }
-  return(cosh_quick(x, RU));
+  return(do_cosh(x, RU));
 }
+
+
 double cosh_rd(double x){ 
   db_number y;
   y.d = x;
@@ -306,7 +314,7 @@ double cosh_rd(double x){
   if (y.d > max_input_ch.d) { /* out of range */
     y.i[LO_ENDIAN] = 0xFFFFFFFF; y.i[HI_ENDIAN] = 0x7FEFFFFF; return (y.d);
   }
-  return(cosh_quick(x, RD));/* cosh is always positive, so rounding to -infinite is equal to rounding to zero */
+  return(do_cosh(x, RD));/* cosh is always positive, so rounding to -infinite is equal to rounding to zero */
 }
 
 
@@ -322,14 +330,7 @@ double cosh_rd(double x){
 
 
 
-
-/*************************************************************
- *************************************************************
- *               ROUNDED  TO NEAREST			     *
- *************************************************************
- *************************************************************/
-
-double sinh_quick(double x, int rounding_mode){ 
+double do_sinh(double x, int rounding_mode){ 
 
   /*some variable declarations */
   int k;
@@ -553,6 +554,8 @@ double sinh_quick(double x, int rounding_mode){
   return(res_hi);
 }
 
+
+
 double sinh_rn(double x){ 
   db_number y;
   y.d = x;
@@ -564,8 +567,10 @@ double sinh_rn(double x){
   if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
    return (y.d);
   }
-  return(sinh_quick(x, RN));
+  return(do_sinh(x, RN));
 }
+
+
 double sinh_rz(double x){ 
   db_number y;
   y.d = x;
@@ -579,12 +584,14 @@ double sinh_rz(double x){
     y.i[LO_ENDIAN] = 0xFFFFFFFF; y.i[HI_ENDIAN] = 0x7FEFFFFF | (y.i[HI_ENDIAN] & 0x80000000); return (y.d);
   }
   if( x > 0) {
-    return(sinh_quick(x, RD));
+    return(do_sinh(x, RD));
   }
   else {
-    return(sinh_quick(x, RU));
+    return(do_sinh(x, RU));
   }
 }
+
+
 double sinh_ru(double x){ 
   db_number y;
   y.d = x;
@@ -601,8 +608,10 @@ double sinh_ru(double x){
       y.i[LO_ENDIAN] = 0xFFFFFFFF; y.i[HI_ENDIAN] = 0xFFEFFFFF ; return (y.d);
     }
   }
-  return(sinh_quick(x, RU));
+  return(do_sinh(x, RU));
 }
+
+
 double sinh_rd(double x){ 
   db_number y;
   y.d = x;
@@ -619,7 +628,7 @@ double sinh_rd(double x){
       y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0xFFF00000; return (y.d);
     }
   }
-  return(sinh_quick(x, RD));
+  return(do_sinh(x, RD));
 }
 
 
