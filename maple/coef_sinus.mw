@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout alignment="left" bullet="none" name="Warning"/><Layout alignment="left" bullet="none" name="Error"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout alignment="left" bullet="none" firstindent="0.0" leftmargin="0.0" linebreak="space" name="Normal" rightmargin="0.0" spaceabove="0.0" spacebelow="0.0"/><Layout alignment="centred" bullet="none" linespacing="0.5" name="Maple Output"/><Font background="[0,0,0]" family="Monospaced" foreground="[0,0,255]" name="Warning" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" opaque="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[255,0,255]" name="Error" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" family="Lucida Bright" foreground="[0,0,255]" name="2D Output" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" opaque="false" size="12"/></Styles><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">restart:
-Digits := 200:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "Common_maple_procedures.m";
+<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout alignment="left" bullet="none" name="Error"/><Layout alignment="left" bullet="none" name="Heading 2" spaceabove="8.0" spacebelow="2.0"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout alignment="left" bullet="none" firstindent="0.0" leftmargin="0.0" linebreak="space" name="Normal" rightmargin="0.0" spaceabove="0.0" spacebelow="0.0"/><Layout alignment="centred" bullet="none" linespacing="0.5" name="Maple Output"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" opaque="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[255,0,255]" name="Error" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 2" opaque="false" size="16"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" family="Lucida Bright" foreground="[0,0,255]" name="2D Output" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" opaque="false" size="12"/></Styles><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">restart:
+Digits := 50:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "Common_maple_procedures.m";
 mkdir("TEMPSIN");</Text-field></Input><Output><Text-field layout="Error" style="Error">Error, (in mkdir) directory exists and is not empty
-</Text-field></Output></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">Useful values</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">bits_pio2hi:=12;</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSxiaXRzX3BpbzJoaUc2IiIjNw==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">pio2hi:= evalf(round((evalf(Pi)/2) * (2**(bits_pio2hi))) / (2**(bits_pio2hi)));
-pio2lo:=nearest(Pi/2 - pio2hi);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSdwaW8yaGlHNiIkImN3KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrK0QieSszZCIhJCo+</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSdwaW8ybG9HNiIjITFCbSZcPVklSEUiNjc8bDAoZS4iZUghZg==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">invpio2:= nearest(2/Pi);
-</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SShpbnZwaW8yRzYiIyIxZkVBUjY7TWQiMSMqNHVhIyo+MiEq</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">
-for k from 1e12 to kmax do
-a:=k*1.57080078125:
-anear:=nearest(a):
-if (a=anear) then
-  :
-else
-  print(k);
-  k:=kmax:
-fi:
-od:</Text-field></Input><Output><Text-field layout="Warning" style="Warning">Warning,  computation interrupted</Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">k;
-kmax:=k;</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIi5GbXktKysiIiIh</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSVrbWF4RzYiJCIuRm15LSsrIiIiIQ==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">round(evalf(1.7976931348623157e308/(Pi/2)));</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiYF5sKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrNUZoXzRbIipROTA7K0M7dFlFJyk+MlcoenpDJ1E7NTEiNDMhKj1ic09YIm95eXUnSF1vWXdcancweEowQkAnSFpfbipwQmJUOCMzYSJHYjcqKmVkPmlQKXB4SXUiPmw+cyR6akZINiJHSSUqcFdXNg==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">convert(1.57080078125, binary);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImN3KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKywrLDUrNiEkKj4=</Equation></Text-field></Output></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Polynomial evaluation</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">with(numapprox):
-with(orthopoly):</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "Common_maple_procedures.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">DEGREE:=21;
+</Text-field></Output></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">Useful values</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">bits_pio2hi0:=35;</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SS1iaXRzX3BpbzJoaTBHNiIiI04=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">pio2hi:= (round((evalf(Pi)/2) * (2**(bits_pio2hi0))) / (2**(bits_pio2hi0)));
+pio2lo:=nearest(Pi/2 - pio2hi);
+bits_pio2hi:=1+log2(op(2,ieeedouble(pio2hi)[3]));
+kmax:=2**(53-bits_pio2hi);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSdwaW8yaGlHNiIjIiw0YTInKXAjIiwlPXApenIi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSdwaW8ybG9HNiIjIjFQUFg+RmBZaiI9WyVbIyl6XDB3cSZ5KyllWiM=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSxiaXRzX3BpbzJoaUc2IiQiI04iIiE=</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSVrbWF4RzYiJCInV0BFIiIh</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">invpio2:= nearest(2/Pi);
+</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SShpbnZwaW8yRzYiIyIxZkVBUjY7TWQiMSMqNHVhIyo+MiEq</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">error_factor_CodyWaite:=2**(-52-bits_pio2hi);
+# which may be multiplied by kmax
+abs_error_CodyWaite:= kmax * error_factor_CodyWaite; # = 2**(1-2*bits_pio2hi)
+prec_CodyWaite :=9;
+miny_accurate:=2**(1-2*bits_pio2hi+53+prec_CodyWaite);
+rel_error_CodyWaite:= abs_error_CodyWaite/miny_accurate;</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+STdlcnJvcl9mYWN0b3JfQ29keVdhaXRlRzYiJCJTSlQ7ciFIWyR6JWUnejEvKUckKjQoRzBkTiZbQlknISN3</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+STRhYnNfZXJyb3JfQ29keVdhaXRlRzYiJCJTXTcuS3ktVCNSR2Y4K1htOHkxZzNYKmUxJXAiISNx</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SS9wcmVjX0NvZHlXYWl0ZUc2IiIiKg==</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SS5taW55X2FjY3VyYXRlRzYiJCJTKysrKysrKysrKysrKysrKysrKysrK103eSEjXw==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+STRyZWxfZXJyb3JfQ29keVdhaXRlRzYiJCJTKysrRGNeR1UkKSlSPGcwXCxvKTM1KFxNLyVvQCEjbw==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log2(rel_error_CodyWaite);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIVMsKysrKysrKysrKysrKysrKysrKysrKytpISNb</Equation></Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Polynomial evaluation</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">with(numapprox):
+with(orthopoly):</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "Common_maple_procedures.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">degSin:=17;
+degCos:=18;
 
-
-</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSdERUdSRUVHNiIiI0A=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">polyTaylorSin:= poly_exact (convert( series(sin(x), x=0, DEGREE+1), polynom));</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SS5wb2x5VGF5bG9yU2luRzYiLDhJInhHRiUiIiIqJEYnIiIkIyExaDE7LiYqei9nIjJvUicqPXF6R2ckKiRGJyIiJiMiMUgmR0RnUlEhWyIzKVtCTUlfMll3JiokRiciIigjITFsSmZvI28rbSQiNTs7YjRQMlduVz0qJEYnIiIqIyIxSE9FM3FwRTsiNjc8bDAoZS4iZUghZiokRiciIzYjITFUU1YieiQpRyo9IjhPIj5NSzlmc2p5YnYqJEYnIiM4IyIxJj1dV25UREAnIjtLd2YhZkwib3dBRWNvUSokRiciIzojITEyRVpPVFF0diI9I3okKkg+Kj5VSUc5Ll8uKioqJEYnIiM8IyIxNHIpZlpYUmMkIkB3YD8ublwsJUgjRy1nXXdFIiokRiciIz4jITFCZ3g/dFxOYCJCN0Q6VD9KbU5YYG9KMnIuXCcqJEYnIiNAIyIxIltqRWw3QEQkIkVzSS9ORCllKEg2JVs5SloqXGBoOw==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">polyTaylorCos:= poly_exact (convert( series(cos(x), x=0, DEGREE+1), polynom));</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SS5wb2x5VGF5bG9yQ29zRzYiLDgiIiJGJyokSSJ4R0YlIiIjIyEiIkYqKiRGKSIiJSMiMWgxOy4mKnovZyIzc2UmZTIpPTpUOSokRikiIicjITFSIVErWj5eUyciNC96UUYlPWdvNlkqJEYpIiIpIyIxbEpmbyNvK20kIjZHSFR3JyplX1JkWiIqJEYpIiM1IyExLjRoMXdOLDgiNydwOF9rcEdbbUJzJSokRikiIzcjIjBaOCJRRWg0aiI5V2xuJEhkTyFcWEpBSSokRikiIzkjITFwSSV6aVorNSgiPDdAY1x1OCFwVSc+KygqPScqJEYpIiM7IyIxMkVaT1RRdHYiP3MxIXozKD12J0cmR11LYyVlIiokRikiIz0jITFGOlVvSSFmTCciQUs/ZC1YKnklM00udD8+W2NTKiRGKSIjPyMiMVA7Qzhkek8mKSJEJVEhKW9KJik+NzkwSlJUVig9cDIj</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">Poly_P := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, 40):
+</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSdkZWdTaW5HNiIiIzw=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSdkZWdDb3NHNiIiIz0=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">polyTaylorSin:=  poly_exact2 (convert( series(sin(x), x=0, degSin+1), polynom), 4);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SS5wb2x5VGF5bG9yU2luRzYiLDRJInhHRiUiIiIqJEYnIiIkIyFCJjMjPlNgUSVmdmJaPjcmRzwzIiJCN0Q6VD9KbU5YYG9KMnIuXCcqJEYnIiImIyIxSCZHRGdSUSFbIjMpW0JNSV8yWXcmKiRGJyIiKCMhMWxKZm8jbyttJCI1OztiNFAyV25XPSokRiciIiojIjFIT0UzcXBFOyI2NzxsMChlLiJlSCFmKiRGJyIjNiMhMVRTViJ6JClHKj0iOE8iPk1LOWZzanlidiokRiciIzgjIjEmPV1XblREQCciO0t3ZiFmTCJvd0FFY29RKiRGJyIjOiMhMTJFWk9UUXR2Ij0jeiQqSD4qPlVJRzkuXy4qKiokRiciIzwjIjE0cilmWlhSYyQiQHdgPy5uXCwlSCNHLWddd0Ui</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">polyTaylorSin0:=  poly_exact (convert( series(sin(x), x=0, degSin+1), polynom));</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SS9wb2x5VGF5bG9yU2luMEc2Iiw0SSJ4R0YlIiIiKiRGJyIiJCMhMWgxOy4mKnovZyIyb1InKj1xekdnJCokRiciIiYjIjFIJkdEZ1JRIVsiMylbQk1JXzJZdyYqJEYnIiIoIyExbEpmbyNvK20kIjU7O2I0UDJXblc9KiRGJyIiKiMiMUhPRTNxcEU7IjY3PGwwKGUuImVIIWYqJEYnIiM2IyExVFNWInokKUcqPSI4TyI+TUs5ZnNqeWJ2KiRGJyIjOCMiMSY9XVduVERAJyI7S3dmIWZMIm93QUVjb1EqJEYnIiM6IyExMkVaT1RRdHYiPSN6JCpIPio+VUlHOS5fLioqKiRGJyIjPCMiMTRyKWZaWFJjJCJAd2A/Lm5cLCVII0ctZ113RSI=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">polyTaylorCos:= poly_exact2(convert( series(cos(x), x=0, degCos+1), polynom),5);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SS5wb2x5VGF5bG9yQ29zRzYiLDYiIiJGJyokSSJ4R0YlIiIjIyEiIkYqKiRGKSIiJSMiQiYzIz5TYFElZnZiWj43Jkc8MyIiQ1sraGsiW19FOVFUbiNIJVtoZiMqJEYpIiInIyExUiFRK1o+XlMnIjQvelFGJT1nbzZZKiRGKSIiKSMiMWxKZm8jbyttJCI2R0hUdycqZV9SZFoiKiRGKSIjNSMhMS40aDF3Tiw4IjcncDhfa3BHW21CcyUqJEYpIiM3IyIwWjgiUUVoNGoiOVdsbiRIZE8hXFhKQUkqJEYpIiM5IyExcEklemlaKzUoIjw3QGNcdTghcFUnPisoKj0nKiRGKSIjOyMiMTJFWk9UUXR2Ij9zMSF6Myg9didHJkddS2MlZSIqJEYpIiM9IyExRjpVb0khZkwnIkFLP2QtWCp5JTNNLnQ/PltjUw==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">polyTaylorCos0:= poly_exact(convert( series(cos(x), x=0, degCos+1), polynom));</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SS9wb2x5VGF5bG9yQ29zMEc2Iiw2IiIiRicqJEkieEdGJSIiIyMhIiJGKiokRikiIiUjIjFoMTsuJip6L2ciM3NlJmUyKT06VDkqJEYpIiInIyExUiFRK1o+XlMnIjQvelFGJT1nbzZZKiRGKSIiKSMiMWxKZm8jbyttJCI2R0hUdycqZV9SZFoiKiRGKSIjNSMhMS40aDF3Tiw4IjcncDhfa3BHW21CcyUqJEYpIiM3IyIwWjgiUUVoNGoiOVdsbiRIZE8hXFhKQUkqJEYpIiM5IyExcEklemlaKzUoIjw3QGNcdTghcFUnPisoKj0nKiRGKSIjOyMiMTJFWk9UUXR2Ij9zMSF6Myg9didHJkddS2MlZSIqJEYpIiM9IyExRjpVb0khZkwnIkFLP2QtWCp5JTNNLnQ/PltjUw==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log2(infnorm(1 - (polyTaylorSin / sin(x)), x=-Pi/4..Pi/4));</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIVM5cSdbJGYoW2pLV05idiNbK3YqUil6NTNiK2xqISNb</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log2(infnorm(1 - (polyTaylorCos / cos(x)), x=-Pi/4..Pi/4));</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIVNCc3VsRCFSUUh0PGojb0oiUSEqNHdbNXRJJ0dsISNb</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">Poly_P := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, 40):
 Poly_Q := convert(Poly_P,polynom):</Text-field></Input><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">Poly_cheb := chebpade(Poly_Q, x=0..evalf(Pi/4), [17,0]):</Text-field></Input><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">Poly_Res := x + x^3 * subs(x=x^2, Poly_cheb):</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log(infnorm( 1 - (Poly_Res)/sin(x),x=0..evalf(Pi/4), err))/log(2.);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIWN3SlYiKilSJSlIaWU1JjNUeCxGP0xaWCQqZTVcUWVMR18hcFpqeDI+eHc6Y1xsNTsveWp1LjtOelhoJlxxejZZIT4uYFdrS2xadDBOYzRhK2BNMUR2IWU2KkdCJXBIXDRxJnlJRWsnKSlIJlx0Jj4hJCg+</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">Poly_trunc:=poly_exact2(Poly_Res,2):
 log(infnorm( 1 - (Poly_trunc)/sin(x),x=0..evalf(Pi/4))/log(2.));</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIWN3NicqUidwQF9KPFlqODotKTMpeip6MjJJVEFWIkgjeiopKmZOJClcMWV0eSJSPWZQJTRsKnpSLFptZmNZYkYqei0pM1ZCenUtKlwneTdhZXEoMz1VVyg+WmtJKG9bZktoJSoqW0csVW1RbSlRI3lVNUNSISQpPg==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_f2d_1(sin(x)/x, 12, 0.7);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiUsPCMiREIiKT0rbmNMMERiJ3BxciRmJVE1IkQjPlMlZUUqNDFkX2xwcXIkZiVRNSIiIkkieEc2IiMiMSpvJmV2XyQqb0giSm9qMUpqRV4oXD5KQkw3ISllJ0g5Y04lKiRGKCIiIyMhMWQxOy4mKnovZyIyb1InKj1xekdnJCokRigiIiQjIS5uKSllZSdIZCJGd1hNIUdncSFRIUgoZSJceSYqekFIOCokRigiIiUjIjFoaF8tJ1JRIVsiMylbQk1JXzJZdyYqJEYoIiImIyIxcCUqNFEhKTMqPSciR2tHMFV6Jj1sVmUnZWhNLXQiZnFdKSokRigiIicjITFeXm1uI28rbSQiNTs7YjRQMlduVz0qJEYoIiIoIyEwLHA4L2EmUmtGNiokRigiIikjIjEwJz4sTSh5MWwiN1tvZ0FbVlRLPWhCKiRGKCIiKiMiMSpcb1FjU3ojPUY2KiRGKCIjNSMhMShSdykpXHA3ZCgiOVdsbiRIZE8hXFhKQUkqJEYoIiM2IyExJj0uSilmaCFSKCJGLyR5ODdUI0dfaCJcaidSSik+InBKJiokRigiIzcjIjFaMFhqOSsiMyQiOzspKUgmem1TJFE2OEdNPiQiY3d6OWlPRGNYOF1uQiFRal1mW1NlMChSSzVGU24mPi8jenJbRyNbITNwJ3lzOlZAaVUiR1Y2QjpKb0IpNHcxS1JMZVglPmRyJD5kVmdGN1R5eDN2cjlMVE4kSDVgXiY0aSJwSyxtNnhEMkZRTyEkPCMkImN3Jm9TO2BubTwqKTROUCtsUScpKTQqSCdcLS8yUkZGTGxeNytIYiEpKjQydj8pPW9rQDtUQzBeUCY0WzpiXiF5IkhnLixJPl1jdHghUXFweG9DJT4lZjcpKls+cm9fJyplaFZ1SjlQKioqKioqKioqKioqKioqKioqISQrIw==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_f2d_2(sin(x)/x,12,0.7);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiUsPCokSSJ4RzYiIiIjIyFBaGhbNzZFISpwdVAoNGNVJzNhIkJjaWQ/ZzokeUVuVWVPYj1YSyokRiUiIiQjIS5uKSllZSdIZCJGd1hNIUdncSFRIUgoZSJceSYqekFIOCokRiUiIiUjIjFoaF8tJ1JRIVsiMylbQk1JXzJZdyYqJEYlIiImIyIxcCUqNFEhKTMqPSciR2tHMFV6Jj1sVmUnZWhNLXQiZnFdKSokRiUiIicjITFeXm1uI28rbSQiNTs7YjRQMlduVz0qJEYlIiIoIyEwLHA4L2EmUmtGLyokRiUiIikjIjEwJz4sTSh5MWwiN1tvZ0FbVlRLPWhCKiRGJSIiKiMiMSpcb1FjU3ojPUYvKiRGJSIjNSMhMShSdykpXHA3ZCgiOVdsbiRIZE8hXFhKQUkqJEYlIiM2IyExJj0uSilmaCFSKCJGLyR5ODdUI0dfaCJcaidSSik+InBKJiokRiUiIzcjIjFaMFhqOSsiMyQiOzspKUgmem1TJFE2OEdNPiMiREIiKT0rbmNMMERiJ3BxciRmJVE1IkQjPlMlZUUqNDFkX2xwcXIkZiVRNSIiIkYlIyJCck89P3FGKWZVJz1sU21yJ3A1ImVuQyNHJzNnNmgpKWVEU2c7PiFlTloqZTQ+cW0lUVZ2I3A6JCJjdyN6UTomPj8hKXBnWXUwJFFkJlFtYUBJQ1Y2TT4lelw9TW0zN21mWDZTaW9JOSozS3BbdSpSZE95RyNbeihSUVxvLmppd194dW8hUm9UIzNoQlEzRnV5OFM0ZVpuTzpeP1YxVypvREdZdz8oKSEkPSMkImN3YCd6TFIiR0N4LGtpQGBUIik9YCFmXCQzQz0iPTZZOFpUNVFrcyFvIkhKJj1rcHU7I0hMPSk9aWZnJSoqZWxuNCt5dkBeJUhyNzojKVFxcHhvQyU+JWY3KSpbPnJvXycqZWhWdUo5UCoqKioqKioqKioqKioqKioqKiEkKyM=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" style="Text">Over 0 .. 2**-26, P = x</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log(infnorm( 1 - x/sin(x),x=0..2**(-26)))/log(2.);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIWN3XmUiUWlXRW5OLW9bQEY/bVpxNXRrVDxgJiozXGNeeiIqKio+dVtIN0wiKXpPXCVbakNvIzNUdCMqZiQ0RlxnRVYyKCkzIiopXDxeKFJxPTFMYyE9bHNRdiJHJiopeld3UHhLKEgvM1doOkAyXWlcZWEhJCk+</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" style="Text">Over 2**-26 .. 0.25</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">xmax:=(0.25-2**(-26))/2:
 poly_trunc_f2d_2(sin(x+xmax+2**(-26)), 12, xmax);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiUsPCokSSJ4RzYiIiIjIyFCMCZHc3BrX2c1SWR5W0VbdGsiRCM+UyVlRSo0MWRfbHBxciRmJVE1KiRGJSIiJCMhMSopempgIVt6JmYiMm9SJyo9cXpHZyQqJEYlIiIlIyIxLnkjPWR1IiopZiI0d3Alb2cvOiNIOiIqJEYlIiImIyIxKFE1SFdlanclIjMpW0JNSV8yWXcmKiRGJSIiJyMhMWYiMyRRa0ElPiQiNTs7YjRQMlduVz0qJEYlIiIoIyExUkA5KlFBSUUoIjVLSzU+dTkpWyQqbyQqJEYlIiIpIyIxRCZbL0RzXyM9IjY3PGwwKGUuImVIIWYqJEYlIiIqIyIvYkhHRSk9XyMiNDNleGFvLnNMQSoqJEYlIiM1IyExUkhcNEUlZmYjIjhPIj5NSzlmc2p5YnYqJEYlIiM2IyExRF1ASlcsNXYiOVdsbiRIZE8hXFhKQUkqJEYlIiM3IyIxKnkmPTR2WTtEIjozJVx3UkxxInBiMTluKiMiQyhHajhPUTBAQGc5ZChIbHAlSCJGKiIiIkYlIyJBJD41IjNvUzByWHFGIXpqJ1whKSJBa1M5MCEqeSZwIm8xWVRRJ0g2KSQiY3diUDZyKD4xQiVwcWh6KnlBdi5lSSozO0tDQl4jUk04TDsneTJNVj5LckVXczRBcitnYmUjekAkekg+ZndsWiM9MUVYJilvaER0N0NXSXgmKkc6OzgsJmYwTiZIQnAlKWZmNm4pZTkicDU5IylmPyIhJDcjJCJjdz5NVzZ5Nk8kPTNZUGN1YV9bLlFHMjE1JT1uKXpNWnMpKkhHI3lTJDQtWCJmYk1fLTVsI1xIXW1VKipmJlJAZCIpcF9bIipSViEpUjJuaCd6W1F6WigpR0U+RyZmL2AnenNeaFk9JmZISF9hI2ZSU1ojISQrIw==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" style="Text">Over 0.25 .. 0.855469</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">xmid:=(0.855469-0.25)/2:
 a:=poly_trunc_f2d_2(sin(x+xmid), 8, xmid-0.25);
-log2(a[2]);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJhRzYiNiUsNCokSSJ4R0YlIiIjIyFCSF4pXGdLc1dablkqZVBOKlJ4IkMnND8jSGpcSSZHdyNbYGVvSCM+JiokRikiIiQjITEob3YoUUQkSFYiIjEjKjR1YSMqPjIhKiokRikiIiUjIjFQOndmJFIvZSQiM1c8cl5oUEkjKUcqJEYpIiImIyIxSGBIL1RRJmUlIjMpW0JNSV8yWXcmKiRGKSIiJyMhMXZObS0xRlF3IjU7O2I0UDJXblc9KiRGKSIiKCMhMUB3aSs3bVk8IjQzZXhhby5zTEEqKiRGKSIiKSMiMSgqKXpVISkpMyI0IiI2R0hUdycqZV9SZFoiIyJCZitTJz4sand2THQlem9uKnBRIkNDXUkjM0NFODJwcUxZQHUhKUgiIiIiRikjIkIsbzEjKjMpKm8iXCd6VXUxMClbOiJCRyIpRzUheTpSakxASG9GZkE7JCJidnEzO2AhUkstTDU8NDFSJjNNQkEqUVtYW3Y5JFJAZ3c8MDAhNCtbWF88WCl5KSpbZStPcHMheTlzcWRDXmteKlEhSEA+JFIsaVRNXFZ0Ilx0LENyeU00Qno4Qil6Iiopb0g0TzghJCwjJCJjdysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKyt2JDRAO1QlMzh2JypSL0ZhaSt5ellJKVxtb0QhKWZjOnVqKT4tdXg4emlfInkiKlxZOXlBbmZeYFhRLDtjZFo+JDNJIVskISQrIw==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIWN3emIsUEFNcnZJbSRvZWc3blMmKXlLRl4tIVJNUzwiUWdyLCJ5RTtdRnZ2Y0xnImZCKnBLTWhwKVwjcCFRZT9qKCoqZScpekRdXTUleVBTQVhLLyopKXkvcDlhUCFmP2l2SC92dyJlTV8zXVM4JylwaSEkKT4=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Output</Text-field></Title><Text-field/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">filename:="TEMPSIN/sine_fast.h":
+log2(a[2]);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJhRzYiNiUsNCokSSJ4R0YlIiIjIyFCSF4pXGdLc1dablkqZVBOKlJ4IkMnND8jSGpcSSZHdyNbYGVvSCM+JiokRikiIiQjITEob3YoUUQkSFYiIjEjKjR1YSMqPjIhKiokRikiIiUjIjFQOndmJFIvZSQiM1c8cl5oUEkjKUcqJEYpIiImIyIxSGBIL1RRJmUlIjMpW0JNSV8yWXcmKiRGKSIiJyMhMXZObS0xRlF3IjU7O2I0UDJXblc9KiRGKSIiKCMhMUB3aSs3bVk8IjQzZXhhby5zTEEqKiRGKSIiKSMiMSgqKXpVISkpMyI0IiI2R0hUdycqZV9SZFoiIyJCZitTJz4sand2THQlem9uKnBRIkNDXUkjM0NFODJwcUxZQHUhKUgiIiIiRikjIkIsbzEjKjMpKm8iXCd6VXUxMClbOiJCRyIpRzUheTpSakxASG9GZkE7JCJidnEzO2AhUkstTDU8NDFSJjNNQkEqUVtYW3Y5JFJAZ3c8MDAhNCtbWF88WCl5KSpbZStPcHMheTlzcWRDXmteKlEhSEA+JFIsaVRNXFZ0Ilx0LENyeU00Qno4Qil6Iiopb0g0TzghJCwjJCJjdysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKyt2JDRAO1QlMzh2JypSL0ZhaSt5ellJKVxtb0QhKWZjOnVqKT4tdXg4emlfInkiKlxZOXlBbmZeYFhRLDtjZFo+JDNJIVskISQrIw==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIWN3emIsUEFNcnZJbSRvZWc3blMmKXlLRl4tIVJNUzwiUWdyLCJ5RTtdRnZ2Y0xnImZCKnBLTWhwKVwjcCFRZT9qKCoqZScpekRdXTUleVBTQVhLLyopKXkvcDlhUCFmP2l2SC92dyJlTV8zXVM4JylwaSEkKT4=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Output</Text-field></Title><Text-field/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">filename:="TEMPSIN/sine_fast.h":
 fd:=fopen(filename, WRITE, TEXT):
 
 fprintf(fd, "#include \"crlibm.h\"\n#include \"crlibm_private.h\"\n"):
 
 fprintf(fd, "\n/*File generated by maple/coef_sine.mw*/\n"):
 
-fprintf(fd, "#define DEGREE %d\n\n", DEGREE):
-fprintf(fd, "#define MAX_FAST_SIN %d\n", max_fast_sin):
+fprintf(fd, "#define DEG_SIN %d\n", degSin):
+fprintf(fd, "#define DEG_COS %d\n", degCos):
+fprintf(fd, "#define MAX_FAST_SIN %1.30e\n", evalf(kmax*Pi/2)):
 fprintf(fd, "#define MIN_RETURN_X_FOR_SINE  1.49e-8\n"):
+fprintf(fd, "#define MINY_ACCURATE %1.30e \n", miny_accurate):
+fprintf(fd, "#define RND_CST %f \n", compute_rn_constant(2*rel_error_CodyWaite)):
+
 fprintf(fd,"#ifdef WORDS_BIGENDIAN\n"):
 for isbig from 1 to 0 by -1 do
 
@@ -52,22 +52,41 @@ for isbig from 1 to 0 by -1 do
   printendian(fd, invpio2, isbig):
   fprintf(fd, " ;\n"):
 
-  # The Taylor coefficients
-  fprintf(fd,"db_number const PolySin[%d] =\n{\n",(DEGREE-1)/2):
-    for j from 3 to DEGREE by 2 do<Font italic="false" underline="false">
-      coef:=coeff(polyTaylorSin,x,j):</Font>
-      printendian(fd, coef, isbig):
-      if j&lt;DEGREE then fprintf(fd," ,\n") fi:
-    od:
+  # The sine polynomial
 
+  # coeff 3 in double-double
+  fprintf(fd,"db_number const Coef3Sin[2] =\n{\n"):
+  ch,cl:= hi_lo(coeff(polyTaylorSin,x,3)):
+  printendian(fd, ch, isbig):
+  fprintf(fd," ,\n"):
+  printendian(fd, cl, isbig):
   fprintf(fd, "\n};\n\n"):
 
-  # The Taylor coefficients
-  fprintf(fd,"db_number const PolyCos[%d] =\n{\n",(DEGREE-1)/2):
-    for j from 2 to DEGREE-1 by 2 do<Font italic="false" underline="false">
+  # The other Taylor coefficients
+  fprintf(fd,"db_number const PolySin[%d] =\n{\n",(degSin-3)/2):
+    for j from 5 to degSin by 2 do<Font italic="false" underline="false">
+      coef:=coeff(polyTaylorSin,x,j):</Font>
+      printendian(fd, coef, isbig):
+      if j&lt;degSin then fprintf(fd," ,\n") fi:
+    od:
+  fprintf(fd, "\n};\n\n"):
+
+  # the cos polynomial
+  
+  # the coeff of degree 4
+  fprintf(fd,"db_number const Coef4Cos[2] =\n{\n"):
+  ch,cl:= hi_lo(coeff(polyTaylorCos,x,4)):
+  printendian(fd, ch, isbig):
+  fprintf(fd," ,\n"):
+  printendian(fd, cl, isbig):
+  fprintf(fd, "\n};\n\n"):
+  
+  # The other Taylor coefficients
+  fprintf(fd,"db_number const PolyCos[%d] =\n{\n",(degCos-4)/2):
+    for j from 6 to degCos by 2 do<Font italic="false" underline="false">
       coef:=coeff(polyTaylorCos,x,j):</Font>
       printendian(fd, coef, isbig):
-      if j&lt;DEGREE then fprintf(fd," ,\n") fi:
+      if j&lt;degCos then fprintf(fd," ,\n") fi:
     od:
 
   fprintf(fd, "\n};\n\n"):
@@ -75,5 +94,113 @@ for isbig from 1 to 0 by -1 do
 od:
 fprintf(fd,"#endif /* WORDS_BIGENDIAN */\n\n\n"):
 
-fclose(fd):
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1"/></Title><Text-field/></Section><Text-field/><Text-field/><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Test and scratch</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">evalf(2**(-26));</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkImN3KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrXWlsWlE+aDYhXCIhJDIj</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Text-field/></Section><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
+fclose(fd): 
+</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log2(miny_accurate);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIVMsKysrKysrKysrKysrKysrKysrKysrKytxISNc</Equation></Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1"/></Title><Section><Title><Text-field layout="Heading 2" style="Heading 2"><Font italic="true">Compute a bound on the accumulated rounding error caused by the Horner evaluation of a truncated polynomial </Font></Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">Computes the accumulated rounding error during the polynomial evaluation.
+P is the polynomial.
+xmax is the max value of |x|.
+n is the degree when P is computed in double double. The first double-double operation is an addition.</Text-field><Text-field layout="Normal" style="Text">
+returns max absolute error, min of the function, max of the function. 
+</Text-field><Text-field layout="Normal" style="Text">This procedure also checks on the fly that the fast (test-free) versions of the double-double addition can be used, i.e. that for all x, at each Horner step i computing ci+x*Si, we have |ci|&gt;|x*Si|. It prints warnings if it not the case. </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compute_abs_rounding_error:=proc(poly,xmax, xerr, nn)
+local n, deg, delta, deltap, i, S, P, Snorm, Smin, Smax, prec:
+deltap:=0:
+delta:=0:
+deg:=degree(poly):
+
+prec:=53; # precision of the first iterations
+
+S:=coeff(poly, x, deg):
+Smax:=abs(S):
+Smin:=Smax:
+
+if nn&lt;0 then n:=0: else n:=nn: fi:# sometimes called by compute_rel_rounding_error with n=-1
+
+for i from (deg-1) to 0 by -1 do
+  P:= convert(S*x, polynom):
+  Smin := abs(coeff(poly,x,i)) - xmax*Smax : 
+  if(Smin&lt;=0) then 
+    printf("Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration %d, consider decreasing xmax\n",i);
+  fi:
+  delta:= evalf(xmax*deltap + 2**(-prec)*xmax*Smax):
+  if i&lt;n then 
+    # fast Add22 ?    
+    if abs(coeff(poly,x,i)) &lt; xmax*Smax  # may be improved to xmax*Smax/2
+    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , i  );   
+         printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*Smax );
+    fi:
+  fi:
+  S:=convert(P+coeff(poly,x,i), polynom):
+  Snorm:=evalf(infnorm(S, x=-xmax..xmax)):
+  if i=n-1 then prec:=100: fi:  # from the addition of the n-1-th iteration
+  deltap:= evalf(delta + 2**(-prec)*(delta + Snorm)): 
+  Smax := Snorm + deltap:  
+od:
+deltap, Smin, Smax;
+end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/><Text-field layout="Normal" style="Text">Computes the total relative rounding error</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compute_rel_rounding_error:=proc(poly,xmax, n)
+local deg, p, rho, deltap, Smin, Smax:
+
+deg:=degree(poly):
+if(n&gt;0) then p:=100: else p:=53: fi: 
+
+if coeff(poly,x, 0) = 0 then
+   deltap, Smin, Smax := compute_abs_rounding_error(poly/x,xmax, n-1):
+   rho :=  (2^(-p)*(Smax+deltap) +deltap ) / Smin :
+else
+   deltap, Smin, Smax := compute_abs_rounding_error(poly,xmax, n):
+   rho := deltap /  Smin:
+fi:
+rho;
+end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes the accumulated rounding error during the polynomial evaluation.
+P is the polynomial.
+xmax is the max value of |x|.
+n is the degree when P is computed in double double. The first double-double operation is a multiplication (probably less useful).</Text-field><Text-field layout="Normal" style="Text">
+returns max absolute error, min of the function, max of the function. 
+</Text-field><Text-field layout="Normal" style="Text">This procedure also checks on the fly that the fast (test-free) versions of the double-double addition can be used, i.e. that for all x, at each Horner step i computing ci+x*Si, we have |ci|&gt;|x*Si|. It prints warnings if it not the case. </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compute_abs_rounding_error_firstmult:=proc(poly,xmax, nn)
+local n, deg, delta, deltap, i, S, P, Snorm, Smin, Smax, prec:
+deltap:=0:
+delta:=0:
+deg:=degree(poly):
+
+prec:=53; # precision of the first iterations
+
+S:=coeff(poly, x, deg):
+Smax:=abs(S):
+Smin:=Smax:
+
+if nn&lt;0 then n:=0: else n:=nn: fi:# sometimes called by compute_rel_rounding_error with n=-1
+
+for i from (deg-1) to 0 by -1 do
+  if i=n-1 then prec:=100: fi:  # from the mult of the n-1-th iteration
+  P:= convert(S*x, polynom):
+  Smin := abs(coeff(poly,x,i)) - xmax*Smax : 
+  if(Smin&lt;=0) then 
+    printf("Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration %d, consider decreasing xmax\n",i);
+  fi:
+  delta:= evalf(xmax*deltap + 2**(-prec)*xmax*Smax):
+  if i&lt;n then 
+    # fast Add22 ?    
+    if abs(coeff(poly,x,i)) &lt; xmax*Smax  # may be improved to xmax*Smax/2
+    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , i  );   
+         printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*Smax );
+    fi:
+  fi:
+  S:=convert(P+coeff(poly,x,i), polynom):
+  Snorm:=evalf(infnorm(S, x=-xmax..xmax)):
+  deltap:= evalf(delta + 2**(-prec)*(delta + Snorm)): 
+  Smax := Snorm + deltap:  
+od:
+deltap, Smin, Smax;
+end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/><Text-field layout="Normal" style="Text">Computes the total relative rounding error</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compute_rel_rounding_error_firstmult:=proc(poly,xmax, n)
+local deg, p, rho, deltap, Smin, Smax:
+
+deg:=degree(poly):
+if(n&gt;0) then p:=100: else p:=53: fi: 
+
+if coeff(poly,x, 0) = 0 then
+   deltap, Smin, Smax := compute_abs_rounding_error_firstmult(poly/x,xmax, n-1):
+   rho :=  (2^(-p)*(Smax+deltap) +deltap ) / Smin :
+else
+   deltap, Smin, Smax := compute_abs_rounding_error_firstmult(poly,xmax, n):
+   rho := deltap /  Smin:
+fi:
+rho;
+end proc:</Text-field></Input></Group></Section><Text-field/></Section><Text-field/><Text-field/><Section><Title><Text-field layout="Heading 1" style="Heading 1">Test and scratch</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">evalf(2**(20));</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIih3Jls1IiIh</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">evalf(10000*Pi/4);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkImN3XSZmSyhRc3RiNiIqKlF3LWolW3ZjLXJET3otN0s/JilSOCR6Ylh3UV82WXQ8bXcwS0c7LVBiKnBFSGJMMSgzcWxcQWJyOjVhcDJbaHRWX1h3UCUpXEJIXDVzdik+ZSUzbTonNCRbdVJqIilSJnkhJCc+</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Text-field/></Section><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
