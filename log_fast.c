@@ -119,7 +119,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       } 
       else
 	{
-	  if((ln2_times_E_HI*ln2_times_E_HI < 16.5*16.5))
+	  if((ln2_times_E_HI*ln2_times_E_HI > 16.5*16.5))
 	    *prndcstindex = 2; 
 	  else 
 	    *prndcstindex =1;

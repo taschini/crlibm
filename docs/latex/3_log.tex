@@ -151,71 +151,44 @@ $|E|\log(2)<746$, and the maximum absolute error of storing $\log(2)$
 as two doubles and multiplying by $E$ is smaller than $2^{-90}$.
 
 
-The  program in
-\texttt{maple/coef\_log.mw} computes, on each interval,  the maximum
-approximation error $\deltapprox$ (this is a relative error), the
-accumulated rounding error of the Horner scheme $\deltaround$ (this is
-an absolute error) and the maximum value of the polynomial on the interval $\maxp$. 
+The program in \texttt{maple/coef\_log.mw} computes, on each interval,
+the maximum approximation error $\deltapprox$ (this is a relative
+error), the accumulated rounding error of the Horner scheme
+$\deltaround$ (this is an absolute error) and the maximum value of the
+polynomial on the interval $\maxp$. This Maple script directly outputs
+the values of the rounding constants required by theorems of section
+\ref{section:testrounding}.
+
 
 Error analysis distinguishes four cases, corresponding to four
 execution paths in the program.
-
-\subsubsubsection{If $|E\log(2)| > \mathtt{MIN\_FASTPATH}=128.5$} then
+\begin{enumerate}
+\item {If $|E\log(2)| > \mathtt{MIN\_FASTPATH}=128.5$} then
 the whole polynomial evaluation may be performed in double-precision,
 with a total (approximation and rounding) absolute error smaller than
-$2^{-55.7}$. This is sufficiently small to get a relative error on
-$E\log(2)+P(x)$ smaller than $2^{-62.8}$. 
+$2^{-55.7}$. As the absolute value of $P(x)$ in this scheme is always
+smaller than $0.38$, this ensures a relative error on $E\log(2)+P(x)$
+smaller than $2^{-62.8}$.
 
-\subsubsubsection{If $|E\log(2)|>16$} then the last two additions and
+\item {If $16.5<|E\log(2)|\le 128.5$} then the last two additions and
 the last multiplication of the Horner polynomial evaluation are
 performed in double-double-precision. The total relative error in this
-case is smaller than  $2^{-64.8}$.
+case is smaller than $2^{-64.8}$.
 
-\subsection{If 0<|E\log(2)| < 16}
+\item {If $0<|E\log(2)| < 16.5$}
 then we use double-double arithmetic as in the previous case, and the
-bound on the relative error is $2^{-60.15}$.
+bound on the relative error is $2^{-60.2}$.
 
-\subsection{If E=0} then the last two additions and
+\item {If E=0} then the last two additions and
 the last two multiplications of the Horner polynomial evaluation are
 performed in double-double-precision. The total relative error in this
-case is smaller than  $2^{-57.68}$.
+case is smaller than $2^{-57.7}$.
+\end{enumerate}
 
-
-
-
-\subsection{Two-path optimization}
-
-The absolute value of $P(x)$ in this scheme is always smaller than
-$0.38$.  For large values of $E\log(2)$, it is therefore possible to
-degrade the relative error on $P(x)$ (to improve performance) and
-still get an overall relative error much smaller than $2^{-53}$.
-
-More specifically, this fast path computes the same polynomial without
-using any double-double arithmetic. A specific Maple procedure
-computes a bound on the total absolute error of computing $P(x)$ in
-this case: it finds $\delta_{P} = 2^{-53}$. If $E\log(2)>2^k+0.38$, a
-bound on the relative error in evaluating $E\log(2) + P(x)$ through
-this fast path is now $\delta = 2^{-53-k-1}.$ In this case,
-Theorem~\ref{th:roundingRN1} p. \pageref{th:roundingRN1} gives the
-value of the rounding constant $e= 1 +  \dfrac{1}{(2^{k}-1)(1-2^{-53})}$
-
-Here $k$ is the parameter of a compromise between the percentage of
-calls going through the fast path, and the percentage of calls to the
-fast path which will launch the accurate step. Currently the only
-value yielding a performance improvement is the greatest possible,
-$k=9$.
-
-Note that a three-path optimization is possible, with an intermediate
-accuracy where only one step is performed in double-double. It is
-probably not worth the trouble.
-
-\subsubsection{Rounding test}
-
-The previous evaluation returns an approximation to the logarithm as
-the sum of two double-precision numbers.  To test if we are able to
-round correctly the result toward $+$ or $- \infty$ or to nearest
-(depending of the function call) the same technique is used as for the
-exponential \cite{DarDefDinMul03}.
+The first case represents a trade-off between accuracy (which impacts
+the percentage of calls to the \accurate\ phase), and  speed. The last
+case is required by the fact that the polynomial corresponding to
+input values around $1$ requires a specific rounding error analysis.
 
 
 
@@ -231,11 +204,11 @@ exponential \cite{DarDefDinMul03}.
 \subsubsection{Exceptional cases, subnormal numbers}
 
 \begin{lstlisting}[caption={Exceptional cases},firstnumber=1]
-  y.d = x;
+  E=0; y.d = x;
   /* Filter cases */
   if (y.i[HI_ENDIAN] < 0x00100000){       
     if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
-      return 1.0/0.0;     
+      return -1.0/0.0;     
     }                                     
     if (y.i[HI_ENDIAN] < 0){ 
       return (x-x)/0;                    
@@ -252,7 +225,7 @@ exponential \cite{DarDefDinMul03}.
 
 
 \begin{tabular}{ll}
-Line  1 &  initialize y\\
+Line  1 &  initialize E and y\\
 Line 3 & Test if x is null, negative or a subnormal number.\\
 Line 4 & Test if x is a NaN or $\infty$ \\
 Line 7 & If x is negative, we should return NaN and raise an exception.\\
