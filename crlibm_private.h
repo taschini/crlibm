@@ -5,8 +5,6 @@
  *
  */
 
-
-
 #ifndef CRLIBM_PRIVATE_H
 #define CRLIBM_PRIVATE_H 1
 
@@ -39,8 +37,8 @@ Optimal values for Pentium 4:
 
 */
 
-#define ADD22_AS_FUNCTIONS 1
-#define DEKKER_AS_FUNCTIONS 1
+#define ADD22_AS_FUNCTIONS 0
+#define DEKKER_AS_FUNCTIONS 0
 
 
 
@@ -54,6 +52,90 @@ Optimal values for Pentium 4:
 /* counter of calls to the second step (accurate step) */
 int crlibm_second_step_taken;
 #endif
+
+
+
+
+
+/*
+ * i = d in rounding to nearest
+ */
+#define DOUBLE2INT(ii, dd)       \
+  {db_number t;              \
+   t.d=(dd+6755399441055744.0);  \
+   ii=t.i[LO_ENDIAN];}
+
+
+
+
+
+
+
+
+/* If the processor has a FMA, use it !   **/
+
+#ifdef CRLIBM_TYPECPU_POWERPC
+#define PROCESSOR_HAS_FMA 1
+#define FMA(r, a,b,c)\  /* r = a*b + c*/
+do{                                                    \
+  double _a, _b,_c,_r;                                 \
+  _a=a; _b=b;_c=c;                                     \
+  __asm__ __volatile__("fmadd %0, %1, %2, %3\n ;;\n"   \
+		       : "=f"(_r)                      \
+		       : "f"(_a), "f"(_b), "f"(_c)     \
+		       );                              \
+  r=_r;                                                \
+} while(1+1==3)
+
+
+#define FMS(r, a,b,c)\  /* r = a*b - c*/
+do{                                                    \
+  double _a, _b,_c,_r;                                 \
+  _a=a; _b=b;_c=c;                                     \
+  __asm__ __volatile__("fmsub %0, %1, %2, %3\n ;;\n"   \
+		       : "=f"(_r)                      \
+		       : "f"(_a), "f"(_b), "f"(_c)     \
+		       );                              \
+  r=_r;                                                \
+  } while(1+1==3)
+
+#endif /*CRLIBM_TYPECPU_POWERPC*/
+
+
+
+
+#ifdef CRLIBM_TYPECPU_ITANNIUM
+#define PROCESSOR_HAS_FMA 1
+#define FMA(r, a,b,c)\  /* r = a*b + c*/
+do{                                                    \
+  double _a, _b,_c,_r;                                 \
+  _a=a; _b=b;_c=c;                                     \
+  __asm__ __volatile__("fms %0 = %1, %2, %3\n ;;\n"    \
+		       : "=f"(_r)                      \
+		       : "f"(_a), "f"(_b), "f"(_c)     \
+		       );                              \
+  r=_r;                                                \
+} while(1+1==3)
+
+
+#define FMS(r, a,b,c)\  /* r = a*b - c*/
+do{                                                    \
+  double _a, _b, _c, _r;                               \
+  _a=a; _b=b;_c=c;                                     \
+  __asm__ __volatile__("fms %0 = %1, %2, %3\n ;;\n"    \
+		       : "=f"(_r)                      \
+		       : "f"(_a), "f"(_b), "f"(_c)     \
+		       );                              \
+  r=_r;                                                \
+  } while(1+1==3)
+
+#endif /*CRLIBM_TYPECPU_ITANIUM*/
+
+
+
+
+
+
 
 
 #ifdef WORDS_BIGENDIAN
@@ -196,107 +278,90 @@ static const struct scs
          Fast2Sum(r2, r3, w, v); }
 
 
-#if !ADD22_AS_FUNCTIONS
-#define Add22Cond(zh,zl,xh,xl,yh,yl)\
-{\
-double r,s;\
-r = xh+yh;\
-s = ((ABS(xh)) > (ABS(yh)))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);\
-*zh = r+s;\
-*zl = r - (*zh) + s;\
-}
+
+
 
 
 
 /*
- * computes double-double addition: zh+zl = xh+xl + yh+yl
+ * Functions to computes double-double addition: zh+zl = xh+xl + yh+yl
  * knowing that xh>yh
  * relative error is smaller than 2^-103 
  */
-  
-#define Add22(zh,zl,xh,xl,yh,yl)\
-{\
-double r,s;\
-r = xh+yh;\
-s = xh-r+yh+yl+xl;\
-*zh = r+s;\
-*zl = r - (*zh) + s;\
-}
-#endif
-
-
-#ifdef CRLIBM_TYPECPU_ITANIUM
-/* One of the nice things with the fused multiply-and-add is that it
-   greatly simplifies the Dekker : */
-#define Mul12Cond(rh,rl,u,v)                          \
-{                                                     \
-  *rh = u*v;                                          \
-  /* The following means: *rl = FMS(u*v-*rh) */       \
-  __asm__ __volatile__("fms %0 = %1, %2, %3\n ;;\n"   \
-		       : "=f"(*rl)                    \
-		       : "f"(u), "f"(v), "f"(*rh)     \
-		       );                             \
-}
-#define Mul12 Mul12Cond  /* TODO check this ! */
-#endif /*CRLIBM_TYPECPU_ITANIUM*/
-
-#ifdef CRLIBM_TYPECPU_POWERPC
-/* One of the nice things with the fused multiply-and-add is that it
-   greatly simplifies the Dekker : */
-#define Mul12Cond(rh,rl,u,v)                          \
-{                                                     \
-  *rh = u*v;                                          \
-  /* The following means: *rl = FMS(u*v-*rh) */       \
-  __asm__ __volatile__("fmsub %0, %1, %2, %3\n ;;\n"   \
-		       : "=f"(*rl)                    \
-		       : "f"(u), "f"(v), "f"(*rh)     \
-		       );                             \
-}
-#define Mul12 Mul12Cond  /* TODO check this ! */
-#define Mul22(pzh,pzl,xh,xl,yh,yl)                      \
-{                                                     \
-double mh, ml;                                        \
-  mh = xh*yh;                                          \
-  /* The following means: *rl = FMS(xh*yh-*mh) */       \
-  __asm__ __volatile__("fmsub %0, %1, %2, %3\n ;;\n"   \
-		       : "=f"(ml)                    \
-		       : "f"(xh), "f"(yh), "f"(mh)     \
-		       );                             \
- 					      \
- /* ml += xh*yl + xl*yh;	*/			      \
-  __asm__ __volatile__("fmadd %0, %1, %2, %3\n ;;\n"   \
-		       : "=f"(ml)                    \
-		       : "f"(xh), "f"(yl), "f"(ml)     \
-		       );                             \
-  __asm__ __volatile__("fmadd %0, %1, %2, %3\n ;;\n"   \
-		       : "=f"(ml)                    \
-		       : "f"(xl), "f"(yh), "f"(ml)     \
-		       );                             \
-						      \
-  *pzh = mh+ml;					      \
-  *pzl = mh - (*pzh) + ml;                              \
-}
-#endif /* CRLIBM_TYPECPU_POWERPC */
 
 
 #if ADD22_AS_FUNCTIONS
 extern void Add22(double *zh, double *zl, double xh, double xl, double yh, double yl);
 extern void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, double yl);
-#endif
+
+#else /* ADD22_AS_FUNCTIONS */
+
+#define Add22Cond(zh,zl,xh,xl,yh,yl)                             \
+do {                                                             \
+  double r,s;                                                    \
+  r = xh+yh;                                                     \
+  s = ((ABS(xh)) > (ABS(yh)))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);\
+  *zh = r+s;                                                     \
+  *zl = r - (*zh) + s;                                           \
+} while(2+2==5)
+
+  
+#define Add22(zh,zl,xh,xl,yh,yl)             \
+do {                                         \
+  double r,s;                                \
+  r = xh+yh;                                 \
+  s = xh-r+yh+yl+xl;                         \
+  *zh = r+s;                                 \
+  *zl = r - (*zh) + s;                       \
+} while(2+2==5)
+#endif /* ADD22_AS_FUNCTIONS */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef PROCESSOR_HAS_FMA
+/* One of the nice things with the fused multiply-and-add is that it
+   greatly simplifies the double-double multiplications : */
+#define Mul12(rh,rl,u,v)                          \
+{                                                     \
+  *rh = u*v;
+  FMS(*rl,   u,v, *rh);                               \
+}
+
+
+#define Mul22(pzh,pzl,xh,xl,yh,yl)                    \
+{                                                     \
+double mh, ml;                                        \
+  mh = xh*yh;                                         \
+  FMS(ml, xh, yh,  mh);                               \
+  FMA(ml, xh,xl, ml);                                 \
+  FMA(ml, xl,yh, ml);                                 \
+  *pzh = mh+ml;					      \
+  *pzl = mh - (*pzh) + ml;                            \
+}
+
+/* besides we don't care anymore about overflows in the mult  */
+#define Mul12Cond Mul12    
+#define Mul22cond Mul22
+
+
+#else /* PROCESSOR_HAS_FMA */
 
 
 #if DEKKER_AS_FUNCTIONS
-#ifndef CRLIBM_TYPECPU_ITANIUM  /* otherwise they have been defined just above */
-#ifndef CRLIBM_TYPECPU_POWERPC  /* otherwise they have been defined just above */
 extern void Mul12(double *rh, double *rl, double u, double v);
 extern void Mul12Cond(double *rh, double *rl, double a, double b);
 extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl);
-#endif /* ifndef CRLIBM_TYPECPU_ITANIUM */ 
-#endif /* ifndef CRLIBM_TYPECPU_POWERPC */ 
-
-
-
-
 #else /* if DEKKER_AS_FUNCTIONS  */
 /*
  * computes rh and rl such that rh + rl = a * b with rh = a @* b exactly
@@ -366,17 +431,15 @@ double mh, ml;                                        \
   *zl = mh - (*zh) + ml;                              \
 }
 
-#endif /*DEKKER_AS_FUNCTION*/
+#endif /* DEKKER_AS_FUNCTIONS */
+
+#endif /* PROCESSOR_HAS_FMA */
 
 
 
-/*
- * i = d in rounding to nearest
- */
-#define DOUBLE2INT(ii, dd)       \
-  {db_number t;              \
-   t.d=(dd+6755399441055744.0);  \
-   ii=t.i[LO_ENDIAN];}
+
+
+
 
 
 
