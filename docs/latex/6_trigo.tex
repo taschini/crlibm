@@ -777,7 +777,7 @@ less-than-ulp difference between $y_h$, $y_h+y_l$ and $\widehat{y}$.
 \section{Details of auxilliary functions
   \label{trigo:auxilliary}}
 
-\subsection{DoSinNotZero \label{dosinzero}}
+\subsection{DoSinZero \label{dosinzero}}
 Upon entering  \texttt{do\_sin\_k\_zero}, we have in
 $y_h+y_l$ an approximation to the ideal reduced value
 $\hat{y}=x-k\frac{\pi}{256}$ with a relative accuracy $\epsilon_{\mathrm{argred}}$:
@@ -1532,49 +1532,35 @@ by $$\maxeps_{tan} = 2.1\maxeps_{SinCosCase3} .$$
 \subsection{RN mode}
 \begin{lstlisting}[caption={Exceptional cases for tangent RN},firstnumber=1]
 double tan_rn(double x){  
-  double sh, sl, ch, cl;
-  double p7, t, x2;
+  double x2, p5, tt;
   rrinfo rri;
-  db_number x_split;
+  db_number x_split, rndcst;
 
   x_split.d=x;
   rri.absxhi = x_split.i[HI] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d; 
   }   
 
-  if (rri.absxhi < XMAX_TAN_CASE2){ /* |x|<2^-3 TODO this tradeoff has not been studied */
+  if (rri.absxhi < XMAX_TAN_CASE2){ 
     if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) 
       return x;
-
+    /* Dynamic computation of the rounding constant */
+    rndcst.i[HI] = 0x3ff00000 + (((rri.absxhi & 0x000fffff)+0x00100000) >> (0x3ff+2 - (rri.absxhi>>20))) ;
+    rndcst.i[LO] =0xffffffff;
     /* Fast Taylor series */
     x2 = x*x;
-    p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
-    t  = x2*(t3l.d +x2*(t5.d + x2*p7));
-
-    sh = x*(x2*t3h.d + t);
-    Add12(rri.rh, rri.rl, x, sh);   
+    p5 = t5.d + x2*(t7.d + x2*(t9.d + x2*t11.d));
+    tt = x2*(t3h.d + (t3l.d +x2*p5));
+    Add12(rri.rh, rri.rl, x, x*tt);  
     /* Test if round to nearest achieved */ 
-    if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE22)))
+    if(rri.rh == (rri.rh + (rri.rl * rndcst.d)))
       return rri.rh;
-    else {
-      /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, x2, t3h.d);
-      Add12(ch, cl, sh, (t+sl));
-      Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-      /* Test if round to nearest achieved */ 
-      if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE21)))
-	return rri.rh;
-      else
-	return scs_tan_rn(x); 
-    }
+    else
+      return scs_tan_rn(x); 
   }
   else {
     /* Otherwise : Range reduction then standard evaluation */
@@ -1591,11 +1577,52 @@ double tan_rn(double x){
 }
 \end{lstlisting}
 
+There is a peculiarity in lines 19 and 20: We compute the rounding
+constant dynamically, out of the value of $x$. The idea here is that
+in the neighborhood of zero, both $tan$ and its approximation are
+equivalent to $x$ with no order-2 term, therefore the relative error
+$\maxeps$ is equivalent to $x^2$ and therefore $\maxeps/x$ will vanish
+as $x\rightarrow 0$ (of course, in the presence of rounding error this
+has to be proven more rigorously - we will use Gappa).  As the error constant is computed
+out of $\maxeps$ (see Theorem~\ref{th:roundingRN1}
+page~\pageref{th:roundingRN1}), for $x$ sufficiently small we can
+compute $e$ out of $x$ and get a finer rounding constant, hence a
+lower probability of going through the accurate phase.
+
+The lines 19-20 implement $$\mathtt{rndcst} \approx 1 + 2^{-2}|x|$$ 
+with  
+$$\mathtt{rndcst} \ge 1 + 2^{-2}|x|$$ ensured by line 20.
+
+To prove that that this rounding constant is correct, we just have to
+check that it fulills the requirements of Theorem \ref{th:roundingRN1}.
+
+Let us note $\maxeps_{TanCase2}$ simply $\maxeps$ in this section.
+First, we compute in Gappa (file\\ \texttt{maple/trigoTanCase2.gappa}),
+using the same constants (produced by the same Maple) as in the C
+code, a bound $M$ on $\dfrac{\maxeps}{|x|}$. We find that, for
+$x<2^{-4}$, we have 
+$$\maxeps_{TanCase2} < 2^{-60.9} $$
+(hence the $k$ of Theorem \ref{th:roundingRN1} may be chosen as $k=7$) and
+$$\dfrac{\maxeps}{|x|} < M=2^{-56.5} .$$
+Or, $$|x| > \maxeps/M$$
+Therefore, 
+$$\mathtt{rndcst} > 1 + 2^{-2}/M\maxeps$$. 
+
+It is now trivial to check that $2^{-2}/M >
+\dfrac{2^{54}}{(1-2^{-7})(1-2^{-53})}$, therefore for any $x$
+the value of $\mathtt{rndcst}$ thus computed allows to determine
+correct rounding according to Theorem \ref{th:roundingRN1}. 
+
+
+
+Note that the computation of the rounding constant, although complex, is performed in
+integer arithmetic and independently of the evaluation of the polynomial.
+Therefore both computations may be carried out in parallel in a superscalar processor.
+
 \subsection{RU mode}
 \begin{lstlisting}[caption={Exceptional cases for tangent RU},firstnumber=1]
 double tan_ru(double x){  
-  double sh, sl, ch, cl, epsilon;
-  double p7, t, x2;
+  double epsilon, p5, tt, x2;
   db_number x_split;
   rrinfo rri;
 
@@ -1604,11 +1631,8 @@ double tan_ru(double x){
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (rri.absxhi>=0x7ff00000) {
-    /* was : return x-x; 
-       but it's optimized out by Intel compiler (bug reported).
-       Who cares to be slow in this case anyway... */
     x_split.l=0xfff8000000000000LL;
-    return x_split.d;
+    return x_split.d - x_split.d;
   }   
   
   if (rri.absxhi < XMAX_TAN_CASE2){
@@ -1623,20 +1647,15 @@ double tan_ru(double x){
     else {
       /* Fast Taylor series */
       x2 = x*x;
-      p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
-      t  = x2*(t3l.d +x2*(t5.d + x2*p7));
-    
-      sh = x*(x2*t3h.d + t);
-      Add12(rri.rh, rri.rl, x, sh);   
-      
-      TEST_AND_RETURN_RU(rri.rh, rri.rl, EPS_TAN_CASE22);
+      p5 = t5.d + x2*(t7.d + x2*(t9.d + x2*t11.d));
+      tt = x2*(t3h.d + (t3l.d +x2*p5));
+      Add12(rri.rh, rri.rl, x, x*tt);  
 
-      /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, x2, t3h.d);
-      Add12(ch, cl, sh, (t+sl));
-      Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-      epsilon=EPS_TAN_CASE21; 
+      /* TODO dynamic computation of error constant */
+      TEST_AND_RETURN_RU(rri.rh, rri.rl, EPS_TAN_CASE2);
+
+      /* if the previous block didn't return a value, launch accurate phase */
+      return  scs_tan_ru(x);
     }
   }
   else { 
@@ -1661,8 +1680,7 @@ double tan_ru(double x){
 \subsection{RD mode}
 \begin{lstlisting}[caption={Exceptional cases for tangent RD},firstnumber=1]
 double tan_rd(double x){  
-  double sh, sl, ch, cl, epsilon;
-  double p7, t, x2;
+  double epsilon, p5, tt, x2;
   rrinfo rri;
   db_number x_split;
 
@@ -1689,20 +1707,14 @@ double tan_rd(double x){
     
     /* Fast Taylor series */
     x2 = x*x;
-    p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
-    t  = x2*(t3l.d +x2*(t5.d + x2*p7));
-    
-    sh = x*(x2*t3h.d + t);
-    Add12(rri.rh, rri.rl, x, sh);   
+    p5 = t5.d + x2*(t7.d + x2*(t9.d + x2*t11.d));
+    tt = x2*(t3h.d + (t3l.d +x2*p5));
+    Add12(rri.rh, rri.rl, x, x*tt);  
+      
+    TEST_AND_RETURN_RD(rri.rh, rri.rl, EPS_TAN_CASE2);
 
-    TEST_AND_RETURN_RD(rri.rh, rri.rl, EPS_TAN_CASE22);
-
-    /* Still relatively fast, but more accurate */
-    Mul12(&sh, &sl, x2, t3h.d);
-    Add12(ch, cl, sh, (t+sl));
-    Mul22(&sh, &sl, x, 0, ch, cl);
-    Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-    epsilon=EPS_TAN_CASE21; 
+    /* if the previous block didn't return a value, launch accurate phase */
+    return  scs_tan_rd(x);
   }
   
   else { 
@@ -1727,8 +1739,7 @@ double tan_rd(double x){
 \subsection{RZ mode}
 \begin{lstlisting}[caption={Exceptional cases for tangent RZ},firstnumber=1]
 double tan_rz(double x){  
-  double sh, sl, ch, cl, epsilon;
-  double p7, t, x2;
+  double epsilon, p5, tt, x2;
   rrinfo rri;
   db_number x_split;
 
@@ -1745,22 +1756,17 @@ double tan_rz(double x){
     if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {
       return x;
     }
-    else{ /* Fast Taylor series */
+    else{ 
+      /* Fast Taylor series */
       x2 = x*x;
-      p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
-      t  = x2*(t3l.d +x2*(t5.d + x2*p7));
-      
-      sh = x*(x2*t3h.d + t);
-      Add12(rri.rh, rri.rl, x, sh);   
-      
-      TEST_AND_RETURN_RZ(rri.rh, rri.rl, EPS_TAN_CASE22);
+      p5 = t5.d + x2*(t7.d + x2*(t9.d + x2*t11.d));
+      tt = x2*(t3h.d + (t3l.d +x2*p5));
+      Add12(rri.rh, rri.rl, x, x*tt);  
 
-      /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, x2, t3h.d);
-      Add12(ch, cl, sh, (t+sl));
-      Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-      epsilon=EPS_TAN_CASE21; 
+      TEST_AND_RETURN_RZ(rri.rh, rri.rl, EPS_TAN_CASE2);
+
+      /* if the TEST_AND_RETURN block didn't return a value, launch accurate phase */
+      return  scs_tan_rz(x);
     }
   }
   else { 
