@@ -166,13 +166,13 @@ static void do_cosh_accurate(double x, scs_ptr res_scs){
 #endif
 
   DOUBLE2INT(k, x * inv_ln_2.d);
-  if ((k > -80) && (k < 80)) {
+  if ((k > -65) && (k < 65)) {
     exp_SC(exp_scs, x);
     scs_inv(exp_minus_scs, exp_scs);
     scs_add(res_scs, exp_scs, exp_minus_scs);
     scs_div_2(res_scs);
   }
-  else if (k >= 80) {
+  else if (k >= 65) {
     exp_SC(res_scs, x);
     scs_div_2(res_scs);
   }
@@ -473,13 +473,13 @@ static void do_sinh_accurate(double x, scs_ptr res_scs){
 #endif
   /* we'll use the sinh(x) == (exp(x) - 1/exp(x))/2 */
   DOUBLE2INT(k, x * inv_ln_2.d);
-  if ((k > -35) && (k < 35)) {
+  if ((k > -65) && (k < 65)) {
     exp_SC(exp_scs, x);
     scs_inv(exp_minus_scs, exp_scs);
     scs_sub(res_scs, exp_scs, exp_minus_scs);
     scs_div_2(res_scs);
   }
-  else if (k >= 35) {
+  else if (k >= 65) {
     exp_SC(res_scs, x);
     scs_div_2(res_scs);
   }

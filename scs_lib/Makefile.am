@@ -24,7 +24,7 @@ SUBDIRS = . tests
 if COMPILER_ICC
 AM_CFLAGS = -std=c99 -Wall -mp -D__ICC__
 else
-AM_CFLAGS = -c99 -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
+AM_CFLAGS = -std=c99 -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
 endif
 
 EXTRA_DIST = VERSION  Doxyfile.user Doxyfile.dev 
