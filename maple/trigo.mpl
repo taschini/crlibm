@@ -116,7 +116,7 @@ log2(%);
 
 bitsCh_0:=21:
 Ch:= round(evalf(  C * 2^(bitsCh_0-expC-1))) / (2^(bitsCh_0-expC-1)):
-# recompute bitsCh in case we are lucky (and we are for bitsCh_0=32)
+# recompute bitsCh in case we are lucky
 bitsCh:=1+log2(op(2,ieeedouble(Ch)[3])) :  # this means the log of the denominator
 
 r := C-Ch:
@@ -190,7 +190,7 @@ log2(delta_ArgRed);
 
 
 
-# Now we use the above range reductions when k mod 256 <> 0
+# Now we use the above absolute error when k mod 256 <> 0
 # otherwise we need to worry about relative accuracy of the result.
 
 # First, what is the worst case for cancellation ?
