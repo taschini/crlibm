@@ -16,7 +16,7 @@ extern double scs_tan_rn(double); /* to nearest  */
 extern double scs_tan_rd(double); /* toward -inf */ 
 extern double scs_tan_ru(double); /* toward +inf */ 
 
-#define DEBUG 0
+#define DEBUG 1
 
 #define INLINE_SINCOS 0
 
@@ -302,8 +302,23 @@ double sin_rn(double x){
 
 }
 
+double sin_rd(double x){
+return scs_sin_rd(x);
+}
 
+double sin_ru(double x){ 
+return scs_sin_ru(x);
+}
 
+double sin_rz(double x){ 
+return scs_sin_rz(x);
+}
+
+/*************************************************************
+ *************************************************************
+ *              COS ROUNDED  TO NEAREST			     *
+ *************************************************************
+ *************************************************************/
 double cos_rn(double x){ 
   double reshi, reslo, yh, yl, ts, tc;
   int quadrant;
@@ -319,12 +334,12 @@ double cos_rn(double x){
   absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
 
   if (absxhi < XMAX_COS_FAST){
-    if (absxhi <XMAX_RETURN_1_FOR_COS)
+    if (absxhi < XMAX_RETURN_1_FOR_COS)
       return 1.;
     /* Fast Taylor series */
     yh=x*x;
     tc = yh * (c2.d + yh*(c4.d + yh*(c6.d + yh*(c8.d))));
-    Add12(reshi,reslo, 1, tc);
+    Add12(reshi,reslo, 1., tc);
     if(reshi == (reshi + (reslo * RN_CST_COSFAST))){	
       return reshi;
     }else{ 
@@ -373,7 +388,7 @@ double cos_rn(double x){
     do_cos(&reshi, &reslo,  yh,yl);
 #endif
   
-  if(quadrant>=2) { 
+  if((quadrant == 1)||(quadrant == 2)) { 
     reshi = -reshi;
     reslo = -reslo;
   }
@@ -386,6 +401,17 @@ double cos_rn(double x){
 
 }
 
+double cos_rd(double x){
+return scs_cos_rd(x);
+}
+
+double cos_ru(double x){ 
+return scs_cos_ru(x);
+}
+
+double cos_rz(double x){ 
+return scs_cos_rz(x);
+}
 
 /*************************************************************
  *************************************************************
@@ -533,7 +559,7 @@ DO_COS;
  *************************************************************
  *************************************************************/
 double tan_rd(double x){  
-return 2.114;
+return scs_tan_rd(x);
  }
 
 /*************************************************************
@@ -542,5 +568,14 @@ return 2.114;
  *************************************************************
  *************************************************************/
 double tan_ru(double x){  
-return 2.114;
+return scs_tan_ru(x);
+ }
+
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TOWARD  ZERO
+ *************************************************************
+ *************************************************************/
+double tan_rz(double x){  
+return scs_tan_rz(x);
  }
