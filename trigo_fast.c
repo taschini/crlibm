@@ -20,6 +20,32 @@ extern double scs_tan_ru(double);
 extern double scs_tan_rz(double);  
 
 #define DEBUG 0
+/* TODO:
+ * - The first coefficient of the cosine polynomial is equal exactly to 1/2
+ *   and this should be modified in order to increase to accuracy of the
+ *   approximation.
+ *
+ *
+ */
+
+
+
+#define LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal){ \
+    quadrant = (k>>7)&3;                                    \
+    k=(k&127)<<2;                                           \
+                                                            \
+    if(k<=(64<<2)) {                                        \
+      sah=sincosTable[k+0].d; /* sin(a), high part */       \
+      sal=sincosTable[k+1].d; /* sin(a), low part  */       \
+      cah=sincosTable[k+2].d; /* cos(a), high part */       \
+      cal=sincosTable[k+3].d; /* cos(a), low part  */       \
+    }else { /* cah <= sah */                                \
+      int k1=(128<<2) - k;                                  \
+      cah=sincosTable[k1+0].d; /* cos(a), high part */      \
+      cal=sincosTable[k1+1].d; /* cos(a), low part  */      \
+      sah=sincosTable[k1+2].d; /* sin(a), high part */      \
+      sal=sincosTable[k1+3].d; /* sin(a), low part  */      \
+    }}
 
 
 static double sah,sal,cah,cal;
@@ -89,8 +115,37 @@ static void do_cos(double* ch, double* cl, double yh, double yl) {
 }
 
 
+static void do_sin_ffast(double* sh, double* sl, double rx, double sx, double cx) {
+  double ts;
 
+  ts = (((sal + cah*sx) + sah*cx) + cah*rx);
+  Add12(*sh, *sl, sah, ts);
+}
 
+static void do_sin_fast(double* sh, double* sl, double rx, double sx, double cx) {
+  double th, tl, ts, gh, gl;
+
+  Mul12(&gh, &gl, cah, rx);
+  ts = (((gl + cal*rx) + sal) + cah*sx) + sah*cx; 
+  Add12(th, tl, gh, ts);
+  Add22(sh, sl, sah, 0, th, tl);
+}
+
+static void do_cos_ffast(double* sh, double* sl, double rx, double sx, double cx) {
+  double ts;
+
+  ts = ((((- sal*rx + cal) - sah*sx) + cah*cx) - sah*rx);
+  Add12(*sh, *sl, cah, ts);
+}
+
+static void do_cos_fast(double* sh, double* sl, double rx, double sx, double cx) {
+  double th, tl, ts, gh, gl;
+
+  Mul12(&gh, &gl, sah, rx);
+  ts = (((((- gl - sal*rx) + cal) - sah*sx) + cah*cx) - sah*rx);
+  Add12(th, tl, -gh, ts);
+  Add22(sh, sl, cah, 0, th, tl);
+}
 
 
 
@@ -188,86 +243,70 @@ int static trig_range_reduction(double* pyh, double* pyl,
  *              SIN ROUNDED  TO NEAREST			     *
  *************************************************************
  *************************************************************/ 
-
 double sin_rn(double x){ 
   double sh, sl, yh, yl, xx;
   int quadrant;
   int k;
   int absxhi;
   db_number x_split;
-  double rx, sx, cx, th, tl, ts, gh, gl; 
+  double rx, sx, cx, ts; 
 
   x_split.d=x;
   absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
 
-  if (absxhi < XMAX_SIN_FAST2){
-    if (absxhi < XMAX_SIN_FAST){
-      /* CASE 1 : x small enough sin(x)=x */
-      if (absxhi <XMAX_RETURN_X_FOR_SIN)
-	return x;
+  /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;    
 
-      /* CASE 2 : x < 2^-7
-                  Fast polynomial evaluation */
-      xx = x*x;
-      ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
-      Add12(sh,sl, x, ts);
-      if(sh == (sh + (sl * RN_CST_SINFAST1))){	
-	return sh;
-      }else{ 
-	return scs_sin_rn(x); 
-      } 
-    }
+  if (absxhi < XMAX_SIN_FAST){
+    /* CASE 1 : x small enough sin(x)=x */
+    if (absxhi <XMAX_RETURN_X_FOR_SIN)
+      return x;
+    
+    /* CASE 2 : x < 2^-7
+       Fast polynomial evaluation */
+    xx = x*x;
+    ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
+    Add12(sh,sl, x, ts);
+    if(sh == (sh + (sl * RN_CST_SINFAST1))){	
+      return sh;
+    }else{ 
+      return scs_sin_rn(x); 
+    } 
+  }
+
+  if (absxhi < XMAX_SIN_FAST2){
     /* CASE3 : 2^-1 > (x) > 2^-7 > Pi/512 
-               easy range reduction (no dramatic cancellation)
-	       + table look-up 
-               + fast polynomial evaluation */
+       easy range reduction (no dramatic cancellation)
+       + table look-up 
+       + fast polynomial evaluation */
 
     /* Cody and Wayte range reduction */
     DOUBLE2INT(k, x * INV_PIO256);
     rx = (x - k*RR_CW2_CH) + k*RR_CW2_MCL;
-
-    quadrant = (k>>7)&3;
-    k=(k&127)<<2;
     
-    if(k<=(64<<2)) {
-      sah=sincosTable[k+0].d; /* sin(a), high part */
-      sal=sincosTable[k+1].d; /* sin(a), low part */
-      cah=sincosTable[k+2].d; /* cos(a), high part */
-      cal=sincosTable[k+3].d; /* cos(a), low part */
-    } else { /* cah <= sah */
-      int k1=(128<<2) - k;
-      cah=sincosTable[k1+0].d; /* cos(a), high part */
-      cal=sincosTable[k1+1].d; /* cos(a), low part  */ 
-      sah=sincosTable[k1+2].d; /* sin(a), high part */
-      sal=sincosTable[k1+3].d; /* sin(a), low part */
+    LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal);    
+    if (quadrant >=2){
+      cah =-cah;      cal =-cal;      sah =-sah;      sal =-sal;
     }
-    xx = rx*rx;
 
+    xx = rx*rx;
     sx = rx * xx * (s3.d + xx*(s5.d + xx*s7.d )); // rx is missing to get sin
-    /* !!!!!!!! c2.d = 1/2 exactement, à modifier pour augmenter la
-       précision de l'evaluation polynomiale !!!!!!!!! */
     cx = xx * (c2.d + xx*(c4.d + xx*c6.d));       //  1 is missing to have cos
-    
-    ts = (((sal + cah*sx) + sah*cx) + cah*rx);
-    Add12(sh, sl, sah, ts);
-    /* !!!!!!!!!  ATTENTION: prendre en compte le fait que l'on oublie
-       des termes et que l'on fait des additions bizarres !!!!!!!!!!
-       d'apres mes calculs 2^(-61) et meme un peu moins */
+
+    if (quadrant&1)  do_cos_ffast(&sh, &sl, rx, sx, cx);
+    else             do_sin_ffast(&sh, &sl, rx, sx, cx);
     if (sh == (sh + (sl * RN_CST_SINFAST2))){	
       return sh; 
     }else{  
-      /* Can improve the accuracy of the result by splitting */
-      Mul12(&gh, &gl, cah, rx);
-      ts = (((gl + cal*rx) + sal) + cah*sx) + sah*cx; 
-      Add12(th, tl, gh, ts);
-      Add22(&sh, &sl, sah, 0, th, tl);
-      
+      if (quadrant&1)  do_cos_fast(&sh, &sl, rx, sx, cx);
+      else             do_sin_fast(&sh, &sl, rx, sx, cx);
+
       if (sh == (sh + (sl * RN_CST_SINFAST3)))	
 	return sh; 
       else
 	return scs_sin_rn(x); 
-    }  
-  } 
+    }
+  }
   /* CASE 4: x>2^(-1) */
 
   /* Otherwise : Range reduction then standard evaluation */
@@ -275,38 +314,22 @@ double sin_rn(double x){
     
   /* Now y_h is in -Pi/512, Pi/512 and k holds the 32 lower bits of an
      int such that x = yh+yl + kPi/256 */
-  
-  quadrant = (k>>7)&3;
-  k=(k&127)<<2;
-  
-  if(k<=(64<<2)) {
-    sah=sincosTable[k+0].d; /* sin(a), high part */
-    sal=sincosTable[k+1].d; /* sin(a), low part */
-    cah=sincosTable[k+2].d; /* cos(a), high part */
-    cal=sincosTable[k+3].d; /* cos(a), low part */
-  } else { /* cah <= sah */
-    int k1=(128<<2) - k;
-    cah=sincosTable[k1+0].d; /* cos(a), high part */
-    cal=sincosTable[k1+1].d; /* cos(a), low part  */ 
-    sah=sincosTable[k1+2].d; /* sin(a), high part */
-    sal=sincosTable[k1+3].d; /* sin(a), low part  */
-  }
 
+  LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal);
+  if (quadrant >=2){
+    cah =-cah;      cal =-cal;      sah =-sah;      sal =-sal;
+  }
+  
 #if DEBUG
 	printf("sah=%1.30e sal=%1.30e  \n", sah,sal);
 	printf("cah=%1.30e cal=%1.30e  \n", cah,cal);
 #endif
 
-  if (quadrant&1)   /*compute the cos  */
-    do_cos(&sh, &sl,  yh,yl);
-  else /* compute the sine */
-    do_sin(&sh, &sl,  yh,yl);
+  if (quadrant&1)   /* compute the cos  */
+    do_cos(&sh, &sl,  yh, yl);
+  else              /* compute the sine */
+    do_sin(&sh, &sl,  yh, yl);
 
-  
-  if(quadrant>=2) { 
-    sh = -sh;
-    sl = -sl;
-  }
   
   if(sh == (sh + (sl * 1.0004))){	
      return sh;
@@ -337,69 +360,95 @@ return scs_sin_rz(x);
  *************************************************************
  *************************************************************/
 double cos_rn(double x){ 
-  double ch, cl, yh, yl,  tc;
+  double ch, cl, yh, yl, xx;
   int quadrant;
   int k;
   int absxhi;
-  db_number xx;
+  db_number x_split;
+  double rx, sx, cx, ts; 
 
 
-  xx.d=x;
-  absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
+
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;   
 
   if (absxhi < XMAX_COS_FAST){
+    /* CASE 1 : x small enough cos(x)=1. */
     if (absxhi <XMAX_RETURN_1_FOR_COS)
       return 1.;
-    /* Fast Taylor series */
-    yh=x*x;
-    tc = yh * (c2.d + yh*(c4.d + yh*c6.d));
-    Add12(ch,cl, 1, tc);
-    if(ch == (ch + (cl * RN_CST_COSFAST))){	
+    
+    /* CASE 2 : x < 2^-7
+       Fast polynomial evaluation */
+    xx = x*x;
+    ts = xx * (c2.d + xx*(c4.d + xx*c6.d ));
+    Add12(ch,cl, 1, ts);
+    if(ch == (ch + (cl * RN_CST_COSFAST1))){	
       return ch;
     }else{ 
       return scs_cos_rn(x); 
     } 
   }
+  if (absxhi < XMAX_COS_FAST2){
+    /* CASE3 : 2^-1 > (x) > 2^-7 > Pi/512 
+               easy range reduction (no dramatic cancellation)
+	       + table look-up 
+               + fast polynomial evaluation */
+
+    /* Cody and Wayte range reduction */
+    DOUBLE2INT(k, x * INV_PIO256);
+    rx = (x - k*RR_CW2_CH) + k*RR_CW2_MCL;
+
+    LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal);
+    if ((quadrant==1)||(quadrant==2)){
+      cah =-cah;      cal =-cal;      sah =-sah;      sal =-sal;
+    }
+
+    xx = rx*rx;
+    sx = rx * xx * (s3.d + xx*(s5.d + xx*s7.d )); // rx is missing to get sin
+    cx = xx * (c2.d + xx*(c4.d + xx*c6.d));       //  1 is missing to have cos
   
+    if (quadrant&1)  do_sin_ffast(&ch, &cl, rx, sx, cx);
+    else             do_cos_ffast(&ch, &cl, rx, sx, cx);
+    
+    if (ch == (ch + (cl * RN_CST_COSFAST2))){	
+      return ch; 
+    }else{  
+
+      if (quadrant&1)  do_sin_fast(&ch, &cl, rx, sx, cx);
+      else             do_cos_fast(&ch, &cl, rx, sx, cx);
+
+      if (ch == (ch + (cl * RN_CST_COSFAST3)))	
+	return ch; 
+      else
+	return scs_cos_rn(x); 
+    }
+  } 
+  /* CASE 4: x>2^(-1) */
+
   /* Otherwise : Range reduction then standard evaluation */
   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
     
   /* Now y_h is in -Pi/512, Pi/512 and k holds the 32 lower bits of an
      int such that x = yh+yl + kPi/256 */
   
-  quadrant = (k>>7)&3;
-  k=(k&127)<<2;
-  
-  if(k<=(64<<2)) {
-    sah=sincosTable[k+0].d; /* sin(a), high part */
-    sal=sincosTable[k+1].d; /* sin(a), low part */
-    cah=sincosTable[k+2].d; /* cos(a), high part */
-    cal=sincosTable[k+3].d; /* cos(a), low part */
-  } else { /* cah <= sah */
-    int k1=(128<<2) - k;
-    cah=sincosTable[k1+0].d; /* cos(a), high part */
-    cal=sincosTable[k1+1].d; /* cos(a), low part  */ 
-    sah=sincosTable[k1+2].d; /* sin(a), high part */
-    sal=sincosTable[k1+3].d; /* sin(a), low part  */
+  LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal);
+  if ((quadrant==1)||(quadrant==2)){
+    cah =-cah;      cal =-cal;      sah =-sah;      sal =-sal;
   }
 
-
-  if (quadrant&1)   /*compute the cos  */
-    do_sin(&ch, &cl,  yh,yl);
-  else /* compute the sine */
-    do_cos(&ch, &cl,  yh,yl);
-  
-  if((quadrant == 1)||(quadrant == 2)) { 
-    ch = -ch;
-    cl = -cl;
-  }
-  
+  if (quadrant&1)   /* compute the cos  */
+    do_sin(&ch, &cl,  yh, yl);
+  else              /* compute the sine */
+    do_cos(&ch, &cl,  yh, yl);
+    
   if(ch == (ch + (cl * 1.0004))){	
      return ch;
   }else{
     return scs_cos_rn(x); 
   } 
-
 }
 
 
@@ -427,26 +476,25 @@ double tan_rn(double x){
   double reshi, reslo, sh, sl, ch, cl, kd, yh, yl;
   db_number y;
   int k, quadrant;
-
-
   int absxhi;
   db_number xx;
 
-#if INLINE_SINCOS
-  double sah,sal,cah,cal,ts,tc;
-#endif
 
   xx.d=x;
   absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
 
-  /* x < 2^-26  => tan(x)~x with accuracy 2^-53.2 */
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;   
+
+  /* Case 1: x < 2^-26  => tan(x)~x with accuracy 2^-53.2 */
   y.d = x;
-    if((y.i[HI_ENDIAN]&0x7FFFFFFF) < 0x3E4BEAD3){	/* Test if |x| < (1+e)2^(-26) */
-    #if DEBUG
-      printf("x est plus petit que 2^-26(1+e)\n");
-    #endif
-      return x;
-    }
+  if((y.i[HI_ENDIAN]&0x7FFFFFFF) < 0x3E4BEAD3){	/* Test if |x| < (1+e)2^(-26) */
+    return x;
+  }
+  /* Case 2: x < 2^- */
+
+
+
 
     /*TODO Add polynomial for small values here */ 
   
@@ -525,13 +573,13 @@ double tan_rn(double x){
      return 0.0;
   }
 
-#if INLINE_SINCOS
-DO_SIN(sh,sl);
-DO_COS(ch,cl);
-#else  
+  //#if INLINE_SINCOS
+  //DO_SIN(sh,sl);
+  //DO_COS(ch,cl);
+  //#else  
   do_sin(&sh, &sl, yh, yl);
   do_cos(&ch, &cl, yh, yl);
-#endif
+  //#endif
 
    Div22(&reshi, &reslo, sh, sl, ch, cl);
 
