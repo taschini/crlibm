@@ -1294,19 +1294,19 @@ double tan_rn(double x){
     /* Test if round to nearest achieved */ 
     if (th == (th + (tl * RN_CST_TAN_CASE22)))
       return th;
-
-    /* Still relatively fast, but more accurate */
-    Mul12(&sh, &sl, xx, t3h.d);
-    Add12(ch, cl, sh, (t+sl));
-    Mul22(&sh, &sl, x, 0, ch, cl);
-    Add22(&th, &tl, x, 0, sh, sl);
-    /* Test if round to nearest achieved */ 
-    if (th == (th + (tl * RN_CST_TAN_CASE21)))
-      return th;
-    else
-      scs_tan_rn(x);
+    else {
+      /* Still relatively fast, but more accurate */
+      Mul12(&sh, &sl, xx, t3h.d);
+      Add12(ch, cl, sh, (t+sl));
+      Mul22(&sh, &sl, x, 0, ch, cl);
+      Add22(&th, &tl, x, 0, sh, sl);
+      /* Test if round to nearest achieved */ 
+      if (th == (th + (tl * RN_CST_TAN_CASE21)))
+	return th;
+      else
+	scs_tan_rn(x);
+    }
   }
-  
   /* Otherwise : Range reduction then standard evaluation */
   compute_tan_with_argred(&th,&tl,x,absxhi);
  
@@ -1367,31 +1367,22 @@ double tan_rd(double x){
       if(tl>0) return th;
       else     return th-u.d;
     }
-    else return scs_tan_rd(x); 
-
-    /* Still relatively fast, but more accurate */
-    Mul12(&sh, &sl, xx, t3h.d);
-    Add12(ch, cl, sh, (t+sl));
-    Mul22(&sh, &sl, x, 0, ch, cl);
-    Add22(&th, &tl, x, 0, sh, sl);
-
-    /* Rounding test to - infinity */
-    absyh.d=th;
-    absyl.d=tl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_TAN_CASE21; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(tl>0) return th;
-      else     return th-u.d;
+    else { 
+      /* Still relatively fast, but more accurate */
+      Mul12(&sh, &sl, xx, t3h.d);
+      Add12(ch, cl, sh, (t+sl));
+      Mul22(&sh, &sl, x, 0, ch, cl);
+      Add22(&th, &tl, x, 0, sh, sl);
+      epsilon=EPS_TAN_CASE21; 
     }
-    else return scs_tan_rd(x);
   }
   
-  /* Otherwise : Range reduction then standard evaluation */
-  compute_tan_with_argred(&th,&tl,x,absxhi);
+  else { /* normal case:
+	    Range reduction then standard evaluation */
+    compute_tan_with_argred(&th,&tl,x,absxhi);
+    epsilon=EPS_TAN_CASE3; 
+  }
+
   /* Rounding test to - infinity */
   absyh.d=th;
   absyl.d=tl;
@@ -1399,7 +1390,6 @@ double tan_rd(double x){
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
-  epsilon=EPS_TAN_CASE3; 
   if(absyl.d > epsilon * u53.d){ 
     if(tl>0) return th;
     else     return th-u.d;
@@ -1434,7 +1424,6 @@ double tan_ru(double x){
 	return x_split.d;
       }
     }
-    
     /* Fast Taylor series */
     xx = x*x;
     p7 = t7.d + xx*(t9.d + xx*(t11.d + xx*(t13.d + xx*t15.d)));
@@ -1442,7 +1431,7 @@ double tan_ru(double x){
     
     sh = x*(xx*t3h.d + t);
     Add12(th, tl, x, sh);   
-
+    
     /* Rounding test to + infinity */
     absyh.d=th;
     absyl.d=tl;
@@ -1455,31 +1444,21 @@ double tan_ru(double x){
       if(tl>0) return th+u.d;
       else     return th;
     }
-    else return scs_tan_ru(x); 
-
-    /* Still relatively fast, but more accurate */
-    Mul12(&sh, &sl, xx, t3h.d);
-    Add12(ch, cl, sh, (t+sl));
-    Mul22(&sh, &sl, x, 0, ch, cl);
-    Add22(&th, &tl, x, 0, sh, sl);
-
-    /* Rounding test to + infinity */
-    absyh.d=th;
-    absyl.d=tl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_TAN_CASE21; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(tl>0) return th+u.d;
-      else     return th;
+    else {
+      /* Still relatively fast, but more accurate */
+      Mul12(&sh, &sl, xx, t3h.d);
+      Add12(ch, cl, sh, (t+sl));
+      Mul22(&sh, &sl, x, 0, ch, cl);
+      Add22(&th, &tl, x, 0, sh, sl);
+      epsilon=EPS_TAN_CASE21; 
     }
-    else return scs_tan_ru(x); 
   }
+  else { /* Normal case:
+	    Range reduction then standard evaluation */
+    compute_tan_with_argred(&th,&tl,x,absxhi);
+    epsilon=EPS_TAN_CASE3; 
+   }
 
-  /* Otherwise : Range reduction then standard evaluation */
-  compute_tan_with_argred(&th,&tl,x,absxhi);
   /* Rounding test to + infinity */
   absyh.d=th;
   absyl.d=tl;
@@ -1487,7 +1466,6 @@ double tan_ru(double x){
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
-  epsilon=EPS_TAN_CASE3; 
   if(absyl.d > epsilon * u53.d){ 
     if(tl>0) return th+u.d;
     else     return th;
@@ -1542,35 +1520,20 @@ double tan_rz(double x){
 	if(tl>0) return th+u.d;
 	else    return th;
     }
-    else return scs_tan_rz(x); 
-
-    /* Still relatively fast, but more accurate */
-    Mul12(&sh, &sl, xx, t3h.d);
-    Add12(ch, cl, sh, (t+sl));
-    Mul22(&sh, &sl, x, 0, ch, cl);
-    Add22(&th, &tl, x, 0, sh, sl);
-
-    /* Rounding test to zero */
-    absyh.d=th;
-    absyl.d=tl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_TAN_CASE21; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(th>0) 
-	if(tl>0) return th;
-	else     return th-u.d;
-      else 
-	if(tl>0) return th+u.d;
-	else    return th;
+    else {
+      /* Still relatively fast, but more accurate */
+      Mul12(&sh, &sl, xx, t3h.d);
+      Add12(ch, cl, sh, (t+sl));
+      Mul22(&sh, &sl, x, 0, ch, cl);
+      Add22(&th, &tl, x, 0, sh, sl);
+      epsilon=EPS_TAN_CASE21; 
     }
-    else return scs_tan_rz(x); 
   }
-
-  /* Otherwise : Range reduction then standard evaluation */
-  compute_tan_with_argred(&th,&tl,x,absxhi);
+  else{  /* Normal case:
+	    Range reduction then standard evaluation */
+    compute_tan_with_argred(&th,&tl,x,absxhi);
+    epsilon=EPS_TAN_CASE3; 
+  }
   /* Rounding test to zero */
   absyh.d=th;
   absyl.d=tl;
@@ -1578,7 +1541,6 @@ double tan_rz(double x){
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
-  epsilon=EPS_TAN_CASE3; 
   if(absyl.d > epsilon * u53.d){ 
     if(th>0) 
       if(tl>0) return th;
