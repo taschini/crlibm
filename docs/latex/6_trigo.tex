@@ -247,12 +247,117 @@ value, so the error to consider in the range reduction is the absolute
 error.  Only in the cases when $k \mod 128=0$ do we need to have 62
 extra bits to compute with. This is ensured by using a slower, more
 accurate range reduction. As a compensation, in this case when $k \mod
-128=0$, there is no table to read and no reconstruction to perform : a
+128=0$, there is no table to read and no reconstruction to perform: a
 simple polynomial approximation to the function suffices.
 
 
 
 
-\section{Proof of the computer program}
 
-TODO
+
+\section{Detailed examination of the sine}
+
+\subsection{Exceptional cases in RN mode}
+\subsection{Exceptional cases in RU mode}
+\subsection{Exceptional cases in RD mode}
+\subsection{Exceptional cases in RZ mode}
+\subsection{Fast approximation for small arguments}
+
+\begin{lstlisting}[caption={Sine, case 2},firstnumber=1]
+    xx = x*x;
+    ts = xx * (s3.d + xx*(s5.d + xx*s7.d ));
+    Add12(sh,sl, x, x*ts);
+\end{lstlisting}
+
+Here we have had no argument reduction, therefore \texttt{x} is exact.
+We need to compute the relative error of $\mathtt{sh}+\mathtt{sl}$
+with respect to $\sin(\mathtt{x})$. As $\mathtt{sh}+\mathtt{sl}$ is
+the result of an (exact) \texttt{Add12}, the error is:
+
+\begin{equation}
+  \epsilon_{\mathrm{sinCase2}} = \frac{\mathtt{x}\otimes \mathtt{ts} + \mathtt{x}}{\sin(\mathtt{x})} -1 = \frac{\mathtt{x}\times\mathtt{ts}(1+\epsilon_{-53}) + \mathtt{x}}{\sin(\mathtt{x})} -1
+\label{eq:SinCase2Total}
+\end{equation}
+The polynomial used to compute \texttt{ts}
+approximates $\frac{\sin(x)-x}{x}$: 
+$$
+P_{\mathtt{ts}}(x) = \mathtt{s3}.x^2 + \mathtt{s5}.x^4 + \mathtt{s7}.x^6
+= \frac{\sin(x)-x}{x}(1+\epsilon_{\mathrm{approxts}})
+$$
+
+We compute this error in Maple as 
+$$\epsilon_{\mathrm{approxts}} = \left\Vert \frac{xP_{\mathtt{ts}}(x)}{\sin(x)-x} -1 \right\Vert_{\infty}$$
+
+We also compute $\epsilon_{\mathrm{hornerts}}$, the relative error due
+to rounding in the Horner evaluation thanks to the
+\texttt{compute\_horner\_rounding\_error} procedure. For thos we need
+the relative error carried by \texttt{xx}, which is only due to the
+rounding error in the multiplication since \texttt{x} is exact:
+$$\mathtt{xx}=\mathtt{x}^2(1+\epsilon_{-53})$$
+
+We therefore have:
+
+$$\mathtt{ts} = P_{\mathtt{ts}}(\mathtt{x})(1+\epsilon_{\mathrm{hornerts}}) = \frac{\sin(\mathtt{x})-\mathtt{x}}{\mathtt{x}}(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})$$
+
+Reporting this in (\ref{eq:SinCase2Total}), we get 
+\begin{equation*}
+  \epsilon_{\mathrm{sinCase2}} = \frac{(\sin(\mathtt{x})-\mathtt{x})(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})(1+\epsilon_{-53}) + \mathtt{x}}{\sin(\mathtt{x})} -1
+\end{equation*}
+or,
+\begin{equation*}
+  \epsilon_{\mathrm{sinCase2}} =  \frac{\sin(\mathtt{x})-\mathtt{x}}{\sin(\mathtt{x})}(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})(1+\epsilon_{-53})
+\end{equation*}
+
+Finally
+\begin{equation}
+  \epsilon_{\mathrm{sinCase2}} =  \left\Vert\frac{\sin(\mathtt{x})-\mathtt{x}}{\sin(\mathtt{x})}\right\Vert_{\infty}(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})(1+\epsilon_{-53})
+  \label{eq:SinCase2Total2}
+\end{equation}
+ 
+
+
+
+
+\section{Detailed examination of auxilliary functions}
+
+Upon entering \texttt{do\_sin\_k\_zero}, we have in $y_h+y_l$ an
+approximation to the ideal reduced value $\hat{y}=x-k\pi/256$ with a
+relative accuracy $\epsilon_{argred}$:
+
+$$y_h+y_l = (x-k\pi/256)(1+\epsilon_{argred}) = \hat{y}(1+\epsilon_{argred}) $$
+
+
+\begin{lstlisting}[caption={do\_sin\_k\_zero},firstnumber=1]
+#define do_sin_k_zero(psh,psl, yh,  yl)            \
+do{                                                \
+  double yh2 ;	              			   \
+  yh2 = yh*yh;					   \
+  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));	   \
+  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */  \
+  /* Now compute (1+ts)*(yh+yl) */                 \
+  Add12(*psh,*psl,   yh, yl+ts*yh);	           \
+} while(0)						   
+\end{lstlisting}
+
+\begin{tabular}{|ll|}
+\hline
+Line 4   & The error of neglecting $y_l$ and the rounding error in the multiplication\\
+         & each amount to half an ulp: \\
+         & $\mathtt{yh2}=\mathtt{yh}^2(1+\epsilon_{-53})$\\
+         & with $\mathtt{yh} = (\mathtt{yh}+\mathtt{yl})(1+\epsilon_{-53}) = \hat{y}(1+\epsilon_{argred})(1+\epsilon_{-53})$\\
+         & hence $\mathtt{yh2}=\hat{y}^2(1+\epsilon_{\mathtt{yh2}})$ \\
+         & with $\epsilon_{\mathtt{yh2}} = (1+\epsilon_{argred})^2(1+\epsilon_{-53})^3$\\
+\hline
+Line 5   & This is a standard Horner evaluation. \\
+\hline
+\end{tabular}
+
+
+
+Upon entering one of \texttt{do\_sin\_k\_notzero},
+\texttt{do\_cos\_k\_zero}, \texttt{do\_cos\_k\_notzero}, we have in
+$y_h+y_l$ an approximation to the ideal reduced value
+$\hat{y}=x-k\pi/256$ with an absolute accuracy $\delta_{argred}$: 
+
+$$y_h+y_l = (x-k\pi/256) + \delta_{argred} $$
+
