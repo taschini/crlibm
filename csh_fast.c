@@ -14,6 +14,7 @@
 #include "exp.h"
 /* switches on various printfs. Default 0 */
 #define DEBUG 0
+extern void  exp_SC(scs_t,double);
 
 void scs_div_2(scs_t num) {
   /* small function to divide by 2 any SCS number */
@@ -65,7 +66,7 @@ double cosh_quick(double x, int rounding_mode){
   double b_hi, b_lo,b_ca_hi, b_ca_lo, b_sa_hi, b_sa_lo;
   double ca_hi, ca_lo, sa_hi, sa_lo; /*will be the tabulated values */
   double tcb_hi, tsb_hi; /*results of polynomial approximations*/
-  double square_y_hi;
+  double square_b_hi;
   double ch_2_pk_hi, ch_2_pk_lo, ch_2_mk_hi, ch_2_mk_lo;
   double sh_2_pk_hi, sh_2_pk_lo, sh_2_mk_hi, sh_2_mk_lo;
   db_number two_p_plus_k, two_p_minus_k; /* 2^(k-1) + 2^(-k-1) */
@@ -81,9 +82,6 @@ double cosh_quick(double x, int rounding_mode){
     }
     else {                                                         
       b_hi = x;  b_lo = 0.;
-      if ((x < two_minus_30.d)&&(x > -two_minus_30.d)) {
-	return((double) 1);
-	  }
     }                                                               
   /*we'll construct 2 constants for the last reconstruction */
   two_p_plus_k.i[LO_ENDIAN] = 0;
@@ -106,7 +104,7 @@ double cosh_quick(double x, int rounding_mode){
   
   y.d = b_hi;
   /*   first, y²  */
-  square_y_hi = b_hi * b_hi;
+  square_b_hi = b_hi * b_hi;
   /* effective computation of the polynomial approximation */
   
   if (((y.i[HI_ENDIAN])&(0x7FFFFFFF)) < (two_minus_30.i[HI_ENDIAN])) {
@@ -116,8 +114,8 @@ double cosh_quick(double x, int rounding_mode){
   else {
     /*   second, cosh(y) = y² * (1/2 + y² * (1/24 + y² * 1/720)) */
     /*tcb_hi = (square_y_hi)* (c2.d + square_y_hi * (c4.d + square_y_hi * (c6.d + square_y_hi * c8.d)));*/
-    tcb_hi = (square_y_hi)* (c2.d + square_y_hi * (c4.d + square_y_hi * c6.d));
-    tsb_hi = square_y_hi * (s3.d + square_y_hi * (s5.d + square_y_hi * s7.d));
+    tcb_hi = (square_b_hi)* (c2.d + square_b_hi * (c4.d + square_b_hi * c6.d));
+    tsb_hi = square_b_hi * (s3.d + square_b_hi * (s5.d + square_b_hi * s7.d));
   }
  
 
@@ -144,7 +142,7 @@ double cosh_quick(double x, int rounding_mode){
       /* first reconstruction for the sinh (corresponding to the second range reduction) */
       Mul12(&b_ca_hi , &b_ca_lo, ca_hi, b_hi);
       temp = (((((sa_lo + (b_lo * ca_hi)) + (b_hi * ca_lo)) + b_ca_lo) + (sa_hi*tcb_hi)) + (b_ca_hi * tsb_hi));
-      Add12Cond(temp_hi, temp_lo, b_ca_hi, temp);
+      Add12(temp_hi, temp_lo, b_ca_hi, temp);
       Add22Cond(&sh_hi, &sh_lo, sa_hi, (double) 0, temp_hi, temp_lo);
     }
     else {
@@ -173,7 +171,7 @@ double cosh_quick(double x, int rounding_mode){
 	sh_2_pk_lo = sh_lo * two_p_plus_k.d;
 	Add22Cond(&res_hi, &res_lo, ch_2_pk_hi, ch_2_pk_lo, sh_2_pk_hi, sh_2_pk_lo);
       }
-    else /* if (k <= -35) */
+    else /* if (k <= -35) */ 
       {
 	ch_2_mk_hi = ch_hi * two_p_minus_k.d;
 	ch_2_mk_lo = ch_lo * two_p_minus_k.d;
@@ -236,13 +234,13 @@ double cosh_quick(double x, int rounding_mode){
 #endif
   /* we'll use the cosh(x) == (exp(x) + 1/exp(x))/2 */
   
-  if ((k > -35) && (k < 35)) {
+  if ((k > -80) && (k < 80)) {
     exp_SC(exp_scs, x);
     scs_inv(exp_minus_scs, exp_scs);
     scs_add(res_scs, exp_scs, exp_minus_scs);
     scs_div_2(res_scs);
   }
-  else if (k >= 35) {
+  else if (k >= 80) {
     exp_SC(res_scs, x);
     scs_div_2(res_scs);
   }
@@ -250,7 +248,6 @@ double cosh_quick(double x, int rounding_mode){
     exp_SC(res_scs, -x);
     scs_div_2(res_scs);
   }
-
 
   switch(rounding_mode) {
   case RN:
@@ -326,11 +323,6 @@ double cosh_rd(double x){
 
 
 
-
-
-
-
-
 /*************************************************************
  *************************************************************
  *               ROUNDED  TO NEAREST			     *
@@ -376,7 +368,6 @@ double sinh_quick(double x, int rounding_mode){
     }
     else {                                                         
       b_hi = x;  b_lo = 0.;
-      if ((x < two_minus_30.d)&&(x > -two_minus_30.d)) return((double) x);
     }                                                               
 
   /*we'll construct 2 constants for the last reconstruction */

@@ -7,7 +7,7 @@
   db_number const ln2_hi = {{0x3FE62E42,0xFEFA3800}};     /*6.9314718056e-01*/  
   db_number const ln2_lo = {{0x3D2EF357,0x93C76730}};     /*5.4979230187e-14*/  
   db_number const two_43_44 = {{0x42B80000,0x00000000}};     /*2.6388279067e+13*/  
-  db_number const two_minus_30 = {{0x3E100000,0x00000000}};     /*9.3132257462e-10*/  
+  db_number const two_minus_30 = {{0x3D700000,0x00000000}};     /*9.0949470177e-13*/  
   int const bias = 89 ;
 
 /* some bounds */ 
@@ -391,7 +391,7 @@ static const db_number cosh_sinh_table[179][4] = {
   db_number const ln2_hi = {{0xFEFA3800,0x3FE62E42}};     /*6.9314718056e-01*/  
   db_number const ln2_lo = {{0x93C76730,0x3D2EF357}};     /*5.4979230187e-14*/  
   db_number const two_43_44 = {{0x00000000,0x42B80000}};     /*2.6388279067e+13*/  
-  db_number const two_minus_30 = {{0x00000000,0x3E100000}};     /*9.3132257462e-10*/  
+  db_number const two_minus_30 = {{0x00000000,0x3D700000}};     /*9.0949470177e-13*/  
   int const bias = 89 ;
 
 /* some bounds */ 
