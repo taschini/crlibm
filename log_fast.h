@@ -10,36 +10,36 @@
 #define EMIN_MEDIUMPATH 23.000 
 #define EMIN_FASTPATH 185.000 
 /* Constants for rounding  */
-double const delta[4] =
+static const double delta[4] =
 {
   /* Case E=0  */
-  4.47385432225115274522995672975200000000000000000000e-18, 
+  4.47385432225115274522995672974873440655535693998277e-18, 
   /* Middle case   */
-  8.53340910856285301560990510931860314676002295022400e-19, 
+  8.53340910856285301560990510928331454462206045871557e-19, 
   /* Case E>EminMedPath  */
-  3.19013236586914638175957676953327822856104536069810e-20, 
+  3.19013236586914638175957676953204491380730158561523e-20, 
   /* And for the fast path  */
-  1.65439555368591958127629148820687925838543565194620e-19 
+  1.65439555368591958127629148820687373633319579538065e-19 
 
 };
 
-double const rncst[4] =
+static const double rncst[4] =
 {
   /* Case E=0  */
-  1.08596671427669422271833354898262768983840942382810e+00, 
+  1.08596671427669422271833354898262768983840942382812e+00, 
   /* Middle case   */
-  1.01549346593522860082714487361954525113105773925780e+00, 
+  1.01549346593522860082714487361954525113105773925781e+00, 
   /* Case E>EminMedPath  */
   1.00057496390146027920309279579669237136840820312500e+00, 
   /* And for the fast path  */
-  1.00298612635768380485501438670326024293899536132810e+00 
+  1.00298612635768380485501438670326024293899536132812e+00 
 };
 
 #ifdef WORDS_BIGENDIAN
-db_number const ln2hi = {{0x3FE62E42,0xFEFA3800}} /* +6.9314718056e-01 */;
-db_number const ln2lo = {{0x3D2EF357,0x93C76730}} /* +5.4979230187e-14 */;
-db_number const two52 = {{0x43300000,0x00000000}} /* +4.5035996274e+15 */;
-db_number const middle[8] =
+static const db_number ln2hi = {{0x3FE62E42,0xFEFA3800}} /* +6.9314718056e-01 */;
+static const db_number ln2lo = {{0x3D2EF357,0x93C76730}} /* +5.4979230187e-14 */;
+static const db_number two52 = {{0x43300000,0x00000000}} /* +4.5035996274e+15 */;
+static const db_number middle[8] =
 {
 {{0x3FE70000,0x00000000}} /* +7.1875000000e-01 */ ,
 {{0x3FE90000,0x00000000}} /* +7.8125000000e-01 */ ,
@@ -51,7 +51,7 @@ db_number const middle[8] =
 {{0x3FF60000,0x00000000}} /* +1.3750000000e+00 */
 };
 
-db_number const Poly_h[8][13] =
+static const db_number Poly_h[8][13] =
 {
  /* polynomial 1 */
 {
@@ -183,7 +183,7 @@ db_number const Poly_h[8][13] =
 }
 };
 
-db_number const Poly_l[8][2] =
+static const db_number Poly_l[8][2] =
 {
  /* polynomial 1 */
 {
@@ -236,10 +236,10 @@ db_number const Poly_l[8][2] =
 };
 
 #else
-db_number const ln2hi = {{0xFEFA3800,0x3FE62E42}} /* +6.9314718056e-01 */;
-db_number const ln2lo = {{0x93C76730,0x3D2EF357}} /* +5.4979230187e-14 */;
-db_number const two52 = {{0x00000000,0x43300000}} /* +4.5035996274e+15 */;
-db_number const middle[8] =
+static const db_number ln2hi = {{0xFEFA3800,0x3FE62E42}} /* +6.9314718056e-01 */;
+static const db_number ln2lo = {{0x93C76730,0x3D2EF357}} /* +5.4979230187e-14 */;
+static const db_number two52 = {{0x00000000,0x43300000}} /* +4.5035996274e+15 */;
+static const db_number middle[8] =
 {
 {{0x00000000,0x3FE70000}} /* +7.1875000000e-01 */ ,
 {{0x00000000,0x3FE90000}} /* +7.8125000000e-01 */ ,
@@ -251,7 +251,7 @@ db_number const middle[8] =
 {{0x00000000,0x3FF60000}} /* +1.3750000000e+00 */
 };
 
-db_number const Poly_h[8][13] =
+static const db_number Poly_h[8][13] =
 {
  /* polynomial 1 */
 {
@@ -383,7 +383,7 @@ db_number const Poly_h[8][13] =
 }
 };
 
-db_number const Poly_l[8][2] =
+static const db_number Poly_l[8][2] =
 {
  /* polynomial 1 */
 {
