@@ -21,48 +21,6 @@ extern double scs_tan_rz(double);
 
 #define DEBUG 0
 
-#define INLINE_SINCOS 0
-
-
-
-#if INLINE_SINCOS
-
-#define DO_SIN(sh,sl)  {\
-  double thi, tlo, cahyh_h, cahyh_l, yh2;\
-  yh2 = yh*yh;\
-  if(sah==0.0)\
-    { \
-      ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));\
-      Add12(sh,sl,   yh, yl+ ts*yh);\
-    }\
-  else {\
-    Mul12(&cahyh_h,&cahyh_l, cah, yh);\
-    Add12(thi, tlo,     sah,cahyh_h);\
-    ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));\
-    tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));\
-    tlo = tc*sah + (ts*cahyh_h  +(sal + (tlo + (cahyh_l  + (cal*yh + cah*yl))))) ; \
-    Add12(sh,sl,  thi, tlo );  \
-  }\
-}
-
-#define DO_COS(ch,cl) {\
-  double thi, tlo, sahyh_h,sahyh_l, yh2; \
-  yh2 = yh*yh ;\
-  if(sah==0.0) { \
-    tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));\
-      Add12(*ch,*cl, 1., tc);\
-    }\
-  else {\
-  Mul12(&sahyh_h,&sahyh_l, sah, yh);\
-  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));\
-  tc = yh2 * (c2.d + yh2*(c4.d + yh2*(c6.d)));\
-  Add12(thi, tlo,  cah, -sahyh_h);\
-  tlo = tc*cah - (ts*sahyh_h -  (cal + (tlo  - (sahyh_l + (sal*yh + sah*yl)) ))) ; \
-  Add12(ch, cl,    thi, tlo ); \
-}}
-
-
-#else /* INLINE_SINCOS */
 
 static double sah,sal,cah,cal;
 
@@ -130,11 +88,7 @@ static void do_cos(double* ch, double* cl, double yh, double yl) {
   }
 }
 
-#endif /* INLINE_SINCOS */
 
-
-
- 
 
 
 
@@ -236,33 +190,86 @@ int static trig_range_reduction(double* pyh, double* pyl,
  *************************************************************/ 
 
 double sin_rn(double x){ 
-  double sh, sl, yh, yl, ts;
+  double sh, sl, yh, yl, xx;
   int quadrant;
   int k;
   int absxhi;
-  db_number xx;
+  db_number x_split;
+  double rx, sx, cx, th, tl, ts, gh, gl; 
 
-#if INLINE_SINCOS
-  double sah,sal,cah,cal,tc;
-#endif
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
 
-  xx.d=x;
-  absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
+  if (absxhi < XMAX_SIN_FAST2){
+    if (absxhi < XMAX_SIN_FAST){
+      /* CASE 1 : x small enough sin(x)=x */
+      if (absxhi <XMAX_RETURN_X_FOR_SIN)
+	return x;
 
-  if (absxhi < XMAX_SIN_FAST){
-    if (absxhi <XMAX_RETURN_X_FOR_SIN)
-      return x;
-    /* Fast Taylor series */
-    yh=x*x;
-    ts = yh * (s3.d + yh*(s5.d + yh*(s7.d + yh*(s9.d))));
-    Add12(sh,sl, x, ts*x);
-    if(sh == (sh + (sl * RN_CST_SINFAST))){	
-      return sh;
-    }else{ 
-      return scs_sin_rn(x); 
-    } 
-  }
-  
+      /* CASE 2 : x < 2^-7
+                  Fast polynomial evaluation */
+      xx = x*x;
+      ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
+      Add12(sh,sl, x, ts);
+      if(sh == (sh + (sl * RN_CST_SINFAST1))){	
+	return sh;
+      }else{ 
+	return scs_sin_rn(x); 
+      } 
+    }
+    /* CASE3 : 2^-1 > (x) > 2^-7 > Pi/512 
+               easy range reduction (no dramatic cancellation)
+	       + table look-up 
+               + fast polynomial evaluation */
+
+    /* Cody and Wayte range reduction */
+    DOUBLE2INT(k, x * INV_PIO256);
+    rx = (x - k*RR_CW2_CH) + k*RR_CW2_MCL;
+
+    quadrant = (k>>7)&3;
+    k=(k&127)<<2;
+    
+    if(k<=(64<<2)) {
+      sah=sincosTable[k+0].d; /* sin(a), high part */
+      sal=sincosTable[k+1].d; /* sin(a), low part */
+      cah=sincosTable[k+2].d; /* cos(a), high part */
+      cal=sincosTable[k+3].d; /* cos(a), low part */
+    } else { /* cah <= sah */
+      int k1=(128<<2) - k;
+      cah=sincosTable[k1+0].d; /* cos(a), high part */
+      cal=sincosTable[k1+1].d; /* cos(a), low part  */ 
+      sah=sincosTable[k1+2].d; /* sin(a), high part */
+      sal=sincosTable[k1+3].d; /* sin(a), low part */
+    }
+    xx = rx*rx;
+
+    sx = rx * xx * (s3.d + xx*(s5.d + xx*s7.d )); // rx is missing to get sin
+    /* !!!!!!!! c2.d = 1/2 exactement, à modifier pour augmenter la
+       précision de l'evaluation polynomiale !!!!!!!!! */
+    cx = xx * (c2.d + xx*(c4.d + xx*c6.d));       //  1 is missing to have cos
+    
+    ts = (((sal + cah*sx) + sah*cx) + cah*rx);
+    Add12(sh, sl, sah, ts);
+    /* !!!!!!!!!  ATTENTION: prendre en compte le fait que l'on oublie
+       des termes et que l'on fait des additions bizarres !!!!!!!!!!
+       d'apres mes calculs 2^(-61) et meme un peu moins */
+    if (sh == (sh + (sl * RN_CST_SINFAST2))){	
+      return sh; 
+    }else{  
+      /* Can improve the accuracy of the result by splitting */
+      Mul12(&gh, &gl, cah, rx);
+      ts = (((gl + cal*rx) + sal) + cah*sx) + sah*cx; 
+      Add12(th, tl, gh, ts);
+      Add22(&sh, &sl, sah, 0, th, tl);
+      
+      if (sh == (sh + (sl * RN_CST_SINFAST3)))	
+	return sh; 
+      else
+	return scs_sin_rn(x); 
+    }  
+  } 
+  /* CASE 4: x>2^(-1) */
+
   /* Otherwise : Range reduction then standard evaluation */
   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_sin_rn);
     
@@ -290,19 +297,11 @@ double sin_rn(double x){
 	printf("cah=%1.30e cal=%1.30e  \n", cah,cal);
 #endif
 
-#if INLINE_SINCOS
-  if (quadrant&1){   /*compute the cos  */
-    DO_COS(sh,sl);
-  }
-  else {/* compute the sine */
-    DO_SIN(sh,sl);
-  }
-#else
   if (quadrant&1)   /*compute the cos  */
     do_cos(&sh, &sl,  yh,yl);
   else /* compute the sine */
     do_sin(&sh, &sl,  yh,yl);
-#endif
+
   
   if(quadrant>=2) { 
     sh = -sh;
@@ -344,9 +343,6 @@ double cos_rn(double x){
   int absxhi;
   db_number xx;
 
-#if INLINE_SINCOS
-  double sah,sal,cah,cal,ts;
-#endif
 
   xx.d=x;
   absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
@@ -356,7 +352,7 @@ double cos_rn(double x){
       return 1.;
     /* Fast Taylor series */
     yh=x*x;
-    tc = yh * (c2.d + yh*(c4.d + yh*(c6.d + yh*(c8.d))));
+    tc = yh * (c2.d + yh*(c4.d + yh*c6.d));
     Add12(ch,cl, 1, tc);
     if(ch == (ch + (cl * RN_CST_COSFAST))){	
       return ch;
@@ -388,19 +384,10 @@ double cos_rn(double x){
   }
 
 
-#if INLINE_SINCOS
-  if (quadrant&1){   /*compute the cos  */
-    DO_SIN(ch,cl);
-  }
-  else {/* compute the sine */
-    DO_COS(ch,cl);
-  }
-#else
   if (quadrant&1)   /*compute the cos  */
     do_sin(&ch, &cl,  yh,yl);
   else /* compute the sine */
     do_cos(&ch, &cl,  yh,yl);
-#endif
   
   if((quadrant == 1)||(quadrant == 2)) { 
     ch = -ch;
