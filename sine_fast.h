@@ -5,10 +5,10 @@
 #define DEGREE 17
 
 #ifdef WORDS_BIGENDIAN
-db_number const pio2hi = {{0x40092200,0x00000000}} /* +3.1416015625e+00 */
-db_number const pio2lo = {{0xBFF92204,0xABBBD2E8}} /* -1.5708052357e+00 */
+db_number const pio2hi = {{0x3FE92200,0x00000000}} /* +7.8540039062e-01 */
+db_number const pio2lo = {{0x3FE921F6,0xA8885A31}} /* +7.8539593617e-01 */
+db_number const invpio2 = {{0x3FE45F30,0x6DC9C883}} /* +6.3661977237e-01 */
 db_number const PolySin[7] =
-{
 {
 {{0xBFC55555,0x55555555}} /* -1.6666666667e-01 */ ,
 {{0x3F811111,0x11111111}} /* +8.3333333333e-03 */ ,
@@ -18,14 +18,13 @@ db_number const PolySin[7] =
 {{0x3DE61246,0x13A86D09}} /* +1.6059043837e-10 */ ,
 {{0xBD6AE7F3,0xE733B81F}} /* -7.6471637318e-13 */ ,
 {{0x3CE952C7,0x7030AD4A}} /* +2.8114572543e-15 */
-}
 };
 
 #else
-db_number const pio2hi = {{0x00000000,0x40092200}} /* +3.1416015625e+00 */
-db_number const pio2lo = {{0xABBBD2E8,0xBFF92204}} /* -1.5708052357e+00 */
+db_number const pio2hi = {{0x00000000,0x3FE92200}} /* +7.8540039062e-01 */
+db_number const pio2lo = {{0xA8885A31,0x3FE921F6}} /* +7.8539593617e-01 */
+db_number const invpio2 = {{0x6DC9C883,0x3FE45F30}} /* +6.3661977237e-01 */
 db_number const PolySin[7] =
-{
 {
 {{0x55555555,0xBFC55555}} /* -1.6666666667e-01 */ ,
 {{0x11111111,0x3F811111}} /* +8.3333333333e-03 */ ,
@@ -35,7 +34,6 @@ db_number const PolySin[7] =
 {{0x13A86D09,0x3DE61246}} /* +1.6059043837e-10 */ ,
 {{0xE733B81F,0xBD6AE7F3}} /* -7.6471637318e-13 */ ,
 {{0x7030AD4A,0x3CE952C7}} /* +2.8114572543e-15 */
-}
 };
 
 #endif /* WORDS_BIGENDIAN */

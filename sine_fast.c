@@ -43,23 +43,24 @@ double sin_rn(double x){
   int k;
   
   y = x;
-  varhi = y * twoopihi.d;
-  varlo = y * twoopilo.d;
-  k = (int)(varhi + varlo);
 
-  y= ( x - ((double)k)*pio2hi.d )    -  ((double)k)*pio2lo.d ;
+  k = (int)(y * invpio2.d);
+
+  /* marche que si x est assez petit */
+
+  y = ( x - ((double)k)*pio2hi.d )  -  ((double)k)*pio2lo.d ;
  
   switch (k&3){
   case 0:
-    sin_fast(y, reshi, reslo);
+    sin_fast(&reshi, &reslo, y);
   case 1:
-    cos_fast(y, reshi, reslo);
+    //   cos_fast(y, reshi, reslo);
   case 2:  
-    sin_fast(y, reshi, reslo);
+    sin_fast(&reshi, &reslo, y);
     reshi *= -1;
     reslo *= -1;
   case 3:
-    cos_fast(y,reshi, reslo);
+    //    cos_fast(y,reshi, reslo);
     reshi *= -1;
     reslo *= -1;
   default:
@@ -78,120 +79,12 @@ double sin_rn(double x){
 }
 
 
-/*************************************************************
- *************************************************************
- *               ROUNDED  TOWARD  -INFINITY		     *
- *************************************************************
- *************************************************************/
-double sin_rd(double x){
-double y;
-db_number reshi, reslo;
-int N;
 
-y = x;
-N = rempio2_fast(y);
-switch (N){
-  case 0:
-    sin_fast(y, reshi, reslo);
-  case 1:
-    cos_fast(y, reshi, reslo);
-  case 2:  
-    sin_fast(y, reshi, reslo);
-    reshi.d *= -1;
-    reslo.d *= -1;
-  case 3:
-    cos_fast(y,reshi, reslo);
-    reshi.d *= -1;
-    reslo.d *= -1;
-  default:
-    fprintf(stderr,"ERREUR: %d is not a valid value in sin_rn \n", N);
-    exit(1);
-  }
-
-  /* ROUNDING TO - INFINITY */
-
- {int logA, err;
-  err = 59*2^(20);
-  logA = (reshi.i[HI_ENDIAN] & 0x7FF00000) - err;
- 
-  if((reslo.i[HI_ENDIAN] & 0x7FF00000) > logA){
-    if((reshi.i[HI_ENDIAN])^(reslo.i[HI_ENDIAN]) < 0){
-      reshi.l -= 1-((reshi.i[HI_ENDIAN] >> 31) << 1);
-    }
-    return reshi.d;
-  }else{
-    return scs_sin_rd(y);
-  }
- }
-}
-
-/*************************************************************
- *************************************************************
- *               ROUNDED  TOWARD  +INFINITY		     *
- *************************************************************
- *************************************************************/
-double sin_ru(double x){
-double y;
-db_number reshi, reslo;
-int N;
-
-y = x;
-N = rempio2_fast(y);
-switch (N){
-  case 0:
-    sin_fast(y, reshi, reslo);
-  case 1:
-    cos_fast(y, reshi, reslo);
-  case 2:  
-    sin_fast(y, reshi, reslo);
-    reshi.d *= -1;
-    reslo.d *= -1;
-  case 3:
-    cos_fast(y,reshi, reslo);
-    reshi.d *= -1;
-    reslo.d *= -1;
-  default:
-    fprintf(stderr,"ERREUR: %d is not a valid value in sin_rn \n", N);
-    exit(1);
-  }
-
-   
-  /* ROUNDING TO + INFINITY */
-
-  {int logA, err;
-   err = 59*2^(20);
-   logA = (reshi.i[HI_ENDIAN] & 0x7FF00000) - err;
- 
-   if((reslo.i[HI_ENDIAN] & 0x7FF00000) > logA){
-    if(reslo.i[HI_ENDIAN] > 0){
-      reshi.l += 1;
-    }
-      return reshi.d;
-    }else{
-      return scs_sin_ru(y);
-    }
-  }
-}
-
-/*************************************************************
- *************************************************************
- *               	FUNCTION SINE       		     *
- *************************************************************
- *************************************************************/
-
-
-void sin_fast(double x, double rhi, double rlo){
+void sin_fast(double *rhi, double *rlo, ){
 db_number z;
 double yy, y, t = 0;
 int n, i;
 
-y = x;
-N = rempio2_fast(y);
-if((N==1)|(N==3)){
-    cos_fast(y, rhi, rlo);
-}else{
-
-z.d = y;
 if (z.i[HI_ENDIAN] < 0x3e500000){	/* z < 2^ -26 */
     rhi = y;
     rlo = 0;

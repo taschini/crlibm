@@ -4,8 +4,7 @@ Digits := 200:</Text-field></Input></Group><Group><Input><Text-field layout="Nor
 mkdir("TEMPSIN");</Text-field></Input><Output><Text-field layout="Error" style="Error">Error, (in mkdir) directory exists and is not empty
 </Text-field></Output></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">Useful values</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">bits_pio2hi:=12;</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSxiaXRzX3BpbzJoaUc2IiIjNw==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">pio2hi:= round((evalf(Pi)/2) * (2**(bits_pio2hi-1))) / (2**(bits_pio2hi));
 pio2lo:=nearest(Pi/2 - pio2hi);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSdwaW8yaGlHNiIjIiU8SyIlJzQl</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSdwaW8ybG9HNiIjIjEoNFk0cDxVMigiMSMqNHVhIyo+MiEq</Equation>
-</Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">bits_twoopihi:=12;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">twoopihi:= round(2/evalf(Pi)) * (2**(bits_twopihi-1))) / (2**(bits_twoopi2hi));</Text-field></Input><Output><Text-field layout="Error" style="Error">Error, `)` unexpected
-</Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Polynomial evaluation</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">with(numapprox):
+</Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">invpio2:= nearest(2/Pi);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SShpbnZwaW8yRzYiIyIxZkVBUjY7TWQiMSMqNHVhIyo+MiEq</Equation></Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Polynomial evaluation</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">with(numapprox):
 with(orthopoly):</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "Common_maple_procedures.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">DEGREE:=17;
 
 
@@ -37,16 +36,18 @@ for isbig from 1 to 0 by -1 do
   printendian(fd, pio2lo, isbig):
   fprintf(fd, "\n"):
 
+  fprintf(fd, "\db_number const invpio2 = "):
+  printendian(fd, invpio2, isbig):
+  fprintf(fd, "\n"):
+
 
   # The Taylor coefficients
   fprintf(fd,"db_number const PolySin[%d] =\n{\n",(DEGREE-3)/2):
-    fprintf(fd,"{\n");
     for j from 3 to DEGREE by 2 do<Font italic="false" underline="false">
       coef:=coeff(polyTaylorSin,x,j):</Font>
       printendian(fd, coef, isbig):
       if j&lt;DEGREE then fprintf(fd," ,\n") fi:
     od:
-    fprintf(fd, "\n}"):
 
   fprintf(fd, "\n};\n\n"):
 
