@@ -30,7 +30,7 @@ xmax_return_1_for_cos_RN := sqrt(2^(-53)):
 xmax_return_1_for_cos_RDIR:=2^(-26):
 one_rounded_down := evalf(1-ulp(1/2)):
 
-xmax_return_x_for_tan := 2^(-26):
+xmax_return_x_for_tan := 2^(-27):
 
 
 

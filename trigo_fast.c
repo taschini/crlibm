@@ -104,6 +104,10 @@ Markstein takes as reduced argument the fractional part of x*256/Pi,
 (or maybe it's 512 in his case), so he's got the same tables as we have, 
 but different polynomials (which compute sin(2Pi*y) and cos(2Pi*y).
 
+
+
+
+
  */
 
 
@@ -128,6 +132,7 @@ but different polynomials (which compute sin(2Pi*y) and cos(2Pi*y).
 int rem_pio256_scs(scs_ptr result, const scs_ptr x){
   unsigned long long int r[SCS_NB_WORDS+3], tmp;
   unsigned int N;
+
   /* result r[0],...,r[10] could store till 300 bits of precision */
 
   /* that is really enough for computing the reduced argument */
@@ -368,6 +373,13 @@ do {                                                                \
 
 
 
+
+
+/************************************************************************/
+/*                                                                      */
+/*                            SINE                                      */
+/*                                                                      */
+/************************************************************************/
 
 static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  double x, int absxhi){ 
   double sah,sal,cah,cal, yh, yl, ts,tc, kd; 
@@ -763,8 +775,11 @@ double sin_rz(double x){
 
 
 
-
-/***************************************COSINE************************/
+/************************************************************************/
+/*                                                                      */
+/*                            COSINE                                    */
+/*                                                                      */
+/************************************************************************/
 
 static void compute_cos_with_argred(double* pch, double* pcl, int* pquadrant,  double x, int absxhi){ 
   double sah,sal,cah,cal, yh, yl, ts,tc, kd; 
@@ -1121,6 +1136,153 @@ double cos_rz(double x){
 }
 
 
+
+
+
+
+/************************************************************************/
+/*                                                                      */
+/*                            TANGENT                                   */
+/*                                                                      */
+/************************************************************************/
+
+static void compute_tan_with_argred(double* pth, double* ptl,  double x, int absxhi){ 
+  double sah,sal,cah,cal, yh, yl, ts,tc, kd; 
+  double ch,cl,sh,sl;
+  double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
+  int k, quadrant, index;
+  long long int kl;
+
+
+  /* Case 3 : x sufficiently small for Cody and Waite argument reduction */
+  if  (absxhi < XMAX_CODY_WAITE_3) {
+    DOUBLE2INT(k, x * INV_PIO256);
+    kd = (double) k;
+    quadrant = (k>>7)&3;      
+    index=(k&127)<<2;
+    if((index == 0)) { 
+      /* Here we risk a large cancellation on yh+yl; 
+	 on the other hand we will have sa=0 and ca=1*/
+      /* all this is exact */
+      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+      Add12 (th,tl,  kch_l, kcm_h) ;
+      /* only rounding error in the last multiplication and addition */ 
+      Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+      if (quadrant&1) {
+	do_sin_k_zero(&ch, &cl, yh,yl);
+	do_cos_k_zero(&sh, &sl, yh,yl);
+	sh=-sh; sl=-sl;
+      } else {
+	do_sin_k_zero(&sh, &sl, yh,yl);
+	do_cos_k_zero(&ch, &cl, yh,yl);
+      }
+      Div22(pth, ptl, sh, sl, ch, cl);
+      return;
+    } 
+    else {      
+      LOAD_TABLE_SINCOS();
+      /* Argument reduction  by Cody & Waite algorithm */ 
+      /* Here we do not care about cancellations on yh+yl */
+      if (absxhi < XMAX_CODY_WAITE_2) { 
+	/* all this is exact but the rightmost multiplication */
+	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
+      }
+      else 
+ 	/* all this is exact but the rightmost multiplication */
+	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
+    }
+    if (quadrant&1) {
+      do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+      do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+      sh=-sh; sl=-sl;
+    } else {
+      do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+      do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+    }
+    Div22(pth, ptl, sh, sl, ch, cl);
+    return;
+  }
+
+  /* Case 4 : x sufficiently small for a Cody and Waite in double-double */
+  if ( absxhi < XMAX_DDRR ) {
+    DOUBLE2LONGINT(kl, x*INV_PIO256);
+    kd=(double)kl;
+    quadrant = (kl>>7)&3;
+    index=(kl&127)<<2;
+    if(index == 0) { /* In this case cancellation may occur, so we
+			  do the accurate range reduction */
+      scs_range_reduction(); 
+      /* Now it may happen that the new k differs by 1 of kl, so check that */
+      if(index==0) {  /* no surprise */
+	if (quadrant&1) {
+	  do_sin_k_zero(&ch, &cl, yh,yl);
+	  do_cos_k_zero(&sh, &sl, yh,yl);	
+	  sh=-sh; sl=-sl;
+	} else {
+	  do_sin_k_zero(&sh, &sl, yh,yl);
+	  do_cos_k_zero(&ch, &cl, yh,yl);
+	}
+	Div22(pth, ptl, sh, sl, ch, cl);
+	return;
+      }
+      else { /*recompute index and quadrant */
+	if (index==4) kl++;   else kl--; /* no more than one bit difference */
+	kd=(double)kl;
+	quadrant = (kl>>7)&3;
+      }
+    }
+    /* arrive here if index<>0 */
+    LOAD_TABLE_SINCOS(); /* in advance */
+    /* all this is exact */
+    Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+    Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+    Add12 (th,tl,  kch_l, kcm_h) ;
+    /* only rounding error in the last multiplication and addition */ 
+    Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+    if (quadrant&1) {
+      do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+      do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+      sh=-sh; sl=-sl;
+    } else {
+      do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+      do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+    }
+    Div22(pth, ptl, sh, sl, ch, cl);
+    return;
+  }
+
+  
+  /* Worst case : x very large, sin(x) probably meaningless, we return
+     correct rounding but do't mind taking time for it */
+  scs_range_reduction(); 
+  quadrant = (k>>7)&3;                                    	\
+  if(index == 0) {
+    if (quadrant&1) {
+      do_sin_k_zero(&ch, &cl, yh,yl);
+      do_cos_k_zero(&sh, &sl, yh,yl);
+      sh=-sh; sl=-sl;
+    } else {
+      do_sin_k_zero(&sh, &sl, yh,yl);
+      do_cos_k_zero(&ch, &cl, yh,yl);
+    }
+  }
+  else {
+    LOAD_TABLE_SINCOS();
+    if (quadrant&1) {
+      do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+      do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+      sh=-sh; sl=-sl;
+    } else {
+      do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+      do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+    }
+  }
+  Div22(pth, ptl, sh, sl, ch, cl);
+  return;
+}
+
+
 /*************************************************************
  *************************************************************
  *              TAN ROUNDED  TO NEAREST			     *
@@ -1141,8 +1303,8 @@ double tan_rn(double x){
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (absxhi>=0x7ff00000) return x-x;   
 
-  if (absxhi < XMAX_TAN_CASE2){ /* |x|<2^-3 */
-    if (absxhi < XMAX_RETURN_X_FOR_TAN) /* |x|<2^-26 */
+  if (absxhi < XMAX_TAN_CASE2){ /* TODO better |x|<2^-3 */
+    if (absxhi < XMAX_RETURN_X_FOR_TAN) 
       return x;
 
     /* Fast Taylor series */
@@ -1150,18 +1312,17 @@ double tan_rn(double x){
     P7 = t7.d + xx*(t9.d + xx*(t11.d + xx*(t13.d + xx*t15.d)));
     t  = xx*(t3l.d +xx*(t5.d + xx*P7));
 
-    /* First Fast approximation */
     sh = x*(xx*t3h.d + t);
     Add12(th, tl, x, sh);   
     if (th == (th + (tl * RN_CST_TAN_CASE22)))
       return th;
 
+    /* Still relatively fast, but more accurate */
     Mul12(&sh, &sl, xx, t3h.d);
     Add12(ch, cl, sh, (t+sl));
     Mul22(&sh, &sl, x, 0, ch, cl);
     Add22(&th, &tl, x, 0, sh, sl);
 
-    /* Second more precise approximation */
     if (th == (th + (tl * RN_CST_TAN_CASE21)))
       return th;
     else
@@ -1169,7 +1330,16 @@ double tan_rn(double x){
   }
   
   /* Otherwise : Range reduction then standard evaluation */
-  return scs_tan_rn(x); 
+  compute_tan_with_argred(&th,&tl,x,absxhi);
+  /* ROUNDING TO NEAREST */
+ 
+  if(th == (th + (tl * 1.0004))){
+    return th;
+  }else{ 
+    return scs_tan_rn(x); 
+  } 
+
+
 #if 0
   /* Otherwise : Range reduction then standard evaluation */
   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
