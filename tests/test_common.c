@@ -19,6 +19,12 @@
    know its value in the other functions, which allows to prevent some
    optimizations  */
 
+
+#define RN 1
+#define RU 2
+#define RD 3
+#define RZ 4  
+
 double zero ;
 
 /* Here come the various random number generators. They all use the
@@ -149,7 +155,7 @@ double rand_for_atan(){
   /* then the high bits of the mantissa, and the sign bit */
   result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
   /* Now set the exponent between -30 and 60, enough to cover the useful range  */
-  e =  (int) ( (rand_double_normal()-1) * 90 ); /* never Payne Hanek : 34 */
+  e =  (int) ( (rand_double_normal()-1) * 90 ); 
   result.i[HI_ENDIAN] += (1023 + e -30)<<20;
   return result.d;
 
@@ -196,11 +202,10 @@ void test_init(/* pointers to returned value */
 	       char *rnd_mode)  {
 
   int crlibm_rnd_mode;
-  
-  if      (strcmp(rnd_mode,"RU")==0) crlibm_rnd_mode = 2;
-  else if (strcmp(rnd_mode,"RD")==0) crlibm_rnd_mode = 3;
-  else if (strcmp(rnd_mode,"RZ")==0) crlibm_rnd_mode = 4;
-  else crlibm_rnd_mode = 1;
+  if      (strcmp(rnd_mode,"RU")==0) crlibm_rnd_mode = RU;
+  else if (strcmp(rnd_mode,"RD")==0) crlibm_rnd_mode = RD;
+  else if (strcmp(rnd_mode,"RZ")==0) crlibm_rnd_mode = RZ;
+  else crlibm_rnd_mode = RN;
 
 
   *randfun        = rand_generic; /* the default random function */
@@ -214,11 +219,11 @@ void test_init(/* pointers to returned value */
       *worst_case= .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
       *testfun_libm   = exp;
       switch(crlibm_rnd_mode){
-      case 2:
+      case RU:
 	*testfun_crlibm = exp_ru;	break;
-      case 3:
+      case RD:
 	*testfun_crlibm = exp_rd;	break;
-      case 4:
+      case RZ:
 	*testfun_crlibm = exp_rz;	break;
       default:
 	*testfun_crlibm = exp_rn;
@@ -230,18 +235,138 @@ void test_init(/* pointers to returned value */
       *testfun_mpfr   = mpfr_exp;
 #endif
     }
+
+
+  else  if (strcmp (func_name, "log") == 0)
+    {
+      *randfun        = rand_for_log;
+      *worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
+      *testfun_libm   = log;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = log_ru;	break;
+      case RD:
+	*testfun_crlibm = log_rd;	break;
+      case RZ:
+	*testfun_crlibm = log_rz;	break;
+      default:
+	*testfun_crlibm = log_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = ulog;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_log;
+#endif
+    }
+
+
+  else  if (strcmp (func_name, "sin") == 0)
+    {
+      *randfun        = rand_for_trig;
+      *worst_case= 9.24898516520941904595076721307123079895973205566406e-01;
+      *testfun_libm   = sin;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = sin_ru;	break;
+      case RD:
+	*testfun_crlibm = sin_rd;	break;
+      case RZ:
+	*testfun_crlibm = sin_rz;	break;
+      default:
+	*testfun_crlibm = sin_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = usin;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_sin;
+#endif
+    }
+
+  else  if (strcmp (func_name, "cos") == 0)
+    {
+      *randfun        = rand_for_trig;
+      *worst_case=  8.87406081479789610177988379291491582989692687988281e-01;
+      *testfun_libm   = cos;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = cos_ru;	break;
+      case RD:
+	*testfun_crlibm = cos_rd;	break;
+      case RZ:
+	*testfun_crlibm = cos_rz;	break;
+      default:
+	*testfun_crlibm = cos_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = ucos;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_cos;
+#endif
+    }
+
+  else  if (strcmp (func_name, "tan") == 0)
+    {
+      *randfun        = rand_for_trig; 
+      *worst_case= 1.18008664944477814628953638020902872085571289062500e-01;
+      *testfun_libm   = tan; 
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = tan_ru;	break;
+      case RD:
+	*testfun_crlibm = tan_rd;	break;
+      case RZ:
+	*testfun_crlibm = tan_rz;	break;
+      default:
+	*testfun_crlibm = tan_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = utan;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_tan;
+#endif
+    }
+
+#if 0 /* No cotan in the standard math.h ? */
+  else  if (strcmp (func_name, "cotan") == 0)
+    {
+      *randfun        = rand_for_trig; 
+      *worst_case= 1.18008664944477814628953638020902872085571289062500e-01;
+      *testfun_libm   = cotan; 
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = cotan_ru;	break;
+      case RD:
+	*testfun_crlibm = cotan_rd;	break;
+      case RZ:
+	*testfun_crlibm = cotan_rz;	break;
+      default:
+	*testfun_crlibm = cotan_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = ucotan;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_cotan;
+#endif
+    }
+#endif /* no cotan */
+
   else if (strcmp (func_name, "atan") == 0)
     {
       *randfun        = rand_for_atan;
       *worst_case= 9.54714164331460501955461950274184346199035644531250e-02; 
       *testfun_libm   = atan;
       switch(crlibm_rnd_mode){
-      case 2:
-	*testfun_crlibm = atan_rn;	break;
-      case 3:
-	*testfun_crlibm = atan_rn;	break;
-      case 4:
-	*testfun_crlibm = atan_rn;	break;
+      case RU:
+	*testfun_crlibm = atan_ru;	break;
+      case RD:
+	*testfun_crlibm = atan_rd;	break;
+      case RZ:
+	*testfun_crlibm = atan_rz;	break;
       default:
         *testfun_crlibm = atan_rn ;
       }
@@ -253,17 +378,19 @@ void test_init(/* pointers to returned value */
 #endif
     }
 
+
+
   else if (strcmp (func_name, "cosh") == 0)
     {
       *randfun        = rand_for_cosh;
-      *worst_case= .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
+      *worst_case= 3.76323248339103422210882854415103793144226074218750e+00;
       *testfun_libm   = cosh;
       switch(crlibm_rnd_mode){
-      case 2:
+      case RU:
 	*testfun_crlibm = cosh_ru;	break;
-      case 3:
+      case RD:
 	*testfun_crlibm = cosh_rd;	break;
-      case 4:
+      case RZ:
 	*testfun_crlibm = cosh_rz;	break;
       default:
 	*testfun_crlibm = cosh_rn;
@@ -280,14 +407,14 @@ void test_init(/* pointers to returned value */
   else if (strcmp (func_name, "sinh") == 0)
     {
       *randfun        = rand_for_sinh;
-      *worst_case= .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
+      *worst_case= 5.81191276791475441854117889306508004665374755859375;
       *testfun_libm   = sinh;
       switch(crlibm_rnd_mode){
-      case 2:
+      case RU:
 	*testfun_crlibm = sinh_ru;	break;
-      case 3:
+      case RD:
 	*testfun_crlibm = sinh_rd;	break;
-      case 4:
+      case RZ:
 	*testfun_crlibm = sinh_rz;	break;
       default:
 	*testfun_crlibm = sinh_rn;
@@ -301,99 +428,7 @@ void test_init(/* pointers to returned value */
 #endif
     }
 
-  else  if (strcmp (func_name, "log") == 0)
-    {
-      *randfun        = rand_for_log;
-      *worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
-      *testfun_libm   = log;
-      switch(crlibm_rnd_mode){
-      case 2:
-	*testfun_crlibm = log_ru;	break;
-      case 3:
-	*testfun_crlibm = log_rd;	break;
-      case 4:
-	*testfun_crlibm = log_rz;	break;
-      default:
-	*testfun_crlibm = log_rn;
-      }
-#ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = ulog;
-#endif
-#ifdef HAVE_MPFR_H
-      *testfun_mpfr   = mpfr_log;
-#endif
-    }
 
-  else  if (strcmp (func_name, "sin") == 0)
-    {
-      *randfun        = rand_for_trig;
-      /* This worst case works fast for Ziv. Damn. */
-      *worst_case=0.498498785880875427967140467444551177322864532470703125000000 ;
-      *testfun_libm   = sin;
-      switch(crlibm_rnd_mode){
-      case 2:
-	*testfun_crlibm = sin_rn;	break;
-      case 3:
-	*testfun_crlibm = sin_rn;	break;
-      case 4:
-	*testfun_crlibm = sin_rn;	break;
-      default:
-	*testfun_crlibm = sin_rn;
-      }
-#ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = usin;
-#endif
-#ifdef HAVE_MPFR_H
-      *testfun_mpfr   = mpfr_sin;
-#endif
-    }
-
-  else  if (strcmp (func_name, "tan") == 0)
-    {
-      *randfun        = rand_for_trig; 
-      /* *worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
-      */ 
-      *testfun_libm   = tan; 
-      switch(crlibm_rnd_mode){
-      case 2:
-	*testfun_crlibm = tan_rn;	break;
-      case 3:
-	*testfun_crlibm = tan_rn;	break;
-      case 4:
-	*testfun_crlibm = tan_rn;	break;
-      default:
-	*testfun_crlibm = tan_rn;
-      }
-#ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = utan;
-#endif
-#ifdef HAVE_MPFR_H
-      *testfun_mpfr   = mpfr_tan;
-#endif
-    }
-  else  if (strcmp (func_name, "scs_tan") == 0)
-    {
-      *randfun        = rand_for_trig; 
-      /* *worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
-      */ 
-      *testfun_libm   = tan; 
-      switch(crlibm_rnd_mode){
-      case 2:
-	*testfun_crlibm = scs_tan_rn;	break;
-      case 3:
-	*testfun_crlibm = scs_tan_rn;	break;
-      case 4:
-	*testfun_crlibm = scs_tan_rn;	break;
-      default:
-	*testfun_crlibm = scs_tan_rn;
-      }
-#ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = utan;
-#endif
-#ifdef HAVE_MPFR_H
-      *testfun_mpfr   = mpfr_tan;
-#endif
-    }
 
   else
     {
