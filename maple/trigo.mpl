@@ -7,10 +7,6 @@ read "common-procedures.mpl":
 mkdir("TEMPTRIG"):
 
 
-#################################
-#Comments and todos :
-
-# recheck the max_return_* : we shave off the lower bits, etc
 
 # - Evaluation scheme :
 # case 1 : return x
@@ -47,30 +43,15 @@ xmax_return_x_for_tan := 2^(-27):
 
 
 
-# TODO  This value seems to work but needs proving. Besides maybe it
-# should not be the same for sine and cos
-
-maxepstotalSinCase3:=2**(-64);
-rnconstantSinCase3 := evalf(compute_rn_constant(maxepstotalSinCase3)):
-
-maxepstotalCosCase3:=2**(-64);
-rnconstantCosCase3 := evalf(compute_rn_constant(maxepstotalCosCase3)):
-
-maxepstotalTanCase3:=2**(-64);
-rnconstantTanCase3 := evalf(compute_rn_constant(maxepstotalTanCase3));
-
-
-#The following is not finished
-
 #################################################
 # CODY and WAITE  Argument reduction
 
 
-C := Pi/256;
-invC:= nearest(1/C);
-reminvC := evalf(1/C - invC);
+C := Pi/256:
+invC:= nearest(1/C):
+reminvC := evalf(1/C - invC):
 expC:=ieeedouble(C)[2]:
-epsinvC := abs(reminvC*C);
+epsinvC := abs(reminvC*C):
 
 # There are three sets of constants :
 #  - split redC into two constants, for small values when we are concerned with absolute error
@@ -81,9 +62,9 @@ epsinvC := abs(reminvC*C);
 
 
 
-# Case2est reduction using two-part Cody and Waite (up to |k|=2^22)
+# Fastest reduction using two-part Cody and Waite (up to |k|=2^22)
 
-bitsCh_0:=34:  # ensures at least ??? bits
+bitsCh_0:=34:
 
 # 1/2 <= C/2^(expC+1) <1
 Ch:= round(evalf(  C * 2^(bitsCh_0-expC-1))) / (2^(bitsCh_0-expC-1)):
@@ -105,8 +86,7 @@ delta_round_cw2    := kmax_cw2* 1/2 * ulp(Cl) :
 delta_cody_waite_2 := kmax_cw2 * delta_repr_C_cw2 + delta_round_cw2:
 # This is the delta on y, the reduced argument
 
-log2(%);
-
+#log2(%);
 
 
 
@@ -115,11 +95,11 @@ log2(%);
 bitsCh_0:=23: # 22 or 23
 Ch:= round(evalf(  C * 2^(bitsCh_0-expC-1))) / (2^(bitsCh_0-expC-1)):
 # recompute bitsCh in case we are lucky
-bitsCh:=1+log2(op(2,ieeedouble(Ch)[3])) ;  # this means the log of the denominator
+bitsCh:=1+log2(op(2,ieeedouble(Ch)[3])) :  # this means the log of the denominator
 
 r := C-Ch:
 Cmed := round(evalf(  r * 2^(2*bitsCh-expC-1))) / (2^(2*bitsCh-expC-1)):
-bitsCmed:=1+log2(op(2,ieeedouble(Cmed)[3])) ;
+bitsCmed:=1+log2(op(2,ieeedouble(Cmed)[3])) :
 
 Cl:=nearest(C - Ch - Cmed):
 
@@ -128,7 +108,7 @@ kmax_cw3 := 2^min(53-bitsCh, 53-bitsCmed, 31):# Otherwise we have integer overfl
 
 
 # The constants to move to the .h file
-RR_CW3_CH  := Ch;
+RR_CW3_CH  := Ch:
 RR_CW3_CM  := Cmed:
 RR_CW3_MCL := -Cl:
 XMAX_CODY_WAITE_3 := nearest(kmax_cw3*C):
@@ -139,7 +119,7 @@ delta_round_cw3    := kmax_cw3 * 1/2 * ulp(Cl) :
 delta_cody_waite_3 := kmax_cw3 * delta_repr_C_cw3 + delta_round_cw3:
 # This is the delta on y, the reduced argument
 
-log2(%);
+#log2(%);
 
 
 
@@ -148,8 +128,8 @@ log2(%);
 # Third range reduction, using double-double arithmetic, for |k| up to 2^51-1
 
 # This max int value can be produced by DOUBLE2LONGINT
-kmax:=2^47-1:
-XMAX_DDRR:=nearest(kmax*C);
+kmax:=2^46-1:
+XMAX_DDRR:=nearest(kmax*C):
 
 #in this case we have C stored as 3 doubles
 Ch   := nearest(C):
@@ -182,7 +162,9 @@ delta_PayneHanek := 2^(-100):
 # Finally the max delta on the reduced argument is
 delta_ArgRed := max(delta_cody_waite_2, delta_cody_waite_3,
                     delta_RR_DD, delta_PayneHanek):
-log2(delta_ArgRed);
+
+print("delta_ArgRed to move to the .gappa file = ",  evalf(delta_ArgRed)):
+#log2(delta_ArgRed);
 
 
 
@@ -201,7 +183,7 @@ wcx := wcn * 2^wce:
 wck := round(wcx/C):
 wcy := wcx - wck*C:
 
-log2(wcy);   # y > 2^(-67);
+#log2(wcy);   # y > 2^(-67);
 
 # In these cases we use the double-double range reduction, for |k|<kmax_cw3
 # and the relative precision in the worst case is for wcy
@@ -213,32 +195,11 @@ delta_RR_DD :=  kmax_cw3 * delta_repr_C + delta_round:
 
 eps_ArgRed := (1+delta_RR_DD/wcy)*(1+2^(-100)) -1:
 
-log2(eps_ArgRed);
+#log2(eps_ArgRed);
 
 # In all the other cases we use Payne and Hanek, and eps_ArgRed is
 # much smaller, so this is the max.
 
-
-
-
-
-
-
-
-
-
-
-######################
-
-
-# An attempt to use Chebychev polynomials, less accurate in our case after poly_exact2
-# If we need extra precision for the polynomial evaluation use Chebpade as follows :
-#with(orthopoly):
-#Poly_P := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, degreeSinCase2*4):
-#Poly_Q := convert(Poly_P,polynom):
-#Poly_cheb := numapprox[chebpade](Poly_Q, x=0..xmaxSinCase2^2, [degreeSinCase2/2-2,0]):
-#polySinCase2 := poly_exact2 ( expand(x + x^3 * subs(x=x^2, Poly_cheb)), 2);
-#
 
 
 ###########
@@ -248,7 +209,10 @@ degreeCos := 7:
 
 maxepsk := (1+epsinvC)*(1+2^(-53))-1:
 
-ymaxCase3  := evalf(Pi/512 +XMAX_DDRR*maxepsk):
+ymaxCase3  := evalf(Pi/512 + XMAX_DDRR*maxepsk):
+print("ymaxCase3 to move to the .gappa file = ",  ymaxCase3):
+
+
 y2maxCase3 := ymaxCase3^2:
 # These are the parameters that can be varied to fine-tune performance
 #   (they should always be larger than Pi/512
@@ -272,19 +236,16 @@ polyCos  := poly_exact (convert( series(cos(x), x=0, degreeCos+1), polynom)):
 polyTc2 := subs(x=sqrt(y), polyCos - 1):
 
 eps_approx_Sin_Case2 := numapprox[infnorm]((x*polyTs+x -sin(x))/sin(x), x=0..xmaxSinCase2):
-log2(%);
 eps_approx_Sin_Case3 := numapprox[infnorm]((x*polyTs +x -sin(x))/sin(x), x=0..ymaxCase3):
-log2(%);
+
 delta_approx_Sin_Case2 := numapprox[infnorm]((x*polyTs+x -sin(x)), x=0..xmaxSinCase2):
-log2(%);
 delta_approx_Sin_Case3 := numapprox[infnorm]((x*polyTs +x -sin(x)), x=0..ymaxCase3):
-log2(%);
 
-delta_approx_Tc_Case2:= numapprox[infnorm](polyCos -  cos(x), x=0..xmaxCosCase2):
-log2(%);
-delta_approx_Tc_Case3:= numapprox[infnorm](polyCos -  cos(x), x=0..ymaxCase3):
-log2(%);
+delta_approx_Cos_Case2:= numapprox[infnorm](polyCos -  cos(x), x=0..xmaxCosCase2):
+delta_approx_Cos_Case3:= numapprox[infnorm](polyCos -  cos(x), x=0..ymaxCase3):
 
+print("delta_approx_Sin_Case3 to move to the .gappa file = ",  delta_approx_Sin_Case3):
+print("delta_approx_Cos_Case3 to move to the .gappa file = ",  delta_approx_Cos_Case3):
 
 
 ########################## Case 2 for sine  ###########################
@@ -299,8 +260,8 @@ errlist:=errlist_quickphase_horner(degree(polyTs2),0,0,2^(-53), 0):
 eps_poly_Ts_Case2 := numapprox[infnorm]((x*polyTs)/(sin(x)-x) -1, x=0..xmaxSinCase2):
 maxeps2 := (1+eps_poly_Ts_Case2)*(1+eps_rounding_Ts)*(1+2^(-53))-1:
 
-maxepstotalSinCase2 := maxeps2 * numapprox[infnorm](1-x/sin(x), x=0..xmaxSinCase2);
-rnconstantSinCase2 := evalf(compute_rn_constant(maxepstotalSinCase2));
+maxepstotalSinCase2 := maxeps2 * numapprox[infnorm](1-x/sin(x), x=0..xmaxSinCase2):
+rnconstantSinCase2 := evalf(compute_rn_constant(maxepstotalSinCase2)):
 
 
 
@@ -314,40 +275,40 @@ errlist        := errlist_quickphase_horner(degree(polyTc2),0,0,2**(-53), 0):
               compute_horner_rounding_error(polyTc2,y,x2maxCosCase2, errlist, true):
 
 # Then we have an Add12 which is exact. The result is greater then cos(xmaxCosCase2):
-miny := cos(xmaxCosCase2);
-maxepstotalCosCase2 :=  (delta_rounding_Tc + delta_approx_Tc_Case2) / miny ;
-log2(%);
-rnconstantCosCase2 := evalf(compute_rn_constant(maxepstotalCosCase2));
+miny := cos(xmaxCosCase2):
+maxepstotalCosCase2 :=  (delta_rounding_Tc + delta_approx_Cos_Case2) / miny :
+#log2(%);
+rnconstantCosCase2 := evalf(compute_rn_constant(maxepstotalCosCase2)):
 
 
 
 
 ######################## Case2 Tangent #########################
 #
-xmaxTanCase2   := 2**(-3);
-degreeTanCase2 := 16;
+xmaxTanCase2   := 2**(-3):
+degreeTanCase2 := 16:
 
 
 # Compute the Taylor series
 with(orthopoly):
 Poly_P := convert(series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, degreeTanCase2*4),polynom):
 Poly_cheb := numapprox[chebpade](Poly_P, x=0..xmaxTanCase2^2, [degreeTanCase2/2-2,0]):
-polyTanCase2 :=  poly_exact2(expand(x + x^3 * subs(x=x^2, Poly_cheb)), 4);
+polyTanCase2 :=  poly_exact2(expand(x + x^3 * subs(x=x^2, Poly_cheb)), 4):
 
 
 
 approx_errorTanCase2:=numapprox[infnorm](1 - polyTanCase2 / tan(x), x=0..xmaxTanCase2):
-log2(approx_errorTanCase2);
+#log2(approx_errorTanCase2);
 
 
 #TODO
 ###TO REMOVE ONCE THE PREVIOUS IS FINISHED
-maxepstotalTanCase21:=2**(-61);
-maxepstotalTanCase22:=2**(-59);
+maxepstotalTanCase21:=2**(-61):
+maxepstotalTanCase22:=2**(-59):
 
 
-rnconstantTanCase21 := evalf(compute_rn_constant(maxepstotalTanCase21));
-rnconstantTanCase22 := evalf(compute_rn_constant(maxepstotalTanCase22));
+rnconstantTanCase21 := evalf(compute_rn_constant(maxepstotalTanCase21)):
+rnconstantTanCase22 := evalf(compute_rn_constant(maxepstotalTanCase22)):
 
 
 
@@ -355,63 +316,14 @@ rnconstantTanCase22 := evalf(compute_rn_constant(maxepstotalTanCase22));
 #   Computing errors for Case3 : now we have an error due to arg red
 
 
-# The error on yh*yh
-# we had $y_h+y_l = y + \abserr{CodyWaite}$.
-# Now we take only $y_h$ :  $y_h = (y_h + y_l)(1+2^{-53}) = (y+\abserr{CodyWaite})(1+2^{-53})$
-# When squared we get $y_h\otimes y_h = (y+\abserr{CodyWaite})^2(1+2^{-53})^3 $
-
-epsy2 := evalf(((1+eps_ArgRed)**2) *  (1+2**(-53))**2 - 1):
-
-############### Errors in computing Ts and Tc
+#  This value has been computed by Gappa (using all the previous)
+maxepstotalSinCosCase3:=2**(-66):
+rnconstantSinCosCase3 := evalf(compute_rn_constant(maxepstotalSinCosCase3)):
 
 
-errlist:=errlist_quickphase_horner(degree(polyTs2),0,0, epsy2 , 0):
-(eps_rounding_Ts, delta_rounding_Ts, minTs, maxTs):=
-	compute_horner_rounding_error(polyTs2,y,y2maxCase3, errlist, true):
-
-errlist:=errlist_quickphase_horner(degree(polyTc2),0,0, epsy2 , 0):
-(eps_rounding_Tc, delta_rounding_Tc, minTc, maxTc):=
-              compute_horner_rounding_error(polyTc2,y,y2maxCase3, errlist, true):
-
-# Computed by Guillaume Melquiond's Gappa:
-# Majorant de l'erreur absolue entre [(1 + tc) * ca - (1 + ts) * sa * yy]
-# et la valeur calculée :
-
-delta_dosin := 4.4432e-21;
-
-
-
-##############   Case  k&127 = 0
-# See above. As the error will always be smaller than in the case
-# k&127 != 0, no need to recompute it. It could be useful to have a
-# better rounding constant, but it will be statistically
-# unsignificant.
-
-
-
-
-
-###### The extreme Cases for tabulated values for the Case k&127 != 0
-minsca := sin(Pi/256);
-minscah:= nearest(minsca);
-maxsca := cos(Pi/256);
-maxscah:= nearest(maxsca);
-
-# Worst Case of approximation error
-
-################ Summing everything up
-# The only error is in
-#  tlo =  tc*cah - (ts*sahyh_h -  (cal + (tlo  - (sahyh_l + (sal*yh + sah*yl)) )));
-
-delta_round_tlo := 2*ulp(maxTc*maxsca) ; # TODO c'est à la louche
-
-
-delta_do_cos := delta_round_tlo;
-min_sin := sin(Pi/512); # TODO Add error on k here
-
-epsilon_sincos := delta_round_tlo / min_sin; # TODO hum
-
-rnconstant_sincos := compute_rn_constant(epsilon_sincos);
+# The error of sin, the error of cos, then the error of Div22
+maxepstotalTanCase3:= 2.1*maxepstotalSinCosCase3:
+rnconstantTanCase3 := evalf(compute_rn_constant(maxepstotalTanCase3)):
 
 
 
@@ -419,10 +331,10 @@ rnconstant_sincos := compute_rn_constant(epsilon_sincos);
 
 ##############################################
 ## Compute constants for SCS arg red
-oldDigits:=Digits;
-Digits:=1000;
+oldDigits:=Digits:
+Digits:=1000:
 # for 2/Pi:
-n:=round(2^(30*48)*evalf(2/Pi));
+n:=round(2^(30*48)*evalf(2/Pi)):
 digitlist:=[]:
 for i from 1 to 48 do
   r:=n mod (2^30):
@@ -430,10 +342,10 @@ for i from 1 to 48 do
   hexstring:= convert(convert(r,hex),string):
   digitlist:=[hexstring, op(digitlist)]:
 end:
-digitlist;
+digitlist:
 
 # for 256/Pi:
-n:=round(2^(30*47)*evalf(256/Pi));
+n:=round(2^(30*47)*evalf(256/Pi)):
 digitlist:=[]:
 for i from 1 to 48 do
   r:=n mod (2^30):
@@ -441,8 +353,8 @@ for i from 1 to 48 do
   hexstring:= convert(convert(r,hex),string):
   digitlist:=[hexstring, op(digitlist)]:
 end:
-digitlist;
-Digits:=oldDigits;
+digitlist:
+Digits:=oldDigits:
 
 
 
@@ -494,13 +406,12 @@ fprintf(fd, "\n"):
 
 fprintf(fd, "#define EPS_SIN_CASE2     %1.25e \n", maxepstotalSinCase2):
 fprintf(fd, "#define RN_CST_SIN_CASE2  %1.25f \n", rnconstantSinCase2):
-fprintf(fd, "#define EPS_SIN_CASE3     %1.25e \n", maxepstotalSinCase3):
-fprintf(fd, "#define RN_CST_SIN_CASE3  %1.25f \n", rnconstantSinCase3):
 fprintf(fd, "\n"):
 fprintf(fd, "#define EPS_COS_CASE2     %1.25e \n", maxepstotalCosCase2):
 fprintf(fd, "#define RN_CST_COS_CASE2  %1.25f \n", rnconstantCosCase2):
-fprintf(fd, "#define EPS_COS_CASE3     %1.25e \n", maxepstotalCosCase3):
-fprintf(fd, "#define RN_CST_COS_CASE3  %1.25f \n", rnconstantCosCase3):
+fprintf(fd, "\n"):
+fprintf(fd, "#define EPS_SINCOS_CASE3     %1.25e \n", maxepstotalSinCosCase3):
+fprintf(fd, "#define RN_CST_SINCOS_CASE3  %1.25f \n", rnconstantSinCosCase3):
 fprintf(fd, "\n"):
 fprintf(fd, "#define EPS_TAN_CASE21    %1.25e \n", maxepstotalTanCase21):
 fprintf(fd, "#define RN_CST_TAN_CASE21 %1.25e \n", rnconstantTanCase21):
@@ -641,11 +552,67 @@ fprintf(fd,"#endif /* WORDS_BIGENDIAN */\n\n\n"):
 
 fclose(fd):
 
-print("************DONE************");
+print("************ DONE TEMPTRIG/trigo_fast.h ************");
+
+
+# The Gappa files in TEMPTRIG
+for i from 1 to SinCosSize/2 do
+    filename:=cat("TEMPTRIG/SinACosA_",i,".gappa"):
+    fd:=fopen(filename, WRITE, TEXT):
+    s:=hi_lo(sin(i*Pi/(2*SinCosSize))):
+    c:=hi_lo(cos(i*Pi/(2*SinCosSize))):
+    fprintf(fd, "cah=%1.50e ;\n", c[1]):
+    fprintf(fd, "cal=%1.50e ;\n", c[2]):
+    fprintf(fd, "sah=%1.50e ;\n", s[1]):
+    fprintf(fd, "sal=%1.50e ;\n", s[2]):
+    fclose(fd):
+od:
+
+
+print("************ DONE TEMPTRIG/*.gappa ************");
+
+# A shell script to use them
+filename:="trigo_test.sh":
+fd:=fopen(filename, WRITE, TEXT):
+fprintf(fd, "#!/bin/sh\n"):
+fprintf(fd, "for file in TEMPTRIG/SinACosA*  \n"):
+fprintf(fd, "do\n"):
+fprintf(fd, "  echo $file:\n"):
+fprintf(fd, "  cat  $file  trigoSinCosCase3.gappa | ~/gappa/src/gappa > /dev/null\n"):
+fprintf(fd, "  echo\n"):
+fprintf(fd, "done\n"):
+fclose(fd):
+
+print("************ DONE trigo_test.sh ************"):
+print("Now you should run"):
+print(" sh trigo_test.sh 2>TEMPTRIG/Gappa.out"):
+print("Then"):
+print(" grep '{' TEMPTRIG/Gappa.out| sed  -e 's/}.*{/\n/g'  -e 's/^.*{-//g' -e 's/}]//g'  | sort | head "):
+
+print("If the first number is smaller than 2^(-66) then everything is OK and the rounding constants in TEMPTRIG/trigo_fast.h are proven upper bounds."):
 
 
 
 #################################################
+# Stuff for the proof of the accurate phase,
+#
+if(1+1=3) then
+ polysin:=convert(series(sin(x), x=0, 32), polynom):
+ polycos:=convert(series(cos(x), x=0, 32), polynom):
+ log[2](numapprox[infnorm](1 - polysin/sin(x), x=0..Pi/4));
+ log[2](numapprox[infnorm](1 - polysin/sin(x), x=0..2^(-17)));
+
+ log[2](numapprox[infnorm](1 - polycos/cos(x), x=0..Pi/4));
+ log[2](numapprox[infnorm](1 - polycos/cos(x), x=0..2^(-18)));
+
+ polytan:=convert(series(tan(x), x=0, 128), polynom):
+ log[2](numapprox[infnorm](  (tan(x) - polytan)/tan(x), x=0..Pi/4));
+ log[2](numapprox[infnorm](  (tan(x) - polytan)/tan(x), x=0..2^(-18)));
+
+
+#################################################
+
+
 
 if(1+1=3) then
 # Modifications to hi_lo
@@ -685,5 +652,11 @@ Poly_Q    := convert(Poly_P,polynom):
 Poly_cheb := chebpade(Poly_Q, x=0..evalf(Pi/4), [17,0]);
 Poly_Res  := x + x^3 * subs(x=x^2, Poly_cheb);
 log(infnorm( 1 - (Poly_Res)/sin(x),x=0..evalf(Pi/4), err))/log(2.);
+
+Poly_P    := series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, 40):
+Poly_Q    := convert(Poly_P,polynom):
+Poly_cheb := chebpade(Poly_Q, x=0..evalf(Pi/4), [17,0]);
+Poly_Res  := x + x^3 * subs(x=x^2, Poly_cheb);
+log(infnorm( 1 - (Poly_Res)/tan(x),x=0..evalf(Pi/4), err))/log(2.);
 
 fi:
