@@ -49,17 +49,18 @@ extern double tan_rn(double); /* to nearest  */
 extern double tan_rd(double); /* toward -inf */ 
 extern double tan_ru(double); /* toward +inf */ 
 
+extern double atan_rn(double);
+
 /* Compute the tangent with correct rounding */
 extern double cotan_rn(double); /* to nearest  */
 extern double cotan_rd(double); /* toward -inf */ 
 extern double cotan_ru(double); /* toward +inf */ 
 
-#if 0 /* temporarily disabled */
 /* Compute the arctangent with correct rounding */
 extern double atan_rn(double); /* to nearest  */
 extern double atan_rd(double); /* toward -inf */ 
 extern double atan_ru(double); /* toward +inf */ 
-#endif
+
 
 /* Compute the exponential with correct rounding */
 extern double exp_rn(double); /* to nearest  */
