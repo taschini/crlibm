@@ -11,8 +11,10 @@
 #include "tan.h"
 #include <coefpi2.h>
 
-void tan(scs_ptr);
-void cotan(scs_ptr);
+#define DEBUG 1
+
+void scs_tan(scs_ptr);
+/*void cotan(scs_ptr); */
 int rem_pio2_scs(scs_ptr, scs_ptr);
 
 /**
@@ -104,17 +106,26 @@ double scs_tan_rn(double x){
 
     switch (N){
     case 0:
+    #if DEBUG
+      printf("Case SCS 0\n");
+    #endif
 	scs_tan(sc2);
 	scs_get_d(&resd, sc2);
 	return resd;
    	break;
     case 1:
+    #if DEBUG
+      printf("Case SCS 1\n");
+    #endif
 	scs_tan(sc2);
 	scs_inv(sc2, sc2);
 	scs_get_d(&resd, sc2);
 	return -(resd);
 	break;
     case 2:
+    #if DEBUG
+      printf("Case SCS 2 ET TOC\n");
+    #endif
 	scs_sub(sc2, Pio2_ptr, sc2);
 	scs_tan(sc2);
 	scs_inv(sc2,sc2);
@@ -122,6 +133,9 @@ double scs_tan_rn(double x){
 	return resd;
 	break;
     case 3:
+    #if DEBUG
+      printf("Case SCS 3\n");
+    #endif
 	scs_sub(sc2, Pio2_ptr, sc2);
 	scs_tan(sc2);
 	scs_get_d(&resd, sc2);	
