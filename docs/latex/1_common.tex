@@ -20,7 +20,7 @@ in the IEEE-754 \emph{round to nearest} mode.
   $\delta$ denotes an absolute error. Upper bounds on the absolute value of these errors
   will be denoted $\maxeps$ and $\maxdelta$.
 
-\item $\maxeps_{-k}$ -- with a negative index -- denotes an error bounded by $2^{-k}$.
+\item $\maxeps_{-k}$ -- with a negative index -- represents an error $e$ such that $|e| \leq 2^{-k}$.
   
 \item For a floating-point number $x$, the value of the least
   significant bit of its mantissa is classically denoted $\ulp(x)$.
@@ -145,12 +145,12 @@ flags:
 \section{Common C procedures for double-double arithmetic\label{section:commonCdoubledouble}}
 
 In this section, we give the basic algorithms for computing with
-numbers represented the sum of two floating-point numbers (or
+numbers represented as the sum of two floating-point numbers (or
 \emph{double-double} numbers). 
 
 The algorithms are given as plain C functions, but it may be
 preferable, for performance issue, to implement them as macros, as in
-\texttt{libnultim}.  The code offers both versions,
+\texttt{libultim}.  The code offers both versions,
 selected by the \texttt{DEKKER\_AS\_FUNCTIONS} constant which is set
 by default to 1 (functions).
 
@@ -181,7 +181,7 @@ void Add12Cond(double *s, double *r, a, b)
 \end{lstlisting}
 Here ABS is a macro that returns the absolute value of a
 floating-point number. This algorithm requires $4$ floating-point additions and $2$ floating
-point test (some of which are hidden in the ABS macro). 
+point tests (some of which are hidden in the ABS macro). 
 
 Note that if it is more efficient on a given architecture, the test can be replaced
 with a test on the exponents of $a$ and $b$.
@@ -193,7 +193,7 @@ If we are able to prove that  the exponent of $a$ is always greater than that
 of $b$, then the previous algorithm to perform an exact addition of 2
 floating-point numbers becomes :
 \begin{lstlisting}[label={lst:Add12},caption={Add12},firstnumber=1]
-void Add12Cond(double *s, double *r, a, b) 
+void Add12(double *s, double *r, a, b) 
 {
   double z;
   s = a + b;            
@@ -589,7 +589,9 @@ total relative error smaller than $\epsilon$, and that the result is
 available as the sum of two non-overlapping floating-point numbers
 $y_h$ and $y_l$ (as is the case if computed by the previous
 algorithms). This section gives and proves algorithms for testing if
-$y_h$ is the correctly rounded value of $y$.
+$y_h$ is the correctly rounded value of $y$ according to the relative
+error $\epsilon$. This correspond to detect whether we are in a hard
+to round case.
 
 
 
@@ -725,7 +727,7 @@ Directed rounding is much easier to achieve than round to the nearest:
 The difficult cases are the cases when the exact value $y$ is very
 close to a machine number, and we have in $y_h+y_l$ an approximation to
 $y$ with a relative error smaller than the half-ulp of $y_h$.
-Therefore we have in $|y_l|$ an approximation to the the distance of
+Therefore we have in $|y_l|$ an approximation to the distance of
 $y_h$ to the closest machine number, with a known approximation error.
 
 
@@ -1295,8 +1297,8 @@ in Section~\ref{sec:Horner}.
 
 Procedure \texttt{compute\_abs\_rounding\_error} computes a bound on
 the accumulated rounding error caused by the Horner evaluation of a
-truncated polynomial. P is the polynomial, xmax is the max value of
-$|x|$, n is the degree when P is computed in double double, and the
+truncated polynomial. \texttt{poly} is the polynomial, \texttt{xmax} is the max value of
+$|x|$, \texttt{nn} is the degree when \texttt{poly} is computed in double double, and the
 first double-double operation is an addition.
 
 This procedure returns the maximum absolute error, and safe bounds on the
