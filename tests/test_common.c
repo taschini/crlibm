@@ -91,6 +91,18 @@ double rand_for_exp(){
   return result.d;
 }
 
+/* For log we only test the positive numbers*/
+double rand_for_log(){
+  db_number result;
+  int e;
+
+  /*first the low bits of the mantissa*/
+  result.i[LO_ENDIAN]=rand_int();
+  /* then the high bits of the mantissa, and the sign bit */
+  result.i[HI_ENDIAN]=  rand_int() & 0x8fffffff;
+  return result.d;
+}
+
 
 /* a number in the range which never produces over/underflow for the
    exp function */

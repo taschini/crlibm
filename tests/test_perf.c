@@ -29,6 +29,10 @@ Beware to compile without optimizations
 
 #define DETAILED_REPORT 0
 
+/* If set, the behaviour of the function with respect to cache memory
+   will be tested*/
+#define TEST_CACHE 0
+
 
 
 
@@ -41,6 +45,8 @@ int crlibm_first_step_taken;
 
 /* Basic-like programming with global variables: */
 db_number input, res_crlibm, res_mpfr, res_ibm, res_libm;
+
+double worst_case; /* worst case for round to nearest only */
 
 /* The random number generator*/
 double (*randfun)       () = NULL;
@@ -64,10 +70,11 @@ void init(char *function){
   crlibm_init();
 
   randfun        = rand_generic; /* the default random function */
-
+  worst_case = 0.0;
   if (strcmp (function, "exp") == 0)
     {
       randfun        = rand_for_exp;
+      worst_case= .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
       testfun_libm   = exp;
       testfun_crlibm = exp_rn;
 #ifdef HAVE_MATHLIB_H
@@ -80,7 +87,8 @@ void init(char *function){
 
   else if (strcmp (function, "log") == 0)
     {
-      /*      randfun        = rand_for_log; */
+      randfun        = rand_for_log;
+      worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
       testfun_libm   = log;
       testfun_crlibm = log_rn;
 #ifdef HAVE_MATHLIB_H
@@ -273,6 +281,8 @@ int main (int argc, char *argv[])
   ibm_dtmin=1<<30;    ibm_dtmax=0;    ibm_dtsum=0;
 
 
+
+#if TEST_CACHE
   /************  TESTS WITH CACHES  *********************/
   /* First tests in real conditions, where cache considerations
      matter */
@@ -337,6 +347,7 @@ int main (int argc, char *argv[])
     }
 #endif
 
+#endif /* TEST_CACHE*/
   /************  TESTS WITHOUT CACHES  *********************/
   srandom(n);
 
@@ -427,11 +438,15 @@ int main (int argc, char *argv[])
   } 
 
 
+#if EVAL_PERF==1  
+  printf("\nCRLIBM : Second step taken %d times out of %d\n",
+	 crlibm_second_step_taken/20, n );
+#endif
+
 
   /************  WORST CASE TESTS   *********************/
   /* worst case test */
-  input = .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
-
+  input = worst_case;
   /* libm timing */
   dtmin=1<<30;
   for(j=0; j<10; j++) {
@@ -482,12 +497,6 @@ int main (int argc, char *argv[])
     ibm_dtwc = dtmin;
 #endif /*HAVE_MATHLIB_H*/
 
-  printf("\nLIBM\n");
-  printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n ",  
-	 libm_dtmin, libm_dtmax,
-	 (((double)libm_dtsum) / ((double) n)),
-	 libm_dtwc
-	 );
 
   printf("\nCRLIBM\n");
   printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
@@ -496,10 +505,12 @@ int main (int argc, char *argv[])
 	 crlibm_dtwc
 	 );
 
-#if EVAL_PERF==1  
-  printf("Second step taken %d times out of %d\n",
-	 crlibm_second_step_taken, n*20 );
-#endif
+  printf("\nLIBM\n");
+  printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n ",  
+	 libm_dtmin, libm_dtmax,
+	 (((double)libm_dtsum) / ((double) n)),
+	 libm_dtwc
+	 );
 
 #ifdef HAVE_MPFR_H
   printf("\nMPFR\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
