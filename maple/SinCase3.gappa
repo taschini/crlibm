@@ -1,9 +1,10 @@
+
 yh = <float64ce>(yy);
 yl = yy - yh;
 sah = <float64ce>(sa);
-sal = sa - sah;
+sal = <float64ce>(sa - sah);
 cah = <float64ce>(ca);
-cal = ca - cah;
+cal =  <float64ce>(ca - cah);
 
 # constantes
 s3 = -6004799503160661b-55;
@@ -21,8 +22,12 @@ yh2 = <float64ce>(yh * yh);
 # ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
 ts = <float64ce>(yh2 * <float64ce>(s3 + <float64ce>(yh2 * <float64ce>(s5 + <float64ce>(yh2 * s7)))));
 
+y2 = y*y;
+tshat = y2 * (s3 + y2*(s5 + y2*s7));
+
 # tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d));
 tc = <float64ce>(yh2 * <float64ce>(c2 + <float64ce>(yh2 * <float64ce>(c4 + <float64ce>(yh2 * c6)))));
+tchat =y2 * (c2 +(y2 * (c4 + (y2 * c6))));
 
 # Mul12(&cahyh_h,&cahyh_l, cah, yh);
 cahyh = cah * yh;
@@ -42,18 +47,30 @@ tlo_r = tc*sah+(ts*cahyh_h+(sal+(tlo1+(cahyh_l+(cal*yh + cah*yl))))) ;
 
 # Add12(*reshi, *reslo, thi, tlo);
 res = thi + tlo;
+reshat = ((1 + tshat) * ca * y + (1 + tchat) * sa );
+# le meme sans erreur sur l'entrée
+exp_yy = ((1 + ts) * ca * yy + (1 + tc) * sa );
 
 {
    yy in [0,0.0061362]    # ymaxCase3 computed by Maple
-/\ ca in [0,1] /\ sa in [0,0.702754744458] # should be refined
-->
-  res - ((1 + ts) * ca * yy + (1 + tc) * sa ) in ?
+ /\ yy - y in [-0.35e-22, 0.25e-22]  # TODO Affiner le calcul dans Maple
+ /\ reshat - sin in [-1b-78, 1b-78] # delta_approx_sinCase3
+# /\ ca in [0.707106, 0.707107] /\ sa in [0.707106, 0.707107] # should be refined
+ /\ sa in [0.00122, 0.00123] /\ ca in [0.999,1] # should be refined
+ ->  (res - sin)/sin in ?#[-1b-62,1b-62]
 }
 
 # This is a hint to the reduction engine. It tells it what we intend
-# to compute by pointing out that res - ((1 + ts) * ca * yy + (1 + tc) * sa ) 
+# to compute by pointing out that res - exp 
 # is equal to tlo - tlo_r + the neglected terms
 
-res - ((1 + ts) * ca * yy + (1 + tc) * sa ) ->
-  tlo  - tlo_r + (sal*tc + cal*yl + ts*(cahyh_l + cah*yl + cal*yh + cal*yl)) ;
+res - sin ->
+   (res - exp_yy) + (exp_yy  - reshat) + (reshat - sin);
 
+res-exp_yy ->
+   (tlo  - tlo_r) + (sal*tc + cal*yl + ts*(cahyh_l + cah*yl + cal*yh + cal*yl)) ;
+
+y -> yy - (yy - y); 
+sin -> reshat - (reshat - sin);
+
+(res - sin)/sin $ yy; #pour dire de faire varier y par dichotomie
