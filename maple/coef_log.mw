@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout leftmargin="0.0" name="_pstyle49" rightmargin="0.0"/><Layout alignment="left" bullet="none" name="Heading 2" spaceabove="8.0" spacebelow="2.0"/><Layout leftmargin="0.0" name="_pstyle48" rightmargin="0.0"/><Layout alignment="centred" bullet="none" linespacing="0.5" name="Maple Output"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="_pstyle47" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle45" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle42" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle41" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle82" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle81" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle80" rightmargin="0.0"/><Layout alignment="left" bullet="none" name="Error"/><Layout leftmargin="0.0" name="Normal" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle39" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle38" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle36" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle35" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle33" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle32" rightmargin="0.0"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle16" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle14" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle13" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle504" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle10" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle6" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle5" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="ParagraphStyle8" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="ParagraphStyle5" readonly="false"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 2" opaque="false" size="16"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_pstyle42" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle80" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[255,0,255]" name="Error" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" family="Lucida Bright" foreground="[0,0,255]" name="2D Output" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle496" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle39" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="Page Number" readonly="false" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_cstyle494" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle492" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_pstyle33" readonly="false"/></Styles><Page-Numbers enabled="false" first-number="1" first-numbered-page="1" horizontal-location="right" style="Page Number" vertical-location="bottom"/><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">restart:
+<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout leftmargin="0.0" name="_pstyle49" rightmargin="0.0"/><Layout alignment="left" bullet="none" name="Heading 2" spaceabove="8.0" spacebelow="2.0"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="_pstyle47" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle45" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle42" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle41" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle82" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle81" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle80" rightmargin="0.0"/><Layout leftmargin="0.0" name="Normal" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle39" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle38" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle36" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle35" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle33" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle32" rightmargin="0.0"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle16" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle14" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle13" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle504" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle10" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="ParagraphStyle8" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 2" opaque="false" size="16"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_pstyle42" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle80" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle496" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle39" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="Page Number" readonly="false" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_cstyle494" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle492" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_pstyle33" readonly="false"/></Styles><Page-Numbers enabled="false" first-number="1" first-numbered-page="1" horizontal-location="right" style="Page Number" vertical-location="bottom"/><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">restart:
 Digits := 200:</Text-field></Input><Input><Text-field layout="_pstyle33" prompt="&gt; " style="_pstyle33">with (numapprox):<Font italic="false" size="12" underline="false">with(orthopoly):</Font></Text-field></Input><Input><Text-field layout="_pstyle33" prompt="&gt; " style="_pstyle33">read "Common_maple_procedures.m";
-mkdir("TEMPLOG");</Text-field></Input><Output><Text-field layout="Error" style="Error">Error, (in mkdir) directory exists and is not empty
-</Text-field></Output></Group><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Second, accurate phase in SCS</Text-field></Title><Group><Input><Text-field layout="_pstyle41" style="_cstyle494">Approach for the scs function:</Text-field><Text-field layout="_pstyle42" style="_pstyle42"/><Text-field layout="_pstyle41" style="_cstyle494"> x=2^e (1+f)
+mkdir("TEMPLOG");</Text-field></Input></Group><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Second, accurate phase in SCS</Text-field></Title><Group><Input><Text-field layout="_pstyle41" style="_cstyle494">Approach for the scs function:</Text-field><Text-field layout="_pstyle42" style="_pstyle42"/><Text-field layout="_pstyle41" style="_cstyle494"> x=2^e (1+f)
  log(x) = e.log(2) + log(1+f)
 
   log(1+f) = log(w) + log(1+(1+f-w)/w)
@@ -67,198 +66,11 @@ err7:=log(infnorm((1-(expand(P7))/(ln(x+22/16))), x=-1/16..1/16))/log(2.);</Text
 save P0, P1, P2, P3, P4, P5, P6, P7, Plist, "TEMPLOG/Polylog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">err:=[err0, err1, err2, err3, err4, err5, err6, err7]:
 errapprox:=[]:
 for i from 1 to 8 do
-  errapprox:=[op(errapprox),2**(-err[i])]:
-od:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save err0, err1, err2, err3, err4, err5, err6, err7, err, errapprox, "TEMPLOG/errapproxlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/></Input></Group></Section><Section><Title><Text-field layout="Heading 2" style="Heading 2">Interval parameters</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m";
+  errapprox:=[op(errapprox),2**(err[i])]:
+od:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save err0, err1, err2, err3, err4, err5, err6, err7, err, errapprox, "TEMPLOG/errapproxlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Interval parameters</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m";
 Xmax:=[2**(-5), 2**(-5), 2**(-5), 2**(-5), 2**(-4), 2**(-4), 2**(-4), 2**(-4)]:
 Ilist:=[[11/16,12/16],[12/16,13/16],[13/16,14/16],[14/16,15/16],[15/16,17/16],[17/16,19/16],[19/16,21/16],[21/16,23/16]]:
-midI:=[23/32,25/32,27/32,29/32,1,18/16,20/16,22/16]:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save Xmax, Ilist, midI, Plist, errapprox, "TEMPLOG/parameterlog.m";</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 2" style="Heading 2">Coefficient output</Text-field></Title><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text">Version Big Endian</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">writecoeff:=proc(filename, Plist, n)
-local deg, npol, fd, i, lastx, coef, isbig, k, j, inter:
-npol:=nops(Plist):
-
-#fclose(fd):
-fd:=fopen(filename, WRITE, TEXT):
-
-for isbig from 1 to 0 by -1 do
-fprintf("#ifdef WORDS_BIGENDIAN\n");
-
-#Write middle table
-
-fprintf(fd, "db_number const middle[%d] =\n{\n",npol);
-for i from 1 to 7 do
-  printendian(fd,midI[i],isbig);
-od:
-lastx:=ieee2Hexa(midI[8]):
-fprintf(<Font opaque="false">fd,"{{0x%+0.8s,0x%+0.8s}} /* %+0.10f */\n};\n\n", lastx[2-isbig], lastx[isbig+1], midI[8]):</Font>
-
-#Write poly_log_fast_b 
-#Assume all polynomial are of same degree
-
-deg:=degree(Plist[1]):
-fprintf(fd,"db_number const poly_log_fast_b[%d][%d] =\n{\n", npol, deg):
-for k from 1 to 7 do<Font italic="false" opaque="false" size="12" underline="false">
-  fprintf(fd," /* polynomial %d */\n{\n",k);</Font>
-  for j from 0 to 12 do
-    coef:=coeff(Plist[k],x,j):
-    printendian(fd,coef,isbig):
-  od:
-  inter:=nearest(<Font opaque="false">coeff(Plist[k],x,13)):</Font>
-  coef:=ieee2Hexa(inter<Font opaque="false">):</Font>
-  fprintf(fd,"{{0x%+0.8s,0x%+0.8s}} /* %+0.10f */\n},\n", coef[2-isbig], coef[isbig+1], inter):
-od: <Font italic="false" opaque="false" size="12" underline="false">
-fprintf(fd," /* polynomial %d */\n{\n",8);</Font><Font opaque="false">
-  for j from 0 to 12 do
-    coef:=coeff(Plist[8],x,j):
-    printendian(fd,coef,isbig):
-  od:
-  inter:=nearest(coeff(Plist[k],x,13)):
-  coef:=ieee2Hexa(inter):
-  fprintf(fd,"{{0x%+0.8s,0x%+0.8s}} /* %+0.10f */\n}\n};\n\n", coef[2-isbig], coef[isbig+1], inter):</Font>
-
-#Write poly_log_fast_l
-
-fprintf(fd,"db_number const poly_log_fast_l[%d][%d] =\n{\n",npol,n);
-for k from 1 to 7 do
-  <Font italic="false" opaque="false" size="12" underline="false">fprintf(fd," /* polynomial %d */\n{\n",k);
-  coef:=hi_lo(coeff(Plist[k],x,0)):</Font>
-  printendian(fd, coef[2], isbig):
-  inter<Font italic="false" opaque="false" size="12" underline="false">:=hi_lo(coeff(Plist[k],x,1)):</Font>
-  coef:=ieee2Hexa(inter[2]):<Font opaque="false">
-  fprintf(fd,"{{0x%+0.8s,0x%+0.8s}} /* %+0.10f */\n},\n", coef[2-isbig], coef[isbig+1], inter[2]):</Font>
-od:<Font italic="false" opaque="false" size="12" underline="false">
-fprintf(fd," /* polynomial %d */\n{\n",8);
-  coef:=hi_lo(coeff(Plist[8],x,0)):</Font><Font opaque="false">
-  printendian(fd, coef[2], isbig):
-  inter<Font italic="false" size="12" underline="false">:=hi_lo(coeff(Plist[8],x,1)):</Font>
-  coef:=ieee2Hexa(inter[2]):
-  fprintf(fd,"{{0x%+0.8s,0x%+0.8s}} /* %+0.10f */\n}\n};\n\n", coef[2-isbig], coef[isbig+1], inter[2]):</Font>
-
-if(isbig=1) then
-  fprintf(fd,"#else\n"):
-else
-  fprintf(fd,"#end if\n");
-fi;
-od:
-fclose(fd):
-end proc: </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">filename:="/home/cdaramy/toto.h";
-fis:=fopen(filename, WRITE, TEXT);
-fprintf(fis,"tout va bien\n");
-fclose(fis):</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSlmaWxlbmFtZUc2IlE1L2hvbWUvY2RhcmFteS90b3RvLmhGJQ==</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSRmaXNHNiIiIiE=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiIzg=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">writecoeff(filename, Plist, 2);</Text-field></Input><Output><Text-field layout="Error" style="Error">Error, (in fprintf) format string expected
-</Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">The upper doubles</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">#fclose(fhi);
-fhi:=fopen("TEMPLOG/plogbhi.h", WRITE, TEXT):
-fprintf(fhi,"db_number const poly_log_fast_b[8][14] =\n{\n"):
-for k from 1 to 8 do
-fprintf(fhi," /* polynom %d */\n{\n",k);
-P:=op(k, Plist); 
-n:= 13:
- co:=coeff(P,x,0);
- x10:=IEEEdouble(co);
- x01:=x10[2]*2**(x10[1]);
- c0hi :=ieee2Hexa(x01):
- 
-fprintf(fhi, "{{0x%+0.8s,0x%+0.8s}},\n",c0hi[1], c0hi[2]); 
-
- c1:=coeff(P,x,1):
- xa1:=IEEEdouble(c1):
- x1a:=xa1[2]*2**(xa1[1]):
- c1hi:=ieee2Hexa(x1a);
- 
-fprintf(fhi, "{{0x%+0.8s,0x%+0.8s}},\n",c1hi[1], c1hi[2]); 
-
- for i from 2 to n do
-   xhl:=ieee2Hexa(coeff(P,x,i));
-   fprintf(fhi, "{{0x%+0.8s,0x%+0.8s}},\n",xhl[1], xhl[2]); 
- od;
-fprintf(fhi,"},\n");
-od:
-fprintf(fhi,"};");
-fclose(fhi);</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text">The lower doubles</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle48" prompt="&gt; " style="ParagraphStyle5"><Font style="_cstyle5">#fclose(flo);
-flo:=fopen("TEMPLOG/plogblo.h", WRITE, TEXT):
-fprintf(flo,"db_number const poly_log_fast_l[8][2] =\n{\n"):
-for k from 1 to 8 do
-fprintf(flo," /* polynom %d */\n{\n",k);
-P:=op(k, Plist); 
-n:= 13:
- co:=coeff(P,x,0);
- x10:=IEEEdouble(co);
- x01:=x10[2]*2**(x10[1]);
- x20:=IEEEdouble(co-x01);
- x02:=x20[2]*2**(x20[1]);
- c0hi :=ieee2Hexa(x01);
- c0lo:=ieee2Hexa(x02);
- 
-fprintf(flo, "{{0x%+0.8s,0x%+0.8s}},\n",c0lo[1], c0lo[2]);
-
- c1:=coeff(P,x,1):
- xa1:=IEEEdouble(c1):
- x1a:=xa1[2]*2**(xa1[1]):
- xb1:=IEEEdouble(c1-x1a):
- x1b:=xb1[2]*2**(xb1[1]):
- c1hi:=ieee2Hexa(x1a);
- c1lo:=ieee2Hexa(x1b);
- 
-fprintf(flo, "{{0x%+0.8s,0x%+0.8s}},\n",c1lo[1], c1lo[2]);
-fprintf(flo,"},\n");</Font><Font style="Maple Input">
-od:</Font><Font style="_cstyle5">
-fprintf(flo,"};");
-fclose(flo);</Font></Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text">Version Low Endian.
-Upper doubles</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle49" prompt="&gt; " style="_cstyle6">#fclose(fhi);
-fhi:=fopen("TEMPLOG/plogshi.h", WRITE, TEXT):
-fprintf(fhi,"db_number const poly_log_fast_b[8][14] =\n{\n"):
-for k from 1 to 8 do
-fprintf(fhi," /* polynom %d */\n{\n",k);
-P:=op(k, Plist); 
-n:= 13:
- co:=coeff(P,x,0);
- x10:=IEEEdouble(co);
- x01:=x10[2]*2**(x10[1]);
- c0hi :=ieee2Hexa(x01);
- 
-fprintf(fhi, "{{0x%+0.8s,0x%+0.8s}},\n",c0hi[2], c0hi[1]); 
-
- c1:=coeff(P,x,1):
- xa1:=IEEEdouble(c1):
- x1a:=xa1[2]*2**(xa1[1]):
- c1hi:=ieee2Hexa(x1a);
- 
-fprintf(fhi, "{{0x%+0.8s,0x%+0.8s}},\n",c1hi[2], c1hi[1]); 
-
- for i from 2 to n do
-   xhl:=ieee2Hexa(coeff(P,x,i));
-   fprintf(fhi, "{{0x%+0.8s,0x%+0.8s}},\n",xhl[2], xhl[1]); 
- od;
-fprintf(fhi,"},\n");
-od:
-fprintf(fhi,"};");
-fclose(fhi);</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text">Lower doubles</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle49" prompt="&gt; " style="ParagraphStyle5"><Font style="_cstyle6">#fclose(flo);
-flo:=fopen("TEMPLOG/plogslo.h", WRITE, TEXT):
-fprintf(flo,"db_number const poly_log_fast_l[8][2] =\n{\n"):
-for k from 1 to 8 do
-fprintf(flo," /* polynom %d, lower doubles */\n{\n",k);
-P:=op(k, Plist); 
-n:= 13:
- co:=coeff(P,x,0);
- x10:=IEEEdouble(co);
- x01:=x10[2]*2**(x10[1]);
- x20:=IEEEdouble(co-x01);
- x02:=x20[2]*2**(x20[1]);
- c0hi :=ieee2Hexa(x01);
- c0lo:=ieee2Hexa(x02);
- 
-fprintf(flo, "{{0x%+0.8s,0x%+0.8s}},\n",c0lo[2], c0lo[1]);
-
- c1:=coeff(P,x,1):
- xa1:=IEEEdouble(c1):
- x1a:=xa1[2]*2**(xa1[1]):
- xb1:=IEEEdouble(c1-x1a):
- x1b:=xb1[2]*2**(xb1[1]):
- c1hi:=ieee2Hexa(x1a);
- c1lo:=ieee2Hexa(x1b);
- 
-fprintf(flo, "{{0x%+0.8s,0x%+0.8s}},\n",c1lo[2], c1lo[1]);
-fprintf(flo,"},\n");</Font><Font style="Maple Input">
-od:</Font><Font style="_cstyle6">
-fprintf(flo,"};");
-fclose(flo);</Font></Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false" foreground="[0,0,0]" italic="false" underline="false">Degugging aid</Font></Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">P:=P1:
+midI:=[23/32,25/32,27/32,29/32,1,18/16,20/16,22/16]:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save Xmax, Ilist, midI, Plist, errapprox, "TEMPLOG/parameterlog.m";</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false" foreground="[0,0,0]" italic="false" underline="false">Degugging aid</Font></Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">P:=P1:
 c0:= coeff(P,x,0):
 c0hi:=evalf(IEEEdouble(c0)[2]*2**(IEEEdouble(c0)[1]));
 c0hie:=IEEEdouble(c0hi):
@@ -323,43 +135,134 @@ local a,bup,bdown,c:
     c:=convert(cieee[3], string):
     fprintf(ffd,"$ %s, \\frac{%s}{%s}, %s$ ys \n",a,bup,bdown,c);
   fi;
-end proc:</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false" foreground="[0,0,0]" italic="false" underline="false">Erreurs commises lors du calcul d'un polynome en machine</Font></Text-field></Title><Group><Input><Text-field layout="_pstyle35" style="Text"><Font encoding="ISO8859-1">Calcule l'erreur commise a chaque op\351ration du calcul du polyn\364me:</Font>
-si la taille de l'intervalle est 2**(-4), alors marge = 5, si c'est 2**(-3)n, alors, marge vaut 4.</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle49" prompt="&gt; " style="Maple Input">read "procedures.m";
-read "Polylog.m";
-read "errapproxlog.m";
-read "parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Compute a table containing the rounding polynomial evaluation error
-return [Epsylon/Smax, log2(Epsylon/Smax), log2(Epsylon/Smax)+53]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">taberr:=[]:
+end proc:</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2">Rounding errors</Text-field></Title><Group><Input><Text-field layout="_pstyle35" style="Text"><Font encoding="ISO8859-1">Calcule l'erreur commise a chaque op\351ration du calcul du polyn\364me:</Font>
+si la taille de l'intervalle est 2**(-4), alors marge = 5, si c'est 2**(-3)n, alors, marge vaut 4.</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle49" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";
+</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Compute a table containing the rounding polynomial evaluation error
+ErrTruncPoly returns [relative error, log2(relative error), log2(relative error+53)]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">errrounding:=[]:
 for i from 1 to 8 do
-  err:=ErrTruncPoly(Plist[i], Xmax[i], 2):
-  taberr:=[op(taberr), err]:
+  err:=(ErrTruncPoly(Plist[i], Xmax[i], 2))[1]:
+  errrounding:=[op(errrounding), err]:
 od:
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">tabe:=[]:
+</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"><Font opaque="false">save errrounding, "TEMPLOG/errroundinglog.m";</Font></Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">compute delta[], a table of total error,  and tabrndcst[] the table of "e" needed for round to nearest</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";read "TEMPLOG/errroundinglog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">tabrndcst:=[]:
 tabk:=[]:
-logdelta:=[]:
+tabdelta:=[]:
 for i from 1 to 8 do
-  k:=abs(trunc(taberr[i,3])):
+  k := abs(trunc( log2(errrounding[i]) + 53) ):
   tabk:=[op(tabk),k]:
-  delta:= taberr[i,1]+2**(-100) + errapprox[i]:
-  logdelta:=[op(logdelta), log(delta)/log(2.)]:
-  e:=((2**((54+k)*delta)/((2**(k)-1)*(1-2**(-53))))):
-  Digits:=100:
-  tabe:=[op(tabe),evalf(e)]:
-  Digits:=150:
+  delta:= <Font opaque="false"> errapprox[i] + </Font>errrounding[i] + 2**(-100):
+  tabdelta:=[op(tabdelta), delta]:
+  e:= 1+ 2**(-51) + (2**(54+k)*delta)   /   ( (2**k-1) * (1-2**(-53)) ):
+  tabrndcst:=[op(tabrndcst),evalf(e)]:
 od:
-tabk;
-tabe;
-logdelta;
-
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">
+save tabrndcst, tabdelta, "TEMPLOG/rndcstlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log2(1); tabrndcst;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">
 Xmax:=[2**(-5), 2**(-5), 2**(-5), 2**(-5), 2**(-4), 2**(-4), 2**(-4), 2**(-4)]:
 tabed:=[]:
 for i from 1 to 8 do
-  e:=1+2**(55)*(taberr[i,1] + 2**(-100)):
+  e:=1+2**(55)*(errrounding[i,1] + 2**(-100)):
   Digits:=10:
   tabed:=[op(tabed),evalf(e)]:
   Digits:=150:
 od:
-tabed;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2"><Font encoding="ISO8859-1" executable="false" foreground="[0,0,0]" italic="false" underline="false">DEBUG, CALCUL du polyn\364me, coeff apres coeff</Font></Text-field></Title><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">read "parameterlog.m";
+tabed;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Coefficient output</Text-field></Title><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";read "TEMPLOG/rndcstlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">filename:="TEMPLOG/log_fast.h":<Font opaque="false">
+fd:=fopen(filename, WRITE, TEXT):
+
+fprintf(fd, "#include \"crlibm.h\"\n#include \"crlibm_private.h\"\n");
+
+fprintf(fd, "\n/*File generated by maple/coef_log.mw*/\n");
+
+fprintf(fd, "\n\#define SQRT_2 1.4142135623730950489e0 \n\n");
+fprintf(fd, "\n#ifdef WORDS_BIGENDIAN\n");
+fprintf(fd, "\db_number const ln2hi = {{0x3FE62E42, 0xFEFA39EF}};\n");
+fprintf(fd, "db_number const ln2lo = {{0x3C7ABC9E, 0x3B39803F}};\n"):
+fprintf(fd, "db_number const two52 = {{0x43300000, 0x00000000}};\n"):
+fprintf(fd, "#else\ndb_number const ln2hi = {{0xFEFA39EF, 0x3FE62E42}};\n");
+fprintf(fd, "db_number const ln2lo = {{0x3B39803F, 0x3C7ABC9E}};\n"):
+fprintf(fd, "db_number const two52 = {{0x00000000, 0x43300000}};\n"):
+fprintf(fd, "#endif\n\n"):</Font>
+
+# THE POLYNOMIALS
+
+npol:=nops(Plist):
+n:=2:  # the degree from which we want two doubles
+
+fprintf(fd,"#ifdef WORDS_BIGENDIAN\n"):
+for isbig from 1 to 0 by -1 do
+
+  if(isbig=0) then
+    fprintf(fd,"#else\n"):
+  fi;
+
+  # Write middle table
+
+  fprintf(fd, "db_number const middle[%d] =\n{\n",npol);
+  for i from 1 to 7 do
+    printendian(fd,midI[i],isbig);
+    fprintf(fd," ,\n"):
+  od:
+  printendian(fd,midI[8],isbig):
+  fprintf(fd, "\n};\n\n"):
+
+  #Write poly_log_fast_h
+
+  deg:=degree(Plist[1]):
+  fprintf(fd,"db_number const poly_log_fast_h[%d][%d] =\n{\n", npol, deg+1):
+  for k from 1 to 7 do<Font italic="false" size="12" underline="false">
+    fprintf(fd," /* polynomial %d */\n{\n",k);</Font>
+    for j from 0 to 12 do
+      coef:=coeff(Plist[k],x,j):
+      printendian(fd,coef,isbig):
+      fprintf(fd," ,\n"):
+    od:
+    coef:=coeff(Plist[k],x,13):
+    printendian(fd,coef,isbig):
+    fprintf(fd, "\n},\n");
+  od: <Font italic="false" size="12" underline="false">
+  fprintf(fd," /* polynomial %d */\n{\n",8):</Font>
+  for j from 0 to 12 do
+    coef:=coeff(Plist[8],x,j):
+    printendian(fd,coef,isbig):
+    fprintf(fd," ,\n"):
+  od:
+  coef:=coeff(Plist[8],x,13):
+  printendian(fd,coef,isbig):
+  fprintf(fd, "\n}\n};\n\n"):
+
+  #Write poly_log_fast_l
+
+  fprintf(fd,"db_number const poly_log_fast_l[%d][%d] =\n{\n",npol,n):
+  for k from 1 to 8 do
+    <Font italic="false" size="12" underline="false">fprintf(fd," /* polynomial %d */\n{\n",k):
+
+    coef:=hi_lo(coeff(Plist[k],x,0)):</Font>
+    printendian(fd, coef[2], isbig):
+    fprintf(fd," ,\n"):<Font italic="false" size="12" underline="false">
+    coef:=hi_lo(coeff(Plist[k],x,1)):</Font>
+    printendian(fd, coef[2], isbig):
+    if(k&lt;8) then
+      fprintf(fd, "\n},\n"):
+    fi:
+  od:
+  fprintf(fd,"\n}\n};\n\n"):
+
+od:<Font opaque="false">
+fprintf(fd,"#endif\n\n\n"):
+
+
+ 
+fprintf(fd,"/* Constants for rounding  */\n"):
+fprintf(fd,"double const delta[%d] =\n{\n",npol):
+for k from 1 to 7 do
+   fprintf(fd,"%1.20e, \n",tabdelta[k]):
+od:
+fprintf(fd,"%1.20e\n};\n\n",tabdelta[k]):
+
+fprintf(fd,"double const rncst[%d] =\n{\n",npol):
+for k from 1 to 7 do
+  fprintf(fd,"%1.20f, \n",tabrndcst[k]):
+od:
+fprintf(fd,"%1.20f\n};\n\n",tabrndcst[k]):</Font>
+fclose(fd):
+</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2"><Font encoding="ISO8859-1" executable="false" foreground="[0,0,0]" italic="false" underline="false">DEBUG, CALCUL du polyn\364me, coeff apres coeff</Font></Text-field></Title><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">read "parameterlog.m";
 </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "procedures.m";
 read "Polylog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text">Valeurs du debuggueur</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">debug1:=Hexa2ieee(["3ff1078f","1da3ee1b"]):
 debug2:=Hexa2ieee(["3ff11adb","35a43279"]):
@@ -427,4 +330,4 @@ print(ieee2Hexa(res));
 resfinal:= evalf(Expo*log(2.)+res);
 print(ieee2Hexa(resfinal));
 end proc;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">infaccuracy(debug2, 4);</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text">Calcul de la fonction log de maple:</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">ieee2Hexa(evalf(log(debug2)));
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section></Section><Text-field layout="Normal" style="Text"/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
+</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section></Section><Text-field layout="Normal" style="Text"/><Text-field/></Worksheet>
