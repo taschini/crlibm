@@ -80,7 +80,7 @@ int crlibm_second_step_taken;
 do{                                                    \
   double _a, _b,_c,_r;                                 \
   _a=a; _b=b;_c=c;                                     \
-  __asm__ __volatile__("fmadd %0, %1, %2, %3\n ;;\n"   \
+  __asm__ ("fmadd %0, %1, %2, %3\n ;;\n"   \
 		       : "=f"(_r)                      \
 		       : "f"(_a), "f"(_b), "f"(_c)     \
 		       );                              \
@@ -92,7 +92,7 @@ do{                                                    \
 do{                                                    \
   double _a, _b,_c,_r;                                 \
   _a=a; _b=b;_c=c;                                     \
-  __asm__ __volatile__("fmsub %0, %1, %2, %3\n ;;\n"   \
+  __asm__ ("fmsub %0, %1, %2, %3\n ;;\n"   \
 		       : "=f"(_r)                      \
 		       : "f"(_a), "f"(_b), "f"(_c)     \
 		       );                              \
@@ -104,13 +104,15 @@ do{                                                    \
 
 
 
+/* On the Itanium 1 we have here we lose 10 cycles when using the FMA !?! */ 
+
 #ifdef CRLIBM_TYPECPU_ITANIUM
 #define PROCESSOR_HAS_FMA 1
 #define FMA(r, a,b,c)  /* r = a*b + c*/                \
 do{                                                    \
   double _a, _b,_c,_r;                                 \
   _a=a; _b=b;_c=c;                                     \
-  __asm__("fms %0 = %1, %2, %3\n ;;\n"                 \
+  __asm__ ("fma %0 = %1, %2, %3\n ;;\n"                \
 		       : "=f"(_r)                      \
 		       : "f"(_a), "f"(_b), "f"(_c)     \
 		       );                              \
@@ -122,7 +124,7 @@ do{                                                    \
 do{                                                    \
   double _a, _b, _c, _r;                               \
   _a=a; _b=b;_c=c;                                     \
-  __asm__("fms %0 = %1, %2, %3\n ;;\n"                 \
+  __asm__ ("fms %0 = %1, %2, %3\n ;;\n"                \
 		       : "=f"(_r)                      \
 		       : "f"(_a), "f"(_b), "f"(_c)     \
 		       );                              \
@@ -338,24 +340,24 @@ do {                                         \
   FMS(*rl,   u,v, *rh);                               \
 }
 
-
-#define Mul22(pzh,pzl,xh,xl,yh,yl)                    \
+#define Mul22(pzh,pzl, xh,xl, yh,yl)                  \
 {                                                     \
-double mh, ml;                                        \
-  mh = xh*yh;                                         \
-  FMS(ml, xh, yh,  mh);                               \
-  FMA(ml, xh,xl, ml);                                 \
-  FMA(ml, xl,yh, ml);                                 \
-  *pzh = mh+ml;					      \
-  *pzl = mh - (*pzh) + ml;                            \
+double ph, pl;                                        \
+  ph = xh*yh;                                         \
+  FMS(pl, xh, yh,  ph);                               \
+  FMA(pl,xh,yl, pl);                                  \
+  FMA(pl,xl,yh,pl);                                   \
+  *pzh = ph+pl;					      \
+  *pzl = (ph - (*pzh)) + pl;                          \
 }
+
 
 /* besides we don't care anymore about overflows in the mult  */
 #define Mul12Cond Mul12    
 #define Mul22cond Mul22
 
 
-#else /* PROCESSOR_HAS_FMA */
+#else /* ! PROCESSOR_HAS_FMA */
 
 
 #if DEKKER_AS_FUNCTIONS
@@ -390,14 +392,14 @@ extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, doubl
   const double two_em53 = 1.1102230246251565404e-16; /* 0x3CA00000, 0x00000000 */\
   const double two_e53  = 9007199254740992.;         /* 0x43400000, 0x00000000 */\
   double u, v;                                            \
-  db_number _a=a, _b=b;                               \
+  db_number _a=a, _b=b;                                   \
                                                           \
   if (_a.i[HI_ENDIAN]>0x7C900000) u = _a*two_em53;        \
   else            u = _a;                                 \
   if (_b.i[HI_ENDIAN]>0x7C900000) v = _b*two_em53;        \
   else            v = _b;                                 \
                                                           \
-  Mul12(rh, rl, u, v);                                   \
+  Mul12(rh, rl, u, v);                                    \
                                                           \
   if (_a.i[HI_ENDIAN]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
   if (_b.i[HI_ENDIAN]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
@@ -419,14 +421,14 @@ double mh, ml;                                        \
   const double c = 134217729.;			      \
   double up, u1, u2, vp, v1, v2;		      \
 						      \
-  up = (xh)*c;        vp = (yh)*c;			      \
-  u1 = ((xh)-up)+up;  v1 = ((yh)-vp)+vp;		      \
-  u2 = (xh)-u1;       v2 = (yh)-v1;                       \
+  up = (xh)*c;        vp = (yh)*c;		      \
+  u1 = ((xh)-up)+up;  v1 = ((yh)-vp)+vp;	      \
+  u2 = (xh)-u1;       v2 = (yh)-v1;                   \
   						      \
-  mh = (xh)*(yh);					      \
+  mh = (xh)*(yh);				      \
   ml = (((u1*v1-mh)+(u1*v2))+(u2*v1))+(u2*v2);	      \
 						      \
-  ml += (xh)*(yl) + (xl)*(yh);				      \
+  ml += (xh)*(yl) + (xl)*(yh);			      \
   *zh = mh+ml;					      \
   *zl = mh - (*zh) + ml;                              \
 }
