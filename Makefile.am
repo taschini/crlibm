@@ -11,7 +11,7 @@ libcrlibm_a_SOURCES =  \
 	log_fast.c log_fast.h log_accurate.h log_accurate.c \
 	log10_accurate.h log10_accurate.c \
 	log2_accurate.h  log2_accurate.c \
-	coefpi2_accurate.h rem_pio2_accurate.c \
+	rem_pio2_accurate.h rem_pio2_accurate.c \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
 	csh_fast.h csh_fast.c
