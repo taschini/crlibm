@@ -92,7 +92,7 @@ scs_square(x2, x_scs);
  *               ROUNDED  TO NEAREST
  *************************************************************
  *************************************************************/
-double tan_rn(double x){  
+double scs_tan_rn(double x){  
   scs_t sc1;
   scs_t sc2;
   double resd;
@@ -138,7 +138,7 @@ double tan_rn(double x){
  *               ROUNDED  TOWARD  -INFINITY
  *************************************************************
  *************************************************************/
-double tan_rd(double x){  
+double scs_tan_rd(double x){  
   scs_t sc1, sc2;
   double resd;
   int N;
@@ -184,7 +184,7 @@ double tan_rd(double x){
  *               ROUNDED  TOWARD  +INFINITY
  *************************************************************
  *************************************************************/
-double tan_ru(double x){  
+double scs_tan_ru(double x){  
   scs_t sc1, sc2;
   double resd;
   int N;
