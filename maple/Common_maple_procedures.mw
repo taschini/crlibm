@@ -109,7 +109,7 @@ delta is the overall relative error of the approximation scheme</Text-field></In
   local k;
   k := trunc(-log2(delta)) - 53: 
   nearest(  1+ 2**(-52) + (2**(54+k)*delta)  /  ( (2**k-1) * (1-2**(-53)) )  ):
-end proc:</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Stuff about truncated polynomials</Text-field></Title><Section collapsed="true"><Title><Text-field layout="Heading 3" style="Heading 3">Truncate a polynomial </Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">
+end proc:</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 2" style="Heading 2">Stuff about truncated polynomials</Text-field></Title><Section collapsed="true"><Title><Text-field layout="Heading 3" style="Heading 3">Truncate a polynomial </Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">
 poly_exact takes a polynomial in x with arbitrary precision coefficients, and returns a truncated polynomial where coefficients are IEEE doubles.</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">poly_exact:=proc(P)
 local deg,i, coef, coef_t, Q:
 Q:= 0:
@@ -245,8 +245,8 @@ else
    rho := deltap /  Smin:
 fi:
 rho;
-end proc:</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 3" style="Heading 3">Compute a good truncated polynomial approximation for a function</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">Computes an approximation to a function of x f, as a truncated polynomial of deegree deg with the n first coefficients exactly representable as double-double.
-The function f(x) must have as input interval -xmax..xmax
+end proc:</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 3" style="Heading 3">Compute a good truncated polynomial approximation for a function</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">Computes an approximation to a function of x f, as a truncated polynomial of deegree deg with the n first coefficients exactly representable as double-double.
+The function f(x) must have as input interval xmin..xmax
 returns [ truncated polynomial, relative approx error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_classic:=proc(f,deg,xmin,xmax,n) 
   local pe, repe, pt, ppe, rept, maxpt;
   pe:=minimax( f,  x=-xmax..xmax,  [deg,0],  1,  'err'):
@@ -255,7 +255,7 @@ returns [ truncated polynomial, relative approx error of trunc. poly.  ,  infini
   maxpt := infnorm( pt, x=-xmax..xmax) :
   pt,rept, maxpt:
 end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes a truncated polynomial of degree deg with the two first coefficients stored as double-doubles. 
-The function f(x) must have as input interval -xmax..xmax</Text-field><Text-field layout="Normal" style="Text">returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_f2d_2:=proc(f,deg,xmin,xmax) 
+The function f(x) must have as input interval xmin..xmax</Text-field><Text-field layout="Normal" style="Text">returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_f2d_2:=proc(f,deg,xmin,xmax) 
   local pe, repe, pt, c0, c1, c2, ppe, rept, maxpt, err;
   pe:=minimax(  f,  x=-xmax..xmax,  [deg,0],  1,  'err'):
   pt := poly_exact2(pe,2):
@@ -268,7 +268,7 @@ The function f(x) must have as input interval -xmax..xmax</Text-field><Text-fiel
   rept := infnorm( 1-pt/f, x=-xmax..xmax) :
   maxpt := infnorm( pt, x=-xmax..xmax) :
   pt,rept,maxpt:
-end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes a truncated polynomial of degree deg with the first coefficient stored as double-double.</Text-field><Text-field layout="Normal" style="Text"> The function f(x) must have as input interval -xmax..xmax
+end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes a truncated polynomial of degree deg with the first coefficient stored as double-double.</Text-field><Text-field layout="Normal" style="Text"> The function f(x) must have as input interval xmin..xmax
 returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_f2d_1:=proc(f,deg,xmin,xmax) 
   local pe, repe, pt, c0, c1, ppe, rept, maxpt, err;
   pe:=minimax(  f ,  x=-xmax..xmax,  [deg,0],  1,  'err'):
