@@ -47,6 +47,7 @@ extern double atan_rn(double x) {
   long double Xred2;
   long double q;
   long double atan;
+  long double eps;
   int i;
   
   if(x>=0)
@@ -77,9 +78,6 @@ extern double atan_rn(double x) {
       /* 1) Argument reduction :  */
       
       /* compute i so that a[i] < x < a[i+1] */
-#if 0
-      i=10;
-#else
       if (x>arctan_table[61][A])
         i=61;
       else {
@@ -96,12 +94,10 @@ extern double atan_rn(double x) {
         else i+= 1;
         if (x < arctan_table[i][A]) i-= 1;
       }
-      
-#endif      
       Xred = (x - arctan_table[i][B] )/(1.0L +  x * arctan_table[i][B] );
       
       Xred2 = Xred*Xred;
-      /*poly eval */
+      /* Polynomial evaluation */
       q = Xred2*(coef_poly[0][0]+Xred2*
            (coef_poly[1][0]+Xred2*
             (coef_poly[2][0]+Xred2*
@@ -110,41 +106,20 @@ extern double atan_rn(double x) {
       /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
       atan = arctan_table[i][ATAN_BHI] + (Xred + q*Xred);
       
-       /* on appelle epsilon l'erreur (relative) faite sur le calcul de atan*/
 
       atanhi = (double) atan;
       atanlo = atan-atanhi;
       
-      
-
-#if 1
-      if(atanlo<0) atanlo = -atanlo;
-      u = ((atanhi+(TWO_M_64*atanhi))-atanhi)*TWO_10; // = 1/2 * ulp(atanhi)
-#else
-      {db_number uu,atanlo_db;
-      uu.d = atanhi;
-      uu.l = uu.l & 0x7ff0000000000000LL;
-      uu.i[HI_ENDIAN] -= (53<<20);
-      u=uu.d;
-      atanlo_db.d = atanlo;
-      atanlo_db.i[HI_ENDIAN] = atanlo_db.i[HI_ENDIAN] & 0x7fffffff;
-      atanlo = atanlo_db.d;
- }
-#endif
-      comp = epsilon*atanhi;
-      
-      atanlo_u = u-atanlo;
       
     }
   else
     
     // no reduction needed
     {
-      /* Polynomial evaluation */
       
       Xred2 = x*x;
       
-      /*poly eval */
+      /* Polynomial evaluation */
       q = Xred2*(coef_poly[0][0]+Xred2*
            (coef_poly[1][0]+Xred2*
             (coef_poly[2][0]+Xred2*
@@ -152,35 +127,18 @@ extern double atan_rn(double x) {
       
       atan = q*x + x;
     
-       /* on appelle epsilon_no_red l'erreur (relative) faite sur le calcul de atan*/
-   
       atanhi = (double) atan;
       atanlo = atan-atanhi;
 
-      if(atanlo<0) atanlo = -atanlo;
-#if 0
-      u = ((atanhi+(TWO_M_64*atanhi))-atanhi)*TWO_10; // = 1/2 * ulp(atanhi)
-#else
-      {db_number uu;
-      uu.d = atanhi;
-      uu.l = uu.l & 0x7ff0000000000000LL;
-      uu.i[HI_ENDIAN] -= (53<<20);
-      u=uu.d;
- }
-#endif
-      comp = atanhi*epsilon_no_red;
-      
-      atanlo_u = u-atanlo; 
-      
     }
 
-  /* Rounding test   */
-  if ( (atanlo_u) > comp) //|| (atanlo_u) < -comp)
-    {
-      __setfpucw(0x027f);
-      return sign*atanhi;}
-  else {
-    
+    __setfpucw(0x027f);
+    if(atanhi==atanhi+(atanlo*1.00368))
+      {      return sign*atanhi;}
+
+
+    else{
+	__setfpucw(0x037f);
 
     /*Second step, double-double  */
     long double tmphi, tmplo;
@@ -279,7 +237,7 @@ extern double atan_rn(double x) {
 #endif
   
   __setfpucw( 0x027f );
-  return (double) (atanhi+atanlo);
+  return sign*((double) (atanhi+atanlo));
 
 
     }
