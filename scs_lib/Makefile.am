@@ -22,4 +22,4 @@ SUBDIRS = . tests
 
 AM_CFLAGS =  -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
 
-EXTRA_DIST = VERSION  Doxyfile.user Doxyfile.dev Docs DocsDev
+EXTRA_DIST = VERSION  Doxyfile.user Doxyfile.dev 
