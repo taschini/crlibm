@@ -6,7 +6,6 @@
 
 
 
-
 /* 
 
 How these functions work:
@@ -852,7 +851,6 @@ double cos_ru(double x){
     }
   }    
   
-
   TEST_AND_RETURN_RU(rri.rh, rri.rl, epsilon);
 
   /* if the previous block didn't return a value, launch accurate phase */
@@ -973,10 +971,9 @@ double cos_rz(double x){
  *************************************************************
  *************************************************************/ 
 double tan_rn(double x){  
-  double sh, sl, ch, cl;
-  double p7, t, x2;
+  double x2, p5, tt;
   rrinfo rri;
-  db_number x_split;
+  db_number x_split, rndcst;
 
   x_split.d=x;
   rri.absxhi = x_split.i[HI] & 0x7fffffff;
@@ -987,32 +984,22 @@ double tan_rn(double x){
     return x_split.d - x_split.d; 
   }   
 
-  if (rri.absxhi < XMAX_TAN_CASE2){ /* |x|<2^-3 TODO this tradeoff has not been studied */
+  if (rri.absxhi < XMAX_TAN_CASE2){ 
     if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) 
       return x;
-
+    /* Dynamic computation of the rounding constant */
+    rndcst.i[HI] = 0x3ff00000 + (((rri.absxhi & 0x000fffff)+0x00100000) >> (0x3ff+2 - (rri.absxhi>>20))) ;
+    rndcst.i[LO] =0xffffffff;
     /* Fast Taylor series */
     x2 = x*x;
-    p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
-    t  = x2*(t3l.d +x2*(t5.d + x2*p7));
-
-    sh = x*(x2*t3h.d + t);
-    Add12(rri.rh, rri.rl, x, sh);   
+    p5 = t5.d + x2*(t7.d + x2*(t9.d + x2*t11.d));
+    tt = x2*(t3h.d + (t3l.d +x2*p5));
+    Add12(rri.rh, rri.rl, x, x*tt);  
     /* Test if round to nearest achieved */ 
-    if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE22)))
+    if(rri.rh == (rri.rh + (rri.rl * rndcst.d)))
       return rri.rh;
-    else {
-      /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, x2, t3h.d);
-      Add12(ch, cl, sh, (t+sl));
-      Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-      /* Test if round to nearest achieved */ 
-      if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE21)))
-	return rri.rh;
-      else
-	return scs_tan_rn(x); 
-    }
+    else
+      return scs_tan_rn(x); 
   }
   else {
     /* Otherwise : Range reduction then standard evaluation */
@@ -1036,8 +1023,7 @@ double tan_rn(double x){
  *************************************************************
  *************************************************************/
 double tan_ru(double x){  
-  double sh, sl, ch, cl, epsilon;
-  double p7, t, x2;
+  double epsilon, p5, tt, x2;
   db_number x_split;
   rrinfo rri;
 
@@ -1062,20 +1048,15 @@ double tan_ru(double x){
     else {
       /* Fast Taylor series */
       x2 = x*x;
-      p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
-      t  = x2*(t3l.d +x2*(t5.d + x2*p7));
-    
-      sh = x*(x2*t3h.d + t);
-      Add12(rri.rh, rri.rl, x, sh);   
-      
-      TEST_AND_RETURN_RU(rri.rh, rri.rl, EPS_TAN_CASE22);
+      p5 = t5.d + x2*(t7.d + x2*(t9.d + x2*t11.d));
+      tt = x2*(t3h.d + (t3l.d +x2*p5));
+      Add12(rri.rh, rri.rl, x, x*tt);  
 
-      /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, x2, t3h.d);
-      Add12(ch, cl, sh, (t+sl));
-      Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-      epsilon=EPS_TAN_CASE21; 
+      /* TODO dynamic computation of error constant */
+      TEST_AND_RETURN_RU(rri.rh, rri.rl, EPS_TAN_CASE2);
+
+      /* if the previous block didn't return a value, launch accurate phase */
+      return  scs_tan_ru(x);
     }
   }
   else { 
@@ -1090,7 +1071,6 @@ double tan_ru(double x){
     }
   }
   
-  
   TEST_AND_RETURN_RU(rri.rh, rri.rl, epsilon);
 
   /* if the previous block didn't return a value, launch accurate phase */
@@ -1104,8 +1084,7 @@ double tan_ru(double x){
  *************************************************************
  *************************************************************/
 double tan_rd(double x){  
-  double sh, sl, ch, cl, epsilon;
-  double p7, t, x2;
+  double epsilon, p5, tt, x2;
   rrinfo rri;
   db_number x_split;
 
@@ -1132,20 +1111,14 @@ double tan_rd(double x){
     
     /* Fast Taylor series */
     x2 = x*x;
-    p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
-    t  = x2*(t3l.d +x2*(t5.d + x2*p7));
-    
-    sh = x*(x2*t3h.d + t);
-    Add12(rri.rh, rri.rl, x, sh);   
+    p5 = t5.d + x2*(t7.d + x2*(t9.d + x2*t11.d));
+    tt = x2*(t3h.d + (t3l.d +x2*p5));
+    Add12(rri.rh, rri.rl, x, x*tt);  
+      
+    TEST_AND_RETURN_RD(rri.rh, rri.rl, EPS_TAN_CASE2);
 
-    TEST_AND_RETURN_RD(rri.rh, rri.rl, EPS_TAN_CASE22);
-
-    /* Still relatively fast, but more accurate */
-    Mul12(&sh, &sl, x2, t3h.d);
-    Add12(ch, cl, sh, (t+sl));
-    Mul22(&sh, &sl, x, 0, ch, cl);
-    Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-    epsilon=EPS_TAN_CASE21; 
+    /* if the previous block didn't return a value, launch accurate phase */
+    return  scs_tan_rd(x);
   }
   
   else { 
@@ -1173,8 +1146,7 @@ double tan_rd(double x){
  *************************************************************
  *************************************************************/
 double tan_rz(double x){  
-  double sh, sl, ch, cl, epsilon;
-  double p7, t, x2;
+  double epsilon, p5, tt, x2;
   rrinfo rri;
   db_number x_split;
 
@@ -1191,22 +1163,17 @@ double tan_rz(double x){
     if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {
       return x;
     }
-    else{ /* Fast Taylor series */
+    else{ 
+      /* Fast Taylor series */
       x2 = x*x;
-      p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
-      t  = x2*(t3l.d +x2*(t5.d + x2*p7));
-      
-      sh = x*(x2*t3h.d + t);
-      Add12(rri.rh, rri.rl, x, sh);   
-      
-      TEST_AND_RETURN_RZ(rri.rh, rri.rl, EPS_TAN_CASE22);
+      p5 = t5.d + x2*(t7.d + x2*(t9.d + x2*t11.d));
+      tt = x2*(t3h.d + (t3l.d +x2*p5));
+      Add12(rri.rh, rri.rl, x, x*tt);  
 
-      /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, x2, t3h.d);
-      Add12(ch, cl, sh, (t+sl));
-      Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-      epsilon=EPS_TAN_CASE21; 
+      TEST_AND_RETURN_RZ(rri.rh, rri.rl, EPS_TAN_CASE2);
+
+      /* if the TEST_AND_RETURN block didn't return a value, launch accurate phase */
+      return  scs_tan_rz(x);
     }
   }
   else { 
