@@ -25,6 +25,18 @@
 #include "crlibm_config.h"
 
 
+
+
+/* Procedures of the Dekker family may be either defined as functions,
+or as #defines.  
+Which one is better depends on the processor/compiler/OS.
+As #define has to be used with more care (not type-safe),
+DEKKER_AS_FUNCTIONS should be set to 1 in the development/debugging
+phase, until no type warning remains.  */
+
+#define DEKKER_AS_FUNCTIONS 1
+
+
 /* setting the following variable adds variables and code for
    monitoring the performance.
    Note that only round to nearest is instrumented */
@@ -129,6 +141,7 @@ static const struct scs
 
 
 
+#define ABS(x) ((x)>0) ? (x) : (-(x))
 
 
 
@@ -179,43 +192,39 @@ static const struct scs
 
 
 
-
-
-extern void Mul22(double * z, double * zz, double x, double xx, double y, double yy);
-extern void Add22(double * z, double * zz, double x, double xx, double y, double yy);
-
-/* Procedures like Dekker may be either defined as inline functions, or as #defines. 
-Currently #define is better (smaller and faster) 
-but it has to be used with more care  */
-
-#define DEKKER_INLINED 1
-
-#if DEKKER_INLINED
-extern void Mul12(double *r1, double *r2, double u, double v);
-extern void Mul12Cond(double *r1, double *r2, double a, double b);
-#else
-
-
-/*
- * computes r1 and r2 such that r1 + r2 = a * b with r1 = a @* b exactly
- * under the conditions : a < 2^970 et b < 2^970 
- */
 #ifdef CRLIBM_TYPECPU_ITANIUM
 /* One of the nice things with the fused multiply-and-add is that it
    greatly simplifies the Dekker : */
-#define Dekker(r1,r2,u,v)                            \
+#define Mul12Cond(rh,rl,u,v)                          \
 {                                                     \
-  *r1 = u*v;                                          \
-  /* The following means: *r2 = FMS(u*v-*r1) */       \
+  *rh = u*v;                                          \
+  /* The following means: *rl = FMS(u*v-*rh) */       \
   __asm__ __volatile__("fms %0 = %1, %2, %3\n ;;\n"   \
-		       : "=f"(*r2)                     \
-		       : "f"(u), "f"(v), "f"(*r1)     \
+		       : "=f"(*rl)                    \
+		       : "f"(u), "f"(v), "f"(*rh)     \
 		       );                             \
 }
-#else
-#define Dekker(r1,r2,u,v)                            \
+#define Mul12 Mul12Cond
+#endif /*CRLIBM_TYPECPU_ITANIUM*/
+
+
+#if DEKKER_AS_FUNCTIONS
+#ifndef CRLIBM_TYPECPU_ITANIUM  /* otherwise they have been defined just above */
+extern void Mul12(double *rh, double *rl, double u, double v);
+extern void Mul12Cond(double *rh, double *rl, double a, double b);
+#endif /* ifndef CRLIBM_TYPECPU_ITANIUM */ 
+extern void Add22(double *zh, double *zl, double xh, double xl, double yh, double yl);
+extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl);
+
+
+#else /* if DEKKER_AS_FUNCTIONS  */
+/*
+ * computes rh and rl such that rh + rl = a * b with rh = a @* b exactly
+ * under the conditions : a < 2^970 et b < 2^970 
+ */
+#define Mul12(rh,rl,u,v)                        \
 {                                               \
-  double c        = 134217729.;               /* 0x41A00000, 0x02000000 */ \
+  const double c  = 134217729.; /* 2^27 +1 */   \
   double up, u1, u2, vp, v1, v2;                \
   double _u =u, _v=v;                           \
                                                 \
@@ -223,19 +232,18 @@ extern void Mul12Cond(double *r1, double *r2, double a, double b);
   u1 = (_u-up)+up;  v1 = (_v-vp)+vp;            \
   u2 = _u-u1;       v2 = _v-v1;                 \
                                                 \
-  *r1 = _u*_v;                                  \
-  *r2 = (((u1*v1-*r1)+(u1*v2))+(u2*v1))+(u2*v2);\
+  *rh = _u*_v;                                  \
+  *rl = (((u1*v1-*rh)+(u1*v2))+(u2*v1))+(u2*v2);\
 }
-#endif /*CRLIBM_TYPECPU_ITANIUM*/
 
 
 /*
- * Computes r1 and r2 such that r1 + r2 = a * b and r1 = a @* b exactly
+ * Computes rh and rl such that rh + rl = a * b and rh = a @* b exactly
  */
-#define DekkerCond(r1, r2, a,  b) \
+#define Mul12Cond(rh, rl, a,  b) \
 {\
-  double two_em53 = 1.1102230246251565404e-16; /* 0x3CA00000, 0x00000000 */\
-  double two_e53  = 9007199254740992.;         /* 0x43400000, 0x00000000 */\
+  const double two_em53 = 1.1102230246251565404e-16; /* 0x3CA00000, 0x00000000 */\
+  const double two_e53  = 9007199254740992.;         /* 0x43400000, 0x00000000 */\
   double u, v;                                            \
   db_number _a=a, _b=b;                               \
                                                           \
@@ -244,14 +252,56 @@ extern void Mul12Cond(double *r1, double *r2, double a, double b);
   if (_b.i[HI_ENDIAN]>0x7C900000) v = _b*two_em53;        \
   else            v = _b;                                 \
                                                           \
-  Dekker(r1, r2, u, v);                                   \
+  Mul12(rh, rl, u, v);                                   \
                                                           \
-  if (_a.i[HI_ENDIAN]>0x7C900000) {*r1 *= two_e53; *r2 *= two_e53;} \
-  if (_b.i[HI_ENDIAN]>0x7C900000) {*r1 *= two_e53; *r2 *= two_e53;} \
+  if (_a.i[HI_ENDIAN]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
+  if (_b.i[HI_ENDIAN]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
 }
 
 
-#endif /*DEKKERINLINED*/
+/*
+ * computes double-double addition: zh+zl = xh+xl + yh+yl
+ * relative error is smaller than 2^-103 
+ */
+  
+#define  Add22(zh, zl, xh, xl, yh, yl)                            \
+{                                                                 \
+double r,s;                                                       \
+r = xh+yh;                                                        \
+s = (ABS(xh) > ABS(yh))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);       \
+*zh = r+s;                                                        \
+*zl = r - (*zh) + s;                                              \
+}
+
+
+
+/*
+ * computes double-double multiplication: zh+zl = (xh+xl) *  (yh+yl)
+ * relative error is smaller than 2^-102
+ */
+  
+
+  
+#define Mul22(zh,zl,xh,xl,yh,yl)                      \
+{                                                     \
+double mh, ml;                                        \
+						      \
+  const double c = 134217729.;			      \
+  double up, u1, u2, vp, v1, v2;		      \
+						      \
+  up = xh*c;        vp = yh*c;			      \
+  u1 = (xh-up)+up;  v1 = (yh-vp)+vp;		      \
+  u2 = xh-u1;       v2 = yh-v1;                       \
+  						      \
+  mh = xh*yh;					      \
+  ml = (((u1*v1-mh)+(u1*v2))+(u2*v1))+(u2*v2);	      \
+						      \
+  ml += xh*yl + xl*yh;				      \
+  *zh = mh+ml;					      \
+  *zl = mh - (*zh) + ml;                              \
+}
+
+#endif /*DEKKER_AS_FUNCTION*/
 
 
 
