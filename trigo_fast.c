@@ -20,14 +20,15 @@ extern double scs_tan_ru(double);
 extern double scs_tan_rz(double);  
 
 #define DEBUG 0
-/* TODO:
- * - The first coefficient of the cosine polynomial is equal exactly to 1/2
- *   and this should be modified in order to increase to accuracy of the
- *   approximation.
+/* TODO: 
  *
- *
+ * - The first coefficient of the cosine polynomial is equal exactly
+ *   to 1/2 and this should be modified in order to increase to accuracy
+ *   of the approximation.
+ * 
+ * - For the Sin and Cos we go into the second step if x<2^-1, bound
+ *   that doesn't have any scientific reason. We should put an approx of Pi/4
  */
-
 
 
 #define LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal){ \
@@ -118,11 +119,14 @@ static void do_cos(double* ch, double* cl, double yh, double yl) {
 static void do_sin_ffast(double* sh, double* sl, double rxh, double rxl, double sx, double cx) {
   double ts;
 
+  ts = ((((((cal*rxh) + cah*rxl) + sal) + cah*sx) + sah*cx) + cah*rxh);
+  Add12(*sh, *sl, sah, ts);
+
 #if DEBUG
   printf("do_sin_ffast\n");
+  printf("sah : %.45e \n",sah);
+  printf("ts  : %.45e \n",ts);
 #endif
-  ts = (((((cal*rxh + cah*rxl) + sal) + cah*sx) + sah*cx) + cah*rxh);
-  Add12(*sh, *sl, sah, ts);
 }
 
 static void do_sin_fast(double* sh, double* sl, double rxh, double rxl, double sx, double cx) {
@@ -257,11 +261,11 @@ int static trig_range_reduction(double* pyh, double* pyl,
  *************************************************************/ 
 double sin_rn(double x){ 
   double sh, sl, yh, yl, xx;
+  double rxh, rxl, sx, cx, ts; 
   int quadrant;
   int k;
   int absxhi;
   db_number x_split;
-  double rxh, rxl, sx, cx, ts; 
 
   x_split.d=x;
   absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
@@ -295,11 +299,7 @@ double sin_rn(double x){
     /* Cody and Waite range reduction */
     DOUBLE2INT(k, x * INV_PIO256);
     Add12(rxh, rxl, (x - k*RR_CW2_CH), (k*RR_CW2_MCL));
-
-#if DEBUG
-    printf("k   : %d \n",k);
-#endif
-
+    
     LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal);    
 
     
@@ -307,32 +307,14 @@ double sin_rn(double x){
     sx = rxh * xx * (s3.d + xx*(s5.d + xx*s7.d )); // rx is missing to get sin
     cx = xx * (c2.d + xx*(c4.d + xx*c6.d));        //  1 is missing to have cos
 
-#if DEBUG
-    printf("rxh : %.25e \n",rxh);
-    printf("sah : %.25e \n",sah);
-    printf("sal : %.25e \n",sal);
-    printf("cah : %.25e \n",cah);
-    printf("cal : %.25e \n",cal);
-    printf("sx  : %.25e \n",sx);
-    printf("cx  : %.25e \n",cx);
-#endif
 
-    if (quadrant&1)  do_cos_ffast(&sh, &sl, rxh, rxl, sx, cx);
-    else             do_sin_ffast(&sh, &sl, rxh, rxl, sx, cx);
-    if (sh == (sh + (sl * RN_CST_SINFAST2))){	
-	return ((quadrant==2)||(quadrant==3))? -sh : sh;
-    }else{  
-#if DEBUG
-      printf("CASE 3bis\n");
-#endif
-      if (quadrant&1)  do_cos_fast(&sh, &sl, rxh, rxl, sx, cx);
-      else             do_sin_fast(&sh, &sl, rxh, rxl, sx, cx);
-
-      if (sh == (sh + (sl * RN_CST_SINFAST3)))	
-	return ((quadrant==2)||(quadrant==3))? -sh : sh;
-      else
-	return scs_sin_rn(x); 
-    }
+    if (quadrant&1)  do_cos_fast(&sh, &sl, rxh, rxl, sx, cx);
+    else             do_sin_fast(&sh, &sl, rxh, rxl, sx, cx);
+    
+    if (sh == (sh + (sl * RN_CST_SINFAST3)))	
+      return ((quadrant==2)||(quadrant==3))? -sh : sh;
+    else
+      return scs_sin_rn(x); 
   }
   /* CASE 4: x>2^(-1) */
 
@@ -385,11 +367,11 @@ return scs_sin_rz(x);
  *************************************************************/
 double cos_rn(double x){ 
   double ch, cl, yh, yl, xx;
+  double rxh, rxl, sx, cx, ts; 
   int quadrant;
   int k;
   int absxhi;
   db_number x_split;
-  double rxh, rxl, sx, cx, ts; 
 
 
 
@@ -421,7 +403,7 @@ double cos_rn(double x){
 	       + table look-up 
                + fast polynomial evaluation */
 
-    /* Cody and Wayte range reduction */
+    /* Cody and Waite range reduction */
     DOUBLE2INT(k, x * INV_PIO256);
     Add12(rxh, rxl, (x - k*RR_CW2_CH), (k*RR_CW2_MCL));
 
@@ -431,21 +413,13 @@ double cos_rn(double x){
     sx = rxh * xx * (s3.d + xx*(s5.d + xx*s7.d )); // rx is missing to get sin
     cx = xx * (c2.d + xx*(c4.d + xx*c6.d));       //  1 is missing to have cos
   
-    if (quadrant&1)  do_sin_ffast(&ch, &cl, rxh, rxl, sx, cx);
-    else             do_cos_ffast(&ch, &cl, rxh, rxl, sx, cx);
+    if (quadrant&1)  do_sin_fast(&ch, &cl, rxh, rxl, sx, cx);
+    else             do_cos_fast(&ch, &cl, rxh, rxl, sx, cx);
     
-    if (ch == (ch + (cl * RN_CST_COSFAST2))){	
+    if (ch == (ch + (cl * RN_CST_COSFAST3)))	
       return ((quadrant==1)||(quadrant==2))? -ch: ch; 
-    }else{  
-
-      if (quadrant&1)  do_sin_fast(&ch, &cl, rxh, rxl, sx, cx);
-      else             do_cos_fast(&ch, &cl, rxh, rxl, sx, cx);
-
-      if (ch == (ch + (cl * RN_CST_COSFAST3)))	
-	return ((quadrant==1)||(quadrant==2))? -ch: ch; 
-      else
-	return scs_cos_rn(x); 
-    }
+    else
+      return scs_cos_rn(x);   
   } 
   /* CASE 4: x>2^(-1) */
 
@@ -492,29 +466,46 @@ return scs_cos_rz(x);
  *************************************************************/ 
 double tan_rn(double x){  
   double reshi, reslo, sh, sl, ch, cl, kd, yh, yl;
+  double P7, t, th, tl, xx;
   db_number y;
   int k, quadrant;
   int absxhi;
-  db_number xx;
+  db_number x_split;
 
 
-  xx.d=x;
-  absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
   if (absxhi>=0x7ff00000) return x-x;   
 
-  /* Case 1: x < 2^-26  => tan(x)~x with accuracy 2^-53.2 */
-  y.d = x;
-  if((y.i[HI_ENDIAN]&0x7FFFFFFF) < 0x3E4BEAD3){	/* Test if |x| < (1+e)2^(-26) */
-    return x;
+  if (absxhi < XMAX_TAN_FAST){ /* |x|<2^-3 */
+    if (absxhi < XMAX_RETURN_X_FOR_TAN) /* |x|<2^-26 */
+      return x;
+
+    /* Fast Taylor series */
+    xx = x*x;
+    P7 = t7.d + xx*(t9.d + xx*(t11.d + xx*(t13.d + xx*t15.d)));
+    t  = xx*(t3l.d +xx*(t5.d + xx*P7));
+
+    /* First Fast approximation */
+    sh = x*(xx*t3h.d + t);
+    Add12(th, tl, x, sh);   
+    if (th == (th + (tl * RN_CST_TANFAST2)))
+      return th;
+
+    Mul12(&sh, &sl, xx, t3h.d);
+    Add12(ch, cl, sh, (t+sl));
+    Mul22(&sh, &sl, x, 0, ch, cl);
+    Add22(&th, &tl, x, 0, sh, sl);
+
+    /* Second more precise approximation */
+    if (th == (th + (tl * RN_CST_TANFAST1)))
+      return th;
+    else
+      scs_tan_rn(x);
   }
-  /* Case 2: x < 2^- */
-
-
-
-
-    /*TODO Add polynomial for small values here */ 
   
   /* Otherwise : Range reduction then standard evaluation */
   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
