@@ -276,7 +276,7 @@ In the following we note $$C=\frac{\pi}{256}$$
 
 \subsection{Structure of the argument reduction
   \label{trigo:structargred}}
-The code for the sine is detailed below (from function \verb!compute_sine_with_argred!).
+The complet code is detailed below.
 
 \begin{lstlisting}[caption={Multilevel argument reduction},firstnumber=1]
 static void compute_trig_with_argred(double* prh, double* prl,  double x, int absxhi, int function){ 
@@ -435,20 +435,25 @@ Here are some comments on the structure of this code (the details on
 actual range reduction come in the following sections).
 
 \begin{itemize}
-\item line 9, the DOUBLETOINT macro works on the range defined by
-  \verb!XMAX_CODY_WAITE_3! (see Section~\ref{sec:double2int}).
+\item The DOUBLETOINT macro at line 9 is called only if
+  $x<\verb!XMAX_CODY_WAITE_3!$ (line 7). This constant is defined  (see
+  Listing~\ref{trigo:lst:cw3maple} below) such
+  that the conditions for this macro to work (see
+  Section~\ref{sec:double2int}) are fullfilled. 
 
-\item Similarly for the DOUBLETOLONGINT macro at line 39 (see
-  Section~\ref{sec:double2longint})
+\item Similarly for the DOUBLETOLONGINT macro (see
+  Section~\ref{sec:double2longint}) at line 39, which is called for
+  inputs smaller than \verb!XMAX_DDR! defined in Listing
+  \ref{trigo:lst:cwddrmaple} below.
 
 \item There is one subtlety at lines 46 and following. There we take
   the decision of computing a more accurate range reduction depending
-  on the value of $k\mod 256$. However, in the case when
-  $x\times\frac{256}{\pi}$ is very close to the middle between two
-  integers, it may happen (very rarely) that the value of $k\mod 256$
-  computed by this second range reduction is equal to $\pm 1$. In such
-  cases, both values work, but we have to design the algorithm
-  accordingly.
+  on the value of $\mathit{index}=k\mod 256$. However, in the case
+  when $x\times\frac{256}{\pi}$ is very close to the middle between
+  two integers, it may happen (very rarely) that the value of $k\mod
+  256$ computed by this second range reduction is equal to $\pm 1$. In
+  such cases, both values are equally valid, but we have to ensure
+  that $k$ and the reduced value match, hence the code at lines 46-54.
 \end{itemize}
 
 
@@ -461,8 +466,8 @@ zeroes), and $C_l=\round(C-C_h)$.  The following is an excerpt of the
 Maple code that computes these constants, and then computes the
 bound on which this argument reduction is valid.
 
-\begin{lstlisting}[caption={Computing constants for Cody and Waite 2},
-  firstnumber=1,  language={sh}]% of course it's maple
+\begin{lstlisting}[caption={Maple script for computing constants for Cody and Waite 2},
+  firstnumber=1,  language={sh}, numbers=none]% of course it's maple
 %Skip a line here, I don't know why, otherwise latex eats the first line
 
 bitsCh_0:=32:  # ensures at least 53+11 bits
@@ -485,10 +490,8 @@ XMAX_CODY_WAITE_2 := nearest(kmax_cw2*C):
 The C code that performs the reduction in this case is the following:
 
 \begin{lstlisting}[caption={Cody and Waite argument reduction with two
-    constants},firstnumber=1]
-      if (absxhi < XMAX_CODY_WAITE_2) { 
+    constants},firstnumber=27]
 	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
-      }
 \end{lstlisting}
 
 Here only the rightmost multiplication involving a rounding: 
@@ -503,8 +506,8 @@ Here only the rightmost multiplication involving a rounding:
 The following Maple code thus computes the maximum absolute error on
 the reduced argument (with respect to the ideal reduced argument) in
 this case.
-\begin{lstlisting}[caption={Computing constants for Cody and Waite 2},
-  firstnumber=1,  language={sh}]% of course it's maple
+\begin{lstlisting}[caption={Maple script for computing absolute error for Cody and Waite 2},
+  firstnumber=1,  language={sh}, numbers=none]% of course it's maple
 
 delta_repr_C_cw2   := abs(C-Ch-Cl);
 delta_round_cw2    := kmax_cw2* 1/2 * ulp(Cl) ;
@@ -517,10 +520,8 @@ delta_cody_waite_2 := kmax_cw2 * delta_repr_C_cw2 + delta_round_cw2;
 The C code that performs the reduction in this case is the following:
 
 \begin{lstlisting}[caption={Cody and Waite argument reduction with three 
-    constants},firstnumber=1]
-      else 
+    constants},firstnumber=31]
 	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
-    }
 \end{lstlisting}
 
 Here again all the operations are exact except the rightmost multiplication. 
@@ -529,8 +530,9 @@ The following Maple code computes the constants, the bound on $x$ for
 this reduction to work, and the resulting absolute error of the reduced
 argument with respect to the ideal reduced argument.
 
-\begin{lstlisting}[caption={Computing constants for Cody and Waite 3},
-  firstnumber=1,  language={sh}]% of course it's maple
+\begin{lstlisting}[caption={Maple script for computing constants for
+    Cody and Waite 3\label{trigo:lst:cw3maple} }, firstnumber=1,
+  language={sh}, numbers=none]% of course it's maple
 %Skip a line here, I don't know why, otherwise latex eats the first line
 
 bitsCh_0:=21:
@@ -563,52 +565,21 @@ delta_cody_waite_3 := kmax_cw3 * delta_repr_C_cw3 + delta_round_cw3:
 The C code that performs the reduction in this case is the following:
 
 \begin{lstlisting}[caption={Cody and Waite argument reduction in
-    double-double},firstnumber=1]
-  if ( absxhi < XMAX_DDRR ) {
-    DOUBLE2LONGINT(kl, x*INV_PIO256);
-    kd=(double)kl;
-    quadrant = (kl>>7)&3;
-    index=(kl&127)<<2;
-    if(index == 0) { /* In this case cancellation may occur, so we
-			  do the accurate range reduction */
-      scs_range_reduction(); 
-      /* Now it may happen that the new k differs by 1 of kl, so check that */
-      if(index==0) {  /* no surprise */
-	*pquadrant=quadrant;
-	if (quadrant&1)
-	  do_cos_k_zero(psh, psl, yh,yl);
-	else 
-	  do_sin_k_zero(psh, psl, yh,yl);
-      	return;
-      }
-      else { /*recompute index and quadrant */
-	if (index==4) kl++;   else kl--; /* no more than one bit difference */
-	kd=(double)kl;
-	quadrant = (kl>>7)&3;
-      }
-    }
-    /* arrive here if index<>0 */
-    *pquadrant=quadrant;
-    LOAD_TABLE_SINCOS(); /* in advance */
+    double-double},firstnumber=57]
     /* all this is exact */
     Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
     Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
     Add12 (th,tl,  kch_l, kcm_h) ;
     /* only rounding error in the last multiplication and addition */ 
     Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-    if (quadrant&1)
-      do_cos_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
-    else 
-      do_sin_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
-    return;
 \end{lstlisting}
 
 
 The error and the bound are computed by the following Maple code.
 
-\begin{lstlisting}[caption={Computing constants for Cody and Waite
-    double-double}, firstnumber=1,
-  language={sh}]% of course it's maple
+\begin{lstlisting}[caption={Maple script for computing constants for Cody and Waite
+    double-double\label{trigo:lst:cwddrmaple}}, firstnumber=1,
+  language={sh}, numbers=none]% of course it's maple
 %Skip a line here, I don't know why, otherwise latex eats the first line
 
 # max int value that we can be produced by DOUBLE2LONGINT
@@ -637,30 +608,22 @@ delta_round :=
               + kmax*ulp(Cl)         # for the subtraction
               + 2^(-100) * Pi/512 :    # for the Add22
 delta_RR_DD :=  kmax * delta_repr_C + delta_round:
-
-#  the last case, Payne and Hanek reduction, gives a very small delta:
-#  red arg is on 9*30 bits, then rounded to a double-double (106 bits)
-# This should, of course, be optimized some day
-delta_PayneHanek := 2^(-100):
-
-# Finally the max delta on the reduced argument is
-delta_ArgRed := max(delta_cody_waite_2, delta_cody_waite_3,
-                    delta_RR_DD, delta_PayneHanek):
 \end{lstlisting}
 
 
 \subsection{Payne and Hanek argument reduction }
 
-This argument reduction is very classical (see K.C. Ng's paper) and
-the code both too long and too simple to appear here. The Payne and
-Hanek reduction uses SCS computations which ensure relative accuracy
-of $2^{-200}$. The result is then converted to a double-double.
-Even counting a worst-case cancellation of less than 70 bits, the final
-absolute error is much smaller than for the other reductions. 
+This argument reduction is very classical (see K.C. Ng's
+paper\cite{Ng1992} or Muller's book \cite{Muller97}) and the code both
+too long and too simple to appear here. The Payne and Hanek reduction
+uses SCS computations which ensure relative accuracy of $2^{-200}$.
+The result is then converted to a double-double.  Even counting a
+worst-case cancellation of less than 70 bits, the final absolute error
+is much smaller than for the other reductions.
 
 \begin{lstlisting}[caption={Computing constants for Cody and Waite
     double-double}, firstnumber=1,
-  language={sh}]% of course it's maple
+  language={sh}, numbers=none]% of course it's maple
 %Skip a line here, I don't know why, otherwise latex eats the first line
 
 delta_PayneHanek := 2^(-100):
@@ -668,10 +631,18 @@ delta_PayneHanek := 2^(-100):
 
 
 \subsection{Maximum error of argument reduction }
-The error and the bound are computed by the following Maple code.
 
-\begin{lstlisting}[caption={Payne and Hanek error bound}, firstnumber=1,
-  language={sh}]% of course it's maple
+We have to cases here.
+
+\paragraph*{Case when $k\mod 256\ne 0$}
+
+In this case we will need the absolute error of range reduction to compute the
+total relative error of \verb!do_sin_k_notzero! and
+\verb!do_cos_k_notzero!: These procedures add tabulated values to the
+reduced argument. This error bound is computed by the following Maple code.
+
+\begin{lstlisting}[caption={Maple script computing the absolute error bound of range reduction}, firstnumber=1,
+  language={sh}, numbers=none]% of course it's maple
 %Skip a line here, I don't know why, otherwise latex eats the first line
 
 delta_ArgRed := max(delta_cody_waite_2, delta_cody_waite_3,
@@ -680,17 +651,60 @@ delta_ArgRed := max(delta_cody_waite_2, delta_cody_waite_3,
 
 We find that $\maxdelta_{\mathrm{argred}}\approx 2^{-71}$
 
-We will use this absolute value if $k\mod 256\ne 0$, as there will be
-an addition of the reduced argument. Otherwise we need to compute the relative error.
+
+\paragraph*{Case when $k\mod 256= 0$}
+
+Here we directly need the relative error $\epsilon_{\mathrm{argred}}$
+on range reduction, which will be used below in Section
+\ref{dosinkzero}. Looking back at Listing~\ref{trigo:structargred}, we
+see that in this case we compute range reduction either in
+double-double, or in SCS. The following Maple code computes
+$\maxeps_{\mathrm{argred}}$.
+
+\begin{lstlisting}[caption={Maple script computing the relative error bound of range reduction}, firstnumber=1,
+  language={sh}, numbers=none]% of course it's maple
+%Skip a line here, I don't know why, otherwise latex eats the first line
+
+# First, what is the worst case for cancellation ?
+
+emax := ieeedouble(XMAX_DDRR)[2] +1 :
+# above emax, we will use Payne and Hanek so we do not worry
+
+(wcn, wce, wceps) := WorstCaseForAdditiveRangeReduction(2,53,-8, emax, C):
+wcx := wcn * 2^wce:
+wck := round(wcx/C):
+wcy := wcx - wck*C:
+
+log2(wcy);   # y > 2^(-67);
+
+# In these cases we use the double-double range reduction, for |k|<kmax_cw3
+# and the relative precision in the worst case is for wcy
+
+delta_round := kmax_cw3 * 1/2 * ulp(Cl)      # for   kd*RR_DD_CL
+              + kmax_cw3 * ulp(Cl) :         # for the subtraction
+
+delta_RR_DD :=  kmax_cw3 * delta_repr_C + delta_round:
+
+eps_ArgRed := (1+delta_RR_DD/wcy)*(1+2^(-100)) -1:
+\end{lstlisting}
+
+This script first computes the smallest possible reduced value thanks
+to the Kahan/Douglas algorithm. It then computes the absolute
+worst-case error of double-double reduction, divides it by the
+smallest possible value to get a relative error, and adds the relative
+error of the final Add22.
+
+ We find that
+$\maxeps_{\mathrm{argred}} \approx 2^{-69.6}$.
+
 
 
 
 \section{Details of auxilliary functions
   \label{trigo:auxilliary}}
 
-\subsection{Errors due to argument reduction}
-Upon entering one of \texttt{do\_sin\_k\_zero}, \texttt{do\_sin\_k\_notzero},
-\texttt{do\_cos\_k\_zero} or \texttt{do\_cos\_k\_notzero}, we have in
+\subsection{\texttt{do\_sin\_k\_zero} \label{dosinkzero}}
+Upon entering  \texttt{do\_sin\_k\_zero}, we have in
 $y_h+y_l$ an approximation to the ideal reduced value
 $\hat{y}=x-k\pi/256$ with a relative accuracy $\epsilon_{\mathrm{argred}}$:
 
@@ -703,21 +717,24 @@ whith, depending on the quadrant, $\sin(\hat{y}) = \pm\sin(x)$ or
 $\sin(\hat{y}) = \pm\cos(x)$ and similarly for $\cos(\hat{y})$. This
 just means that $\hat{y}$ is the ideal, errorless reduced value.
 
-
 For simplicity, we define a common upper bound $y_{\max}$ on
 $|\hat{y}|$, $|\mathtt{yh}+\mathtt{yl}|$ and $|\mathtt{yh}|$. This
 bound takes into account $\epsilon_{argred}$, an $\epsilon_{53}$ just
 for the case when it is a bound on $y_h$, and also an error due to the
-fact that we used a machine rounding to get $k$, so the reduced value
-may exceed $\pi/512$:
+fact that we had a rounding error when computing
+$x\otimes\verb!INV_PIO256!$, so the reduced value may slightly
+exceed $\pi/512$. More precisely, we may come to \texttt{computeZero}
+either for $x<\verb!XMAX_CODY_WAITE_3!$, in which case we we have used
+DOUBLE2INT to compute $k$, deporting this rounding error at least $52-32=20$
+bits to the right, or after an SCS range reduction in which case the
+error will be much smaller. Therefore we define
 \begin{equation}
-  y_{\mathrm{maxargred}} = \frac{\pi}{512}(1+\epsilon_{\mathrm{argred2}})
+  y_{\mathrm{maxargred}} = \frac{\pi}{512}(1+2^{-19})
   \label{eq:ymaxsink0}  
 \end{equation}
-where $\epsilon_{\mathrm{argred2}}$ should be defined precisely (TODO).
+where the $2^{-19}$ also accounts for the less-than-ulp difference
+between $y_h$, $y_h+y_l$ and $\widehat{y}$.
 
-
-\subsection{\texttt{do\_sin\_k\_zero} \label{dosinkzero}}
 In the following we will
 assume we are in the case $\sin(\hat{y}) = \sin(x)$, (the proof is
 identical in the other cases), therefore the relative error that we need
@@ -828,6 +845,12 @@ $y_{\mathrm{maxargred}}$.
 
 
 \subsection{\texttt{do\_sin\_k\_notzero}}
+
+
+\subsection{\texttt{do\_cos\_k\_zero}}
+
+
+\subsection{\texttt{do\_cos\_k\_notzero}}
 
 
 
