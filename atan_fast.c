@@ -121,10 +121,7 @@ static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x)
                 coef_poly[0]))) ;
       Add12(*atanhi,*atanlo, x , x*q);
       
-      if (x > 0x3F500000)
-        *index_of_e = 2;
-      else
-        *index_of_e = 3;
+      *index_of_e = 2;
     }
 
 }
