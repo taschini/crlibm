@@ -76,7 +76,7 @@ int crlibm_second_step_taken;
 
 #ifdef CRLIBM_TYPECPU_POWERPC
 #define PROCESSOR_HAS_FMA 1
-#define FMA(r, a,b,c)\  /* r = a*b + c*/
+#define FMA(r, a,b,c)  /* r = a*b + c*/                \
 do{                                                    \
   double _a, _b,_c,_r;                                 \
   _a=a; _b=b;_c=c;                                     \
@@ -88,7 +88,7 @@ do{                                                    \
 } while(1+1==3)
 
 
-#define FMS(r, a,b,c)\  /* r = a*b - c*/
+#define FMS(r, a,b,c)   /* r = a*b - c*/               \
 do{                                                    \
   double _a, _b,_c,_r;                                 \
   _a=a; _b=b;_c=c;                                     \
@@ -332,9 +332,9 @@ do {                                         \
 #ifdef PROCESSOR_HAS_FMA
 /* One of the nice things with the fused multiply-and-add is that it
    greatly simplifies the double-double multiplications : */
-#define Mul12(rh,rl,u,v)                          \
+#define Mul12(rh,rl,u,v)                              \
 {                                                     \
-  *rh = u*v;
+  *rh = u*v;                                          \
   FMS(*rl,   u,v, *rh);                               \
 }
 
