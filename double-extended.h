@@ -47,28 +47,38 @@ case). However it uses a coarser error estimation.
                    7f0                60   etc
  */
 
-#define TEST_AND_RETURN_RN(y, mask)                       \
-{                                                         \
-  db_ext_number z;   double yh;                           \
-  int lo;                                                 \
-  z.d = y;                                                \
-  yh = (double) y;                                        \
-  lo = z.i[DE_MANTISSA_LO] &(mask);                       \
-  if( (lo!=(0x3ff&(mask))) && (lo!= (0x400&(mask)))  ) {  \
-    BACK_TO_DOUBLE_MODE;                                  \
-    return yh;                                            \
-  }                                                       \
+#define TEST_AND_RETURN_RN(_y, _mask)                       \
+{                                                           \
+  db_ext_number _z;   double _yh;                           \
+  int _lo;                                                  \
+  _z.d = _y;                                                \
+  _yh = (double) _y;                                        \
+  _lo = _z.i[DE_MANTISSA_LO] &(_mask);                      \
+  if((_lo!=(0x3ff&(_mask))) && (_lo!= (0x400&(_mask)))) {   \
+    BACK_TO_DOUBLE_MODE;                                    \
+    return _yh;                                             \
+  }                                                         \
+}
+
+
+/* Use this one if you want a final computation step to overlap with
+   the rounding test. Examples: multiplication by a sign or by a power of 2 */
+
+#define TEST_AND_RETURN_RN2(_ytest, _yreturn, _mask)         \
+{                                                            \
+  db_ext_number _z;   double _y_return_d;                    \
+  int _lo;                                                   \
+  _z.d = _ytest;                                             \
+  _y_return_d = (double) (_yreturn);                         \
+  _lo = _z.i[DE_MANTISSA_LO] &(_mask);                       \
+  if((_lo!=(0x3ff&(_mask))) && (_lo!= (0x400&(_mask)))) {    \
+    BACK_TO_DOUBLE_MODE;                                     \
+    return _y_return_d;                                      \
+  }                                                          \
 }
 #endif /* CRLIBM_TYPECPU_X86*/
 
 
-
-
-#define Add12_ext(s, r, a, b)         \
-        { long double _z, _a=a, _b=b;    \
-         s = _a + _b;             \
-         _z = s - _a;              \
-         r = _b - _z; }            
 
 #ifdef ITANIUMICC
 typedef          __int64  INT64;
@@ -235,6 +245,27 @@ typedef enum {
     }
 
 
+#define Mul12_ext(_prh,_prl,_u,_v)                    \
+{                                               \
+  *_prh = _u*_v;                                  \
+  *_prl = *_prh - _u*_v;                             \
+}
+
+
+#define Mul22_ext(pzh,pzl, xh,xl, yh,yl)              \
+{                                                     \
+long double ph, pl;                                   \
+  ph = xh*yh;                                         \
+  pl = xh*yh - ph;                                    \
+  pl = xh*yl + pl;                                    \
+  pl = xl*yh + pl;                                    \
+  *pzh = ph+pl;					      \
+  *pzl = ph - (*pzh);                                 \
+  *pzl += pl;                                         \
+}
+
+
+
 
 #else /*ITANIUMICC*/
 #define Mul12_ext(rh,rl,u,v)                        \
@@ -270,11 +301,22 @@ long double mh, ml;                                   \
   *zl = mh - (*zh) + ml;                              \
 }
 
+
+#endif /*ITANIUMICC*/
+
 #define  Div22_ext(zh,zl,xh,xl,yh,yl)\
 {long double ch,cl,uh,ul;  \
            ch=(xh)/(yh);   Mul12_ext(&uh,&ul,ch,(yh));  \
            cl=(((((xh)-uh)-ul)+(xl))-ch*(yl))/(yh);   zh=ch+cl;   zl=(ch-zh)+cl;\
 }
+
+
+
+#define Add12_ext(s, r, a, b)         \
+        { long double _z, _a=a, _b=b;    \
+         s = _a + _b;             \
+         _z = s - _a;              \
+         r = _b - _z; }            
 
 
 #define Add22_ext(zh,zl,xh,xl,yh,yl) \
@@ -286,6 +328,5 @@ s = (xh)-r+(yh)+(yl)+(xl);\
 *zl = r - (*zh) + s;\
 } while(0)
 
-#endif /*ITANIUMICC*/
 
 #endif // ifndef __DOUBLE_EXT_H
