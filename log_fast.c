@@ -56,109 +56,109 @@ extern double scs_log_rn(db_number, int);
 extern double scs_log_ru(db_number, int);
 extern double scs_log_rd(db_number, int);
 
-/* The following constant selects which path to take.  Currently, 9
+
+/*  Compile-time switches */
+/* These #defines are intended to provide several performance tradeoffs. */
+
+/* switches on various printfs. Default 0 */
+#define DEBUG 0
+
+/* The code for the first step may be shared, or not. Default to 1 (shared)
+   There is a speed/size tradeoff there.
+   Example : sharing costs 30 cycles out of 1300 on a PIV/Linux/gcc3.3 */
+#define SHARE_CODE 1
+
+/* The following constant selects which path to take.  Currently, 8
 is optimal, but if we improve the speed of the second step in the
 future, we may want to try 8 or 7, which will trade off speed for the
 first step and % of taking second step
 */
-#define CONST_FASTPATH 9
+#define CONST_FASTPATH 8
 #define ROUNDCST_FASTPATH (1.0000000000000009 +(4. / (((double)(4<<CONST_FASTPATH)) -1.) ))
 
-/* static  void log_quick(double *res_hi, double *res_lo, double * roundcst, db_number * y, int * pE) { */
-/*    db_number z; */
-/*    double ln2_times_E_HI, ln2_times_E_LO; */
-/*    double res, P_hi, P_lo; */
-/*    int k, i, E; */
 
-/*    E=*pE; */
 
-/*   /\* find y.d such that sqrt(2)/2 < y.d < sqrt(2) *\/ */
-/*   E += ((*y).i[HI_ENDIAN]>>20)-1023;				/\* extract the exponent *\/ */
-/*   (*y).i[HI_ENDIAN] =  ((*y).i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/\* do exponent = 0 *\/ */
-/*   if ((*y).d > SQRT_2){ */
-/*     (*y).d *= 0.5; */
-/*     E++; */
-/*   } */
+#if SHARE_CODE
+static void log_quick(double *pres_hi, double *pres_lo, double * proundcst, db_number * py, int * pE) {
+   db_number z,y;
+   double ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo, roundcst;
+   double res, P_hi, P_lo;
+   int k, i, E;
 
-/*   /\* E belongs to {-52-1023 .. 2046-1023} *\/ */
-     
-/*   /\* find the interval including y.d *\/ */
-/*   i = ((((*y).i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;  /\* to know which polynom to evaluate *\/ */
-/*   if (i < 10) { */
-/*     i = i>>1; */
-/*   } */
-/*   else{ */
-/*     i = ((i-1)>>1); */
-/*   } */
+   y.d = *py;
 
-/*   z.d = (*y).d - (middle[i]).d; 	/\* evaluate the value of x in the */
-/* 				   ii-th interval (exact thanks to */
-/* 				   Sterbenz Lemma) *\/ */
 
-/*   *pE=E; */
+    /* E belongs to {-52-1023 .. 2046-1023} */
+    
+    /* find the interval including y.d */
+    i = (((y.i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;  /* to know which polynom to evaluate */
+    if (i < 10)
+      i = i>>1;
+    else
+      i = ((i-1)>>1);
 
-/*   /\* sc_ln2_times_E = E*log(2)  *\/ */
-/*   Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.); */
+    z.d = y.d - (middle[i]).d; 	/* evaluate the value of x in the
+				   ii-th interval (exact thanks to
+				   Sterbenz Lemma) */
+    
+    /* sc_ln2_times_E = E*log(2)  */
+    Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
+    
+    /*
+     * Polynomial evaluation of log(1 + R) 
+     */
 
- 
-/*   /\* */
-/*    * Polynomial evaluation of log(1 + R) with an error less than 2^(-60) */
-/*    *\/ */
-
-/*   res = (poly_log_fast_b[i][13]).d; */
-/*   for(k=12; k>1; k--){ */
-/*     res *= z.d; */
-/*     res += (poly_log_fast_b[i][k]).d; */
-/*   } */
+    res = (poly_log_fast_h[i][13]).d;
+    for(k=12; k>1; k--){
+      res *= z.d;
+      res += (poly_log_fast_h[i][k]).d;
+    }
    
-
-
-/*   if(ABS(ln2_times_E_HI) < ((double)(1<<CONST_FASTPATH))+0.5) { */
-/*     /\* Slow path *\/ */
-/*     /\*   */
-/* 	if(ABS(ln2_times_E_HI)>32.) */
-/* 	roundcst=1.+ (1./64.)*(delta[i]-1.); */
-/* 	else  */
-/*     *\/ */
-/*     *roundcst = delta[i]; */
-
-
-/*     /\* Multiply S2 by x = P2 *\/ */
-/*     Mul12(&P_hi, &P_lo, res, z.d); */
+    if(ABS(ln2_times_E_HI) < ((double)(1<<CONST_FASTPATH))+0.5) {
+      
+      /* Slow path */
+      roundcst = delta[i];
+      
+      /* Multiply S2 by x = P2 */
+      Mul12(&P_hi, &P_lo, res, z.d);
+      
+      /* add S1 = a1_hi + a1_lo to P2 */ 
+      Add22(&res_hi, &res_lo, (poly_log_fast_h[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
     
-/*     /\* add S1 = a1_hi + a1_lo to P2 *\/  */
-/*     /\* *\/ */
-/*     Add22Cond(res_hi, res_lo, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo); */
-    
-/*     /\* multiply S1 by x = P1 *\/  */
-/*     Mul22(&P_hi, &P_lo, *res_hi, *res_lo, z.d, 0.);  */
-    
-/*     /\* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo *\/ */
-/*     Add22Cond(res_hi, res_lo, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo); */
-    
-/*       /\* REBUILDING *\/ */
-/*     /\*    if (!(E==0))  commented out, because slows many down to speedup a few *\/  */
-/*     Add22Cond(res_hi, res_lo, ln2_times_E_HI, ln2_times_E_LO, *res_hi, *res_lo); */
-    
+      /* multiply S1 by x = P1 */ 
+      Mul22(&P_hi, &P_lo, res_hi, res_lo, z.d, 0.); 
+      
+      /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
+      Add22(&res_hi, &res_lo, (poly_log_fast_h[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
+      
+      /* REBUILDING */
+      if (!(E==0)) /* This test saves two tests in Add22Cond */
+	Add22(&res_hi, &res_lo, ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo);
+    }
 
-/*   } */
-/*   else { /\* Fast path *\/ */
-/*     *roundcst=ROUNDCST_FASTPATH; */
-/*     res =  (poly_log_fast_b[i][0]).d + z.d*((poly_log_fast_b[i][1]).d + z.d*res); */
+    else { /* Fast path */
+      roundcst=ROUNDCST_FASTPATH;
+      res =  (poly_log_fast_h[i][0]).d + z.d*((poly_log_fast_h[i][1]).d + z.d*res);
+      
+      /* REBUILDING */
+      /* As |ln2_times_E_HI| > CONST_FASTPATH and |res| < 0.5 we may use Add22 */
+      Add22(&res_hi, &res_lo, ln2_times_E_HI, ln2_times_E_LO, res, 0.0);
+#if DEBUG
+      printf("\ni=%d    roundcst=%1.20e\n", i , roundcst);
+      printf("\ res=%1.20e\n E=%d\n Eln2HI=%1.20e\n Eln2LO=%1.20e\n \n",res,E,ln2_times_E_HI,ln2_times_E_LO);
+      printf("\n   reshi=%1.20e\n   reslo=%1.20e\n",res_hi,res_lo);
+      printf("\n    reslo*cst=%1.20e\n",res_lo*roundcst);
+      printf("\n roundcst=%1.20e\n",roundcst);
+#endif /* DEBUG */
+    }
 
-/*     /\* REBUILDING *\/ */
-/*     /\* As |ln2_times_E_HI| > CONST_FASTPATH and |res| < 0.5 we may use Add22 *\/ */
-/*     Add22(res_hi, res_lo, ln2_times_E_HI, ln2_times_E_LO, res, 0.0); */
-/*   } */
-/* #if 0 */
-/*   printf("\ni=%d    roundcst=%1.20e\n", i , roundcst); */
-/*   printf("\ res=%1.20e\n E=%d\n Eln2HI=%1.20e\n Eln2LO=%1.20e\n Eln2LO*cst=%1.20e\n",res,E,ln2_times_E_HI,ln2_times_E_LO); */
-/*   printf("\n   reshi=%1.20e\n   reslo=%1.20e\n",reshi,reslo); */
-/*   printf("\n    reslo*cst=%1.20e\n",reslo*roundcst); */
-/*   printf("\n roundcst=%1.20e\n",roundcst); */
-/* #endif */
-/* } */
+    /* exit */
+    *proundcst = roundcst;
+    *pres_hi=res_hi;
+    *pres_lo=res_lo;
+}
 
+#endif /* SHARE_CODE */
 
 /*************************************************************
  *************************************************************
@@ -171,9 +171,46 @@ first step and % of taking second step
    int E;
 
    E=0;
-   
-   y.d = x;
+   y.d=x;
+
  /* Filter cases */
+   if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
+     if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
+       return 1.0/0.0;     
+     }                    		   /* log(+/-0) = -Inf */
+     if (y.i[HI_ENDIAN] < 0){ 
+      return (x-x)/0;                      /* log(-x) = Nan    */
+     }
+     /* Subnormal number */
+     E = -52; 		
+     y.d *= two52.d; 	  /* make x as normal number = x's mantissa    */ 
+   }
+    
+   if (y.i[HI_ENDIAN] >= 0x7ff00000){
+     return  x+x;				    /* Inf or Nan       */
+   }
+   
+    /* find y.d such that sqrt(2)/2 < y.d < sqrt(2) */
+    E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
+    y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
+    if (y.d > SQRT_2){
+      y.d *= 0.5;
+      E++;
+    }
+
+#if SHARE_CODE
+  log_quick(&res_hi, &res_lo, &roundcst, &y, &E);
+#else
+  {
+    db_number z;
+    double ln2_times_E_HI, ln2_times_E_LO;
+    double res, P_hi, P_lo;
+    int k, i;
+
+    E=0;
+    
+    y.d = x;
+    /* Filter cases */
   if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
     if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
       return 1.0/0.0;     
@@ -190,198 +227,156 @@ first step and % of taking second step
     return  x+x;				    /* Inf or Nan       */
   }
 
-#if 0
-  log_quick(&res_hi, &res_lo, &roundcst, &y, &E);
-#else
+    /* find y.d such that sqrt(2)/2 < y.d < sqrt(2) */
+    E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
+    y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
+    if (y.d > SQRT_2){
+      y.d *= 0.5;
+      E++;
+    }
 
-{
-   db_number z;
-   double ln2_times_E_HI, ln2_times_E_LO;
-   double res, P_hi, P_lo;
-   int k, i;
+    /* E belongs to {-52-1023 .. 2046-1023} */
+    
+    /* find the interval including y.d */
+    i = (((y.i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;  /* to know which polynom to evaluate */
+    if (i < 10)
+      i = i>>1;
+    else
+      i = ((i-1)>>1);
 
-  /* find y.d such that sqrt(2)/2 < y.d < sqrt(2) */
-  E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
-  y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
-  if (y.d > SQRT_2){
-    y.d *= 0.5;
-    E++;
-  }
-
-  /* E belongs to {-52-1023 .. 2046-1023} */
-     
-  /* find the interval including y.d */
-  i = (((y.i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;  /* to know which polynom to evaluate */
-  if (i < 10) {
-    i = i>>1;
-  }
-  else{
-    i = ((i-1)>>1);
-  }
-
-  z.d = y.d - (middle[i]).d; 	/* evaluate the value of x in the
+    z.d = y.d - (middle[i]).d; 	/* evaluate the value of x in the
 				   ii-th interval (exact thanks to
 				   Sterbenz Lemma) */
+    
+    /* sc_ln2_times_E = E*log(2)  */
+    Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
+    
+    /*
+     * Polynomial evaluation of log(1 + R) 
+     */
 
-
-  /* sc_ln2_times_E = E*log(2)  */
-  Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
-
- 
-  /*
-   * Polynomial evaluation of log(1 + R) 
-   */
-
-  res = (poly_log_fast_b[i][13]).d;
-  for(k=12; k>1; k--){
-    res *= z.d;
-    res += (poly_log_fast_b[i][k]).d;
-  }
+    res = (poly_log_fast_h[i][13]).d;
+    for(k=12; k>1; k--){
+      res *= z.d;
+      res += (poly_log_fast_h[i][k]).d;
+    }
    
-  if(ABS(ln2_times_E_HI) < ((double)(1<<CONST_FASTPATH))+0.5) {
-    /* Slow path */
-
-    roundcst = delta[i];
-
-
-    /* Multiply S2 by x = P2 */
-    Mul12(&P_hi, &P_lo, res, z.d);
+    if(ABS(ln2_times_E_HI) < ((double)(1<<CONST_FASTPATH))+0.5) {
+      
+      /* Slow path */
+      roundcst = delta[i];
+      
+      /* Multiply S2 by x = P2 */
+      Mul12(&P_hi, &P_lo, res, z.d);
+      
+      /* add S1 = a1_hi + a1_lo to P2 */ 
+      Add22(&res_hi, &res_lo, (poly_log_fast_h[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
     
-    /* add S1 = a1_hi + a1_lo to P2 */ 
-    /* */
-    Add22(&res_hi, &res_lo, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
-    
-    /* multiply S1 by x = P1 */ 
-    Mul22(&P_hi, &P_lo, res_hi, res_lo, z.d, 0.); 
-    
-    /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
-    Add22(&res_hi, &res_lo, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
-    
+      /* multiply S1 by x = P1 */ 
+      Mul22(&P_hi, &P_lo, res_hi, res_lo, z.d, 0.); 
+      
+      /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
+      Add22(&res_hi, &res_lo, (poly_log_fast_h[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
+      
       /* REBUILDING */
-    if (!(E==0)) /* This test saves two tests in Add22Cond */
-      Add22(&res_hi, &res_lo, ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo);
+      if (!(E==0)) /* This test saves two tests in Add22Cond */
+	Add22(&res_hi, &res_lo, ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo);
+    }
 
+    else { /* Fast path */
+      roundcst=ROUNDCST_FASTPATH;
+      res =  (poly_log_fast_h[i][0]).d + z.d*((poly_log_fast_h[i][1]).d + z.d*res);
+      
+      /* REBUILDING */
+      /* As |ln2_times_E_HI| > CONST_FASTPATH and |res| < 0.5 we may use Add22 */
+      Add22(&res_hi, &res_lo, ln2_times_E_HI, ln2_times_E_LO, res, 0.0);
+#if DEBUG
+      printf("\ni=%d    roundcst=%1.20e\n", i , roundcst);
+      printf("\ res=%1.20e\n E=%d\n Eln2HI=%1.20e\n Eln2LO=%1.20e\n \n",res,E,ln2_times_E_HI,ln2_times_E_LO);
+      printf("\n   reshi=%1.20e\n   reslo=%1.20e\n",res_hi,res_lo);
+      printf("\n    reslo*cst=%1.20e\n",res_lo*roundcst);
+      printf("\n roundcst=%1.20e\n",roundcst);
+#endif /* DEBUG */
+    }
   }
-  else { /* Fast path */
-    roundcst=ROUNDCST_FASTPATH;
-    res =  (poly_log_fast_b[i][0]).d + z.d*((poly_log_fast_b[i][1]).d + z.d*res);
-
-    /* REBUILDING */
-    /* As |ln2_times_E_HI| > CONST_FASTPATH and |res| < 0.5 we may use Add22 */
-    Add22(&res_hi, &res_lo, ln2_times_E_HI, ln2_times_E_LO, res, 0.0);
-#if 0
-  printf("\ni=%d    roundcst=%1.20e\n", i , roundcst);
-  printf("\ res=%1.20e\n E=%d\n Eln2HI=%1.20e\n Eln2LO=%1.20e\n \n",res,E,ln2_times_E_HI,ln2_times_E_LO);
-  printf("\n   reshi=%1.20e\n   reslo=%1.20e\n",res_hi,res_lo);
-  printf("\n    reslo*cst=%1.20e\n",res_lo*roundcst);
-  printf("\n roundcst=%1.20e\n",roundcst);
-#endif
-  }
-}
-
-#endif
+  
+#endif /* SHARE_CODE */
   /* ROUNDING TO NEAREST */
   if(res_hi == (res_hi + (res_lo * roundcst)))
     return res_hi;
   else { 
-#if 0
+#if DEBUG
     printf("Going for Accurate Phase");
 #endif
     return scs_log_rn(y, E);    
   }
  }
+
+
+
+
+
 /*************************************************************
  *************************************************************
  *               ROUNDED  TOWARD  -INFINITY		     *
  *************************************************************
  *************************************************************/
  double log_rd(double x){ 
- double ln2_times_E_HI, ln2_times_E_LO;
- double res, P_hi, P_lo;
- db_number y, z, reshi, reslo;
- int k, i = 0, E = 0;
-  
-  y.d = x;
-  /* Filter cases */
-  if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
-    if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
-      return 1.0/0.0;     
-    }                    		   /* log(+/-0) = -Inf */
-    if (y.i[HI_ENDIAN] < 0){ 
+   db_number y;
+   double res_hi,res_lo,roundcst;
+   int E;
+
+   E=0;
+   y.d=x;
+
+ /* Filter cases */
+   if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
+     if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
+       return 1.0/0.0;     
+     }                    		   /* log(+/-0) = -Inf */
+     if (y.i[HI_ENDIAN] < 0){ 
       return (x-x)/0;                      /* log(-x) = Nan    */
-    }
-    /* Subnormal number */
-    E = -52; 		
-    y.d *= two52.d; 	  /* make x as normal number = x's mantissa    */ 
-    }
+     }
+     /* Subnormal number */
+     E = -52; 		
+     y.d *= two52.d; 	  /* make x as normal number = x's mantissa    */ 
+   }
     
-  if (y.i[HI_ENDIAN] >= 0x7ff00000){
-    return  x+x;				    /* Inf or Nan       */
-  }
+   if (y.i[HI_ENDIAN] >= 0x7ff00000){
+     return  x+x;				    /* Inf or Nan       */
+   }
+   
+    /* find y.d such that sqrt(2)/2 < y.d < sqrt(2) */
+    E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
+    y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
+    if (y.d > SQRT_2){
+      y.d *= 0.5;
+      E++;
+    }
+ 
 
-  /* find y.d such that sqrt(2)/2 < y.d < sqrt(2) */
-  E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
-  y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
-  if (y.d > SQRT_2){
-    y.d *= 0.5;
-    E++;
-  }
+#if SHARE_CODE
+  log_quick(&res_hi, &res_lo, &roundcst, &y, &E);
+#else
   
-  
-  
-  /* find the interval including y.d */
-  i = (((y.i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;  /* 11<= i <= 21, then we know which polynom to evaluate */
-  if (i < 10) {
-    i = i>>1;
-  }
-  else{
-    i = ((i-1)>>1);
-  }
- 
-  z.d = y.d - (middle[i]).d; 	/* evaluate the value of x in the ii-th interval */ 						/* Sterbenz Lemma */
- 
-  /*
-   * Polynomial evaluation of log(1 + R) with an error less than 2^(-60)
-   */
-
-  res = (poly_log_fast_b[i][13]).d;
-  for(k=12; k>1; k--){
-    res *= z.d;
-    res += (poly_log_fast_b[i][k]).d;
-  }
-   
-   /* Multiply S2 by x = P2 */
- Mul12(&P_hi, &P_lo, res, z.d);
- 
-  /* add S1 = a1_hi + a1_lo to P2 */ 
-  Add22(&reshi.d, &reslo.d, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
- 
-  /* multiply S1 by x = P1 */ 
-  Mul22(&P_hi, &P_lo, reshi.d, reslo.d, z.d, 0.);
-       
-  /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
-  Add22(&reshi.d, &reslo.d, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
-  
-  if (!(E==0)){
-  
-  /* sc_ln2_times_E = E*log(2)  */
-  Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
-   
-   /* RECONSTRUCTION */
-   Add22(&reshi.d, &reslo.d, ln2_times_E_HI, ln2_times_E_LO, reshi.d, reslo.d);
-}
-   
+#endif /* SHARE_CODE */ 
   /* ROUNDING TO - INFINITY */
 
- {int logA, err;
-  err = 59*2^(20);
-  logA = (reshi.i[HI_ENDIAN] & 0x7FF00000) - err;
- 
-  if((reslo.i[HI_ENDIAN] & 0x7FF00000) > logA){
-    if((reshi.i[HI_ENDIAN])^(reslo.i[HI_ENDIAN]) < 0){
-      reshi.l -= 1-((reshi.i[HI_ENDIAN] >> 31) << 1);
-    }
-    return reshi.d;
+ { 
+   db_number absyh, absyl, u, u53;
+
+   absyh.d=res_hi;
+   absyl.d=res_lo;
+
+   absyh.l = absyh.l & 0x7fffffffffffffffLL;
+   absyl.l = absyl.l & 0x7fffffffffffffffLL;
+   u.l     = absyh.l & 0x7fff000000000000LL;
+   u53.l   = u.l     + 0x0035000000000000LL; /* exp + 53  */
+
+   if(absyl.d > delta*u53.d){
+     if(res_lo<0.)
+       res_hi -= u.d;
+    return res_hi.d;
   }else{
     return scs_log_rd(y, E);
   }
@@ -442,29 +437,29 @@ double log_ru(double x){
    * Polynomial evaluation of log(1 + R) with an error less than 2^(-60)
    */
 
-  res = (poly_log_fast_b[i][13]).d;
+  res = (poly_log_fast_h[i][13]).d;
   for(k=12; k>2; k--){
     res *= z.d;
-    res += (poly_log_fast_b[i][k]).d;
+    res += (poly_log_fast_h[i][k]).d;
   }
    
    /* Multiply S3 by x = P3 */
  Mul12(&P_hi, &P_lo, res, z.d);
  
   /* add S2 = a2_hi to P3 */ 
- Add22(&reshi.d, &reslo.d, (poly_log_fast_b[i][2]).d, 0., P_hi, P_lo);
+ Add22(&reshi.d, &reslo.d, (poly_log_fast_h[i][2]).d, 0., P_hi, P_lo);
  
   /* Multiply S2 by x = P2 */
  Mul22(&P_hi, &P_lo, reshi.d, reslo.d, z.d, 0.);
  
   /* add S1 = a1_hi + a1_lo to P2 */ 
-  Add22(&reshi.d, &reslo.d, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
+  Add22(&reshi.d, &reslo.d, (poly_log_fast_h[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
  
   /* multiply S1 by x = P1 */ 
   Mul22(&P_hi, &P_lo, reshi.d, reslo.d, z.d, 0.);
        
   /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
-  Add22(&reshi.d, &reslo.d, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
+  Add22(&reshi.d, &reslo.d, (poly_log_fast_h[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
   
   if (!(E==0)){
   
