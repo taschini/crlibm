@@ -309,7 +309,7 @@ Line 10 & Let us prove that z.d is computed exactly, without rounding error. \\
 \end{lstlisting}
 
 \begin{tabular}{ll}
-& Procedures ADD2, Dekker2 and Dekker are detailed in \ref{section:commonC}\\
+& Procedures Add22, Mul12 and Mul22 are detailed in \ref{section:commonCdoubledouble}\\
 Line 2 & $P\_hi + P\_lo$  is exactly the result of the multiplication of "res" by "z.d".\\    
 Line 5 & ADD2 does the addition of $P\_hi + P\_lo$ with $c_1hi + c_1lo$ and returns a result over\\ & two IEEE-double precision numbers, with an error less than $2^{-103}$.\\
 Line 8 & Dekker2 does the multiplication of $reshi.d + reslo.d$ by $z.d$ and returns a result over\\ & two IEEE-double precision numbers, with an error less than $2^{-103}$.\\
@@ -529,6 +529,60 @@ So, at the end, we compute:\\
 \subsection{Rounding mode}
 The procedures $scs\_get\_d$, $scs\_get\_d\_pinf$ and $scs\_get\_d\_minf$ assure the conversion from type "scs" to type "IEEE" according to the selected round mode.\\
 You are encouraged for further details to have a look at the research report RR 2003-37.pdf at www.ens-lyon.fr/LIP/Pub/rr2003.html
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Analysis of the logarithm performance}
+\label{section:log_results}
+
+Table \ref{tbl:log_abstime} (produced by the \texttt{crlibm\_testperf}
+executable) gives absolute timings for a variety of processors and
+operating systems. Contributions to this table for new
+processors/OS/compiler combinations are welcome.
+
+\begin{table}[!htb]
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|l|r|r|r||r|}
+\hline\hline
+ \multicolumn{4}{|c|}{Pentium 4 Xeon / Debian sarge / gcc 3.3}   \\ 
+ \hline
+                         & min time      & max time      & avg time \\ 
+ \hline
+ \texttt{libm}           & 728          & 33196         &        892 \\ 
+ \hline
+  \texttt{mpfr}          & 748          & 242592        &      22604 \\ 
+ \hline
+  \texttt{libultim}      & 968          & 419528        &       1289 \\ 
+ \hline\hline
+ \texttt{crlibm}         & 1472         & 52828         &       1837 \\ 
+ \hline\hline
+\end{tabular}
+\end{center}
+\caption{Absolute timings for the logarithm
+  \label{tbl:log_abstime}}
+\end{table}
+
+
+In average, the second step is taken in 0.4\% of the calls, which
+seems a rather good balance considering the respective costs of the
+first and second steps (seen in the table as the min and max times,
+respectively).
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion and perspectives}
+
+
+In the log we have a fairly good balance between both evaluation
+phases. The IBM library has specific code for the cases when $x$ is
+close to $1$. By following this approach we can hope for a further
+50\% performance improvement in average, at the cost of a more
+complicated proof.
 
 
 

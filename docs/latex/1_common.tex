@@ -253,6 +253,130 @@ $y_h$ is the correctly rounded value of $y$.
 
 \subsection{Rounding to the nearest}
 
+\begin{theorem}[Correct rounding of a double-double to the nearest double, avoiding denormals]
+\label{th:roundingRN1}
+~\\
+      Let $y$ and $\delta$ be real numbers, and $e$, $y_h$ and $y_l$ be
+  floating-point numbers such that 
+  \begin{itemize}
+  \item $y_h=y_h\oplus y_l$,
+  \item none of $y_h$ and $y_l$ is a  NaN.
+  \item $|y_h|\ge 2^{-1022+53}$ 
+  \item $|y_h+y_l - y| < \delta.|y|$
+  \item $0< \delta \le 2^{-53-k}$ with $k\ge 2$ integer
+  \item $e\ge 1+  \dfrac{2^{53+k+1}\delta}{(2^{k}-1)(1-2^{-53})}$
+\end{itemize}
+
+The following test determines whether $y_h$ is the
+  correctly rounded value of $y$ in  round to nearest mode.
+
+\begin{lstlisting}[
+  firstnumber=1]
+if( (*@$y_h$@*) == ((*@$y_h$@*) + ((*@$y_l$@*)*e)) )
+  return (*@$y_h$@*);
+else /* more accuracy is needed, lauch accurate phase */
+\end{lstlisting}
+\end{theorem}
+
+\begin{proof}
+  The theorem holds if $y_h$ is $\pm \infty$.
+  
+  It also holds if $y_h$ is a denormal: in this case $y_l$ is zero, so
+  the correctly rounded result is $y_h$, and the test is true. In the
+  following we therefore assume that $y_h$ is a normal number. We also
+  assume that $y\ge0$ (so $y_h\ge0$), as the other case is symmetric.
+  
+  Let us note $u=\ulp(y_h)$. By definition of the \ulp, we have $y_h
+  \in [2^{52}u, (2^{53}-1)u]$, which implies $y<2^{53}u$ as $y < y_h + y_l + \delta y
+  < (2^{53}-1)u +\frac{1}{2}u +\frac{1}{2}u$.
+
+  What we want to prove is that if the test is true, then $y_h =
+  \round(y)$. We will prove that  if the test is true, then $|y_l-\frac{1}{2}u| > 2^{53}\delta
+  u$, which implies $|y_l-\frac{1}{2}u| > \delta y$, which implies
+  that we are not in a difficult case for correct rounding to the
+  nearest, so $y_h = \round(y)$.
+
+  Consider the case when $y_l$ is positive:  $0\le y_l \le \frac{1}{2}u$.
+
+  If $0 \le y_l < (\frac{1}{2} - \frac{1}{2^{k+1}})u$, then since
+    $|\delta|<2^{-53+k}$ we are in an easy case for rounding to the
+    nearest, and $y_h = \round(y)$ regardless of the result of the test.
+
+    Now consider the case when $y_l \ge (\frac{1}{2} - \frac{1}{2^{k+1}})u$.
+   % = \frac{2^{k}-1}{2^{k+1}}u
+    Remark that the condition $|y_h|\ge 2^{-1022+54}$ ensures that
+    $\frac{1}{2}u$ is a normal number, so in this case
+    $y_l$ is a normal number. As $e>1$ this ensures that
+    $$y_l\times e(1-2^{-53})\ \le\ y_l \otimes e\ \le\ y_l\times e(1+2^{-53})$$
+
+
+  Suppose that the test is true ($y_h \oplus y_l \otimes e = y_h$). 
+  With IEEE-54 compliant rounding to
+  nearest, this implies $|y_l \otimes e|
+  \le \frac{1}{2}u$, which in turn implies $|y_l \times e|
+  (1-2^{-53}) \le \frac{1}{2}u$, as $y_l$ is a normal number and $e>1$. 
+  
+  We get $y_l \times (1+e-1)(1-2^{-53}) \le \frac{1}{2}u$, or
+  \begin{equation}
+  \frac{1}{2}u - y_l \ge y_l (e-1)(1-2^{-53})\label{eq:prooftestRN2}
+  \end{equation}  
+
+(\ref{eq:prooftestRN2}) implies
+    $\frac{1}{2}u - y_l \ge \frac{2^{k}-1}{2^{k+1}} (e-1)(1-2^{-53}) >
+    2^{53}\delta u$, from $e\ge 1+
+    \frac{2^{53+k+1}\delta}{(2^{k}-1)(1-2^{-53})}$.
+
+  The case when $y_l$ is negative is similar.
+\end{proof}
+
+
+
+\begin{theorem}[Correct rounding of a double-double to the nearest double, general case]
+\label{th:roundingRN2}
+~\\
+  Let $y$ and $\delta$ be real numbers, and $e$, $y_h$ and $y_l$ be
+  floating-point numbers such that 
+  \begin{itemize}
+  \item $y_h=y_h\oplus y_l$,
+  \item none of $y_h$ and $y_l$ is a  NaN.
+  \item $|y_h+y_l - y| < \delta.|y|$
+  \item $0< \delta \le 2^{-53-k}$ with $k\ge 2$ integer
+  \item $e\ge 1+  \dfrac{2^{53+k+2}\delta}{2^{k}-1}$
+\end{itemize}
+
+The following test determines whether $y_h$ is the
+  correctly rounded value of $y$ in  round to nearest mode.
+
+\begin{lstlisting}[firstnumber=1]
+if( (*@$y_h$@*) == ((*@$y_h$@*) + ((*@$y_l$@*)*e)) )
+  return (*@$y_h$@*);
+else /* more accuracy is needed, lauch accurate phase */
+\end{lstlisting}
+\end{theorem}
+
+\begin{proof}
+  The proof is identical to the previous theorem, with the exception
+  that we cannot ensure anymore that $y_l$ will not be a denormal.
+  Therefore the relative error on $y_l\times e$ may be as high as
+  $\frac{1}{2}$, and the condition on $e$ is reinforced accordingly.
+\end{proof}
+
+
+\subsubsection*{Notes}
+
+\begin{itemize}
+\item In general we will target values of $\delta$ in the order of
+  $2^{-53-10}$ to balance the execution times of the quick and
+  accurate phase. In this case, using the first theorem almost divides
+  by two the frequency of calls to the accurate phase. 
+\item If a fused multiply-and-add is  used for the
+  computation of $y_h+y_l\times e$, TODO.
+\end{itemize}
+
+
+
+\subsection{Rounding up}
+
 \begin{theorem}[Correct rounding of a double-double to a double]
   Let $y$ and $\delta$ be real numbers, and $e$, $y_h$ and $y_l$ be
   floating-point numbers such that 
@@ -275,58 +399,6 @@ if( (*@$y_h$@*) == ((*@$y_h$@*) + ((*@$y_l$@*)*e)) )
 else /* more accuracy is needed, lauch accurate phase */
 \end{lstlisting}
 \end{theorem}
-
-\begin{proof}
-  The property holds if $y_h$ is $\pm \infty$.
-  
-  In the following we assume that $y\ge0$ (so $y_h\ge0$), as the other
-  case is symmetric.
-  
-  Let us note $u=\ulp(y_h)$. By definition of the \ulp, we have $y_h
-  \in [2^{52}u, (2^{53}-1)u]$, which implies $y<2^{53}u$ as $y < y_h + y_l + \delta y
-  < (2^{53}-1)u +\frac{1}{2}u +\frac{1}{2}u$.
-
-  
-  What we want to prove is that if the test is true, then $y_h =
-  \round(y)$. We will prove that  if the test is true, then $|y_l-\frac{1}{2}u| > 2^{53}\delta
-  u$, which implies $|y_l-\frac{1}{2}u| > \delta y$, which implies
-  that we are not in a difficult case for correct rounding to the
-  nearest.
-
-  Suppose that the test is true ($y_h \oplus y_l \otimes e = y_h$). 
-  With IEEE-54 compliant rounding to
-  nearest, this implies $|y_l \otimes e|
-  \le \frac{1}{2}u$, which in turn implies $|y_l \times e|
-  (1-2^{-53}) \le \frac{1}{2}u$. 
-  
-  Consider the case when $y_l$ is positive:  $0\le y_l \le \frac{1}{2}u$.
-  We get $y_l \times (1+e-1)(1-2^{-53}) \le \frac{1}{2}u$, or
-  \begin{equation}
-  \frac{1}{2}u - y_l \ge y_l (e-1)(1-2^{-53})\label{eq:prooftestRN2}
-  \end{equation}  
-  Now
-  \begin{itemize}
-  \item if $0 \le y_l < (\frac{1}{2} - \frac{1}{2^{k+1}})u$, then since
-    $|\delta|<2^{-53+k}$ we are in an easy case for rounding to the
-    nearest, and $y_h = \round(y)$.
-  \item If $y_l \ge (\frac{1}{2} - \frac{1}{2^{k+1}})u =
-    \frac{2^{k}-1}{2^{k+1}}u$, then (\ref{eq:prooftestRN2}) implies
-    $\frac{1}{2}u - y_l \ge \frac{2^{k}-1}{2^{k+1}} (e-1)(1-2^{-53}) >
-    2^{53}\delta u$, from $e\ge 1+
-    \frac{2^{53+k+1}\delta}{(2^{k}-1)(1-2^{-53})}$.
-\end{itemize}  
-  The case when $y_l$ is negative is similar.
-\end{proof}
-
- Note that a fused multiply-and-add may be used safely for the
- computation of $y_h+y_l\times e$.
-
-
-
-
-\subsection{Rounding up}
-
-TODO
 
 \subsection{Rounding down}
 

@@ -9,18 +9,17 @@
 \usepackage{lscape}    % pour le mode landscape
 \usepackage{makeidx}
 \usepackage{color}
-\usepackage{amstext,url,latexsym,amsfonts,amssymb,amsmath}
+\usepackage{amstext,url,latexsym,amsfonts,amssymb,amsmath,amsthm}
 
 
 \newtheorem{example}{Example}
 \newtheorem{theorem}{Theorem}
 \newtheorem{algorithm}{Algorithm}
-\newtheorem{proof}{Proof}
 \newtheorem{propriete}{Property}
 
 
 
-\newcommand{\pref}[1]{<\ref{#1}>}
+\newcommand{\pref}[1]{$<$\ref{#1}$>$}
 \newcommand{\quick}{{quick}}
 \newcommand{\accurate}{{accurate}}
 \newcommand{\ulp}{\mbox{ulp}}
@@ -40,7 +39,7 @@
 % Environnement pour disposer de propriété ``à la leslie lamport''
 \newcounter{propexp} % reset propexp à chaque chapitre
 \newenvironment{prop}
-{\begin{trivlist}\refstepcounter{propexp}\item[\hbox to 0pt{\spring {\bf <\arabic{propexp}>}}]}
+{\begin{trivlist}\refstepcounter{propexp}\item[\hbox to 0pt{\spring {\bf $<$\arabic{propexp}$>$}}]}
 {\ifvmode\smallskip\fi$\bullet$\end{trivlist}}
 
 % Définition de l'environnement proof
@@ -48,8 +47,6 @@
 \def\@yproof[#1]{\@proof{ #1}}
 \def\@proof#1{\begin{trivlist}\item[\hbox to 0pt{\spring $\diamond$}]
 \emph{Proof#1. }}
-%\newenvironment{preuve}
-%{\@ifnextchar[{\@yproof}{\@proof{}}}{\hfill\null\hfill$\square$\end{trivlist}}
 \newenvironment{preuve}
 {\@proof{}}{\hfill\null\hfill$\square$\end{trivlist}}
 
