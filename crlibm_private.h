@@ -32,10 +32,16 @@ multiplications of the Dekker family may be either defined as
 functions, or as #defines.  Which one is better depends on the
 processor/compiler/OS.  As #define has to be used with more care (not
 type-safe), the two following variables should  be set to 1 in the
-development/debugging phase, until no type warning remains.  */
-
-#define ADD22_AS_FUNCTIONS 1
+development/debugging phase, until no type warning remains.  
+Optimal values for Pentium 4:
+#define ADD22_AS_FUNCTIONS 0
 #define DEKKER_AS_FUNCTIONS 1
+
+*/
+
+#define ADD22_AS_FUNCTIONS 0
+#define DEKKER_AS_FUNCTIONS 1
+
 
 
 /* setting the following variable adds variables and code for
