@@ -38,7 +38,8 @@ AC_PROG_MAKE_SET
 
 dnl Check for compiler
 
-AC_PROG_CC(gcc icc cc)
+
+AC_PROG_CC(gcc-3.3 gcc-3.2 gcc icc cc)
 
 dnl send this information to automake
 AM_CONDITIONAL(COMPILER_ICC, test x$CC = xicc)
