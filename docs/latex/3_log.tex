@@ -8,14 +8,15 @@ This chapter is contributed by Florent de~Dinechin, with assistance from C. Dara
 
 For this function, the search for worst-case accuracy required to
 compute in double precision the correctly rounded  logarithm of a double is
-completed. This worst-case accuracy is $118$ bits according to Lefèvre
+completed. This worst-case accuracy is $2^{-118}$ according to Lefèvre
 and Muller \cite{LefMul2004}.
 
 We therefore proceed in two phases \cite{Ziv91}.  The first, quick
-phase (program \texttt{log\_fast.c}) is accurate only to $2^57$ and $2^64$,
-depending on the execution path as detailed below.  If this is not
-enough to decide correct rounding, a second phase, accurate to $120$
-bits using the SCS library is launched (program \texttt{log\_accurate.c}).
+phase (program \texttt{log\_fast.c}) is accurate only to $2^{-57}$ and
+$2^{-64}$, depending on the execution path as detailed below.  If this
+is not enough to decide correct rounding, a second phase, accurate to
+$2^{-120}$,  using the SCS library is launched (program
+\texttt{log\_accurate.c}).
 
 
 \subsubsection*{Definition interval and exceptional cases}
@@ -572,7 +573,7 @@ void scs_log(scs_ptr res, db_number y, int E){
 $log(1+\frac{1+f-w_i}{w_i})$ is approximated by a polynomial
 $Q(\frac{1+f-w_i}{w_i})$ with an overall relative error less than $2^{-130}$.
 
-The polynomials are available in \texttt{log.h}.
+The polynomials are available in \texttt{log\_accurate.h}.
 
 
 \begin{lstlisting}[caption={Polynomial approximation},firstnumber=1]
@@ -582,10 +583,6 @@ The polynomials are available in \texttt{log.h}.
     scs_mul(res1, addi, R);
   }
 \end{lstlisting}
-
-TODO:
-Add a Maple script that computes the relative error of a polynomial given an error on the input. It is required here.
-
 
 
 
