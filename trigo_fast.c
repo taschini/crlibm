@@ -585,7 +585,7 @@ double sin_ru(double x){
   if (absxhi>=0x7ff00000) return x-x;    
   
   if (absxhi < XMAX_SIN_CASE2){
-
+    
     /* CASE 1 : x small enough, return x suitably rounded */
     if (absxhi <XMAX_RETURN_X_FOR_SIN) {
       if(x>=0.)
@@ -595,32 +595,22 @@ double sin_ru(double x){
 	return x_split.d;
       }
     }
-
-    /* CASE 2 : x < Pi/512
-       Fast polynomial evaluation */
-    xx = x*x;
-    ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
-    Add12(sh,sl, x, ts);
-    
-    /* Rounding test to + infinity */
-    absyh.d=sh;
-    absyl.d=sl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_SIN_CASE2; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(sl>0) return sh+u.d;
-      else     return sh;
+    else {
+      /* CASE 2 : x < Pi/512
+	 Fast polynomial evaluation */
+      xx = x*x;
+      ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
+      Add12(sh,sl, x, ts);
+      epsilon=EPS_SIN_CASE2; 
     }
-    else return scs_sin_ru(x); 
   }
-
-  /* CASE 3 : Need argument reduction */ 
-  compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
-  epsilon=EPS_SIN_CASE3;
-  /* Rounding test to + infinity */
+  else {
+    /* CASE 3 : Need argument reduction */ 
+    compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
+    epsilon=EPS_SIN_CASE3;
+  }
+  
+    /* Rounding test to + infinity */
   absyh.d=sh;
   absyl.d=sl;
   absyh.l = absyh.l & 0x7fffffffffffffffLL;
@@ -666,44 +656,34 @@ double sin_rd(double x){
 	return x_split.d;
       }
     }
+    else {
+      /* CASE 2 : x < Pi/512
+	 Fast polynomial evaluation */
+      xx = x*x;
+      ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
+      Add12(sh,sl, x, ts);
+      epsilon=EPS_SIN_CASE2; 
+    }
+  }
+  else {
+    /* CASE 3 : Need argument reduction */ 
+    compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
+    epsilon=EPS_SIN_CASE3;
+  }
 
-    /* CASE 2 : x < Pi/512
-       Fast polynomial evaluation */
-    xx = x*x;
-    ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
-    Add12(sh,sl, x, ts);
-    
-    /* Rounding test to - infinity */
+    /* Rounding test to + infinity */
     absyh.d=sh;
     absyl.d=sl;
     absyh.l = absyh.l & 0x7fffffffffffffffLL;
     absyl.l = absyl.l & 0x7fffffffffffffffLL;
     u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
     u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_SIN_CASE2; 
+    
     if(absyl.d > epsilon * u53.d){ 
-      if(sl>0) return sh;
-      else     return sh-u.d;
+      if(sl>0)  return sh;
+      else      return sh-u.d;
     }
-    else return scs_sin_rd(x); 
-  }
-
-  /* CASE 3 : Need argument reduction */ 
-  compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
-  epsilon=EPS_SIN_CASE3;
-  /* Rounding test to + infinity */
-  absyh.d=sh;
-  absyl.d=sl;
-  absyh.l = absyh.l & 0x7fffffffffffffffLL;
-  absyl.l = absyl.l & 0x7fffffffffffffffLL;
-  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-  u.l   = u53.l - 0x0350000000000000LL;
-   
-  if(absyl.d > epsilon * u53.d){ 
-    if(sl>0)  return sh;
-    else      return sh-u.d;
-  }
-  else return scs_sin_rd(x);
+    else return scs_sin_rd(x);
 }
 
 
@@ -727,43 +707,27 @@ double sin_rz(double x){
   if (absxhi>=0x7ff00000) return x-x;    
   
   if (absxhi < XMAX_SIN_CASE2){
-
+    
     /* CASE 1 : x small enough, return x suitably rounded */
     if (absxhi <XMAX_RETURN_X_FOR_SIN) {
       x_split.l --;
       return x_split.d;
     }
-
-    /* CASE 2 : x < Pi/512
-       Fast polynomial evaluation */
-    xx = x*x;
-    ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
-    Add12(sh,sl, x, ts);
-    
-    /* Rounding test to zero */
-    absyh.d=sh;
-    absyl.d=sl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_SIN_CASE2; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(sh>0) {
-	if (sl>0) return sh;
-	else      return sh-u.d;
-      }
-      else {
-	if (sl>0) return sh+u.d;
-	else      return sh;
-      }
-    }	
-    else return scs_sin_rz(x); 
+    else {
+      /* CASE 2 : x < Pi/512
+	 Fast polynomial evaluation */
+      xx = x*x;
+      ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
+      Add12(sh,sl, x, ts);
+      epsilon=EPS_SIN_CASE2; 
+    }
   }
-
-  /* CASE 3 : Need argument reduction */ 
-  compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
-  epsilon=EPS_SIN_CASE3;
+  else {
+    /* CASE 3 : Need argument reduction */ 
+    compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
+    epsilon=EPS_SIN_CASE3;
+  }
+  
   /* Rounding test to + infinity */
   absyh.d=sh;
   absyl.d=sl;
@@ -852,44 +816,35 @@ double cos_ru(double x){
     /* CASE 1 : x small enough cos(x)=1. */
     if (absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
       return 1.;
-    
-    /* CASE 2 : Fast polynomial evaluation */
-    xx = x*x;
-    tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
-    Add12(ch,cl, 1, tc);
-    /* Rounding test to + infinity */
-    absyh.d=ch;
-    absyl.d=cl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_COS_CASE2; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(cl>0) return ch+u.d;
-      else     return ch;
+    else {
+      /* CASE 2 : Fast polynomial evaluation */
+      xx = x*x;
+      tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
+      Add12(ch,cl, 1, tc);
+      epsilon=EPS_COS_CASE2; 
     }
-    else return scs_cos_ru(x);  
   }
-  /* CASE 3 : Need argument reduction */ 
   else {
-    epsilon=EPS_COS_CASE3;
+    /* CASE 3 : Need argument reduction */ 
     compute_trig_with_argred(&ch,&cl,x,absxhi,COS);
-    /* Rounding test to + infinity */
-    absyh.d=ch;
-    absyl.d=cl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-   
-    if(absyl.d > epsilon * u53.d){ 
-      if(cl>0)  return ch+u.d;
-      else      return ch;
+    epsilon=EPS_COS_CASE3;
+  }
+  
+  /* Rounding test to + infinity */
+  absyh.d=ch;
+  absyl.d=cl;
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l   = u53.l - 0x0350000000000000LL;
+  
+  if(absyl.d > epsilon * u53.d){ 
+    if(cl>0)  return ch+u.d;
+    else      return ch;
   }
   else return scs_cos_ru(x);
-  }
 }
+
 
 
 /*************************************************************
@@ -918,39 +873,29 @@ double cos_rd(double x){
     xx = x*x;
     tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
     Add12(ch,cl, 1, tc);
-    /* Rounding test to -infinity */
-    absyh.d=ch; 
-    absyl.d=cl;
-    /* absyh.l = absyh.l & 0x7fffffffffffffffLL; should be positive already */
-    absyl.l =  absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
     epsilon=EPS_COS_CASE2; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(cl>=0) return ch;
-      else      return ch-u.d;
-    }
-    else return scs_cos_rd(x);  
   }
-  /* CASE 3 : Need argument reduction */ 
   else {
+    /* CASE 3 : Need argument reduction */ 
     epsilon=EPS_COS_CASE3;
     compute_trig_with_argred(&ch,&cl,x,absxhi,COS);
-    /* Rounding test to - infinity */
-    absyh.d=ch;
-    absyl.d=cl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-   
-    if(absyl.d > epsilon * u53.d){ 
+  }
+  
+  /* Rounding test to - infinity */
+  absyh.d=ch;
+  absyl.d=cl;
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l   = u53.l - 0x0350000000000000LL;
+  
+  if(absyl.d > epsilon * u53.d){ 
       if(cl>=0)  return ch;
       else       return ch-u.d;
   }
   else return scs_cos_rd(x);
-  }
 }
+
 
 
 
@@ -980,33 +925,23 @@ double cos_rz(double x){
     xx = x*x;
     tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
     Add12(ch,cl, 1, tc);
-    /* Rounding test to zero */
-    absyh.d=ch; 
-    absyl.d=cl;
-    /* absyh.l = absyh.l & 0x7fffffffffffffffLL; should be positive already */
-    absyl.l =  absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
     epsilon=EPS_COS_CASE2; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(cl>=0) return ch;
-      else      return ch-u.d;
-    }
-    else return scs_cos_rz(x);  
   }
-  /* CASE 3 : Need argument reduction */ 
   else {
-    epsilon=EPS_COS_CASE3;
+    /* CASE 3 : Need argument reduction */ 
     compute_trig_with_argred(&ch,&cl,x,absxhi,COS);
-    /* Rounding test to zero */
-    absyh.d=ch;
-    absyl.d=cl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-   
-    if(absyl.d > epsilon * u53.d){ 
+    epsilon=EPS_COS_CASE3;
+  }
+
+  /* Rounding test to zero */
+  absyh.d=ch;
+  absyl.d=cl;
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l   = u53.l - 0x0350000000000000LL;
+  
+  if(absyl.d > epsilon * u53.d){ 
     if(ch>0) {
       if (cl>0) return ch;
       else      return ch-u.d;
@@ -1017,7 +952,6 @@ double cos_rz(double x){
     }	
   }
   else return scs_cos_rz(x);
-  }
 }
 
 
