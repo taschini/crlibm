@@ -75,15 +75,15 @@ double scs_atan_ru(double);
    _i = _t.i[LO_ENDIAN];}
 
 
-/* Same idea but beware: works only for |ii| < 2^51 -1 */
-#define DOUBLE2LONGINT(_i, _d)       \
-  {\
-    db_number _t;              \
-    _t.d = (_d+6755399441055744.0); \
-    if (_d >= 0) /* sign extend */\
-      _i = _t.l & 0x0007FFFFFFFFFFFFLL;\
-    else\
-      _i = (_t.l & 0x0007FFFFFFFFFFFFLL) |  (0xFFF8000000000000LL);\
+/* Same idea but beware: works only for |_i| < 2^51 -1 */
+#define DOUBLE2LONGINT(_i, _d)                                      \
+  {                                                                 \
+    db_number _t;                                                   \
+    _t.d = (_d+6755399441055744.0);                                 \
+    if (_d >= 0) /* sign extend */                                  \
+      _i = _t.l & 0x0007FFFFFFFFFFFFLL;                             \
+    else                                                            \
+      _i = (_t.l & 0x0007FFFFFFFFFFFFLL) |  (0xFFF8000000000000LL); \
   }
 
 
