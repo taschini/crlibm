@@ -78,16 +78,43 @@ precision number $x$.
   The following algorithm, taken from \cite{AMDoptim2001}, converts a
   double-precision floating-point number $d$ into a 32-bit
   integer $i$ with rounding to nearest mode.
+
+  It works for all the doubles whose nearest integer fits on a 32-bit machine signed integer.
+
 \begin{lstlisting}[label={chap0:lst:conversion2},caption={Conversion from FP to int},firstnumber=1]
-#define DOUBLE2INT(i, d) \
+#define DOUBLE2INT(i, d)   \
   {double t=(d+6755399441055744.0); i=LO(t);}
 \end{lstlisting}
 \end{theorem}
+
 This algorithm adds the constant $2^{52}+2^{51}$ to the floating-point
 number to put the integer part of $x$, in the lower part of the
 floating-point number.  We use $2^{52}+2^{51}$ and not $2^{52}$,
 because the value $2^{51}$ is used to contain possible carry
 propagations with negative numbers.
+
+
+\subsection{Conversion from floating-point to integer \label{sec:double2longint}}
+
+\begin{theorem}[Conversion floating-point to a long long integer]
+  The following algorithm, is derived from the previous.
+
+  It works for any double whose nearest integer is smaller than $2^{51} -1$.
+
+\begin{lstlisting}[label={chap0:lst:conversion3},caption={Conversion from FP to long long int},firstnumber=1]
+#define DOUBLE2LONGINT(i, d)                                      \
+  {                                                               \
+    db_number t;                                                  \
+    t.d = (d+6755399441055744.0);                                 \
+    if (d >= 0) /* sign extend */                                 \
+      i = t.l & 0x0007FFFFFFFFFFFFLL;                             \
+    else                                                          \
+      i = (t.l & 0x0007FFFFFFFFFFFFLL) |  (0xFFF8000000000000LL); \
+  }
+\end{lstlisting}
+
+\end{theorem}
+
 
 
 
