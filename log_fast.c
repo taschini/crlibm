@@ -92,64 +92,53 @@ first step and % of taking second step
 
 
 
-
-
 #if SHARE_CODE
 
 static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_number * py, int E) {
-   db_number z,y;
    double ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo;
-   double res, P_hi, P_lo;
+   double z, res, P_hi, P_lo;
    int k, i;
 
-   y = *py;
    
     /* E belongs to {-52-1023 .. 2046-1023} */
     
     /* find the interval including y.d */
-    i = (((y.i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;  /* to know which polynom to evaluate */
+    i = ((((*py).i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;  /* to know which polynom to evaluate */
     if (i < 10)
       i = i>>1;
     else
       i = ((i-1)>>1);
 
-    z.d = y.d - (middle[i]).d; 	/* evaluate the value of x in the
+    /* sc_ln2_times_E = E*log(2)   in double-double */
+    Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
+    
+    z = (*py).d - (middle[i]).d; 	/* evaluate the value of x in the
 				   ii-th interval (exact thanks to
 				   Sterbenz Lemma) */
-    
-    /* sc_ln2_times_E = E*log(2)  */
-    Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
     
     /*
      * Polynomial evaluation of log(1 + R) 
      */
 
-#if DEBUG
-    printf("z=%1.30f\n",z.d);
-#endif
     res = (poly_log_fast_h[i][DEGREE]).d;
+
     for(k=DEGREE-1; k>1; k--){
-      res *= z.d;
+      res *= z;
       res += (poly_log_fast_h[i][k]).d;
     }
    
     if(ln2_times_E_HI * ln2_times_E_HI < MIN_FASTPATH*MIN_FASTPATH ) {
       
       /* Slow path */
-
-#if DEBUG
-      printf("\nSlow path\n");
-#endif
-
       
       /* Multiply S2 by x = P2 */
-      Mul12(&P_hi, &P_lo, res, z.d);
+      Mul12(&P_hi, &P_lo, res, z);
       
       /* add S1 = a1_hi + a1_lo to P2 */ 
       Add22(&res_hi, &res_lo, (poly_log_fast_h[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
     
       /* multiply S1 by x = P1 */ 
-      Mul22(&P_hi, &P_lo, res_hi, res_lo, z.d, 0.); 
+      Mul22(&P_hi, &P_lo, res_hi, res_lo, z, 0.); 
       
       /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
       Add22(&res_hi, &res_lo, (poly_log_fast_h[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
@@ -164,26 +153,15 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       }
     }
     else { /* Fast path */
-#if DEBUG
-       printf("\nFast path\n");
-#endif
-      
-      res =  (poly_log_fast_h[i][0]).d + z.d*((poly_log_fast_h[i][1]).d + z.d*res);
       
       *prndcstindex = 16 ;
+      res =  (poly_log_fast_h[i][0]).d + z*((poly_log_fast_h[i][1]).d + z*res);
+      
 
       /* REBUILDING */
       /* As |ln2_times_E_HI| > CONST_FASTPATH and |res| < 0.5 we may use Add22 */
       Add22(&res_hi, &res_lo, ln2_times_E_HI, ln2_times_E_LO, res, 0.0);
     }
-#if DEBUG
-      printf("\n i=%d    roundcst=%1.20e\n", i , roundcst);
-      printf("\n res=%1.20e\n E=%d\n Eln2HI=%1.20e\n Eln2LO=%1.20e\n \n",res,E,ln2_times_E_HI,ln2_times_E_LO);
-      printf("\n   reshi=%1.20e\n   reslo=%1.20e\n",res_hi,res_lo);
-      printf("\n    reslo*cst=%1.20e\n",res_lo*roundcst);
-      printf("\n    reslo52=%1.20e\n",res_lo*two52.d);
-      printf("\n roundcst=%1.20e\n",roundcst);
-#endif /* DEBUG */
 
     /* exit */
     *pres_hi=res_hi;
@@ -234,9 +212,8 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
   roundcst = rncst[rndcstindex];
 #else
   {
-    db_number z;
     double ln2_times_E_HI, ln2_times_E_LO;
-    double res, P_hi, P_lo;
+    double z, res, P_hi, P_lo;
     int k, i;
 
       /* E belongs to {-52-1023 .. 2046-1023} */
@@ -248,7 +225,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
     else
       i = ((i-1)>>1);
 
-    z.d = y.d - (middle[i]).d; 	/* evaluate the value of x in the
+    z = y.d - (middle[i]).d; 	/* evaluate the value of x in the
 				   ii-th interval (exact thanks to
 				   Sterbenz Lemma) */
     
@@ -260,11 +237,11 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
      */
 
 #if DEBUG
-    printf("z=%1.30f\n",z.d);
+    printf("z=%1.30f\n",z);
 #endif
     res = (poly_log_fast_h[i][DEGREE]).d;
     for(k=DEGREE-1; k>1; k--){
-      res *= z.d;
+      res *= z;
       res += (poly_log_fast_h[i][k]).d;
     }
    
@@ -278,13 +255,13 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
 
       
       /* Multiply S2 by x = P2 */
-      Mul12(&P_hi, &P_lo, res, z.d);
+      Mul12(&P_hi, &P_lo, res, z);
       
       /* add S1 = a1_hi + a1_lo to P2 */ 
       Add22(&res_hi, &res_lo, (poly_log_fast_h[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
     
       /* multiply S1 by x = P1 */ 
-      Mul22(&P_hi, &P_lo, res_hi, res_lo, z.d, 0.); 
+      Mul22(&P_hi, &P_lo, res_hi, res_lo, z, 0.); 
       
       /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
       Add22(&res_hi, &res_lo, (poly_log_fast_h[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
@@ -302,8 +279,8 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
 #if DEBUG
        printf("\nFast path\n");
 #endif
-      roundcst=RNCST_FASTPATH;
-      res =  (poly_log_fast_h[i][0]).d + z.d*((poly_log_fast_h[i][1]).d + z.d*res);
+      roundcst=rncst[16];
+      res =  (poly_log_fast_h[i][0]).d + z*((poly_log_fast_h[i][1]).d + z*res);
       
       /* REBUILDING */
       /* As |ln2_times_E_HI| > CONST_FASTPATH and |res| < 0.5 we may use Add22 */
