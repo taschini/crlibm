@@ -97,12 +97,8 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
     res = (Poly_h[i][DEGREE]).d;
 
     for(k=DEGREE-1; k>1; k--){
-#if PROCESSOR_HAS_FMA   /* the impact on performance is negligible */
-      FMA(res, res,z,  (Poly_h[i][k]).d);
-#else
       res *= z;
       res += (Poly_h[i][k]).d;
-#endif
     }
 
     if(E <=  EMIN_FASTPATH) {

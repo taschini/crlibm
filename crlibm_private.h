@@ -76,28 +76,28 @@ int crlibm_second_step_taken;
 
 #ifdef CRLIBM_TYPECPU_POWERPC
 #define PROCESSOR_HAS_FMA 1
-#define FMA(r, a,b,c)  /* r = a*b + c*/                \
-do{                                                    \
+#define FMA(a,b,c)  /* r = a*b + c*/                   \
+({                                                     \
   double _a, _b,_c,_r;                                 \
   _a=a; _b=b;_c=c;                                     \
-  __asm__ ("fmadd %0, %1, %2, %3\n ;;\n"   \
+  __asm__ ("fmadd %0, %1, %2, %3\n ;;\n"               \
 		       : "=f"(_r)                      \
 		       : "f"(_a), "f"(_b), "f"(_c)     \
 		       );                              \
-  r=_r;                                                \
-} while(1+1==3)
+ _r;                                                   \
+})
 
 
-#define FMS(r, a,b,c)   /* r = a*b - c*/               \
-do{                                                    \
-  double _a, _b,_c,_r;                                 \
-  _a=a; _b=b;_c=c;                                     \
-  __asm__ ("fmsub %0, %1, %2, %3\n ;;\n"   \
-		       : "=f"(_r)                      \
-		       : "f"(_a), "f"(_b), "f"(_c)     \
-		       );                              \
-  r=_r;                                                \
-  } while(1+1==3)
+#define FMS(a,b,c)   /* r = a*b - c*/                 \
+({                                                    \
+  double _a, _b,_c,_r;                                \
+  _a=a; _b=b;_c=c;                                    \
+  __asm__ ("fmsub %0, %1, %2, %3\n ;;\n"              \
+		       : "=f"(_r)                     \
+		       : "f"(_a), "f"(_b), "f"(_c)    \
+		       );                             \
+  _r;                                                 \
+  })
 
 #endif /*CRLIBM_TYPECPU_POWERPC*/
 
@@ -108,28 +108,28 @@ do{                                                    \
 
 #ifdef CRLIBM_TYPECPU_ITANIUM
 #define PROCESSOR_HAS_FMA 1
-#define FMA(r, a,b,c)  /* r = a*b + c*/                \
-do{                                                    \
-  double _a, _b,_c,_r;                                 \
-  _a=a; _b=b;_c=c;                                     \
-  __asm__ ("fma %0 = %1, %2, %3\n ;;\n"                \
-		       : "=f"(_r)                      \
-		       : "f"(_a), "f"(_b), "f"(_c)     \
-		       );                              \
-  r=_r;                                                \
-} while(1+1==3)
+#define FMA(a,b,c)  /* r = a*b + c*/                 \
+({                                                   \
+  double _a, _b,_c,_r;                               \
+  _a=a; _b=b;_c=c;                                   \
+  __asm__ ("fma %0 = %1, %2, %3\n ;;\n"              \
+		       : "=f"(_r)                    \
+		       : "f"(_a), "f"(_b), "f"(_c)   \
+		       );                            \
+  _r;                                                \
+})
 
 
-#define FMS(r, a,b,c)  /* r = a*b - c*/                \
-do{                                                    \
-  double _a, _b, _c, _r;                               \
-  _a=a; _b=b;_c=c;                                     \
-  __asm__ ("fms %0 = %1, %2, %3\n ;;\n"                \
-		       : "=f"(_r)                      \
-		       : "f"(_a), "f"(_b), "f"(_c)     \
-		       );                              \
-  r=_r;                                                \
-  } while(1+1==3)
+#define FMS(a,b,c)  /* r = a*b - c*/                 \
+({                                                   \
+  double _a, _b, _c, _r;                             \
+  _a=a; _b=b;_c=c;                                   \
+  __asm__ ("fms %0 = %1, %2, %3\n ;;\n"              \
+		       : "=f"(_r)                    \
+		       : "f"(_a), "f"(_b), "f"(_c)   \
+		       );                            \
+  _r;                                                \
+  })
 
 #endif /*CRLIBM_TYPECPU_ITANIUM*/
 
@@ -337,16 +337,16 @@ do {                                         \
 #define Mul12(rh,rl,u,v)                              \
 {                                                     \
   *rh = u*v;                                          \
-  FMS(*rl,   u,v, *rh);                               \
+  *rl = FMS(u,v, *rh);                               \
 }
 
 #define Mul22(pzh,pzl, xh,xl, yh,yl)                  \
 {                                                     \
 double ph, pl;                                        \
   ph = xh*yh;                                         \
-  FMS(pl, xh, yh,  ph);                               \
-  FMA(pl,xh,yl, pl);                                  \
-  FMA(pl,xl,yh,pl);                                   \
+  pl = FMS(xh, yh,  ph);                               \
+  pl = FMA(xh,yl, pl);                                  \
+  pl = FMA(xl,yh,pl);                                   \
   *pzh = ph+pl;					      \
   *pzl = (ph - (*pzh)) + pl;                          \
 }
