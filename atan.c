@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <atan.h>
+#include <atan_fast.h>
 
 void atan(scs_ptr, scs_ptr);
 double scs_atan_rd(double);
@@ -58,88 +59,82 @@ double scs_atan_rn(double);
  
  
 void scs_atan(scs_ptr res_scs, scs_ptr x){
-    scs_t X_scs, denom1_scs, denom2_scs, num_scs, poly_scs, X2;
-    db_number db;
-    int k, ind = 100, j, intmid = 32;
+
+  scs_t X_scs, denom1_scs, denom2_scs, poly_scs, X2;
+  db_number db;
+  int k;
   
   scs_get_d(&db.d, x);  
-			     	     
-    /* Test if x need to be reduced */
+  
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+  
+  /* test if x as to be reduced */
+  if (db.d > my_e) {
+    /* Compute i so that  x E [a[i],a[i+1]] */
+    int i=31;
+    if (db.d < value[i][A].d) i-= 16;
+    else i+=16;
+    if (db.d < value[i][A].d) i-= 8;
+    else i+= 8;
+    if (db.d < value[i][A].d) i-= 4;
+    else i+= 4;
+    if (db.d < value[i][A].d) i-= 2;
+    else i+= 2;
+    if (db.d < value[i][A].d) i-= 1;
+    else if (i<61) i+= 1;
+    if (db.d < value[i][A].d) i-= 1;
     
-    if( db.i[HI_ENDIAN] >= borne_I[48]){
-      	if ( db.i[HI_ENDIAN]  < borne_I[49]){
-	    j = 48;}
-	else if( db.i[HI_ENDIAN] > borne_I[49]){
-	    j = 49;}
-	else {
-	    res_scs =  atan_bi_ptr[49];
-	    return;
-	}
-	ind = j;
-	
-	/* evaluate X = (x - b(j)) / (1 + x*b(j)) */
-	    	    	    
-	scs_mul(denom1_scs,bsc_ptr[ind],x);
-	scs_add(denom2_scs,denom1_scs,SCS_ONE);
-	scs_sub(X_scs,x,bsc_ptr[ind]);
-	scs_div(X_scs,X_scs,denom2_scs);
-    }
-    else if (((int) db.i[HI_ENDIAN]) == borne_I[48]) {
-	res_scs = atan_bi_ptr[48];
-	return ;
-    }
-    else if ( db.i[HI_ENDIAN] < borne_I[0]){
-	scs_set(X_scs, x);
-	ind = 60;
-    }
-    else{	/* First reduction : find the interval including x, "save" j to have b(j)  and then being able to calculate X */
-	j = 32;
-	for (k=1;k<=5;k++){
-	    if (db.i[HI_ENDIAN] < borne_I[j]){
-		j -= (intmid >> k);
-            }
-            else if(db.i[HI_ENDIAN] > borne_I[j]){
-		j += (intmid >>  k);	    
-	    }
-	    else {res_scs = atan_bi_ptr[j];
-		  return ;
-	    }
-	}
-	if (db.i[HI_ENDIAN] < borne_I[j]){
-	    ind = j-1;
-	}
-	else{
-	    ind = j;
-	}
-	
-    /* evaluate X = (x - b(j)) / (1 + x*b(j)) */
-		    	    
-	scs_mul(denom1_scs,bsc_ptr[ind],x);
-	scs_add(denom2_scs,denom1_scs,SCS_ONE);   
-	scs_sub(num_scs,x,bsc_ptr[ind]);
-	scs_div(X_scs,num_scs,denom2_scs);
-    } 
-		
-/* Polynomial evaluation of atan(X) , X = (x-b(i)) / (1+ x*b(i)) */ 
-	
+    /* evaluate X = (x - b(i)) / (1 + x*b(i)) */
+    scs_t bsc_ptr;
+    scs_set_d(bsc_ptr, value[i][B].d);
+    
+    scs_mul(denom1_scs,bsc_ptr,x);
+    scs_add(denom2_scs,denom1_scs,SCS_ONE);
+    scs_sub(X_scs,x,bsc_ptr);
+    scs_div(X_scs,X_scs,denom2_scs);
+    
+    double test; scs_get_d(&test,X_scs);
+    
+    /* Polynomial evaluation of atan(X) , X = (x-b(i)) / (1+ x*b(i)) */
     scs_square(X2, X_scs);
     scs_set(res_scs, constant_poly_ptr[0]);
-    for(k=1; k < 13; k++){
-	scs_mul(res_scs, res_scs, X2);		/* we use Horner expression */
-    	scs_add(res_scs, constant_poly_ptr[k], res_scs);
-	
+    for(k=1; k < 10; k++) {
+      /* we use Horner expression */
+      scs_mul(res_scs, res_scs, X2);
+      scs_add(res_scs, constant_poly_ptr[k], res_scs);
     }
     scs_mul(poly_scs, res_scs, X_scs);
     
-    if(ind == 60){ 
-	scs_set(res_scs, poly_scs);
-	return;
-    }else{
-	/*scs_set(denom_scs, res_scs);*/
-	scs_add(res_scs,atan_bi_ptr[ind], poly_scs); 
-    }
+    /* reconstruction : */
+    
+    /* 1st we load atan ( b[i] ) in a scs*/ 
+    scs_t atanbhihi,atanbhilo, atanblo, atanbhi, atanb;
+    scs_set_d( atanbhihi , value[i][ATAN_BHI].d);
+    scs_set_d( atanbhilo , value[i][ATAN_BLO].d);
+    scs_set_d( atanblo , atan_blolo[i].d);
+    scs_add(atanbhi,atanbhihi,atanbhilo);
+    scs_add(atanb,atanbhi,atanblo);
+    scs_add(res_scs,atanb, poly_scs); 
     return;
-}	
+  }
+  
+  else 
+    { /* no reduction needed */
+      
+      /* Polynomial evaluation of atan(x) */
+      scs_square(X2, x);
+      scs_set(res_scs, constant_poly_ptr[0]);
+      for(k=1; k < 10; k++) {
+        /* we use Horner expression */
+        scs_mul(res_scs, res_scs, X2);
+        scs_add(res_scs, constant_poly_ptr[k], res_scs);
+      }
+      scs_mul(res_scs, res_scs, x);
+      return;
+    }
+}
        
 /*************************************************************
  *************************************************************
@@ -148,39 +143,27 @@ void scs_atan(scs_ptr res_scs, scs_ptr x){
  *************************************************************/
 
 double scs_atan_rn(double x){ 
+  /* This function does NOT compute atan(x) correctly if it isn't 
+   * called in atan_rn() 
+   */
   scs_t sc1;
   scs_t res_scs;
   db_number res;
   int sign =1;
   
-   res.d = x;
+  res.d = x;
 
-    /* Filter cases */
-    if((res.l & 0x7fffffffffffffffULL) > larg_int.l) 
-    {
-	if (x > 0){
-	    return pio2.d;
-	}
-	else{
-            return mpio2.d;
-	}
-    }
-    else if ((res.l & 0x7fffffffffffffffULL) < tiny_int.l) {
-	    return 0.0;
-    }
-    else{
-	 if (x < 0){
-	    sign = -1;
-	    x *= -1;
-	}
-	scs_set_d(sc1, x);
-	scs_atan(res_scs, sc1);
-	scs_get_d(&res.d, res_scs);
-	if (sign == -1){
-	    res.d *= -1;
-	}
-	return res.d;
-    }
+  if (x < 0){
+    sign = -1;
+    x *= -1;
+  }
+  scs_set_d(sc1, x);
+  scs_atan(res_scs, sc1);
+  scs_get_d(&res.d, res_scs);
+  
+  res.d *= sign;
+  
+  return res.d;
 }
 
 /*************************************************************
@@ -197,33 +180,22 @@ double scs_atan_rd(double x){
    
   res.d = x;
 
-    /* Filter cases */
-    if((res.l & 0x7fffffffffffffffULL) > larg_int.l) 
-    {
-	if (x < 0){
-	    return mpio2.d;
-	}
-	else{
-		return pio2.d;
-	}
-    }
-    else {  
-	if (x < 0){
-	    sign = -1;
-	    x *= -1;
-	}
-	scs_set_d(sc1, x);
-	scs_atan(res_scs, sc1);
-	if (sign == -1){
-	    scs_get_d_pinf(&res.d, res_scs);
-	    res.d *= -1;
-	    return res.d;
-	}
-	else{
-	    scs_get_d_minf(&res.d, res_scs);		
-	    return res.d;
-	}
-    }
+  /* Filter cases */
+  if (x < 0){
+    sign = -1;
+    x *= -1;
+  }
+  scs_set_d(sc1, x);
+  scs_atan(res_scs, sc1);
+  if (sign == -1){
+    scs_get_d_pinf(&res.d, res_scs);
+    res.d *= -1;
+    return res.d;
+  }
+  else{
+    scs_get_d_minf(&res.d, res_scs);		
+    return res.d;
+  }
 }
 
 /*************************************************************
@@ -240,36 +212,22 @@ double scs_atan_ru(double x){
   
   res.d = x;
 
-    /* Filter cases */
-    if((res.l & 0x7fffffffffffffffULL) > larg_int.l) 
-    {
-	if (x > 0)
-        {
-	    return pio2.d;
-	}
-	else
-	{
-            return mpio2.d; 		
-	}
-    }
-    else 
-	{
-	   if (x < 0){
-		sign = -1;
-		x *= -1;
-	    }
+  /* Filter cases */
+  if (x < 0){
+    sign = -1;
+    x *= -1;
+  }
  
-	    scs_set_d(sc1, x);
-	    scs_atan(res_scs, sc1);
-	    	    if (sign == -1){
-		scs_get_d_minf(&res.d, res_scs);
-		res.d *= -1;
-		return res.d;
-	    }
-	    else{
-		scs_get_d_pinf(&res.d, res_scs);		
-		return res.d;
-	    }
-	}
+  scs_set_d(sc1, x);
+  scs_atan(res_scs, sc1);
+  if (sign == -1){
+    scs_get_d_minf(&res.d, res_scs);
+    res.d *= -1;
+    return res.d;
+  }
+  else{
+    scs_get_d_pinf(&res.d, res_scs);		
+    return res.d;
+  }
 }
 
