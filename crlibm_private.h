@@ -280,9 +280,9 @@ static const struct scs
  */
 #define Add12(s, r, a, b)         \
         {double _z, _a=a, _b=b;    \
-         s = _a + _b;             \
+         s = _a + _b;              \
          _z = s - _a;              \
-         r = _b - _z; }            
+         r = _b - _z;   }            
 
 
 /*
@@ -315,22 +315,22 @@ extern void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, d
 
 #define Add22Cond(zh,zl,xh,xl,yh,yl)                             \
 do {                                                             \
-  double r,s;                                                    \
-  r = (xh)+(yh);                                                     \
-  s = ((ABS(xh)) > (ABS(yh)))? ((xh)-r+(yh)+(yl)+(xl)) : ((yh)-r+(xh)+(xl)+(yl));\
-  *zh = r+s;                                                     \
-  *zl = (r - (*zh)) + s;                                           \
+  double _r,_s;                                                    \
+  _r = (xh)+(yh);                                                     \
+  _s = ((ABS(xh)) > (ABS(yh)))? ((xh)-_r+(yh)+(yl)+(xl)) : ((yh)-_r+(xh)+(xl)+(yl));\
+  *zh = _r+_s;                                                     \
+  *zl = (_r - (*zh)) + _s;                                           \
 } while(2+2==5)
 
   
 
 #define Add22(zh,zl,xh,xl,yh,yl) \
-do {\
-double r,s;\
-r = (xh)+(yh);\
-s = ((((xh)-r) +(yh)) + (yl)) + (xl);\
-*zh = r+s;\
-*zl = (r - (*zh)) + s;\
+do {                                   \
+double _r,_s;                            \
+_r = (xh)+(yh);                         \
+_s = ((((xh)-_r) +(yh)) + (yl)) + (xl);  \
+*zh = _r+_s;                             \
+*zl = (_r - (*zh)) + _s;                 \
 } while(0)
 
 #endif /* ADD22_AS_FUNCTIONS */
