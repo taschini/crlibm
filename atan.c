@@ -57,7 +57,7 @@ double scs_atan_rn(double);
 
  
  
-void atan(scs_ptr res_scs, scs_ptr x){
+void scs_atan(scs_ptr res_scs, scs_ptr x){
     scs_t X_scs, denom1_scs, denom2_scs, num_scs, poly_scs, X2;
     db_number db;
     int k, ind = 100, j, intmid = 32;
@@ -174,7 +174,7 @@ double scs_atan_rn(double x){
 	    x *= -1;
 	}
 	scs_set_d(sc1, x);
-	atan(res_scs, sc1);
+	scs_atan(res_scs, sc1);
 	scs_get_d(&res.d, res_scs);
 	if (sign == -1){
 	    res.d *= -1;
@@ -213,7 +213,7 @@ double scs_atan_rd(double x){
 	    x *= -1;
 	}
 	scs_set_d(sc1, x);
-	atan(res_scs, sc1);
+	scs_atan(res_scs, sc1);
 	if (sign == -1){
 	    scs_get_d_pinf(&res.d, res_scs);
 	    res.d *= -1;
@@ -260,7 +260,7 @@ double scs_atan_ru(double x){
 	    }
  
 	    scs_set_d(sc1, x);
-	    atan(res_scs, sc1);
+	    scs_atan(res_scs, sc1);
 	    	    if (sign == -1){
 		scs_get_d_minf(&res.d, res_scs);
 		res.d *= -1;
