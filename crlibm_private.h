@@ -34,8 +34,8 @@ processor/compiler/OS.  As #define has to be used with more care (not
 type-safe), the two following variables should  be set to 1 in the
 development/debugging phase, until no type warning remains.  */
 
-#define ADD22_AS_FUNCTIONS 0
-#define DEKKER_AS_FUNCTIONS 0
+#define ADD22_AS_FUNCTIONS 1
+#define DEKKER_AS_FUNCTIONS 1
 
 
 /* setting the following variable adds variables and code for

@@ -57,12 +57,12 @@ void sine(scs_ptr x){
 
 
 
-/*************************************************************
+/************************************************************
  *************************************************************
  *               ROUNDED  TO NEAREST
  *************************************************************
  *************************************************************/
-double sin_rn(double x){  
+double scs_sin_rn(double x){  
   scs_t sc1, sc2;
   double resd;
   int N;
@@ -100,7 +100,7 @@ double sin_rn(double x){
  *               ROUNDED  TOWARD  -INFINITY
  *************************************************************
  *************************************************************/
-double sin_rd(double x){  
+double scs_sin_rd(double x){  
   scs_t sc1, sc2;
   double resd;
   int N;
@@ -138,7 +138,7 @@ double sin_rd(double x){
  *               ROUNDED  TOWARD  +INFINITY
  *************************************************************
  *************************************************************/
-double sin_ru(double x){  
+double scs_sin_ru(double x){  
   scs_t sc1, sc2;
   double resd;
   int N;

@@ -9,111 +9,125 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "sine_fast.h"
 #include <crlibm.h>
+#include <crlibm_private.h>
+#include "sine_fast.h"
 
 extern double scs_sin_rn(double);
 extern double scs_sin_ru(double);
 extern double scs_sin_rd(double);
 
+#define DEBUG 0
 
-/*************************************************************
- *************************************************************
- *               ARGUMENT REDUCTION			     *
- *************************************************************
- *************************************************************/
+
  
-/* Argument reduction for trigonometric functions */
-/* by Cody & Waite algorithm */
 
-int rempio2_fast(double y){
-int k;
+static void cos_fast(double *prhi, double *prlo, double yh, double yl){
+  double yy, t;
+  int n, i;
 
-return k;
+
+  n = 10;
+ 
+  yy = yh*yh;
+  
+  /*Taylor series */
+  t=yy*(PolyCos[n]).d;
+  for(i=n-1; i >= 0; i--){
+    t = yy * (t + (PolyCos[i]).d);
+
+  }
+
+  Add12(*prhi, *prlo, 1.0, t);
 }
+
+
+
+
+
+static void sin_fast(double *prhi, double *prlo, double yh, double yl){
+  double yy, t, rh, rl;
+  int n, i;
+  n = 10;
+  
+
+  yy = yh*yh;
+  
+  /*Taylor series */
+  t=yy*(PolySin[n]).d;
+  for(i=n-1; i >= 0; i--){
+    t = yy * (t + (PolySin[i]).d);
+  }
+
+  Mul22(&rh, &rl,  t,0.0,  yh, yl);
+  Add22(prhi, prlo,  rh, rl, yh, yl);
+}
+
+
+
 
 /*************************************************************
  *************************************************************
  *               ROUNDED  TO NEAREST			     *
  *************************************************************
  *************************************************************/
+
 double sin_rn(double x){ 
-  double y, reshi = 0, reslo = 0;
-  double  varhi, varlo;
+  double reshi, reslo;
+  double kd, yh,yl;
+  double absx;
   int k;
   
-  y = x;
+  if (x<0) 
+    absx=-x; 
+  else 
+    absx=x;
 
-  k = (int)(y * invpio2.d);
+  if (absx > MAX_FAST_SIN)
+    return scs_sin_rn(x);
+  if (absx < MIN_RETURN_X_FOR_SINE)
+    return x;
 
-  /* marche que si x est assez petit */
+  DOUBLE2INT(k, x * invpio2.d);
+  kd = (double) k;
 
-  y = ( x - ((double)k)*pio2hi.d )  -  ((double)k)*pio2lo.d ;
+  /* Argument reduction  by Cody & Waite algorithm */
+  Add12 (yh,yl,  ( x - kd*pio2hi.d),  (-kd*pio2lo.d) ) ;
  
+#if DEBUG
+   printf("\nk=%d k&3=%d \t y=%5.10f\n", k, k&3, yh);
+#endif
+
   switch (k&3){
   case 0:
-    sin_fast(&reshi, &reslo, y);
+    sin_fast(&reshi, &reslo, yh, yl);
+    break;
   case 1:
-    //   cos_fast(y, reshi, reslo);
+    cos_fast(&reshi, &reslo, yh,yl);
+    break;
   case 2:  
-    sin_fast(&reshi, &reslo, y);
+    sin_fast(&reshi, &reslo, yh,yl);
     reshi *= -1;
     reslo *= -1;
+    break;
   case 3:
-    //    cos_fast(y,reshi, reslo);
+    cos_fast(&reshi, &reslo, yh,yl);
     reshi *= -1;
     reslo *= -1;
+    break;
   default:
-    fprintf(stderr,"ERREUR: %d is not a valid value in sin_rn \n", N);
+    fprintf(stderr,"ERREUR: %d is not a valid value in sin_rn \n", k&3);
     exit(1);
   }
   
   /* ROUNDING TO NEAREST */
 
-  if(reshi == (reshi + (reslo * (1.0078125)))){	/* 2^-7 = 0.0078125 */
+  //if(reshi == (reshi + (reslo * (1.0078125)))){	/* 2^-7 = 0.0078125 */
      return reshi;
-  }else{
-     return scs_sin_rn(y);
-  }
+  /* }else{ */
+/*      return scs_sin_rn(y); */
+/*   } */
 
 }
 
 
-
-void sin_fast(double *rhi, double *rlo, ){
-db_number z;
-double yy, y, t = 0;
-int n, i;
-
-if (z.i[HI_ENDIAN] < 0x3e500000){	/* z < 2^ -26 */
-    rhi = y;
-    rlo = 0;
-    return;
-}
-else if(z.i[HI_ENDIAN] < 0x3fd00000 ){	/* z < 2^ -2 */
-    n = 7;
-}
-else if (y < 0x3fe921fb54442d18){	/* z < Pi/4 */
-    n = 10;
-}
-else {
-    printf("ERROR, Z must be lower or equal to PI/4\n");
-    return;
-}
-
-yy = y*y;
-
-    /*Taylor series */
-for(i=n; i > 0; i--){
-    t = (t + (poly_sin_fast[i]).d) * yy;
-}
-t = t*y;
-rhi = 1 + t;
-rlo = (1-rhi) + t;
-}
-if(N>1){
-    rhi*=-1;	
-    rlo*=-1;
-}
-return;	
-}
