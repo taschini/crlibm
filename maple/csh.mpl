@@ -4,7 +4,7 @@ with (numapprox):with(orthopoly):
 interface(quiet=true);
 read "Common_Maple_Procedures.mpl";
 deg:=18;
-mkdir("TEMPLOG");
+mkdir("TEMPCSH");
 
 
 ######################################################################
@@ -171,14 +171,14 @@ reminvln2 := evalf(1/ln2 - invln2);
 expln2:=ieeedouble(ln2)[2]:   #get the exponent of ln2 in its IEEE representation
 
 bits_ln2_hi_0 := ceil(log2(k_max));
-# 1/2 <= ln2/2^(expln2 + 1) <  1 
+# 1/2 <= ln2/2^(expln2 + 1) <  1
 ln2_hi := round(evalf(ln2 * 2^(52 - bits_ln2_hi_0 - expln2)))/2^(52 - bits_ln2_hi_0 - expln2);#this trick is used to get a truncated mantissa for ln2_hi
 #ln2_hi is a now exactly representable in the IEEE format and bits_ln2_hi_0 last bits of its mantissa are set to 0
 #and bits_ln2_hi_0 is exactly the max number of bits to represent k
 #so the k * ln2_hi-product is exact :)
 ln2_lo:=nearest(ln2 - ln2_hi):
 
-# The error in this case (we need absolute error) 
+# The error in this case (we need absolute error)
 delta_repr_ln2 := abs(ln2 - ln2_hi - ln2_lo);
 delta_round := evalf(1/2 * ulp(ln2_lo));
 delta_cody_waite := k_max * (delta_repr_ln2 + delta_round);
@@ -198,7 +198,7 @@ delta_b := delta_repr_ln2 + delta_round + delta_cody_waite;
 # x = k * (ln2_hi + ln2_lo) + (b_hi + b_lo) + table_index_float
 #   with table_index_float = table_index * 2^(-8)
 
-#we'll use the following mathematical formulaes : 
+#we'll use the following mathematical formulaes :
 #cosh(a + b) = cosh(a) * cosh(b) + sinh(a) * sinh(b)
 #sinh(a + b) = sinh(a) * cosh(b) + sinh(b) * cosh(a)
 #sinh(a) and cosh(a) are tabulated as double double
@@ -280,7 +280,7 @@ sinh1_max := sinh1_max + b_max * sa_max * tsb_max:
 delta_sinh1 := delta_sinh1 + 1/2*2^(-53)*ulp(sinh1_max + b_max * ca_max):
 sinh1_max := sinh1_max + b_max * ca_max:
 delta_sinh1 := delta_sinh1 + 2^(-53)*1/2*ulp(sinh1_max + sa_max);
-sinh1_max := sinh1_max + sa_max; 
+sinh1_max := sinh1_max + sa_max;
 
 sinh_max := max(sinh1_max, sinh0_max);
 delta_sinh := max(delta_sinh0, delta_sinh1);
@@ -320,7 +320,7 @@ end:
 IEEE2db_number := proc(ieee_number, big_little)
 if (big_little = 1) then
 IEEE2db_number_BE(ieee_number):
-else 
+else
 IEEE2db_number_LE(ieee_number):
 fi;
 end:
@@ -340,7 +340,7 @@ hex1:= op(1, hexstring1):
 hex2:= op(2, hexstring1):
 hex3:= op(1, hexstring2):
 hex4:= op(2, hexstring2):
-else 
+else
 hex1:= op(2, hexstring1):
 hex2:= op(1, hexstring1):
 hex3:= op(2, hexstring2):
@@ -358,7 +358,7 @@ hex1:= op(1, hexstring1):
 hex2:= op(2, hexstring1):
 hex3:= op(1, hexstring2):
 hex4:= op(2, hexstring2):
-else 
+else
 hex1:= op(2, hexstring1):
 hex2:= op(1, hexstring1):
 hex3:= op(2, hexstring2):
@@ -412,7 +412,7 @@ for big_little from 1 to 2 do
 	for i from 1 to (n_double_ch/2) do
 		fprintf(fd, cat(cat(cat(  "  db_number const c",convert(2*(i-1),string))," =   "),IEEE2db_number(coeff(poly_ch+1,x,2*(i-1)),big_little))):
 	od:
-	
+
 	fprintf(fd,"/* the coefficients for the sinh-approximations */\n"):
 	for i from 1 to (n_double_sh/2) do
 		fprintf(fd, cat(cat(cat(  "  db_number const s",convert(2*i-1,string))," =   "),IEEE2db_number(coeff(poly_sh+1,x,2*(i-1)),big_little))):
