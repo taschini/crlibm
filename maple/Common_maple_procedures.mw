@@ -28,8 +28,8 @@ else
  fi;
  Digits := 53;
  mantissa := mantissa*2^(-52);
-fi;<Font opaque="false">
-sign,exponent,mantissa;</Font>
+fi;
+sign,exponent,mantissa;
 end:</Text-field></Input><Input><Text-field prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="_pstyle7" style="_cstyle57">
 p<Font family="Lucida Bright" style="_pstyle6">ulp returns the precision of the ulp of x</Font></Text-field><Text-field layout="_pstyle7" style="_cstyle57"/></Input></Group><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">pulp:=proc(x)
 local flt, ulpy;
@@ -129,7 +129,7 @@ convert(Q, polynom):
 deg:=degree(P,x):
   for i from 0 to deg do
     coef :=coeff(P,x,i):
-    coef_hi<Font opaque="false">, coef_lo</Font>:=hi_lo(coef):
+    coef_hi, coef_lo:=hi_lo(coef):
     Q:= Q + coef_hi*x^i:
     if(i&lt;n) then
         Q := Q + coef_lo*x^i:
@@ -140,13 +140,15 @@ end:
 </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 3" style="Heading 3">Compute a bound on the accumulated rounding error caused by the Horner evaluation of a truncated polynomial </Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">Computes the accumulated rounding error during the polynomial evaluation.
 P is the polynomial.
 xmax is the max value of |x|.
-n is the degree when P is computed in double double.</Text-field><Text-field layout="Normal" style="Text">
+n is the degree when P is computed in double double. The first double-double operation is an addition.</Text-field><Text-field layout="Normal" style="Text">
 returns max absolute error, min of the function, max of the function. 
 </Text-field><Text-field layout="Normal" style="Text">This procedure also checks on the fly that the fast (test-free) versions of the double-double addition can be used, i.e. that for all x, at each Horner step i computing ci+x*Si, we have |ci|&gt;|x*Si|. It prints warnings if it not the case. </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compute_abs_rounding_error:=proc(poly,xmax, nn)
-local n, deg, delta, deltap, i, S, P, Snorm, Smin, Smax:
+local n, deg, delta, deltap, i, S, P, Snorm, Smin, Smax, prec:
 deltap:=0:
 delta:=0:
 deg:=degree(poly):
+
+prec:=53; # precision of the first iterations
 
 S:=coeff(poly, x, deg):
 Smax:=abs(S):
@@ -154,34 +156,28 @@ Smin:=Smax:
 
 if nn&lt;0 then n:=0: else n:=nn: fi:# sometimes called by compute_rel_rounding_error with n=-1
 
-for i from (deg-1) to n by -1 do
+for i from (deg-1) to 0 by -1 do
   P:= convert(S*x, polynom):
-  delta:= evalf(xmax*deltap + 2**(-53)*xmax*Smax):
   Smin := abs(coeff(poly,x,i)) - xmax*Smax : 
-  if(Smin&lt;=0) then printf("Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration %d, consider decreasing xmax\n",i); fi:
-  S:=convert(P+coeff(poly,x,i), polynom):
-  Snorm:=evalf(infnorm(S, x=-xmax..xmax)):
-  deltap:= evalf(delta + 2**(-53)*(delta + Snorm)):
-  Smax := Snorm + deltap:  
-od:
-for i from n-1 to 0 by -1 do
-  # fast Add22 ?    
-  if abs(coeff(poly,x,i)) &lt; xmax*Smax  # may be improved to xmax*Smax/2
-  then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , i  );   
-       printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*Smax );
+  if(Smin&lt;=0) then 
+    printf("Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration %d, consider decreasing xmax\n",i);
   fi:
-
-  P:= convert(S*x, polynom):
-  Smin := abs(coeff(poly,x,i)) - xmax*Smax : 
-  delta:= evalf(xmax*deltap + 2**(-100)*xmax*Smax):
-  if(Smin&lt;=0) then printf("Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration %d, consider decreasing xmax\n",i); fi:
+  delta:= evalf(xmax*deltap + 2**(-prec)*xmax*Smax):
+  if i&lt;n then 
+    # fast Add22 ?    
+    if abs(coeff(poly,x,i)) &lt; xmax*Smax  # may be improved to xmax*Smax/2
+    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , i  );   
+         printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*Smax );
+    fi:
+  fi:
   S:=convert(P+coeff(poly,x,i), polynom):
   Snorm:=evalf(infnorm(S, x=-xmax..xmax)):
-  deltap:= evalf(delta + 2**(-100)*(delta + Snorm)): 
+  if i=n-1 then prec:=100: fi:  # from the addition of the n-1-th iteration
+  deltap:= evalf(delta + 2**(-prec)*(delta + Snorm)): 
   Smax := Snorm + deltap:  
 od:
 deltap, Smin, Smax;
-end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/><Text-field layout="Normal" style="Text">Computes the total relative rounding error</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"><Font opaque="false">compute_rel_rounding_error:=proc(poly,xmax, n)
+end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/><Text-field layout="Normal" style="Text">Computes the total relative rounding error</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compute_rel_rounding_error:=proc(poly,xmax, n)
 local deg, p, rho, deltap, Smin, Smax:
 
 deg:=degree(poly):
@@ -195,9 +191,63 @@ else
    rho := deltap /  Smin:
 fi:
 rho;
-end proc:</Font></Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes an approximation to a function of x f, as a truncated polynomial of deegree deg with the n first coefficients exactly representable as double-double.
+end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes the accumulated rounding error during the polynomial evaluation.
+P is the polynomial.
+xmax is the max value of |x|.
+n is the degree when P is computed in double double. The first double-double operation is a multiplication (probably less useful).</Text-field><Text-field layout="Normal" style="Text">
+returns max absolute error, min of the function, max of the function. 
+</Text-field><Text-field layout="Normal" style="Text">This procedure also checks on the fly that the fast (test-free) versions of the double-double addition can be used, i.e. that for all x, at each Horner step i computing ci+x*Si, we have |ci|&gt;|x*Si|. It prints warnings if it not the case. </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compute_abs_rounding_error_firstmult:=proc(poly,xmax, nn)
+local n, deg, delta, deltap, i, S, P, Snorm, Smin, Smax, prec:
+deltap:=0:
+delta:=0:
+deg:=degree(poly):
+
+prec:=53; # precision of the first iterations
+
+S:=coeff(poly, x, deg):
+Smax:=abs(S):
+Smin:=Smax:
+
+if nn&lt;0 then n:=0: else n:=nn: fi:# sometimes called by compute_rel_rounding_error with n=-1
+
+for i from (deg-1) to 0 by -1 do
+  if i=n-1 then prec:=100: fi:  # from the mult of the n-1-th iteration
+  P:= convert(S*x, polynom):
+  Smin := abs(coeff(poly,x,i)) - xmax*Smax : 
+  if(Smin&lt;=0) then 
+    printf("Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration %d, consider decreasing xmax\n",i);
+  fi:
+  delta:= evalf(xmax*deltap + 2**(-prec)*xmax*Smax):
+  if i&lt;n then 
+    # fast Add22 ?    
+    if abs(coeff(poly,x,i)) &lt; xmax*Smax  # may be improved to xmax*Smax/2
+    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , i  );   
+         printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*Smax );
+    fi:
+  fi:
+  S:=convert(P+coeff(poly,x,i), polynom):
+  Snorm:=evalf(infnorm(S, x=-xmax..xmax)):
+  deltap:= evalf(delta + 2**(-prec)*(delta + Snorm)): 
+  Smax := Snorm + deltap:  
+od:
+deltap, Smin, Smax;
+end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/><Text-field layout="Normal" style="Text">Computes the total relative rounding error</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compute_rel_rounding_error_firstmult:=proc(poly,xmax, n)
+local deg, p, rho, deltap, Smin, Smax:
+
+deg:=degree(poly):
+if(n&gt;0) then p:=100: else p:=53: fi: 
+
+if coeff(poly,x, 0) = 0 then
+   deltap, Smin, Smax := compute_abs_rounding_error_firstmult(poly/x,xmax, n-1):
+   rho :=  (2^(-p)*(Smax+deltap) +deltap ) / Smin :
+else
+   deltap, Smin, Smax := compute_abs_rounding_error_firstmult(poly,xmax, n):
+   rho := deltap /  Smin:
+fi:
+rho;
+end proc:</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 3" style="Heading 3">Compute a good truncated polynomial approximation for a function</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">Computes an approximation to a function of x f, as a truncated polynomial of deegree deg with the n first coefficients exactly representable as double-double.
 The function f(x) must have as input interval -xmax..xmax
-returns [ truncated polynomial, relative approx error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 3" style="Heading 3">Compute a good truncated polynomial approximation for a function</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_classic:=proc(f,deg,xmax,n) 
+returns [ truncated polynomial, relative approx error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_classic:=proc(f,deg,xmax,n) 
   local pe, repe, pt, ppe, rept, maxpt;
   pe:=minimax( f,  x=-xmax..xmax,  [deg,0],  1,  'err'):
   pt := poly_exact2(pe,n):
@@ -231,7 +281,7 @@ returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite prec
   rept := infnorm( 1-pt/f, x=-xmax..xmax) :
   maxpt := infnorm( pt, x=-xmax..xmax) :
   pt,rept,maxpt:
-end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/></Input></Group></Section></Section></Section><Group><Input><Text-field layout="_pstyle5" prompt="&gt; " style="Maple Input">save log2, pulp, nearest,ieeedouble, hi_lo, ieeehexa, printendian, hexa2ieee, ieeehexa2, poly_exact, poly_exact2<Font opaque="false">,  compute_rel_rounding_error,</Font>  compute_abs_rounding_error, compute_rn_constant, poly_trunc_f2d_1, poly_trunc_f2d_2, poly_trunc_classic, "Common_maple_procedures.m"; </Text-field></Input></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">Stuff for SCS</Text-field></Title><Section><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">Global parameters</Font></Text-field></Title><Text-field layout="_pstyle7" style="_cstyle57"><Font encoding="ISO8859-1">Don\264t forget to set all the parameters here</Font></Text-field><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">NB_WORDS := 2:
+end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/></Input></Group></Section></Section></Section><Group><Input><Text-field layout="_pstyle5" prompt="&gt; " style="Maple Input">save log2, pulp, nearest,ieeedouble, hi_lo, ieeehexa, printendian, hexa2ieee, ieeehexa2, poly_exact, poly_exact2,  compute_rel_rounding_error,  compute_abs_rounding_error, compute_rel_rounding_error_firstmult,  compute_abs_rounding_error_firstmult, compute_rn_constant, poly_trunc_f2d_1, poly_trunc_f2d_2, poly_trunc_classic, "Common_maple_procedures.m"; </Text-field></Input></Group><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Stuff for SCS</Text-field></Title><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">Global parameters</Font></Text-field></Title><Text-field layout="_pstyle7" style="_cstyle57"><Font encoding="ISO8859-1">Don\264t forget to set all the parameters here</Font></Text-field><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">NB_WORDS := 2:
 NB_BITS  := 30:</Text-field></Input></Group></Section><Section><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">GetSCS_real</Font></Text-field></Title><Text-field layout="_pstyle13" style="_cstyle63">This procedure convert a decimal number into it SCS representation.</Text-field><Text-field layout="_pstyle13" style="_cstyle63">       x : input number to convert into it SCS representation</Text-field><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">GetSCS_real := proc(x)
 local exception, index, sign, mantissa, nb, i;
 
@@ -376,4 +426,4 @@ end proc:</Font></Text-field></Input></Group><Group><Input><Text-field layout="_
   fi;
   convert(resultat, hex);
 end:</Font><Font family="Lucida Bright">
-</Font></Text-field></Input></Group><Text-field layout="_pstyle14" style="_pstyle14"/></Section></Section><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Tests and scratch</Text-field></Title><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_pstyle1">ieeedouble(ln(2));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_exact2(1/3+x, 0);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
+</Font></Text-field></Input></Group><Text-field layout="_pstyle14" style="_pstyle14"/></Section></Section><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Tests and scratch</Text-field></Title><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_pstyle1">ieeedouble(ln(2));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_exact2(1/3+x, 0);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
