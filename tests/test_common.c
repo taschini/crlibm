@@ -99,7 +99,8 @@ double rand_for_log(){
   /*first the low bits of the mantissa*/
   result.i[LO_ENDIAN]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
-  result.i[HI_ENDIAN]=  rand_int() & 0x8fffffff;
+  result.i[HI_ENDIAN]=  rand_int() & 0x7fffffff;
+  /* printf("x = %1.5e\n", result.d);*/
   return result.d;
 }
 
