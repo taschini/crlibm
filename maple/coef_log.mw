@@ -4,34 +4,34 @@ Digits := 100:</Text-field></Input><Input><Text-field layout="_pstyle33" prompt=
 mkdir("TEMPLOG");
 deg:=12;</Text-field></Input></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">First, quick phase</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" style="Text">Approach for the first function:</Text-field><Text-field layout="Normal" style="Text">log(x) = E*log(2) + P(R)
 where P(R) is defined over such an interval [11/16; 12/16] ... [21/16; 23/16]
-At all, there is 8 intervals, corresponding to 8 polynomials.</Text-field></Input><Input><Text-field layout="Normal" style="Text"/></Input></Group><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Interval parameters</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">Xmax:=[2**(-5), 2**(-5), 2**(-5), 2**(-5), 2**(-4), 2**(-4), 2**(-4), 2**(-4)]:
+At all, there is 8 intervals, corresponding to 8 polynomials.</Text-field></Input><Input><Text-field layout="Normal" style="Text"/></Input></Group><Section><Title><Text-field layout="Heading 2" style="Heading 2">Interval parameters</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">Xmax:=[2**(-5), 2**(-5), 2**(-5), 2**(-5), 2**(-4), 2**(-4), 2**(-4), 2**(-4)]:
 Ilist:=[[11/16,12/16],[12/16,13/16],[13/16,14/16],[14/16,15/16],[15/16,17/16],[17/16,19/16],[19/16,21/16],[21/16,23/16]]:
-midI:=[23/32,25/32,27/32,29/32,1,18/16,20/16,22/16]:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save Xmax, Ilist, midI, "TEMPLOG/parameterlog.m";</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Computation of the polynomials</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">This is the function we use on all the intervals except i=5 (the one around 1)</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_log_2 := proc(i,deg) 
- local p, e, pt, rel_approx_error, abs_rounding_error, minptr, maxptr, maxpt, delta, miny, deltaZero, <Font opaque="false">deltaEgt24 </Font>;
+midI:=[23/32,25/32,27/32,29/32,1,18/16,20/16,22/16]:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save Xmax, Ilist, midI, "TEMPLOG/parameterlog.m";</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 2" style="Heading 2">Computation of the polynomials</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">This is the function we use on all the intervals except i=5 (the one around 1)</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_log_2 := proc(i,deg) 
+ local p, e, pt, rel_approx_error, abs_rounding_error, minptr, maxptr, maxpt, delta, miny, deltaZero, deltaEgt24 ;
 
-  pt, rel_approx_error,  maxpt := poly_trunc_f2d_2( log(x+midI[i]) ,  deg, Xmax[i]):
+  pt, rel_approx_error,  maxpt := poly_trunc_f2d_2( log(x+midI[i]) ,  deg, -Xmax[i], Xmax[i]):
 
   abs_rounding_error, minptr, maxptr := compute_abs_rounding_error(pt, Xmax[i], 2):
 
   printf("Interval %d  : minp,maxp=(%3.2f,%3.2f)  rel. approx err. = %3.2f bits, abs_round. err. = %3.2f",
-    i, minptr, maxptr,  <Font opaque="false">-log2(rel_approx_error), -log2(abs_rounding_error) ):</Font>
+    i, minptr, maxptr,  -log2(rel_approx_error), -log2(abs_rounding_error) ):
 
   # delta for E&lt;&gt;0
   miny:=nearest(log(2)) - maxptr;
-  delta := (rel_approx_error*maxptr + abs_rounding_error)/miny * (1+2^(-100)):<Font opaque="false">
+  delta := (rel_approx_error*maxptr + abs_rounding_error)/miny * (1+2^(-100)):
 
   #delta for E&gt;=24
   miny:=nearest(24*log(2)) - maxptr;
-  deltaEgt24 := (1 + (rel_approx_error*maxptr + abs_rounding_error)/miny) * (1+2^(-100)) - 1:</Font>
+  deltaEgt24 := (1 + (rel_approx_error*maxptr + abs_rounding_error)/miny) * (1+2^(-100)) - 1:
 
-  #delta for E=0<Font opaque="false">
-  abs_rounding_error, minptr, maxptr := compute_abs_rounding_error_firstmult(pt, Xmax[i], 2):</Font>
+  #delta for E=0
+  abs_rounding_error, minptr, maxptr := compute_abs_rounding_error_firstmult(pt, Xmax[i], 2):
   deltaZero := (rel_approx_error*maxptr + abs_rounding_error)/minptr: 
 
-  printf("  delta = %3.2f<Font opaque="false">,   deltaZero = %3.2f,   deltaEgt24 = %3.2f</Font>\n",
-        -log2(delta),<Font opaque="false"> -log2(deltaZero), -log2(deltaEgt24) </Font>);
+  printf("  delta = %3.2f,   deltaZero = %3.2f,   deltaEgt24 = %3.2f\n",
+        -log2(delta), -log2(deltaZero), -log2(deltaEgt24) );
 
-  [pt, max(maxpt,maxptr), delta, deltaZero<Font opaque="false">, deltaEgt24</Font>]
+  [pt, max(maxpt,maxptr), delta, deltaZero, deltaEgt24]
 end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">evalf(24*log(2));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Special case around one</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=5:
 xmax5:=Xmax[i]:
 pe5:=minimax(  (log(1+x)/x),  x=-xmax5..xmax5,  [deg-1,0], 1 ,  'err'):
@@ -49,12 +49,12 @@ printf("Interval %d  : minp,maxp=(%3.2f,%3.2f)  rel. approx err. = %3.2f bits, a
     i, minptr5, maxptr5,  -log2(rept5), -log2(abs_rounding_error5) ):
 </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">  #delta for E&gt;=24
   miny5:=nearest(24*log(2)) - maxptr5;
-  deltaEgt245 := (1 + (rept5*maxptr5 + abs_rounding_error5)/miny5) * (1+2^(-100)) - 1;<Font opaque="false">
+  deltaEgt245 := (1 + (rept5*maxptr5 + abs_rounding_error5)/miny5) * (1+2^(-100)) - 1;
 
 # the relative error in the case when E=0
 deltaZero5 := (1+rept5)  * (1 + compute_rel_rounding_error_firstmult(pt5,xmax5, 2)) - 1 ;
 printf("  delta = %3.2f,   deltaZero = %3.2f,   deltaEgt24 = %3.2f\n",
-        -log2(delta5), -log2(deltaZero5), -log2(deltaEgt245) );</Font>
+        -log2(delta5), -log2(deltaZero5), -log2(deltaEgt245) );
 </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">evalf(compute_rn_constant(deltaZero5));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">The warning above is OK, because the Add22 in question adds zero, which is an exact operation even with the unconditional version.</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">PolyList:=[ 
   poly_log_2(1,deg),
   poly_log_2(2,deg),
@@ -64,7 +64,7 @@ printf("  delta = %3.2f,   deltaZero = %3.2f,   deltaEgt24 = %3.2f\n",
   poly_log_2(6,deg),
   poly_log_2(7,deg),
   poly_log_2(8,deg)
-]:  </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save PolyList, "TEMPLOG/PolyList.m";</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2">Computation of constants for RN test</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">We have in PolyList delta the total error for polynomial approximation, build tabrndcst[] the table of "e" needed for round to nearest</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/PolyList.m"; read "TEMPLOG/parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"><Font opaque="false">maxdelta:=0:
+]:  </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save PolyList, "TEMPLOG/PolyList.m";</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2">Computation of constants for RN test</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">We have in PolyList delta the total error for polynomial approximation, build tabrndcst[] the table of "e" needed for round to nearest</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/PolyList.m"; read "TEMPLOG/parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">maxdelta:=0:
 maxdeltaEZero:=0:
 maxdeltaEgt24:=0:
 
@@ -79,7 +79,7 @@ od:
 rncst := evalf(compute_rn_constant(maxdelta));
 rncstEZero := evalf(compute_rn_constant(maxdeltaEZero));
 rncstEgt24 := evalf(compute_rn_constant(maxdeltaEgt24));
-</Font>
+
 </Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Compute the total rel error in Fast path</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">max_abs_err:=0:
 for i from 1 to 8 do
   xmax:=Xmax[i];
@@ -90,10 +90,10 @@ for i from 1 to 8 do
   abs_err := abs_appr_err + abs_rnd_err + 2^(-90);
   if abs_err &gt; max_abs_err then max_abs_err := abs_err: fi:
   printf(" (appr %3.4f, rnd %3.4f), total %3.4f", log2(abs_appr_err), log2(abs_rnd_err),  log2(abs_err));
-od:<Font opaque="false">
-log2(max_abs_err);</Font></Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Try doubling and halving minfastpath. This value is optimal for the Pentium IV</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">minfastpath:=128+0.5;<Font opaque="false">
+od:
+log2(max_abs_err);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Try doubling and halving minfastpath. This value is optimal for the Pentium IV</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">minfastpath:=128+0.5;
 deltafastpath:=max_abs_err/(minfastpath-0.4);
-log2(deltafastpath);</Font>
+log2(deltafastpath);
 rncstfastpath := evalf(compute_rn_constant(deltafastpath));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Also tested with one iteration less, but it is too much worse</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">
 for i from 1 to 8 do
   xmax:=Xmax[i];
@@ -123,7 +123,7 @@ fprintf(fd, "#endif\n\n"):
 fprintf(fd, "#define DEGREE %d\n\n", deg):
 
 fprintf(fd,"#define MIN_FASTPATH %4.3f \n",minfastpath ):
-<Font opaque="false">
+
 fprintf(fd,"/* Constants for rounding  */\n"):
 
 fprintf(fd,"double const delta[4] =\n{\n"):
@@ -146,7 +146,7 @@ fprintf(fd,"  /* Case E&gt;24  */\n"):
 fprintf(fd,"  %1.50e, \n",rncstEgt24):
 fprintf(fd,"  /* And for the fast path  */\n"):
 fprintf(fd,"  %1.50e \n",rncstfastpath):
-fprintf(fd,"};\n\n"):</Font>
+fprintf(fd,"};\n\n"):
 
 
 # THE POLYNOMIALS
@@ -299,4 +299,4 @@ for i from 0 to nb_turn do
    table_ti := table_ti * x + log(start_nb):
    table_inv_wi := table_inv_wi *x + 1./ start_nb:
    start_nb := start_nb + 2.^(N):
-od:</Text-field></Input></Group></Section><Text-field/><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 1" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 1">Tests and scratch</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
+od:</Text-field></Input></Group></Section><Text-field/><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 1" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 1">Tests and scratch</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
