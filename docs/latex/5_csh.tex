@@ -1,17 +1,21 @@
 
-\newcommand{\middlei}{\mathrm{middle}[i]}
-
 
 \section{Overview}
 
-Like the algorithms for others elementary functions, we will compute our hyperbolic cosine and sine in one or two steps.
-The first one, which is called 'fast step' is always executed and provides a precision of about 63 bits. 
-This is a sufficient precision in most cases, but sometimes more precision is needed, and then we enter the second step (called `slow pass') using the SCS library.
+Like the algorithms for others elementary functions, we will compute
+our hyperbolic cosine and sine in one or two steps.  The first one,
+which is called 'fast step' is always executed and provides a
+precision of about 63 bits.  This is a sufficient precision in most
+cases, but sometimes more precision is needed, and then we enter the
+second step (called `slow pass') using the SCS library.
 
 
 \subsubsection*{Definition interval and exceptional cases}
-The hyperbolic cosine and the hyperbolic sine are defined for all real numbers, and then for all floating point numbers.
-These functions are divergent toward $+\infty$ and $-\infty$, so for $|x| > 710.47586007$, $\cosh(x)$ and $\sinh(x)$ should return $+\infty$ or the greatest representable number (depending ot the choosen rounding mode).
+The hyperbolic cosine and the hyperbolic sine are defined for all real
+numbers, and then for all floating point numbers.  These functions are
+divergent toward $+\infty$ and $-\infty$, so for $|x| > 710.47586007$,
+$\cosh(x)$ and $\sinh(x)$ should return $+\infty$ or the greatest
+representable number (depending ot the choosen rounding mode).
 
 \begin{itemize}
 \item If $x = NaN$ , then $\sin(x)$ and $\cosh(x)$ should return $NaN$
@@ -22,8 +26,10 @@ These functions are divergent toward $+\infty$ and $-\infty$, so for $|x| > 710.
 
 This is true in all rounding modes.
 
-Concerning denormals, $\cosh(x) \geq 1$, so $\cosh(x)$ can't return denormal numbers, even for denormal inputs.
-For small inputs ($|x| \leq 2^{-40}$), we have $\sinh(x) = x$ with 80 bits of precision, so we can return a result without any computation on denormals. 
+Concerning denormals, $\cosh(x) \geq 1$, so $\cosh(x)$ can't return
+denormal numbers, even for denormal inputs.  For small inputs ($|x|
+\leq 2^{-40}$), we have $\sinh(x) = x$ with 80 bits of precision, so
+we can return a result without any computation on denormals.
 
 \section{Quick phase}
 
@@ -41,7 +47,7 @@ These formulaes are:
 
 
 
-After having treated special cases ($\NaN$, $+\infty$, $-\infty$), we do a first range reduction, to have an small input x (between $\frac{-ln(2)}{2}$ and $\frac{ln(2)}{2}$).
+After having treated special cases ($NaN$, $+\infty$, $-\infty$), we do a first range reduction, to have an small input x (between $\frac{-ln(2)}{2}$ and $\frac{ln(2)}{2}$).
 So, we write $x = k*\ln(2) + y$, where k is given by rounding to the nearest integer $x * \frac{1}{ln(2)}$.
 Now, $\frac{-ln(2)}{2} \leq y  \leq \frac{ln(2)}{2}$, but it is even too large to have a sufficient precision during polynomial evaluation with small polynoms, and we do a second range reduction, by writing $y = a + b$, where $a = index * 2^{-8}$ (index is an integer)  and $|b| \leq 2^{-9}$.
 
@@ -220,29 +226,29 @@ Here there are all the variables which will be used in the code.
 \begin{tabular}{ll}
 Line 20 & Put in k the closest integer of x * inv\_ln\_2. \\
         & We use the property of DOUBLE2INT that convert a floating-point number in rouding to nearest mode. \\
-	& By its definition, $k$ satisfies the following properties:\\
-	&  $\lfloor x \times inv\_ln2 \rfloor \leq k \leq \lceil x \times inv\_ln2\rceil$ \\
-	& $|k| \leq \frac{x}{2} \times inv\_ln2$ \\
-	& since $|x| \leq 710.475...$, we have $|k| \leq 1025$, so $k$ is coded on at most 11 bits. \\
+        & By its definition, $k$ satisfies the following properties:\\
+        &  $\lfloor x \times inv\_ln2 \rfloor \leq k \leq \lceil x \times inv\_ln2\rceil$ \\
+        & $|k| \leq \frac{x}{2} \times inv\_ln2$ \\
+        & since $|x| \leq 710.475...$, we have $|k| \leq 1025$, so $k$ is coded on at most 11 bits. \\
 Line 21 & First case : $k \neq 0$ \\
         & We have by contruction : $ln2_{hi} + ln2_{lo} = \ln(2) + \abserr{repr\_ln2}$, where $|\abserr{repr\_ln2}| \leq \maxabserr{repr\_ln2} = 1.95e-31$.\\
-	& the last 11 bits of $ln_{hi}$ are set to zero by its construction \\
+        & the last 11 bits of $ln_{hi}$ are set to zero by its construction \\
 Line 22 & the $ln2_{hi} * k$ product is exact since $k$ is coded on at most 11 bits and the last 11 bits of $ln2_{hi}$ are zeros \\
         & we have to use the properties verified by $k$: $x * inv\_ln2 - 1 \leq k \leq x * inv\_ln2 + 1$\\
-	& if $x \geq 0$ \\
-	& we have $ k \geq 1$ and then $x \geq \frac{\ln(2)}{2}$, so $(x * inv\_ln2 + 1)*ln2_{hi} \leq 2*x$\\
-	& since $|k| \leq \frac{x}{2} \times inv\_ln2$, we have $\frac{x}{2} \leq (x * inv\_ln2 - 1)*ln2_{hi}$\\
-	& and then we have $\frac{x}{2} \leq k * ln2_{hi} \leq 2*x$\\
-	& we can apply the Sterbenz theorem to prove that the result of this line is exact\\
-	& if $x \leq 0$\\
-	& we can use the same reasoning and then apply the Sterbenz theorem\\
-	& and this line of code is always exact. \\
+        & if $x \geq 0$ \\
+        & we have $ k \geq 1$ and then $x \geq \frac{\ln(2)}{2}$, so $(x * inv\_ln2 + 1)*ln2_{hi} \leq 2*x$\\
+        & since $|k| \leq \frac{x}{2} \times inv\_ln2$, we have $\frac{x}{2} \leq (x * inv\_ln2 - 1)*ln2_{hi}$\\
+        & and then we have $\frac{x}{2} \leq k * ln2_{hi} \leq 2*x$\\
+        & we can apply the Sterbenz theorem to prove that the result of this line is exact\\
+        & if $x \leq 0$\\
+        & we can use the same reasoning and then apply the Sterbenz theorem\\
+        & and this line of code is always exact. \\
 Line 23 & this product is not exact, we can loose at most 11 bits of precision\\
         & there is an error of $\abserr{round}$ which satisfies $|\abserr{round}|\leq \maxabserr{round} = 3.15e-30$ on $ln2_{lo}$ \\
         & so a bound to the maximal absolute error is $k_{max} * \maxabserr{round}$\\
 Line 24 & We do an Add12 to have well-aligned double doubles in $b_{hi}$ and $b_{lo}$\\
         & The conditionnal version is used since temp\_hi  can be zero if $x$ is very close to $k * ln(2)$.\\
-	& The total absolute error is bounded by $\maxabserr{b} = 3.43e-27$ \\
+        & The total absolute error is bounded by $\maxabserr{b} = 3.43e-27$ \\
 Line 27 & We have $k = 0$. We needn't to do any reduction, so $b_{hi} + b_{lo} = x$ exactly.\\
 \end{tabular}
 
@@ -274,12 +280,12 @@ At this stage, we have $b_{hi} + b_{lo} = \widehat{y} + \abserr{b}$, where $|\ab
 Line 30-33 & Put in \texttt{two\_p\_plus\_k} and \texttt{two\_p\_minus\_k} the exact values of $2^{k-1}$ and $2^{-k-1}$.\\
 Line 38-44 & The goal of the second range reduction is to write $y$ as $y = index * 2^{-8} + b$ \\
            & We have $|y| \leq \frac{ln(2)}{2} \leq \frac{1}{2}$ \\
-	   & so $2^{44} \leq 2^{44} + 2^{43} + y \leq 2^{44} + 2^{43} + 2^{42}$ \\
-	   & since the mantissa counts 53 bits, only the part above $2^{-8}$ si kept in table\_index\_float\\
-	   & It is easy to show that we have $-89 \leq table\_index \leq 89$ \\
-	   & so we can add $bias = 89$ to $table\_index$ to have only positive values. \\
-	   & then we remove this bits of $y$ to obtain the final $b = b_{hi} + b_{lo}$ \\
-	   & all these operations are exact, so the final absolute error doesn't increase \\
+           & so $2^{44} \leq 2^{44} + 2^{43} + y \leq 2^{44} + 2^{43} + 2^{42}$ \\
+           & since the mantissa counts 53 bits, only the part above $2^{-8}$ si kept in table\_index\_float\\
+           & It is easy to show that we have $-89 \leq table\_index \leq 89$ \\
+           & so we can add $bias = 89$ to $table\_index$ to have only positive values. \\
+           & then we remove this bits of $y$ to obtain the final $b = b_{hi} + b_{lo}$ \\
+           & all these operations are exact, so the final absolute error doesn't increase \\
 
 \end{tabular}
 
@@ -332,11 +338,11 @@ Line 51-52 & If $|b| \leq 2^{-40}$, we will have $|tcb|,[tsb| \leq \maxabserr{sq
            & We can avoid by this way any problem with denormalized numbers. \\
 Line 55-56 & Polynomial evaluation of $cosh(x)-1$ and $\frac{sinh(x)}{x}-1$, following the Hörner scheme. \\
            & A maple procedure is used to compute the error on this computations\\
-	   & There are 2 reasons for the total error :\\
-	   & the effective computations, since all operations are done with 53 bits of precision.\\
-	   & the mathematical approximation, since we use polynoms \\
-	   & finally, we have $tcb = \widehat{cosh(\widehat{b}-1)} + \abserr{tcb}$, where $|\abserr{tcb}| \leq \maxabserr{tcb} = 6.35e-22$, \\
-	   & and $tsb = \widehat{(\frac{sinh(\widehat{b})}{\widehat{b}}-1)} + \abserr{tsb}$, where $|\abserr{tsb}| \leq \maxabserr{tsb} = 1.11e-21$ \\
+           & There are 2 reasons for the total error :\\
+           & the effective computations, since all operations are done with 53 bits of precision.\\
+           & the mathematical approximation, since we use polynoms \\
+           & finally, we have $tcb = \widehat{cosh(\widehat{b}-1)} + \abserr{tcb}$, where $|\abserr{tcb}| \leq \maxabserr{tcb} = 6.35e-22$, \\
+           & and $tsb = \widehat{(\frac{sinh(\widehat{b})}{\widehat{b}}-1)} + \abserr{tsb}$, where $|\abserr{tsb}| \leq \maxabserr{tsb} = 1.11e-21$ \\
 Line 60    & If $y$ is very close to $0$, we have the 8 bits of the second range reduction which are null \\
 Line 62-65 & We get tabulated values for $cosh(a)$ and $sinh(a)$. They are tabulated as double doubles: \\
            & we have $ca_{hi} + ca_{lo} = \widehat{cosh(\widehat{a})} + \abserr{ca}$, where $|\abserr{ca}| \leq \maxabserr{ca} = 6.08e-33$, \\
@@ -344,10 +350,10 @@ Line 62-65 & We get tabulated values for $cosh(a)$ and $sinh(a)$. They are tabul
 Line 68    & $b\_sa_{hi} + b\_sa_{lo} = sa_{hi} * b_{hi}$. This product is exact. \\
 Line 69-70 & it is the reconstruction : $cosh(y) = cosh(a)*(1+tcb) + sinh(a)*b*(1+tsb)$ \\
            & A maple procedure is used to compute the error done in this reconstruction. \\
-	   & We have $ch_{hi}+ch_{lo} = \widehat{cosh(\widehat{y})} + \abserr{cosh1}$, where $|\abserr{cosh1}| \leq \maxabserr{cosh1} = 2.39e-20$\\
+           & We have $ch_{hi}+ch_{lo} = \widehat{cosh(\widehat{y})} + \abserr{cosh1}$, where $|\abserr{cosh1}| \leq \maxabserr{cosh1} = 2.39e-20$\\
 Line 75    & If $y$ is very close to $0$, we have $a = 0$ and $cosh(y) = cosh(b) = 1 + tcb$. \\
            & This addition is exact, so no error is introduced. \\
-	   & We have $ch_{hi}+ch_{lo} = \widehat{cosh(\widehat{y})} + \abserr{cosh0}$, where $|\abserr{cosh0}| \leq \maxabserr{cosh0} = 6.35e-22$\\
+           & We have $ch_{hi}+ch_{lo} = \widehat{cosh(\widehat{y})} + \abserr{cosh0}$, where $|\abserr{cosh0}| \leq \maxabserr{cosh0} = 6.35e-22$\\
 \end{tabular}
 
 
@@ -367,34 +373,34 @@ Line 75    & If $y$ is very close to $0$, we have $a = 0$ and $cosh(y) = cosh(b)
     }
     if((k < 35) && (k > -35) )
       {
-	ch_2_pk_hi = ch_hi * two_p_plus_k.d;
-	ch_2_pk_lo = ch_lo * two_p_plus_k.d;
-	ch_2_mk_hi = ch_hi * two_p_minus_k.d;
-	ch_2_mk_lo = ch_lo * two_p_minus_k.d;
-	sh_2_pk_hi = sh_hi * two_p_plus_k.d;
-	sh_2_pk_lo = sh_lo * two_p_plus_k.d;
-	sh_2_mk_hi = -1 * sh_hi * two_p_minus_k.d;
-	sh_2_mk_lo = -1 * sh_lo * two_p_minus_k.d;
-	
-	Add22Cond(&res_hi, &res_lo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
-	Add22Cond(&ch_2_mk_hi, &ch_2_mk_lo , sh_2_pk_hi, sh_2_pk_lo, res_hi, res_lo);
-	Add22Cond(&res_hi, &res_lo, ch_2_pk_hi, ch_2_pk_lo, ch_2_mk_hi, ch_2_mk_lo);
+        ch_2_pk_hi = ch_hi * two_p_plus_k.d;
+        ch_2_pk_lo = ch_lo * two_p_plus_k.d;
+        ch_2_mk_hi = ch_hi * two_p_minus_k.d;
+        ch_2_mk_lo = ch_lo * two_p_minus_k.d;
+        sh_2_pk_hi = sh_hi * two_p_plus_k.d;
+        sh_2_pk_lo = sh_lo * two_p_plus_k.d;
+        sh_2_mk_hi = -1 * sh_hi * two_p_minus_k.d;
+        sh_2_mk_lo = -1 * sh_lo * two_p_minus_k.d;
+        
+        Add22Cond(&res_hi, &res_lo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
+        Add22Cond(&ch_2_mk_hi, &ch_2_mk_lo , sh_2_pk_hi, sh_2_pk_lo, res_hi, res_lo);
+        Add22Cond(&res_hi, &res_lo, ch_2_pk_hi, ch_2_pk_lo, ch_2_mk_hi, ch_2_mk_lo);
       } 
     else if (k >= 35) 
       {
-	ch_2_pk_hi = ch_hi * two_p_plus_k.d;
-	ch_2_pk_lo = ch_lo * two_p_plus_k.d;
-	sh_2_pk_hi = sh_hi * two_p_plus_k.d;
-	sh_2_pk_lo = sh_lo * two_p_plus_k.d;
-	Add22Cond(&res_hi, &res_lo, ch_2_pk_hi, ch_2_pk_lo, sh_2_pk_hi, sh_2_pk_lo);
+        ch_2_pk_hi = ch_hi * two_p_plus_k.d;
+        ch_2_pk_lo = ch_lo * two_p_plus_k.d;
+        sh_2_pk_hi = sh_hi * two_p_plus_k.d;
+        sh_2_pk_lo = sh_lo * two_p_plus_k.d;
+        Add22Cond(&res_hi, &res_lo, ch_2_pk_hi, ch_2_pk_lo, sh_2_pk_hi, sh_2_pk_lo);
       }
     else /* if (k <= -35) */
       {
-	ch_2_mk_hi = ch_hi * two_p_minus_k.d;
-	ch_2_mk_lo = ch_lo * two_p_minus_k.d;
-	sh_2_mk_hi = -1 * sh_hi * two_p_minus_k.d;
-	sh_2_mk_lo = -1 * sh_lo * two_p_minus_k.d;
-	Add22Cond(&res_hi, &res_lo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
+        ch_2_mk_hi = ch_hi * two_p_minus_k.d;
+        ch_2_mk_lo = ch_lo * two_p_minus_k.d;
+        sh_2_mk_hi = -1 * sh_hi * two_p_minus_k.d;
+        sh_2_mk_lo = -1 * sh_lo * two_p_minus_k.d;
+        Add22Cond(&res_hi, &res_lo, ch_2_mk_hi, ch_2_mk_lo, sh_2_mk_hi, sh_2_mk_lo);
       }
   }
   else {
@@ -408,10 +414,10 @@ Line 75    & If $y$ is very close to $0$, we have $a = 0$ and $cosh(y) = cosh(b)
 Line 77    & Test if $k = 0$ or not \\
 Line 78-87 & We have $k \neq 0$, so we must compute $sinh(y)$ \\
            & This computation is done like the computation of $cosh(h)$ \\
-	   & We can use an Add12 (instead of Add12Cond) since $b_{hi} * ca_{hi} \geq  temp$ \\
-	   & A maple script gives $sinh(y) = \widehat{sinh(\widehat{y})} + \abserr{sinh1}$, where $|\abserr{sinh1}| \leq  \maxabserr{sinh1} = 1.09e-22$ \\
+           & We can use an Add12 (instead of Add12Cond) since $b_{hi} * ca_{hi} \geq  temp$ \\
+           & A maple script gives $sinh(y) = \widehat{sinh(\widehat{y})} + \abserr{sinh1}$, where $|\abserr{sinh1}| \leq  \maxabserr{sinh1} = 1.09e-22$ \\
 
-	   & and $|\abserr{sinh1}| \leq  \maxabserr{sinh0} = 5.4e-20$ (when $sinh(a) = 0$) \\
+           & and $|\abserr{sinh1}| \leq  \maxabserr{sinh0} = 5.4e-20$ (when $sinh(a) = 0$) \\
 Line 89    & We have $k\neq 0$, and $|k| \leq 35$ \\
 Line 91-98 & we multiply $sinh(y)$ and $cosh(y)$ by powers of 2, so these products are exact \\
 Line 100-102 & A maple script is used to compute the error: \\
@@ -474,7 +480,7 @@ For the accurate phase, we use SCSLib, which provides 208 bits of precision. Tha
 Line 177   & We will distinguish three cases, since if $|x|$ is large enough, we can ignore some computations. \\
 Line 178-181 & The used formulae is $cosh(x) = exp(x) + \frac{1}{exp(x)}$. \\
            & SCSlib ensure 208 bits of precision, so the final result has at least 158 bits of precision,\\
-	   & and that is enough for a correct rounding \\
+           & and that is enough for a correct rounding \\
 Line 182   & If $|k| \geq 80$, $e^{-x}$ is negligible, since we have $e^{-x} \leq 2^{-160} e^x$. \\
            & So we continue to have our 158 bits of precision \\
 Line 186   & This case is symetric to the previous one. \\
