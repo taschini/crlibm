@@ -36,39 +36,38 @@ in the IEEE-754 \emph{round to nearest} mode.
 
 \begin{theorem}[Sterbenz Lemma~\cite{Ste74,Gol91}]
 \label{sterbenz}
-If $x$ and $y$ are floating-point numbers, and if ${y}/{2} \leq x \leq 2y$ then $x\ominus y$ is computed exactly, without any rounding error.
+If $x$ and $y$ are floating-point numbers, and if ${y}/{2} \leq x \leq
+2y$ then $x\ominus y$ is computed exactly, without any rounding error.
 \end{theorem}
 
 
 \subsection{Double-precision numbers in memory\label{section:memory}}
 
-A double precision floating-point number uses $64$ bits. The unit of memory in most current
-architectures is a 32-bit word. The
-order in which the two $32$ bits words of a double are stored in memory  depends on
-the architecture. An architecture is said \emph{Little Endian} if the
-lower part of the number is stored in memory at the smallest address;
-It is the case of the x86 processors. Conversely, an architecture
-with the high part of the number stored in memory at the smallest
-address is said \emph{Big Endian}; It is the case of the PowerPC
-processors.
+A double precision floating-point number uses $64$ bits. The unit of
+memory in most current architectures is a 32-bit word. The order in
+which the two $32$ bits words of a double are stored in memory depends
+on the architecture. An architecture is said \emph{Little Endian} if
+the lower part of the number is stored in memory at the smallest
+address; It is the case of the x86 processors. Conversely, an
+architecture with the high part of the number stored in memory at the
+smallest address is said \emph{Big Endian}; It is the case of the
+PowerPC processors.
 
-
-The following code extracts the upper and lower part from a double
-precision number $x$.
+In \crlibm, we extract the higher and lower parts of a double by using
+an union in memory: the type \texttt{db\_number}. The following code
+extracts the upper and lower part from a double precision number $x$.
 
 \begin{lstlisting}[label={chap0:lst:endian},
   caption={Extract upper and lower part of a double precision number $x$},firstnumber=1]
-/* LITTLE_ENDIAN/BIG_ENDIAN are defined by the user or  */
-/* automatically by tools such as autoconf/automake.   */
+  /* HI and LO are defined automatically by autoconf/automake.  */
 
-#ifdef LITTLE_ENDIAN
-#define HI(x) *(1+(int*)&x)
-#define LO(x) *(int*)&x
-#elif BIG_ENDIAN
-#define HI(x) *(int*)&x
-#define LO(x) *(1+(int*)&x)
-#endif
+db_number xx;
+int x_hi, x_lo;
+xx.d = x;
+x_hi = xx.i[HI]
+x_lo = xx.i[LO]
 \end{lstlisting}
+
 
 
 
@@ -94,7 +93,7 @@ because the value $2^{51}$ is used to contain possible carry
 propagations with negative numbers.
 
 
-\subsection{Conversion from floating-point to integer \label{sec:double2longint}}
+\subsection{Conversion from floating-point to 64-bit integer \label{sec:double2longint}}
 
 \begin{theorem}[Conversion floating-point to a long long integer]
   The following algorithm, is derived from the previous.
@@ -158,7 +157,8 @@ by default to 1 (functions).
 
 \subsection{Exact sum algorithm {Add12}}
 
-This algorithm is also known as the Fast2Sum algorithm in the litterature.
+This algorithm is also known as the Fast2Sum algorithm in the
+litterature.
 \begin{theorem}[Exact sum~\cite{Knu73, Boldo2001}]
   Let $a$ and $b$ be floating-point numbers, then the following method
   computes two floating-point numbers $s$ and $r$, such that $s+r =
@@ -170,7 +170,7 @@ void Add12Cond(double *s, double *r, a, b)
 {
   double z;
   s = a + b;            
-  if ((HI(a)&0x7FF00000)> (HI(b)&0x7FF00000)){  
+  if (ABS(a) > ABS(b)){  
     z = s - a;           
     r = b - z;           
   }else {                 
@@ -179,7 +179,13 @@ void Add12Cond(double *s, double *r, a, b)
   } 
 }                         
 \end{lstlisting}
-This algorithm requires $3$ floating-point additions, $2$ masks and $1$ test over integer.
+Here ABS is a macro that returns the absolute value of a
+floating-point number. This algorithm requires $4$ floating-point additions and $2$ floating
+point test (some of which are hidden in the ABS macro). 
+
+Note that if it is more efficient on a given architecture, the test can be replaced
+with a test on the exponents of $a$ and $b$.
+
 \end{theorem}
 
 
@@ -285,6 +291,8 @@ is the example code for the Itanium processor.
 #define Mul12 Mul12Cond
 \end{lstlisting}
 
+The \crlibm\ distribution attempts to use the FMA for systems on which
+it is availables (currently Itanium and PowerPC).
 
 
 
@@ -573,7 +581,8 @@ The following computes tight bounds on $\epsilon^\times_k$ and on $\delta^+_k$.
 
 
 
-\section{Test if rounding is possible\label{section:testrounding}}
+\section{Test if rounding is possible
+\label{section:testrounding}}
 
 We assume here that an evaluation of $y=f(x)$ has been computed with a
 total relative error smaller than $\epsilon$, and that the result is
@@ -615,7 +624,7 @@ else /* more accuracy is needed, launch accurate phase */
 \begin{proof}
   The theorem holds if $y_h$ is $\pm \infty$.
   
-  It also holds if $y_h$ is a denormal: in this case $y_l$ is zero, so
+  It also holds if $y_h$ is a denormal: In this case $y_l$ is zero, so
   the correctly rounded result is $y_h$, and the test is true. In the
   following we therefore assume that $y_h$ is a normal number. We also
   assume that $y\ge0$ (so $y_h\ge0$), as the other case is symmetric.
@@ -705,7 +714,7 @@ else /* more accuracy is needed, launch accurate phase */
   by two the frequency of calls to the accurate phase. 
 \item It is not obvious that a fused multiply-and-add may be used for
   the computation of $y_h+y_l\times e$, but the proof should be easy
-  to adapt to this (more accurate) operation.
+  to adapt to this (more accurate) operation (TODO).
 \end{itemize}
 
 
@@ -713,14 +722,26 @@ else /* more accuracy is needed, launch accurate phase */
 \subsection{Directed rounding modes}
 
 Directed rounding is much easier to achieve than round to the nearest:
-the difficult cases are the cases when the exact value $y$ is very
+The difficult cases are the cases when the exact value $y$ is very
 close to a machine number, and we have in $y_h+y_l$ an approximation to
 $y$ with a relative error smaller than the half-ulp of $y_h$.
 Therefore we have in $|y_l|$ an approximation to the the distance of
 $y_h$ to the closest machine number, with a known approximation error.
 
-We first give a test, then the correction to bring to $y_h$ in the
-three directed rounding modes.
+
+
+We use in \crlibm\ the following macro which does the test and then the rounding. 
+It should be used as follows (example taken from \texttt{atan\_fast.c}):
+
+\begin{lstlisting}[caption={An occurence of the test for rounding up},
+  firstnumber=1]
+  TEST_AND_RETURN_RU(atanhi, atanlo, roundcst);
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_atan_ru(x);
+\end{lstlisting}
+
+
+
 \begin{theorem}[Test for correct directed rounding of a double-double to a double]
 \label{th:roundingDirected}
 ~\\
@@ -728,7 +749,7 @@ Let $y$ be a real number, and $y_h$, $y_l$ and $\maxeps$ be
 floating-point numbers such that
   \begin{itemize}
   \item $y_h=y_h\oplus y_l$,
-  \item $y_h$ is neither a NaN, a denormal, or $\pm \infty$.
+  \item $y_h$ is neither a NaN, a denormal, $\pm 0$ or $\pm \infty$.
   \item $y_l$ is neither a NaN or $\pm \infty$.
   \item $|y_h+y_l - y| <\maxeps.|y|$
 \end{itemize}
@@ -738,73 +759,60 @@ The following test determines whether $y_h$ is the
 
 \begin{lstlisting}[caption={Test for directed rounding},
   firstnumber=1]
-  union {long long int lli; double d} absyh, absyl, u, u53;
-  absyh.d = (*@$y_h$@*);
-  absyl.d = (*@$y_l$@*);
-  /* 64-bit arithmetic */
-  absyh.lli = absyh.lli & 0x(*@\texttt{7fffffffffffffff}@*)LL;
-  absyl.lli = absyl.lli & 0x(*@\texttt{7fffffffffffffff}@*)LL;
-  u53.lli  = (absyh.lli & 0x(*@\texttt{7ff0000000000000}@*)LL) + 0x(*@\texttt{0001000000000000}@*)LL;
-  u.lli    = (absyh.lli & 0x(*@\texttt{7ff0000000000000}@*)LL) - 0x(*@\texttt{0350000000000000}@*)LL;
-  /* back to double arithmetic */
-  if (absyl.d > (*@$\maxeps$@*)*u53.d ) {
-    /* enough accuracy to round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
-    ...
-  }
-  else /* more accuracy is needed, launch accurate phase */
-    ...
+#define TEST_AND_RETURN_RU(__yh__, __yl__, __eps__)                    \
+{                                                                      \
+  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
+  yh.d = __yh__;    yl.d = __yl__;                                     \
+  yh_neg = (yh.i[HI] & 0x80000000);                                    \
+  yl_neg = (yl.i[HI] & 0x80000000);                                    \
+  yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  u53.l     = (yh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;   \
+  if(yl.d > __eps__ * u53.d){                                          \
+    if(!yl_neg) {  /* The case yl==0 is filtered by the above test*/   \
+      /* return next up */                                             \
+      yh.d = __yh__;                                                   \
+      if(yh_neg) yh.l--;  else yh.l++; /* Beware: Fails for zero */    \
+      return yh.d ;                                                    \
+    }                                                                  \
+    else  return __yh__;                                               \
+  }                                                                    \
+}
 \end{lstlisting}
 \end{theorem}
 
 \begin{proof}
-  The first lines compute $|y_h|$, $u_{53}=2^{53}\ulp(y_h)$, and
-  $u=\ulp(y_h)$. Here we use 64-bit arithmetic for readability, but
-  any other implementation will do. Note that this computation doesn't
-  work for infinities or denormals.
+  The first lines compute $|y_h|$, $|y_l|$, boolean values holding the
+  sign information of $y_h$ and $y_l$, and $u_{53}=2^{53}\ulp(y_h)$.
+  Here we use integer 64-bit arithmetic for readability, but other
+  implementations may be more efficient on some systems. Note that
+  these computations don't work for infinities, zeroes or denormals.
   
   As previously, by definition of the \ulp, we have  $y<2^{53}u$.
   
-  If the test is true, then $y_l>(2^{53}u)\otimes\maxeps = 
-  2^{53}\maxeps u $ (the multiplication by $u_{53}$, a power of
-  two, is exact), hence $y_l>\maxeps y$ so we are in an easy case for directed rounding.
+  The main test which determines whether correct rounding is possible
+  is line 10. If this test is true, then $y_l>(2^{53}u)\otimes\maxeps
+  = 2^{53}\maxeps u $ (the multiplication by $u_{53}$, a power of two,
+  is exact), hence $y_l>\maxeps y$ so we are in an easy case for
+  directed rounding.
 
+  The remaining computations and tests (lines 11 and following)
+  compute \texttt{nextafter(yh,inf)} in an efficient way since an
+  integer representation of $y_h$ is already available. For the other
+  directed rounding modes, only these lines change in a
+  straightforward way.
 \end{proof}
 
 
-The following three listings show how to round up, down and towards
-zero. Once the value of the $\ulp(x_h)$ is available, they are fairly
-straightforward. Again, this doesn't work if $y_h$ is a denormal. If
+It is important to note that all this doesn't work if $y_h$ is a denormal. If
 one cannot prove statically that this case doesn't appear, a sensible solution
 is to test for denormals and launch the accurate phase.
 
-
-\begin{lstlisting}[caption={Rounding up}, firstnumber=1]
-    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
-    if ( (*@$y_l$@*) > 0.)
-       (*@$y_h$@*) += u.d;
-    return (*@$y_h$@*);
-\end{lstlisting}
-
-\begin{lstlisting}[caption={Rounding down}, firstnumber=1]
-    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
-    if ( (*@$y_l$@*) < 0.)
-       (*@$y_h$@*) -= u.d;
-    return (*@$y_h$@*);
-\end{lstlisting}
-
-
-\begin{lstlisting}[caption={Rounding towards zero}, firstnumber=1]
-    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
-    if ( (*@$y_h$@*) < 0.) {
-      if ( (*@$y_l$@*) > 0.)
-         (*@$y_h$@*) += u.d;
-    }
-    else{
-      if ( (*@$y_l$@*) < 0.)
-        (*@$y_h$@*) -= u.d;
-    }
-    return (*@$y_h$@*);
-\end{lstlisting}
+Finally, remark that for some functions, the tests on the sign of
+$y_h$ are statically predictable to be true because the function is
+always positive. We shall use this macro anyway for safety. Tanks to
+branch predictor logic in modern processors, it will make little
+difference from a performance point of view.
 
 
 
@@ -813,7 +821,10 @@ is to test for denormals and launch the accurate phase.
 
 
 
-\section{The Software Carry Save library}
+
+
+\section{The Software Carry Save library
+\label{sec:SCSLib}}
 
 The software carry-save internal representation of multiple-precision
 numbers was designed specifically for simple and fast implementations
@@ -834,7 +845,7 @@ double-precision numbers, including denormals and exceptional cases.
 Conversions between SCS format and IEEE-754 doubles, as well as
 arithmetic operations, follow the IEEE rules concerning the
 exceptional cases. SCS doesn't ensure correct rounding, but provides
-conversions to doubles in the four IEEE-754 rounding modes, wich is
+conversions to doubles in the four IEEE-754 rounding modes, which is
 enough for the purpose of \crlibm.
 
 However, a formal proof of correctness of the \scslib\ operators
@@ -1237,7 +1248,7 @@ end proc:
 
 Procedure \texttt{Poly\_exact2} takes in arguments a polynomial
 \texttt{P} and a integer \texttt{n}. It returns a truncated
-polynomial, of wich coefficients are exactly IEEE-double numbers. The
+polynomial, of which coefficients are exactly IEEE-double numbers. The
 \texttt{n} first coefficients are written over 2 IEEE-double numbers.
 
 \begin{lstlisting}[caption={poly\_exact2},firstnumber=1]
@@ -1386,5 +1397,7 @@ end proc:
 The file \texttt{maple/double-extended.mpl} contains procedures
 similar to those previously described to handle double-extended
 precision (64 bits of mantissa and 15 bits of exponent). This is
-currently used in experimental code only. For more details see
-\cite{DinDefLau2004LIP,DinGast2005}.
+currently used in experimental code only: The \crlibm\ CVS repository
+at \url{http://lipforge.ens-lyon.fr/} contains such code for
+exponential and arctangent on Itanium, and arctangent on IA32
+processors. For more details see \cite{DinDefLau2004LIP,DinGast2005}.

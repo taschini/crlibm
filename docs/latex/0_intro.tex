@@ -26,24 +26,36 @@ However, the IEEE-754 standard specifies nothing about elementary
 functions, which limits these advances to code excluding such
 functions.  Currently, several options exist: on one hand, one can use
 today's mathematical libraries that are efficient but without any
-warranty on the correctness of the results. When strict guarantees are
-needed, some multiple-precision packages like MPFR \cite{MPFRweb}
-offer correct rounding in all rounding modes, but are several orders
-of magnitude slower than the usual mathematical libraries for the same
-precision. The recently released IBM Ultimate Math
-Library\cite{IBMlibultimweb} is both portable and fast, if bulky. It
-claims to offer correct rounding to the nearest, however this claim is
-not proven, and indeed some values are still uncorrectly
-rounded\footnote{Try
-  $\sin(0.252113814338773334355892075109295547008514404296875)$}.
-Besides, this library still lacks directed rounding modes needed for
-interval arithmetic.
+warranty on the correctness of the results. To be fair, most modern
+libraries are \emph{accurate-faithful}: trying to round to nearest,
+they return a number that is one of the two FP numbers surrounding the
+exact mathematical result, and indeed return the correctly rounded
+result most of the time. This behaviour is sometimes described using
+phrases like \emph{99\% correct rounding} or \emph{0.501 ulp accuracy}.
 
+When stricter guarantees are needed, some multiple-precision packages
+like MPFR \cite{MPFRweb} offer correct rounding in all rounding modes,
+but are several orders of magnitude slower than the usual mathematical
+libraries for the same precision. Finally, there are are currently
+three attempts to develop a correctly-rounded \texttt{libm}. The first
+was IBM's \texttt{libultim}\cite{IBMlibultimweb} which is both
+portable and fast, if bulky, but lacks directed rounding modes needed
+for interval arithmetic. The second was Ar\'enaire's \texttt{crlibm},
+which was first distributed in 2003. The third is Sun
+correctly-rounded mathematical library called \texttt{libmcr}, whose
+first beta version appeared in 2004.  These libraries are reviewed in
+\ref{section:lib-overview}.
 
-The  goal of the \crlibm\ project is to build on a combination of several
-recent advances to design a proven  correctly rounded mathematical
-library which is fast enough to replace the existing libraries, at acceptable
- cost in terms of performance and resources.
+The goal of the \crlibm\ project is to build on a combination of
+several recent theoretical and algorithmic advances to design a proven
+correctly rounded mathematical library, with an overhead  in terms of
+performance and resources acceptable enough to replace existing
+libraries transparently. 
+
+More generally, the \crlibm\ project serves as an open-source
+framework for research on software elementary functions. As a side
+effect, it may be used as a tutorial on elementary function
+development.
 
 
 
@@ -124,7 +136,7 @@ only two steps allows us to publish, along with each function, a proof
 of its correctly rounding behavior.
 
 
-\subsection{Portable IEEE-754 FP for fast first step}
+\subsection{Portable IEEE-754 FP for a fast first step}
 The computation of a tight bound on the approximation error of the
 first step ($\maxeps_1$) is crucial for the efficiency of the onion
 peeling strategy: overestimating $\maxeps_1$ means going more often
@@ -166,7 +178,8 @@ application \cite{DefDin2002,DinDef2003}. This choice is motivated by
 considerations of code size and performance, but also by the need to
 be independent of other libraries: Again, we need a library on which
 we may rely at the proof level. This library is included in \crlibm,
-but also distributed separately \cite{SCSweb}.
+but also distributed separately \cite{SCSweb}. This library is
+described in more details in \ref{sec:SCSLib}.
 
 
 
@@ -372,6 +385,10 @@ function):
     \hline
     $\log$ & $\mathbb{F}$  \\
     \hline
+    $\log2$ & $\mathbb{F}$  \\
+    \hline
+    $\log10$ & $\mathbb{F}$  \\
+    \hline
     $\cosh$ & $\mathbb{F}$  \\
     \hline
     $\sinh$ & $\mathbb{F}$  \\
@@ -453,6 +470,60 @@ Three libraries offer correct correct rounding:
 \end{itemize}
 
 
+\section{Various policies in \crlibm}
+
+\subsection{Naming the functions}
+Current \crlibm\ doesn't by default replace your existing \texttt{libm}: the
+functions in \crlibm\ have the C99 name, suffixed with \texttt{\_rn},
+\texttt{\_ru}, \texttt{\_rd}, and \texttt{\_rz} for rounding to the
+nearest, up, down and to zero respectively. They require the processor
+to be in round to nearest mode. Starting with version 0.9 we should
+provide a compile-time flag which will overload the default
+\texttt{libm} functions with the crlibm ones with rounding to nearest.
+
+It is interesting to compare this to the behaviour of Sun's library:
+First, Sun's \texttt{libmcr} provides only one function for each C99
+function instead of four in \crlibm, and rounds according to the
+processor's current mode. This is probably closer to the expected
+long-term behaviour of a correctly-rounded mathematical library, but
+with current processors it may have a tremendous impact on
+performance. Besides, the notion of ``current processor rounding
+mode'' is no longer relevant on recent processors like the Itanium
+family, which have up to four different modes at the same time.  A
+second feature of \texttt{libmcr} is that it overloads by default the
+system \texttt{libm}.
+
+The policy implemented in current \crlibm\ intends to provide best
+performance to the two classes of users who will be requiring correct
+rounding: Those who want predictible, portable behaviour of
+floating-point code, and those who implement interval arithmetic. Of course, we
+appreciate any feedback on this subject.
+
+\subsection{Policy concerning IEEE-754 flags}
+
+Currently, the \crlibm\ functions try to raise the Overflow and
+Underflow flags properly. Raising the other flags (especially the
+Inexact flag) is possible but considered too costly for the expected
+use, and will usually not be implemented. We also appreciate feedback
+on this subject.
+
+\subsection{Policy concerning conflicts between correct rounding and
+  expected mathematical properties}
+As remarked in \cite{DefHanLefMulRevZim2004}, it may happen that the
+requirement of correct rounding conflicts with a basic mathematical
+property of the function, such as its domain and range. A typical
+example is the arctangent of a very large number which, rounded up,
+will be a number larger than $\pi/2$ (fortunately, $\round(\pi/2) <
+\pi/2$). The policy that will be implemented in \crlibm\ will be
+\begin{itemize}
+\item to give priority to the mathematical property in round to
+  nearest mode (so as not to hurt the innocent user who may expect
+  such a property to be respected), and 
+\item to give priority to correct rounding in the directed rounding
+  modes, in order to provide trustful bounds to interval arithmetic.
+\end{itemize}
+
+Again, this policy is open to discussion.
 
 \section{Organization of the source code}
 

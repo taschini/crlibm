@@ -251,11 +251,11 @@ This part  is shown for \texttt{cosh\_rn}, but it is quite identical for the thr
  double cosh_rn(double x){ 
   db_number y;
   y.d = x;
-  y.i[HI_ENDIAN] = y.i[HI_ENDIAN] & 0x7FFFFFFF;     /* to get the absolute value of the input */
+  y.i[HI] = y.i[HI] & 0x7FFFFFFF;     /* to get the absolute value of the input */
   if (y.d > max_input_ch.d) { /* out of range */
-    y.i[LO_ENDIAN] = 0; y.i[HI_ENDIAN] = 0x7FF00000; return (y.d);
+    y.i[LO] = 0; y.i[HI] = 0x7FF00000; return (y.d);
   }
-  if ((y.i[HI_ENDIAN] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
+  if ((y.i[HI] & 0x7FF00000) >= (0x7FF00000)) {    /*particular cases : QNaN, SNaN, +- oo*/
    return (y.d);
   }
   return(cosh_quick(x, RN));
@@ -353,10 +353,10 @@ At this stage, we have $b_{hi} + b_{lo} = \widehat{y} + \abserr{b}$, where $|\ab
 \begin{lstlisting}[caption={Procedure \texttt{cosh\_quick} - second range reduction},firstnumber=29]
 
   /*we'll construct 2 constants for the last reconstruction */
-  two_p_plus_k.i[LO_ENDIAN] = 0;
-  two_p_plus_k.i[HI_ENDIAN] = (k-1+1023) << 20;
-  two_p_minus_k.i[LO_ENDIAN] = 0;
-  two_p_minus_k.i[HI_ENDIAN] = (-k-1+1023) << 20;
+  two_p_plus_k.i[LO] = 0;
+  two_p_plus_k.i[HI] = (k-1+1023) << 20;
+  two_p_minus_k.i[LO] = 0;
+  two_p_minus_k.i[HI] = (-k-1+1023) << 20;
 
   /* at this stage, we've done the first range reduction : we have b_hi + b_lo  between -ln(2)/2 and ln(2)/2 */
   /* now we can do the second range reduction */
@@ -392,7 +392,7 @@ Line 38-44 & The goal of the second range reduction is to write $y$ as $y = inde
   square_b_hi = b_hi * b_hi;
   /* effective computation of the polynomial approximation */
   
-  if (((y.i[HI_ENDIAN])&(0x7FFFFFFF)) < (two_minus_30.i[HI_ENDIAN])) {
+  if (((y.i[HI])&(0x7FFFFFFF)) < (two_minus_30.i[HI])) {
     tcb_hi = 0;
     tsb_hi = 0;
   }

@@ -288,11 +288,11 @@ This part  is shown for \texttt{log\_rn}, but it is identical for the three func
    y.d=x;
 
    /* Filter cases */
-   if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
-     if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
+   if (y.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
+     if (((y.i[HI] & 0x7fffffff)|y.i[LO])==0){
        return -1.0/0.0;     
      }                                     /* log(+/-0) = -Inf */
-     if (y.i[HI_ENDIAN] < 0){ 
+     if (y.i[HI] < 0){ 
        return (x-x)/0;                      /* log(-x) = Nan    */
      }
      /* Subnormal number */
@@ -300,13 +300,13 @@ This part  is shown for \texttt{log\_rn}, but it is identical for the three func
      y.d *= two52.d;      /* make x a normal number    */ 
    }
     
-   if (y.i[HI_ENDIAN] >= 0x7ff00000){
+   if (y.i[HI] >= 0x7ff00000){
      return  x+x;                                /* Inf or Nan       */
    }
    
    /* reduce to  y.d such that sqrt(2)/2 < y.d < sqrt(2) */
-   E += (y.i[HI_ENDIAN]>>20)-1023;                              /* extract the exponent */
-   y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;        /* do exponent = 0 */
+   E += (y.i[HI]>>20)-1023;                              /* extract the exponent */
+   y.i[HI] =  (y.i[HI] & 0x000fffff) | 0x3ff00000;        /* do exponent = 0 */
    if (y.d > SQRT_2){
      y.d *= 0.5;
      E++;
@@ -342,7 +342,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
    int k, i;
    
     /* find the interval including y.d */
-    i = ((((*py).i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;
+    i = ((((*py).i[HI] & 0x001F0000)>>16)-6) ;
     if (i < 10)
       i = i>>1;
     else
@@ -503,7 +503,7 @@ void scs_log(scs_ptr res, db_number y, int E){
  /* to normalize y.d and round to nearest      */
   /* + (1-trunc(sqrt(2.)/2 * 2^(4))*2^(-4) )+2.^(-(4+1))*/ 
   z.d = y.d + norm_number.d; 
-  i = (z.i[HI_ENDIAN] & 0x000fffff);
+  i = (z.i[HI] & 0x000fffff);
   i = i >> 16; /* 0<= i <=11 */
   
 

@@ -1164,8 +1164,8 @@ if (R11 == (R11 + R8 * errn)){             (*@ \label{exp:code:44} @*)
     LO(R11_new) = LO(R11);
     R12.d       = R11_new * twom1000;      (*@ \label{exp:code:48} @*)
 
-    HI(st2mem) = R12.i[HI_ENDIAN];         (*@ \label{exp:code:49} @*)
-    LO(st2mem) = R12.i[LO_ENDIAN];         (*@ \label{exp:code:50} @*)
+    HI(st2mem) = R12.i[HI];         (*@ \label{exp:code:49} @*)
+    LO(st2mem) = R12.i[LO];         (*@ \label{exp:code:50} @*)
 
     R11_err -= st2mem * two1000;           (*@ \label{exp:code:51} @*)
     HI(R13) = HI(R11_err) & 0x7fffffff;    (*@ \label{exp:code:52} @*)
@@ -1370,8 +1370,8 @@ if ((HI(R8) & 0x7ff00000) > exp_R11){      (*@ \label{exp:code:pinf:0} @*)
     HI(R11) += ((k+1000)<<20);          
     R12.d    = R11 * twom1000;              (*@ \label{exp:code:pinf:2} @*)
 
-    HI(st2mem) = R12.i[HI_ENDIAN] ;     
-    LO(st2mem) = R12.i[LO_ENDIAN]       
+    HI(st2mem) = R12.i[HI] ;     
+    LO(st2mem) = R12.i[LO]       
 
     R11 -= st2mem * two1000;                (*@ \label{exp:code:pinf:3} @*)
     if ((HI(R11) > 0)||((HI(R11) == 0)&&(HI(R8) > 0))) R12.l += 1;(*@ \label{exp:code:pinf:5} @*)
@@ -1459,8 +1459,8 @@ if ((HI(R8) & 0x7ff00000) > exp_R11){
     HI(R11) += ((k+1000)<<20);             
     R12.d    = R11 * twom1000;             
 
-    HI(st2mem) = R12.i[HI_ENDIAN];                  
-    LO(st2mem) = R12.i[LO_ENDIAN];                  
+    HI(st2mem) = R12.i[HI];                  
+    LO(st2mem) = R12.i[LO];                  
 
     R11 -= st2mem * two1000;               
     if ((HI(R11) < 0)||((HI(R11) == 0)&&(HI(R8) < 0))) R12.l -= 1;
@@ -1635,7 +1635,7 @@ void exp_SC(scs_ptr res_scs, double x){
   /* db.d = x/512  (= 2^9)  */
   
   db.d = x;                                    (*@ \label{exp:mp:0} @*)
-  db.i[HI_ENDIAN] -= (9 << 20);                (*@ \label{exp:mp:1} @*) 
+  db.i[HI] -= (9 << 20);                (*@ \label{exp:mp:1} @*) 
   scs_set_d(sc1, db.d);                        (*@ \label{exp:mp:2} @*)
   
   
@@ -1773,17 +1773,17 @@ $|constant\_poly\_ptr[8]=c_8| \leq 2^{-2}$,  $|constant\_poly\_ptr[9]=c_9| \leq 
 
 We have :
 \begin{itemize}
-\item $P_0=c_1 \boxplus (red \boxtimes c_0)$   donc $|P_0| \leq 2^{-20}$ et $P_0 = c_1 + (red \times c_0 ) + \epsilon_{-231}$
-\item $P_1=c_2 \boxplus (red \boxtimes P_0)$   donc $|P_1| \leq 2^{-17}$ et $P_1 = c_2 + (red \times P_0 ) + \epsilon_{-228}$
-\item $P_2=c_3 \boxplus (red \boxtimes P_1)$   donc $|P_2| \leq 2^{-14}$ et $P_2 = c_3 + (red \times P_1 ) + \epsilon_{-225}$
-\item $P_3=c_4 \boxplus (red \boxtimes P_2)$   donc $|P_3| \leq 2^{-11}$ et $P_3 = c_4 + (red \times P_2 ) + \epsilon_{-222}$
-\item $P_4=c_5 \boxplus (red \boxtimes P_3)$   donc $|P_4| \leq 2^{-8}$ et $P_4 = c_5 + (red \times P_3 ) + \epsilon_{-219}$
-\item $P_5=c_6 \boxplus (red \boxtimes P_4)$   donc $|P_5| \leq 2^{-5}$ et $P_5 = c_6 + (red \times P_4 ) + \epsilon_{-216}$
-\item $P_6=c_7 \boxplus (red \boxtimes P_5)$   donc $|P_6| \leq 2^{-3}$ et $P_6 = c_7 + (red \times P_5 ) + \epsilon_{-214}$
-\item $P_7=c_8 \boxplus (red \boxtimes P_6)$   donc $|P_7| \leq 2^{-1}$ et $P_7 = c_8 + (red \times P_6 ) + \epsilon_{-212}$
-\item $P_8=c_9 \boxplus (red \boxtimes P_7)$   donc $|P_8| \leq 1 + 2^{-10} $ et $P_8 = c_9 + (red \times P_7 ) + \epsilon_{-211}$
-\item $P_9=1   \boxplus (red \boxtimes P_8)$   donc $|P_9| \leq 1 + 2^{-9}$ et $P_9 = 1   + (red \times P_8 ) + \epsilon_{-210}$
-\item $P_{10}=1   \boxplus (red \boxtimes P_9)$donc $|P_{10}| \leq 1 + 2^{-8}$ et $P_{10} = 1   + (red \times P_9) + \epsilon_{-210}$
+\item $P_0=c_1 \boxplus (red \boxtimes c_0)$   thus $|P_0| \leq 2^{-20}$ et $P_0 = c_1 + (red \times c_0 ) + \epsilon_{-231}$
+\item $P_1=c_2 \boxplus (red \boxtimes P_0)$   thus $|P_1| \leq 2^{-17}$ et $P_1 = c_2 + (red \times P_0 ) + \epsilon_{-228}$
+\item $P_2=c_3 \boxplus (red \boxtimes P_1)$   thus $|P_2| \leq 2^{-14}$ et $P_2 = c_3 + (red \times P_1 ) + \epsilon_{-225}$
+\item $P_3=c_4 \boxplus (red \boxtimes P_2)$   thus $|P_3| \leq 2^{-11}$ et $P_3 = c_4 + (red \times P_2 ) + \epsilon_{-222}$
+\item $P_4=c_5 \boxplus (red \boxtimes P_3)$   thus $|P_4| \leq 2^{-8}$ et $P_4 = c_5 + (red \times P_3 ) + \epsilon_{-219}$
+\item $P_5=c_6 \boxplus (red \boxtimes P_4)$   thus $|P_5| \leq 2^{-5}$ et $P_5 = c_6 + (red \times P_4 ) + \epsilon_{-216}$
+\item $P_6=c_7 \boxplus (red \boxtimes P_5)$   thus $|P_6| \leq 2^{-3}$ et $P_6 = c_7 + (red \times P_5 ) + \epsilon_{-214}$
+\item $P_7=c_8 \boxplus (red \boxtimes P_6)$   thus $|P_7| \leq 2^{-1}$ et $P_7 = c_8 + (red \times P_6 ) + \epsilon_{-212}$
+\item $P_8=c_9 \boxplus (red \boxtimes P_7)$   thus $|P_8| \leq 1 + 2^{-10} $ et $P_8 = c_9 + (red \times P_7 ) + \epsilon_{-211}$
+\item $P_9=1   \boxplus (red \boxtimes P_8)$   thus $|P_9| \leq 1 + 2^{-9}$ et $P_9 = 1   + (red \times P_8 ) + \epsilon_{-210}$
+\item $P_{10}=1   \boxplus (red \boxtimes P_9)$ thus $|P_{10}| \leq 1 + 2^{-8}$ et $P_{10} = 1   + (red \times P_9) + \epsilon_{-210}$
 \end{itemize}
 
 Therefore :

@@ -1,3 +1,47 @@
+\section{What is \crlibm?}
+
+The \crlibm\ project aims at developing a portable, proven, correctly rounded,
+and efficient mathematical library (\texttt{libm}) for double precision. 
+
+\begin{description}
+\item[correctly rounded] Current \texttt{libm} implementation do not
+  always return the floating-point number that is closest to the exact
+  mathematical result. As a consequence, different \texttt{libm}
+  implementation will return different results for the same input,
+  which prevents full portability of floating-point applications. In
+  addition, few libraries support but the round-to-nearest mode of the
+  IEEE754/IEC 60559 standard for floating-point arithmetic (hereafter
+  usually referred to as the IEEE-754 standard). \crlibm\ provides the
+  four rounding modes: To nearest, to $+\infty$, to $-\infty$ and to
+  zero.
+
+\item[portable] \crlibm\ is written in C and will be compiled by any
+  compiler fulfilling basic requirements of the ISO/IEC 9899:1999
+  (hereafter referred to as C99) standard.  This is the case of
+  \texttt{gcc} version 3 and higher which is available on most
+  computer systems. It also requires a floating-point implementation
+  respecting the IEEE-754 standard, which is also available on
+  most modern systems. \crlibm\ has been tested on a large range of
+  systems.
+
+\item[proven] Other libraries attempt to provide correctly-rounded
+  result. For theoretical and practical reasons, this behaviour is
+  difficult to prove, and in extreme cases termination is not even
+  guaranteed. \crlibm\ intends to provide a comprehensive proof of the
+  theoretical possibility of correct rounding, the algorithms used,
+  and the implementation, assuming C99 and IEEE-754 compliance.
+
+\item[efficient] performance and resource usage of \crlibm\ should be
+  comparable to existing \texttt{libm} implementations, both in
+  average and in the worst case. In contrast, other correctly-rounded
+  libraries have worst case performance and memory consumption several
+  order of magnitude larger than standard \texttt{libm}s.
+
+\end{description}
+
+The ultimate goal of the \crlibm\ project is to push towards the
+standardization of correctly-rounded elementary functions.
+
 \section{Compilation and installation}
 See the \texttt{INSTALL} file in the main directory. This library is
 developed using the GNU autotools, and can therefore be compiled on

@@ -366,12 +366,12 @@ constant is $1.000005$.
 
   db_number x_db;
   x_db.d = x;
-  unsigned int hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
+  unsigned int hx = x_db.i[HI] & 0x7FFFFFFF; 
 
   /* Filter cases */
   if ( hx >= 0x43500000)           /* x >= 2^54 */
     {
-      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO] != 0)))
         return x+x;                /* NaN */
       else
         return HALFPI.d;           /* \arctan(x) = Pi/2 */
@@ -417,7 +417,7 @@ Then : $\arctan(x) \approx x $
 
   if ( hx >= 0x43500000)           /* x >= 2^54 */
     {
-      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO] != 0)))
         return x+x;                /* NaN */
       else
         if (x>0)
@@ -429,8 +429,8 @@ Then : $\arctan(x) \approx x $
     if ( hx < 0x3E400000 )
       {if (sign>0)
         {if(x==0)
-          {x_db.i[HI_ENDIAN]  = 0x80000000;
-          x_db.i[LO_ENDIAN] = 0;}
+          {x_db.i[HI]  = 0x80000000;
+          x_db.i[LO] = 0;}
         else
           x_db.l--;
         return x_db.d;
@@ -469,7 +469,7 @@ $x<2^(-27)$.
 
   if ( hx >= 0x43500000)           /* x >= 2^54 */
     {
-      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO_ENDIAN] != 0)))
+      if ((hx > 0x7ff00000) || ((hx == 0x7ff00000) && (x_db.i[LO] != 0)))
         return x+x;                /* NaN */
       else
         if (x>0)
