@@ -385,7 +385,7 @@ Finally
 
 \subsection{Errors due to argument reduction}
 Upon entering one of \texttt{do\_sin\_k\_zero}, \texttt{do\_sin\_k\_notzero},
-\texttt{do\_cos\_k\_zero}, \texttt{do\_cos\_k\_notzero}, we have in
+\texttt{do\_cos\_k\_zero} or \texttt{do\_cos\_k\_notzero}, we have in
 $y_h+y_l$ an approximation to the ideal reduced value
 $\hat{y}=x-k\pi/256$ with a relative accuracy $\epsilon_{argred}$:
 
@@ -393,28 +393,32 @@ $\hat{y}=x-k\pi/256$ with a relative accuracy $\epsilon_{argred}$:
   y_h+y_l = (x-k\pi/256)(1+\epsilon_{argred}) = \hat{y}(1+\epsilon_{argred})
   \label{eq:sinargrederror1}
 \end{equation}
-whith, depending on the quadrant, $\sin(\hat{y} = \pm\sin(x)$ or
-$\sin(\hat{y} = \pm\cos(x)$: the important idea is that there is no
-error in this ideal argument reduction. In the following we will
+whith, depending on the quadrant, $\sin(\hat{y}) = \pm\sin(x)$ or
+$\sin(\hat{y}) = \pm\cos(x)$ and similarly for $\cos(\hat{y})$. This
+just means that $\hat{y}$ is the ideal, errorless reduced value.
+
+
+For simplicity, we define a common upper bound $y_{\max}$ on
+$|\hat{y}|$, $|\mathtt{yh}+\mathtt{yl}|$ and $|\mathtt{yh}|$. This
+bound takes into account $\epsilon_{argred}$, an $\epsilon_{53}$ just
+for the case when it is a bound on $y_h$, and also an error due to the
+fact that we used a machine rounding to get $k$, so the reduced value
+may exceed $\pi/512$:
+\begin{equation}
+  y_{\mathrm{maxargred}} = \frac{\pi}{512}(1+\epsilon_{\mathrm{argred2}})
+  \label{eq:ymaxsink0}  
+\end{equation}
+where $\epsilon_{\mathrm{argred2}}$ should be defined precisely (TODO).
+
+
+\subsection{\texttt{do\_sin\_k\_zero}}
+In the following we will
 assume we are in the case $\sin(\hat{y} = \sin(x)$, (the proof is
 identical in the other cases) therfore the relative error that we need
 to compute is
 \begin{equation}
   \epsilon_{\mathrm{sinkzero}} = \frac{(\mathtt{*psh} + \mathtt{*psl})}{\sin(\mathtt{x})} -1 = \frac{(\mathtt{*psh} + \mathtt{*psl})}{\sin(\hat{y})} -1
 \end{equation}
-
-We also have a common upper bound $y_{\max}$ on $|\hat{y}|$,
-$|\mathtt{yh}+\mathtt{yl}|$ and $|\mathtt{yh}|$, which also takes into
-account the fact that we used a machine rounding to get $k$, so the
-reduced value may exceed $\pi/512$:
-\begin{equation}
-  y_{\max} = \frac{pi}{512}(1+\epsilon_{\mathrm{argred2}})
-  \label{eq:ymaxsink0}  
-\end{equation}
-where $\epsilon_{\mathrm{argred2}}$ should be computed somewhere else (TODO).
-
-
-\subsection{\texttt{do\_sin\_k\_zero}}
 
 
 \begin{lstlisting}[caption={do\_sin\_k\_zero},firstnumber=1]
@@ -508,7 +512,7 @@ We get
 \label{eq:sinkzero}
 \end{eqnarray*}
 
-Again we may compute the value of $\maxeps_{\mathrm{sinkzero}}$ as an infinite norm under Maple. Or, we may compute majorations.
+Again we may compute the value of $\maxeps_{\mathrm{sinkzero}}$ as an infinite norm under Maple. Or, we may compute majorations using $y_{\mathrm{maxargred}}$.
 
  
 
