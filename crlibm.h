@@ -31,53 +31,77 @@
    architectures with default double extended) */
 extern void crlibm_init(void);
 
-/* Compute the cosine with correct rounding */
-extern double cos_rn(double); /* to nearest  */
-extern double cos_rd(double); /* toward -inf */ 
-extern double cos_ru(double); /* toward +inf */ 
 
-/* Compute the sine with correct rounding */
-extern double sin_rn(double); /* to nearest  */
-extern double sin_rd(double); /* toward -inf */ 
-extern double sin_ru(double); /* toward +inf */ 
+/* Finished functions */
+/* These functions are computed in two steps and have an average
+   execution time comparable to that of a standard libm
+*/
 
-/* Compute the tangent with correct rounding */
-extern double tan_rn(double); /* to nearest  */
-extern double tan_rd(double); /* toward -inf */ 
-extern double tan_ru(double); /* toward +inf */ 
-/* For debugging purpose */
-extern double scs_tan_rn(double); /* to nearest  */
-extern double scs_tan_rd(double); /* toward -inf */ 
-extern double scs_tan_ru(double); /* toward +inf */ 
-
-extern double atan_rn(double);
-
-/* Compute the tangent with correct rounding */
-extern double cotan_rn(double); /* to nearest  */
-extern double cotan_rd(double); /* toward -inf */ 
-extern double cotan_ru(double); /* toward +inf */ 
-
-/* Compute the arctangent with correct rounding */
-extern double atan_rn(double); /* to nearest  */
-extern double atan_rd(double); /* toward -inf */ 
-extern double atan_ru(double); /* toward +inf */ 
-
-
-/* Compute the exponential with correct rounding */
+/*  exponential  */
 extern double exp_rn(double); /* to nearest  */
 extern double exp_rd(double); /* toward -inf */ 
 extern double exp_ru(double); /* toward +inf */ 
 #define exp_rz exp_rd         /* toward zero */ 
 
-extern double exp2_rn(double); /* to nearest  */
-extern double exp2_rd(double); /* toward -inf */ 
-extern double exp2_ru(double); /* toward +inf */ 
-
-/* Compute the logarithm with correct rounding */
+/*  logarithm  */
 extern double log_rn(double); /* to nearest  */
 extern double log_rd(double); /* toward -inf */ 
 extern double log_ru(double); /* toward +inf */ 
 extern double log_rz(double); /* toward zero */ 
+
+/*  cosine  */
+extern double cos_rn(double); /* to nearest  */
+extern double cos_rd(double); /* toward -inf */ 
+extern double cos_ru(double); /* toward +inf */ 
+extern double cos_rz(double); /* toward zero */ 
+
+/*  sine  */
+extern double sin_rn(double); /* to nearest  */
+extern double sin_rd(double); /* toward -inf */ 
+extern double sin_ru(double); /* toward +inf */ 
+extern double sin_rz(double); /* toward zero */ 
+
+/*  tangent  */
+extern double tan_rn(double); /* to nearest  */
+extern double tan_rd(double); /* toward -inf */ 
+extern double tan_ru(double); /* toward +inf */
+extern double tan_rz(double); /* toward zero */
+ 
+
+/*  cotangent  */
+extern double cotan_rn(double); /* to nearest  */
+extern double cotan_rd(double); /* toward -inf */ 
+extern double cotan_ru(double); /* toward +inf */ 
+extern double cotan_rz(double); /* toward zero */ 
+
+/*  arctangent  */
+extern double atan_rn(double); /* to nearest  */
+extern double atan_rd(double); /* toward -inf */ 
+extern double atan_ru(double); /* toward +inf */ 
+extern double atan_rz(double); /* toward zero */ 
+
+/*  hyperbolic cosine*/
+extern double cosh_rn(double); /* to nearest */
+extern double cosh_rd(double); /* toward -inf */ 
+extern double cosh_ru(double); /* toward +inf */ 
+extern double cosh_rz(double); /* toward zero */ 
+
+/*  hyperbolic sine */
+extern double sinh_rn(double); /* to nearest */
+extern double sinh_rd(double); /* toward -inf */ 
+extern double sinh_ru(double); /* toward +inf */ 
+extern double sinh_rz(double); /* toward zero */ 
+
+
+/* Unfinished functions */
+/* These functions provide correct rounding but are very slow
+   (typically 100 times slower that the standard libm) */
+
+
+extern double exp2_rn(double); /* to nearest  */
+extern double exp2_rd(double); /* toward -inf */ 
+extern double exp2_ru(double); /* toward +inf */ 
+
 
 extern double log2_rn(double); /* to nearest  */
 extern double log2_rd(double); /* toward -inf */ 
@@ -87,15 +111,5 @@ extern double log10_rn(double); /* to nearest  */
 extern double log10_rd(double); /* toward -inf */ 
 extern double log10_ru(double); /* toward +inf */ 
 
-/* Compute the hyperbolic cosine*/
-extern double cosh_rn(double); /* to nearest */
-extern double cosh_rd(double); /* toward -inf */ 
-extern double cosh_ru(double); /* toward +inf */ 
-extern double cosh_rz(double); /* toward zero */ 
-/* Compute the hyperbolic sine */
-extern double sinh_rn(double); /* to nearest */
-extern double sinh_rd(double); /* toward -inf */ 
-extern double sinh_ru(double); /* toward +inf */ 
-extern double sinh_rz(double); /* toward zero */ 
 
 #endif /* ifdef CRLIBM_H*/
