@@ -22,7 +22,8 @@ $\pm\round(\pi/2) =\pm\rounddown(\pi/2) $. That could be a probem for
 rounding up but we choose not to have a x with $\arctan(x) > \pi/2$.
 \section{Quick phase}
 
-We try to have about 64 bits of precision.
+We try to have about 64 bits of precision. This phase is computed in double
+or double.
 
 \subsection{Overview of the algorithm.}
 
@@ -53,7 +54,7 @@ in order to have 66 bits of precision.
 
 \begin{equation}
 \begin{split} \arctan(x)& \approx x - \dfrac{1}{3} .x^3 + \frac{1}{5}.x^5
-- \frac{1}{7}.x^7 + \frac{1}{9}.x^9 \\ \label{eq:poly_eval}
+- \frac{1}{7}.x^7 + \frac{1}{9}.x^9 \nonumber \\ \label{eq:poly_eval}
   & \approx x . ( 1 + Q(x^2))
 \end{split}
 \end{equation}
@@ -102,19 +103,22 @@ Line 8 & \texttt{HALFPI} is the greatest double smaller than
 Line 11 & When $x<2^{-27}$ : $x^2 < 2^{-54}$. Plus we know that $\arctan(x) = \displaystyle {\sum_{i=0}^{\infty}
 \frac{x^{2i+1}}{2i+1}(-1)^i}$.
 \end{tabular}
-\begin{eqnarray}
-\lefteqn{ 
-     \Big| \frac{\arctan(x)-x}{x}  \Big|  = 
-     \Bigg|\frac{ \displaystyle {\sum_{i=0}^{\infty}
-     \Big( \frac{x^{2i+1}}{2i+1}(-1)^i} \Big) - x}{x} \Bigg|
-                                \nonumber 
-                                }\\
-& & {} = \Big|\displaystyle {\sum_{i=1}^{\infty}}
-     \frac{x^{2i}}{2i+1}(-1)^i\Big|\nonumber \\ 
-& & {} < \frac{x^2}{3}\nonumber \\
-& & {} < 2^{-54} \nonumber
-\end{eqnarray}
 
+So:
+\begin{equation}
+   \begin{split}
+       \Big| \frac{\arctan(x)-x}{x}  \Big| & = 
+       \Bigg|\frac{ \displaystyle {\sum_{i=0}^{\infty}
+       \Big( \frac{x^{2i+1}}{2i+1}(-1)^i} \Big) - x}{x} \Bigg|
+       \nonumber\\
+       & = \Big|\displaystyle {\sum_{i=1}^{\infty}}
+       \frac{x^{2i}}{2i+1}(-1)^i\Big|\nonumber \\ 
+       & < \frac{x^2}{3}\nonumber \\
+       & < 2^{-54} \nonumber
+   \end{split}
+\end{equation}
+
+Then : $\arctan(x) \approx x $
 \bigskip
 
 
@@ -325,11 +329,18 @@ Line 4-5 & Add22 : $\epsilon_{105}$\\
 Line 6 & DIV2 makes $\epsilon_{104}$ (according to Ziv ... ref) error so we have :
 \end{tabular}
 
-\begin {equation}
-\epsilon_{\xred} = (1+\epsilon_{105})(1+\epsilon_{105}+\epsilon_{105}+\epsilon_{104})-1 \cong
-\epsilon_{102.6}
-\end {equation}
-
+\begin{equation}
+\begin{split}
+   \xred & = \frac{(x-b_i).(1+\epsilon_{105})}{(1+x.b_i.(1+\epsilon_{105})
+          .(1+\epsilon_{105}) )}.(1+\epsilon_105) \\
+         & =
+          \frac{x-b_i}{1+x.b_i}.(1+\epsilon_{105})(1+\epsilon_{105}+\epsilon_{105}+\epsilon_{104})\\
+         & = \xred . (1+\epsilon_{102.6})\nonumber
+\end{split}
+\end{equation}
+\begin{equation}
+So: \epsilon_{\xred} & = \epsilon_{102.6} \label{eps:equation}
+\end{equation}
 \subsubsection{Error about polynomial evaluation}
 \begin{lstlisting}[caption={Polynomial Evaluation},firstnumber=1]
 
@@ -416,10 +427,11 @@ rounding constant of $1.00000126$.
 \end{lstlisting}
 
 The code is very simple so there is few error :
-\begin{tabular}
-Line 1 & $\epsilon_{53}$
-Line 2 & The Maple procedure to compute Horner approximation gives $\epsilon_{51}$
-Line 3 & $delta_{no\_reduction} = \epsilon_{105}.x + \epsilon_Q.x^3 +
+
+\begin{tabular}{ll}
+Line 1 & $\epsilon_{53}$ \\
+Line 2 & The Maple procedure to compute Horner approximation gives $\epsilon_{51}$\\
+Line 3 & $delta_{no\_reduction} = \epsilon_{105}.x + \epsilon_Q.x^3 + 
 \epsilon_{x.Q}.x^3 + |arctan(x) - x.(1+Q)| $
 \end{tabular}
 
