@@ -170,7 +170,6 @@ if (sign == 1){			/* x is negative, then N = once complement(N) */
     
 }      
 
-N = N & 0x0000003;		/* extract the 2 last bits of  N */
 
   /* Now we get the reduce argument and check for possible
    * cancellation By Kahan algorithm we will have at most 2 digits

@@ -74,6 +74,7 @@ double scs_sin_rn(double x){
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1);
+  N = N & 0x0000003;		/* extract the 2 last bits of  N */
   switch (N){
   case 0:
     sine(sc2);
@@ -112,6 +113,7 @@ double scs_sin_rd(double x){
     
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1);
+  N = N & 0x0000003;		/* extract the 2 last bits of  N */
   switch (N){
   case 0:
     sine(sc2);
@@ -150,6 +152,7 @@ double scs_sin_ru(double x){
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1);
+  N = N & 0x0000003;		/* extract the 2 last bits of  N */
   switch (N){
   case 0:
     sine(sc2);

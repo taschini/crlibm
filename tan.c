@@ -100,7 +100,8 @@ double scs_tan_rn(double x){
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1); 	/* x (=sc2) is in [-Pi/4,Pi/4] */ 
-  
+  N = N & 0x0000003;		/* extract the 2 last bits of  N */
+
     switch (N){
     case 0:
 	scs_tan(sc2);
@@ -145,7 +146,8 @@ double scs_tan_rd(double x){
  
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1); 	/* x is in [-Pi/4,Pi/4] */ 
- 
+  N = N & 0x0000003;		/* extract the 2 last bits of  N */
+
     switch (N){
       case 0:
 	scs_tan(sc2);
@@ -191,7 +193,8 @@ double scs_tan_ru(double x){
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1); 	/* x is in [-Pi/4,Pi/4] */ 
-   
+  N = N & 0x0000003;		/* extract the 2 last bits of  N */
+
     switch (N){
     case 0:
 	scs_tan(sc2);

@@ -68,6 +68,7 @@ double scs_cos_rn(double x){
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1);
+  N = N & 0x0000003;		/* extract the 2 last bits of  N */
   switch (N){
   case 0:
     cosine(sc2);
@@ -105,6 +106,7 @@ double scs_cos_rd(double x){
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1);
+  N = N & 0x0000003;		/* extract the 2 last bits of  N */
   switch (N){
   case 0:
     cosine(sc2);
@@ -142,6 +144,7 @@ double scs_cos_ru(double x){
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1);
+  N = N & 0x0000003;		/* extract the 2 last bits of  N */
   switch (N){
   case 0:
     cosine(sc2);
