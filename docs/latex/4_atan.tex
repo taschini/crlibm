@@ -2,14 +2,13 @@ This chapter is contributed by Nicolas Gast under the supervision of
 F. de~Dinechin.  
 
 \newcommand{\xred}{X_{\mathrm{red}}}
-\newcommand{\xredhi}{X_{\mathrm{red hi}}}
-\newcommand{\xredlo}{X_{\mathrm{red lo}}}
+\newcommand{\xredhi}{{\mathrm{Xredhi}}}
+\newcommand{\xredlo}{{\mathrm{Xredlo}}}
 
 \section{Overview}
 
-We compute atan in two steps : the first one gives us a precision around 64
-bits. The second one computes 136 bits of precision is order to have
-correct rounding in all cases.
+For the arctangent, the quick phase has a precision of 64 bits, and
+the accurate phase computes to a precision of 136 bits.
 
 \subsubsection{Definition interval and exceptional cases}
 
@@ -20,53 +19,65 @@ The inverse tangent is defined over all real numbers.
 \item If $x = \pm\infty$ , then $\arctan(x)$ should return
 $\pm\round(\pi/2) = \pm\rounddown(\pi/2)$ in rounding to nearest mode. In
 directed rounding modes, we may return $\pm\roundup(\pi/2)$ which
-invalidates the inequation $\arctan(\frac{\pi}{2})$ but respects the
+invalidates the inequation $|\arctan(x)|<\frac{\pi}{2}$ but respects the
 rounding.
+\item  For $2^{54}<|x|<+\infty$ we choose to return $\pm\round(\pi/2)$
+  in all rounding modes.
+\item For $|x|<2^{-27}$ we have $|\arctan(x)-x|<2^{-53}x$ and
+  $|\arctan(x)|<|x|$, which allows to decide to return either $x$ or the
+  FP number next to $x$ towards zero.
 \end{itemize}
-we choose to return $\pm\round(\pi/2)$ when $|x|>2^{54}$ since
-$\pm\round(\pi/2) =\pm\rounddown(\pi/2) $. That could be a probem for
-rounding up but we choose not to have a x with $\arctan(x) > \pi/2$.
+
+
+
+
+
 \section{Quick phase}
 
-We have five function. One (\texttt{atan\_quick}) which returns two doubles
-($atanhi$ and $atanlo$) that represent $\arctan(x)$ with a precision of
-about 64 bits. Four other functions compute the correct rounding :
+The code of the quick phase is organized in  five
+functions. The function (\texttt{atan\_quick})  returns two doubles
+($atanhi$ and $atanlo$) that represent $\arctan(x)$ with a precision
+of about 64 bits. Four other functions compute the correct rounding :
 \texttt{atan\_rn}, \texttt{atan\_ru}, \texttt{atan\_rd} and
-\texttt{atan\_rz}. First we'll see the main algorithm and then the rounding.
+\texttt{atan\_rz}. 
 
-\subsection{Overview of the algorithm.}
 
-We try to have about 64 bits of precision. This phase is computed in double
-or double-double.
+\subsection{Overview of the algorithm for the quick phase.}
 
-There are two steps in the algorithm: an argument reduction and a polynomial
-approximation with a polynomial of degree 9. 
+This phase is computed in double or double-double. There are two steps
+in the algorithm: an argument reduction and a polynomial approximation
+with a polynomial of degree 9.
 
 We compute $\arctan(x)$ as 
 \begin{equation}
 \arctan(x) = \arctan( b_i ) + \arctan(\frac{x-b_i}{1+x.b_i}) \label{eq:arctan_redu}
 \end{equation}
 
-The $b_i$ are exact double and $\arctan(b_i)$ are stored in
+The $b_i$ are exact doubles and the $\arctan(b_i)$ are stored in
 double-double.
 
-We defined $\xred = \dfrac{x-b_i}{1+x.b_i}$ for the rest of this chapter.
+We define $\xred = \dfrac{x-b_i}{1+x.b_i}$ for the rest of this chapter.
 
-We build 62 intervals $[a_i;a_{i+1}]$ and 62 $b_i$ in order that $ x \in
-[a_i;a_{i+1}] \Rightarrow \dfrac{x-b_i}{1+x.b_i} < e$
+We tabulate intervals bounds $a_i$ and values $b_i$ such
+that 
+\begin{equation}
+ x \in [a_i;a_{i+1}] \Rightarrow \dfrac{x-b_i}{1+x.b_i} < e \quad .
+\label{atan_ineq_interval}
+\end{equation}
 
-We make a dichotomy in order to find $i$ such as $ x \in [a_i;a_{i+1}]
-$. That's why we choose 62 $b_i$ and $e=2^{-6.3}$ (since 62 is close to
-$2^6$ and a power of 2 is better for dichotomy).
+The $i$ such that $x \in [a_i;a_{i+1}]$ will be found by dichotomy.
+Therefore we choose a power of two for the number of intervals: 64
+intervals ensure $e=2^{-6.3}$.
 
-Then we use a polynomial of degree 9 for the approximation of $\arctan(\xred)$:
-in order to have 66 bits of precision.
+Then we use a polynomial of degree 9 for the approximation of $\arctan(\xred)$
+which ensures 66 bits of precision:
 
 \begin{equation}
 \begin{split} \arctan(x)& \approx x - \dfrac{1}{3} .x^3 + \frac{1}{5}.x^5
-- \frac{1}{7}.x^7 + \frac{1}{9}.x^9 \nonumber \\ \label{eq:poly_eval}
+- \frac{1}{7}.x^7 + \frac{1}{9}.x^9 \nonumber \\ 
   & \approx x . + x.Q(x^2)
 \end{split}
+\label{eq:poly_eval}
 \end{equation}
  
 Q is evaluated thanks to a Horner scheme:
@@ -76,32 +87,30 @@ where each operation is computed in double.
 
 As $|z| \leq e$, $Q(z) \leq e^2$
 
-At the end, the reconstruction implements equation and (\ref{eq:poly_eval})  
-(\ref{eq:arctan_redu}) in double-double
+At the end, the reconstruction implements equation
+(\ref{eq:poly_eval}) and (\ref{eq:arctan_redu}) in double-double
 arithmetic.
 
-%\begin{equation} \arctan(x) = \arctan( b_i ) + \arctan(\frac{x-b_i}{1+x.b_i}).\label{eq:\arctan_redu}
-%\end{equation}
 
-\bigskip
 \subsection{Error analysis on atan\_quick}
 
-We choose four rounding constant : two when there is a argument reduction, two in
-the other case. For each case, we made two constants on order to
-improve performances. We will compute the error separately.
+We choose four rounding constant: two when there is a argument
+reduction, two in the other case. For each case, we use two constants
+on order to improve performances.
 
-An accurate computation is done in \texttt{maple/arctan\_coef.mw} 
+The error analysis presented here is implemented in
+\texttt{maple/atan.mpl}
 
 \paragraph{Notes on $b_i$, $a_i$ and $\arctan(b_i)$}
 The $b_i$ and $a_i$ are computed thanks to the \texttt{allbi} maple
-procedure (see \texttt{maple/arctan\_coef.mw}). There is no approximation
-error on $b_i$ since they are computed (in the maple procedure) as
-double. $\arctan (b_i)$ are stored in double-double so there is an
-approximation of $2^{-105}$ on them. We have a possible error about $a_i$
-because they are real number stored as double but we have a margin on $a_i$
-that prove us that $\xred$ is always smaller than $e$.
+procedure (see \texttt{maple/atan.mpl}). There is no approximation
+error on the $b_i$ since we chose them to be FP numbers. The $\arctan
+(b_i)$ are stored in double-double so there is an approximation of
+$2^{-105}$ on them. The value of $e$ is fixed, then the $a_i$ are also
+chosen as FP numbers such that inequation (\ref{atan_ineq_interval})
+is true.
 
-\subsubsection{Error about argument reduction}
+\subsubsection{Argument reduction}
 
 \begin{lstlisting}[caption={Reduction part 1},firstnumber=1]
   if (x > MIN_REDUCTION_NEEDED) /* test if reduction is necessary : */ 
@@ -137,7 +146,7 @@ that prove us that $\xred$ is always smaller than $e$.
 Lines  1 & test if $x > 2^{-6.3}$ and so need to be reduced\\
 Line 5 & test if $x>b[61]$ because when $i \in [0;60] : b_i/2 < x <
 b_i$ (or $ x/2 < b_i < x$) and then \\&$x-b_i$ is computed exactly
-value thanks to Sterbenz lemma.\\
+thanks to Sterbenz lemma.\\
 Line 10...21 & compute $i$ so that $\frac{x-b_i}{1+x.b_i} < 2^{-6.3} $\\
 Line 7 and 23 & compute $xmBIhi + xmBIlo = x - b_i$
 
@@ -152,16 +161,16 @@ We have no rounding error in the computation of $x-b_i$.
         Add22(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
       else {Add22( &x0hi , &x0lo , 1.0,0.0,tmphi,tmplo);}
       
-      DIV2( xmBihi , xmBilo , x0hi,x0lo, xhi,xlo);
+      Div22( xmBihi , xmBilo , x0hi,x0lo, xhi,xlo);
 
 \end{lstlisting}
 
 \begin{tabular}{ll}
-Line 1 & compute $x.b_i$. The error is 0 thanks to Mul12\\
+Line 1 & compute $x.b_i$ exactly as a double-double\\
 Line 3-5 & We need to have a Add22Comp but as we know that $x.b_i > 0$ (so
 $tmphi>0$), we test if\\& $tmphi$ is greater than 1 in order to be
 faster. The Add22 makes an error of $\epsilon_{Add22}=\epsilon_{103}$\\
-Line 7 & We compute $\xred = \dfrac{x-b_i}{1+x.b_i}$. The DIV2 makes $\epsilon_{104}$ (according to Ziv \cite{Ziv91}) error so we have :
+Line 7 & We compute $\xred = \dfrac{x-b_i}{1+x.b_i}$. The Div22 makes $\epsilon_{104}$ (according to Ziv \cite{Ziv91}) error so we have :
 \end{tabular}
 \bigskip
 
@@ -178,7 +187,14 @@ So:
 \begin{equation}
 \epsilon_{\xred} = \epsilon_{102.6} \label{eps:equation}
 \end{equation}
-\subsubsection{Error about polynomial evaluation}
+
+
+
+\subsubsection{Polynomial evaluation}
+
+The error due to the polynomial approximation is $\delta_{approx} =
+\infnorm{ \arctan(x) - x.(1+q)}= \delta_{72,38}$ 
+
 \begin{lstlisting}[caption={Polynomial Evaluation},firstnumber=1]
       Xred2 = Xredhi*Xredhi;
       
@@ -187,44 +203,26 @@ So:
                   (coef_poly[1]+Xred2*
                    coef_poly[0]))) ;
 
-      /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
-      double atanlolo = Xredlo+ arctan_table[i][ATAN_BLO].d + Xredhi*q;
-      double tmphi2, tmplo2;
-      Add12( tmphi2, tmplo2, arctan_table[i][ATAN_BHI].d, Xredhi);
-      Add12( atanhi, atanlo, tmphi2, (tmplo2+atanlolo));
-
 \end{lstlisting}
 \begin{tabular}{ll}
-Line 1 & $\xred \times \xred$ makes an error of $\epsilon_{53}$ so $\xred2 =
-      o((\xredhi)^2) = (1+\epsilon_{53}). (\xredhi)^2 = ( 1 + \epsilon_{53}).\big(\round(\xred).(1+\epsilon_{53}+\epsilon_{\xred})\big)^2 = x^2 +  \epsilon_{53} $\\ 
-      &the error about x2 is $\epsilon_{51.4}$ \\
-Line 3 & Horner approximation with error on x2 :
-      Maple compute an error around $\epsilon_{50.7}$ so $\delta_{horner}=\delta_{69.6}$\\ 
-Line 5-9 & We need to add $\arctan(b_i)_{hi}+\arctan(b_i)_{lo} +
-      (\xredhi+\xredlo).(1+q)$\\
-      &
-      We compute this in tree steps $test_{lo}= \xredlo+ \arctan(b_i)_{lo}
-      + \xredhi.q$.\\
-      & then we add $\xredhi+\arctan(b_i))_{hi}$ at the end we add the two results.\\
+Line 1 & The error between $\xred2$ and the ideal value of $\xred^2$ from\\
+       & $\bullet$~ the error $\epsilon_{\xred}$  on $\xredhi+\xredlo$\\
+       & the truncation of $\xredlo$\\
+       & $\bullet$~ the rounding error of $\epsilon_{53}$ 
+                     in the FP multiplication\\
+       & which sum up to about $\epsilon_{51.4}$ \\
+Line 3 & Horner approximation with error on $\xred2$:
+      Maple computes an error around $\epsilon_{50.7}$\\
+      & or $\delta_{horner}=\delta_{69.6}$\\ 
+\end{tabular}
 
-      &We have two kinds of errors : 
-\end{tabular}      
-  \begin{itemize} 
-    \item Truncation error of  $\xredlo.q$
-      but $\xredlo < \xredhi.2^{-53}$ and $q<x^2<2^{-12.6}$ so $\epsilon_{trunc} =
-      \epsilon_{65.6}$. 
-    \item Rounding error due to the operations : the computation of
-      $test_{lo}$ causes 3 errors :\\
-       $ \epsilon_{53}.(\xredlo+ \arctan(b_i)_{lo}) < \delta_{100}$\\
-       $\epsilon_{53}.\xredhi.q < \delta_{53+6.3+6.3*2} < \delta_{71.9}$\\
-       $ \epsilon_{53} . atanlolo < \delta_{65.5}$\\
-       $delta_{recons} =  \delta_{71.9}$
-      \end{itemize}
-      If we add all these errors, we have \\
-      $atanlolo_{error} \leq \epsilon_{trunc}.e + \delta_{100} +
-      \epsilon_{71.9} + delta_{recons} = \delta_{68.72}$\\
+\subsubsection{Reconstruction}
 
-We represent the different values on the next figures :
+The reconstruction adds $\arctan(b_i)$, 
+which is read as a double-double from a table, and $\arctan(\xred)$, 
+approximated by  $(\xredhi+\xredlo)(1+q)$. 
+The terms of this developed product are depicted in the following figure. 
+
 
 \begin{center}
  \small
@@ -245,6 +243,43 @@ We represent the different values on the next figures :
         \end{picture}
       }
   \end{center}
+
+Here the  $\epsilon$ bar represents the target accuracy of $2^{-64}$.
+One can see that the term $\xredlo.q$ can be truncated. As  $\xredlo < \xredhi.2^{-53}$ and $q<x^2<2^{-12.6}$ this entails an error of $\epsilon_{trunc} =
+      \epsilon_{65.6}$
+
+
+\begin{lstlisting}[caption={Reconstruction},firstnumber=1]
+      /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
+      double atanlolo = Xredlo+ arctan_table[i][ATAN_BLO].d + Xredhi*q;
+      double tmphi2, tmplo2;
+      Add12( tmphi2, tmplo2, arctan_table[i][ATAN_BHI].d, Xredhi);
+      Add12( atanhi, atanlo, tmphi2, (tmplo2+atanlolo));
+
+\end{lstlisting}
+\begin{tabular}{ll}
+Line 5-9 & We need to add $\arctan(b_i)_{hi}+\arctan(b_i)_{lo} +
+      (\xredhi+\xredlo).(1+q)$\\
+      &
+      We compute this in tree steps $atanlolo= \xredlo+ \arctan(b_i)_{lo}
+      + \xredhi.q$.\\
+      & then we add $\xredhi+\arctan(b_i))_{hi}$ at the end we add the two results.\\
+
+      &We have two kinds of errors : 
+\end{tabular}      
+  \begin{itemize} 
+    \item .     \item Rounding error due to the operations : the computation of
+      $atanlolo$ causes 3 errors :\\
+       $ \epsilon_{53}.(\xredlo+ \arctan(b_i)_{lo}) < \delta_{100}$\\
+       $\epsilon_{53}.\xredhi.q < \delta_{53+6.3+6.3*2} < \delta_{71.9}$\\
+       $ \epsilon_{53} . atanlolo < \delta_{65.5}$\\
+       $delta_{recons} =  \delta_{71.9}$
+      \end{itemize}
+      If we add all these errors, we have \\
+      $atanlolo_{error} \leq \epsilon_{trunc}.e + \delta_{100} +
+      \epsilon_{71.9} + delta_{recons} = \delta_{68.72}$\\
+
+
 \begin{center}
  \small
  \setlength{\unitlength}{3ex}
@@ -286,12 +321,6 @@ Line 8 & Add12 add no error\\
 Line 9 & Add12 add no error
 \end{tabular}
 
-\bigskip
-
-\subsubsection {Error due to the polynomial approximation}
-
-The error due to the polynomial approximation is $\delta_{approx} =
-\infnorm{ \arctan(x) - x.(1+q)}= \delta_{72,38}$ 
 
 \subsubsection {Final error and rounding constant}
 
