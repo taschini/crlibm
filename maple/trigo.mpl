@@ -1,15 +1,14 @@
 
 Digits := 100:
- interface(quiet=true):
+interface(quiet=true):
 read "Common_Maple_Procedures.mpl":
-# read "temp_common.mpl";
 
 
 mkdir("TEMPTRIG"):
 
 
 #################################
-#Comments and todos : 
+#Comments and todos :
 
 #don't forget the error on k in Cody and Waite
 
@@ -24,7 +23,7 @@ xmax_return_x_for_sin := 2^(-26):
 xmax_return_1_for_cos := 2^(-27):
 
 
-#####################################Fast sine###########################
+##################################### Fast sine ###########################
 # These are the parameters to vary
 xmaxSinFast:=2**(-4);
 degreeSinFast:=10;
@@ -48,7 +47,7 @@ maxP1:= rounding_error1[4];
 
 # now we multiply this result by x
 # Here x is exact, so $x\otimes P(y) = x P(y)(1+\epsilon_{-53})$
-# therefore the relative error respective to the stored polynomial is  
+# therefore the relative error respective to the stored polynomial is
 
 maxeps2 := (1+maxeps1)*(1+2**(-53))-1:
 log2(maxeps2);
@@ -76,7 +75,7 @@ degreeCosFast:=10;
 # Compute the Taylor series
 polyCosFast:=  poly_exact2 (convert( series(cos(x), x=0, degreeCosFast), polynom),2);
 delta_approx := numapprox[infnorm](polyCosFast - cos(x), x=-xmaxCosFast..xmaxCosFast):
-log2(%); 
+log2(%);
 
 # remove the first 1 and compute the polynomial of x**2
 polyCosFast2 :=  subs(x=sqrt(y), expand(polyCosFast-1));
@@ -86,7 +85,7 @@ x2maxCosFast:= xmaxCosFast**2;
 errlist:=errlist_quickphase_horner(degree(polyCosFast2),0,0,2**(-53), 0):
 rounding_error1:=compute_horner_rounding_error(polyCosFast2,y,x2maxCosFast, errlist, true):
 delta_round := rounding_error1[2]:
-log2(%); 
+log2(%);
 
 # Then we have an Add12 which is exact. The result is greater then cos(xmaxCosFast):
 miny := cos(xmaxCosFast);
@@ -119,44 +118,45 @@ invC:= nearest(1/C);
 reminvC := evalf(1/C - invC);
 expC:=ieeedouble(C)[2]:
 
-# There are three sets of constants : 
-#  - split redC into two constants, for small values when we are concerned with absolute error 
-#  - split redC into three constants, for larger values 
-#  - split redC into three doubles, for the cases when we need 
+# There are three sets of constants :
+#  - split redC into two constants, for small values when we are concerned with absolute error
+#  - split redC into three constants, for larger values
+#  - split redC into three doubles, for the cases when we need
 #     good relative precision on the result and fear cancellation
 
 
 
 
-# Fastest reduction using two-part Cody and Waite
+# Fastest reduction using two-part Cody and Waite (up to |k|=2^22)
 
 bitsCh_0:=32:  # ensures at least 53+11 bits
 
-# 1/2 <= C/2^(expC+1) <1 
+# 1/2 <= C/2^(expC+1) <1
 Ch:= round(evalf(  C * 2^(bitsCh_0-expC-1))) / (2^(bitsCh_0-expC-1)):
 # recompute bitsCh in case we are lucky (and we are for bitsCh_0=32)
 bitsCh:=1+log2(op(2,ieeedouble(Ch)[3])) :  # this means the log of the denominator
 
 Cl:=nearest(C - Ch):
-# Cody and Waite argument reduction will work for k<kmax
-kmax:=2^(53-bitsCh):
+# Cody and Waite argument reduction will work for |k|<kmax_cw2
+kmax_cw2:=2^(53-bitsCh):
 
 # The constants to move to the .h file
-CW2_CH := Ch;
-CW2_MCL := -Cl:
-XMAX_CODY_WAITE_2 := nearest(kmax*C):
+RR_CW2_CH := Ch:
+RR_CW2_MCL := -Cl:
+XMAX_CODY_WAITE_2 := nearest(kmax_cw2*C):
 
-# The error in this case (we need absolute error) 
-delta_repr_C := abs(C-Ch-Cl);
-delta_round := 1/2 * ulp(Cl) ;
-delta_cody_waite_2 := kmax * (delta_repr_C + delta_round);
+# The error in this case (we need absolute error)
+delta_repr_C_cw2 := abs(C-Ch-Cl);
+delta_round_cw2 := kmax_cw2* 1/2 * ulp(Cl) ;
+delta_cody_waite_2 := kmax_cw2 * delta_repr_C_cw2 + delta_round_cw2;
+# This is the delta on y, the reduced argument
 
 log2(%);
 
 
 
 
-# Slower reduction using three-part Cody and Waite
+# Slower reduction using three-part Cody and Waite, up to |k|=2^31
 
 bitsCh_0:=21:
 Ch:= round(evalf(  C * 2^(bitsCh_0-expC-1))) / (2^(bitsCh_0-expC-1)):
@@ -165,92 +165,118 @@ bitsCh:=1+log2(op(2,ieeedouble(Ch)[3])) :  # this means the log of the denominat
 
 r := C-Ch:
 Cmed := round(evalf(  r * 2^(2*bitsCh-expC-1))) / (2^(2*bitsCh-expC-1)):
-bitsCmed:=1+log2(op(2,ieeedouble(Cmed)[3])) : 
-
-  (53-max(bitsCh, bitsCmed + 1));
+bitsCmed:=1+log2(op(2,ieeedouble(Cmed)[3])) :
 
 Cl:=nearest(C - Ch - Cmed):
-# Cody and Waite argument reduction will work for k<kmax
-kmax:=2^(53-max(bitsCh, bitsCmed + 1)):
 
-kmax:=2^31: # Otherwise we have integer overflow
+kmax_cw3 := 2^31:# Otherwise we have integer overflow
 
-cw2_kmax := kmax;
 
 
 # The constants to move to the .h file
-CW3_CH := Ch;
-CW3_CM := Cmed:
-CW3_MCL := -Cl:
-XMAX_CODY_WAITE_3 := nearest(kmax*C):
+RR_CW3_CH := Ch;
+RR_CW3_CM := Cmed:
+RR_CW3_MCL := -Cl:
+XMAX_CODY_WAITE_3 := nearest(kmax_cw3*C):
 
-# The error in this case (we need absolute error) 
-delta_repr_C := abs(C - Ch - Cmed - Cl):
-delta_round := 1/2 * ulp(Cl) :
-delta_cody_waite_3 := kmax * (delta_repr_C + delta_round):
+# The error in this case (we need absolute error)
+delta_repr_C_cw3 := abs(C - Ch - Cmed - Cl):
+delta_round_cw3 := kmax_cw3 * 1/2 * ulp(Cl) :
+delta_cody_waite_3 := kmax_cw3 * delta_repr_C_cw3 + delta_round_cw3:
+# This is the delta on y, the reduced argument
 
 log2(%);
 
 
-XMAX_DDRR:=nearest((2^51-1)*C);
 
 
 
-delta_ArgRed := max(delta_cody_waite_2, delta_cody_waite_3); # TODO ajouter la troisième
+# Third range reduction, using double-double arithmetic, for |k| up to 2^51-1
 
+# max int value that we can be produced by DOUBLE2LONGINT
+kmax:=2^51-1:
+XMAX_DDRR:=nearest(kmax*C);
 
+#in this case we have C stored as 3 doubles
+Ch := nearest(C):
+Cmed := nearest(C-Ch):
+Cl := nearest(C-Ch-Cmed):
 
-
-# Now we use the above range reduction when k mod 256 <> 0
-# otherwise we need to worry about relative accuracy of the result.
-# what is the worst case for cancellation ?
-
-emax := ieeedouble(XMAX_CODY_WAITE_3)[2] +1 ;
-# above emax, we will use Payne and Hanek
-(wcn, wce, wceps) := WorstCaseForAdditiveRangeReduction(2,53,-8, emax, C):
-wcx := wcn * 2^wce:
-wck := round(wcx/C): 
-wcy := wcx - wck*C:
-
-log2(wcy);   # y < 2^(-67);
-
-# What is the precision we can expect if we do a stupid range reduction storing C as 3 doubles ? 
-Ch := nearest(C);
-Cmed := nearest(C-Ch);
-Cl := nearest(C-Ch-Cmed);
+RR_DD_MCH := -Ch:
+RR_DD_MCM := -Cmed:
+RR_DD_CL := Cl:
 
 delta_repr_C := abs(C - Ch - Cmed - Cl):
-delta_round := 1/2 * ulp(Cl) :
-delta_max :=  (delta_repr_C + delta_round) * cw2_kmax;
-eps_ArgRed_k0 := delta_max/wcy :
-eps_ArgRed_k0 := (1+eps_ArgRed_k0)*(1+2^(-102))-1:
-log2(eps_ArgRed_k0);
 
-RRK0_MCH := -Ch;
-RRK0_MCM := -Cmed;
-RRK0_CL := Cl;
+# and we have only exact Add12 and Mul12  operations. The only place
+# with possible rounding errors is:
+#       Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+# where (x + kch_h) is exact (Sterbenz) with up to kmax bits of cancellation
+# and the error is simply the error in  (kcm_l - kd*RR_DD_CL)
+# At the very worst :
+delta_round :=
+              kmax * 1/2 * ulp(Cl) # for   kd*RR_DD_CL
+              + kmax*ulp(Cl)         # for the subtraction
+              + 2^(-100) * Pi/512 :    # for the Add22
+delta_RR_DD :=  kmax * delta_repr_C + delta_round:
+
+#  the last case, Payne and Hanek reduction, gives a very small delta:
+#  red arg is on 9*30 bits, then rounded to a double-double (106 bits)
+# This should, of course, be optimized some day
+delta_PayneHanek := 2^(-100):
+
+# Finally the max delta on the reduced argument is
+delta_ArgRed := max(delta_cody_waite_2, delta_cody_waite_3,
+                    delta_RR_DD, delta_PayneHanek):
+log2(delta_ArgRed);
 
 
 
-eps_ArgRed := eps_ArgRed_k0; # TODO Correct this
+
+
+# Now we use the above range reductions when k mod 256 <> 0
+# otherwise we need to worry about relative accuracy of the result.
+
+# First, what is the worst case for cancellation ?
+
+emax := ieeedouble(XMAX_DDRR)[2] +1 :
+# above emax, we will use Payne and Hanek so we do not worry
+
+(wcn, wce, wceps) := WorstCaseForAdditiveRangeReduction(2,53,-8, emax, C):
+wcx := wcn * 2^wce:
+wck := round(wcx/C):
+wcy := wcx - wck*C:
+
+log2(wcy);   # y > 2^(-67);
+
+# In these cases we use the double-double range reduction, for |k|<kmax_cw3
+# and the relative precision in the worst case is for wcy
+
+delta_round := kmax_cw3 * 1/2 * ulp(Cl)      # for   kd*RR_DD_CL
+              + kmax_cw3 * ulp(Cl) :         # for the subtraction
+
+delta_RR_DD :=  kmax_cw3 * delta_repr_C + delta_round:
+
+eps_ArgRed := (1+delta_RR_DD/wcy)*(1+2^(-100)) -1:
+
+log2(eps_ArgRed);
+
+# In all the other cases we use Payne and Hanek, and eps_ArgRed is
+# much smaller, so this is the max.
 
 
 
-###########################################################################################
-#            Payne and Hanek argument reduction
-#
-
-# We use the SCS version...
 
 
 
-################################## Polynomials for do_sine and do_cos 
+
+################################## Polynomials for do_sine and do_cos
 
 ymax:=Pi/512;
-y2max:= ymax**2; 
+y2max:= ymax**2;
 
-# The error on yh*yh 
-# we had $y_h+y_l = y + \abserr{CodyWaite}$. 
+# The error on yh*yh
+# we had $y_h+y_l = y + \abserr{CodyWaite}$.
 # Now we take only $y_h$ :  $y_h = (y_h + y_l)(1+2^{-53}) = (y+\abserr{CodyWaite})(1+2^{-53})$
 # When squared we get $y_h\otimes y_h = (y+\abserr{CodyWaite})^2(1+2^{-53})^3 $
 
@@ -270,15 +296,6 @@ errlist:=errlist_quickphase_horner(degree(polyTs2),0,0, epsy2 , 0):
 
 
 ############### Computing Tc
-
-if(1+1=3) then # We get a better polynomial below ;
- polyCos:= poly_exact(convert( series(cos(x), x=0, 8), polynom),x);
- polyTc:=expand(polyCos-1);
- deltaTc := numapprox[infnorm](polyTc -  (cos(x)-1), x=-ymax..ymax):
- maxTc := numapprox[infnorm](polyTc, x=-ymax..ymax):
- log2(deltaTc);
- log2(maxTc);
-end if;
 
 polyCos:= poly_exact(subs(y=x^2, numapprox[minimax]((cos(sqrt(y))), y=2^(-2048)..y2max, [3,0])), x);
 polyTc:=polyCos - 1;
@@ -301,7 +318,7 @@ maxscah:= nearest(maxsca);
 # Worst case of approximation error
 
 ################ Summing everything up
-# The only error is in 
+# The only error is in
 #  tlo =  tc*cah - (ts*sahyh_h -  (cal + (tlo  - (sahyh_l + (sal*yh + sah*yl)) )));
 
 delta_round_tlo := 2*ulp(maxTc*maxsca) ; # TODO c'est à la louche
@@ -317,7 +334,7 @@ rnconstant_sincos := compute_rn_constant(delta_sincos);
 
 # Output
 
-filename:="TEMPTRIG/trigo.h":
+filename:="TEMPTRIG/trigo_fast.h":
 fd:=fopen(filename, WRITE, TEXT):
 
 fprintf(fd, "#include \"crlibm.h\"\n#include \"crlibm_private.h\"\n"):
@@ -343,18 +360,18 @@ fprintf(fd, "#define XMAX_CODY_WAITE_3 0x%s\n", ieeehexa(XMAX_CODY_WAITE_3)[1]):
 fprintf(fd, "#define XMAX_DDRR 0x%s\n", ieeehexa(XMAX_DDRR)[1]):
 fprintf(fd, "\n"):
 
-fprintf(fd, "#define CW2_CH %1.50e\n", CW2_CH):
-fprintf(fd, "#define CW2_MCL %1.50e\n", CW2_MCL):
+fprintf(fd, "#define RR_CW2_CH %1.50e\n", RR_CW2_CH):
+fprintf(fd, "#define RR_CW2_MCL %1.50e\n", RR_CW2_MCL):
 fprintf(fd, "\n"):
 
-fprintf(fd, "#define CW3_CH %1.50e\n", CW3_CH):
-fprintf(fd, "#define CW3_CM %1.50e\n", CW3_CM):
-fprintf(fd, "#define CW3_MCL %1.50e\n", CW3_MCL):
+fprintf(fd, "#define RR_CW3_CH %1.50e\n", RR_CW3_CH):
+fprintf(fd, "#define RR_CW3_CM %1.50e\n", RR_CW3_CM):
+fprintf(fd, "#define RR_CW3_MCL %1.50e\n", RR_CW3_MCL):
 fprintf(fd, "\n"):
 
-fprintf(fd, "#define RRK0_MCH %1.50e\n", RRK0_MCH):
-fprintf(fd, "#define RRK0_MCM %1.50e\n", RRK0_MCM):
-fprintf(fd, "#define RRK0_CL %1.50e\n", RRK0_CL):
+fprintf(fd, "#define RR_DD_MCH %1.50e\n", RR_DD_MCH):
+fprintf(fd, "#define RR_DD_MCM %1.50e\n", RR_DD_MCM):
+fprintf(fd, "#define RR_DD_CL %1.50e\n", RR_DD_CL):
 fprintf(fd, "\n"):
 
 fprintf(fd, "#define RN_CST_SINCOS %f \n", rnconstant_sincos);
@@ -386,7 +403,7 @@ for isbig from 1 to 0 by -1 do
 
 
   # the cos polynomial
-  
+
 
   fprintf(fd, "static db_number const c2 = "):
   printendian(fd, coeff(polyCos,x,2), isbig):
@@ -427,7 +444,7 @@ for isbig from 1 to 0 by -1 do
 od:
 fprintf(fd,"#endif /* WORDS_BIGENDIAN */\n\n\n"):
 
-fclose(fd): 
+fclose(fd):
 
 
 
