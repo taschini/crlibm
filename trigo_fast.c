@@ -140,22 +140,22 @@ int static trig_range_reduction(double* pyh, double* pyl,
       /* TODO : improve this code by pre-splitting CH,  CM and k (as an int) 
 	 Then you can improve the precision by taking kmax into account */
       /* all this is exact */
-      Mul12(&kch_h, &kch_l,   kd, RRK0_MCH);
-      Mul12(&kcm_h, &kcm_l,   kd, RRK0_MCM);
+      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
       Add12 (th,tl,  kch_l, kcm_h) ;
       /* only rounding error in the last multiplication and addition */ 
-      Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RRK0_CL),   th, tl) ;
+      Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
     } 
     else {      
       /* Argument reduction  by Cody & Waite algorithm */ 
       /* Here we do not care about cancellations on *pyh+yl */
       if (absxhi < XMAX_CODY_WAITE_2) { 
 	/* all this is exact but the rightmost multiplication */
-	Add12 (*pyh,*pyl,  (x - kd*CW2_CH),  (kd*CW2_MCL) ) ;
+	Add12 (*pyh,*pyl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
       }
      else 
        /* all this is exact but the rightmost multiplication */
-       Add12Cond(*pyh,*pyl,  (x - kd*CW3_CH) -  kd*CW3_CM,   kd*CW3_MCL);
+       Add12Cond(*pyh,*pyl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
     }
   }
   else  if ( absxhi < XMAX_DDRR ) {
@@ -163,7 +163,7 @@ int static trig_range_reduction(double* pyh, double* pyl,
     double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
     DOUBLE2LONGINT(kl, x*INV_PIO256);
     kd=(double)kl;
-    k = (int) (kl & 0x00000000FFFFFFFFLL);
+    k = (int) kl;
 #if DEBUG
     printf("kl=%lld  \n", kl);
 #endif
@@ -181,11 +181,11 @@ int static trig_range_reduction(double* pyh, double* pyl,
     } 
     else {
       /* all this is exact */
-      Mul12(&kch_h, &kch_l,   kd, RRK0_MCH);
-      Mul12(&kcm_h, &kcm_l,   kd, RRK0_MCM);
+      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
       Add12 (th,tl,  kch_l, kcm_h) ;
       /* only rounding error in the last multiplication and addition */ 
-      Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RRK0_CL),   th, tl) ;
+      Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
     }
   }
   else {
