@@ -193,7 +193,7 @@ So:
 \subsubsection{Polynomial evaluation}
 
 The error due to the polynomial approximation is $\delta_{approx} =
-\infnorm{ \arctan(x) - x.(1+q)}= \delta_{72,38}$ 
+\infnorm{ \arctan(x) - x.(1+q)}= \delta_{72.38}$ 
 
 \begin{lstlisting}[caption={Polynomial Evaluation},firstnumber=1]
       Xred2 = Xredhi*Xredhi;
@@ -205,15 +205,15 @@ The error due to the polynomial approximation is $\delta_{approx} =
 
 \end{lstlisting}
 \begin{tabular}{ll}
-Line 1 & The error between $\xred2$ and the ideal value of $\xred^2$ from\\
+Line 1 & The error between $\mathrm{Xred2}$ and the ideal value of $\xred^2$\\
        & $\bullet$~ the error $\epsilon_{\xred}$  on $\xredhi+\xredlo$\\
-       & the truncation of $\xredlo$\\
-       & $\bullet$~ the rounding error of $\epsilon_{53}$ 
-                     in the FP multiplication\\
-       & which sum up to about $\epsilon_{51.4}$ \\
+       & $\bullet$~ the truncation of $\xredlo$ adds $\epsilon_{53}$\\
+       & $\bullet$~ then the FP multiplication squares this term and adds a rounding error of $\epsilon_{53}$\\
+       & which sum up to  $\epsilon_\mathrm{Xred2} = ((1+2^{-53}+2^{-105})^2)(1+2^{-53}) 
+          \approx \epsilon_{51.4}$ \\
 Line 3 & Horner approximation with error on $\xred2$:
       Maple computes an error around $\epsilon_{50.7}$\\
-      & or $\delta_{horner}=\delta_{69.6}$\\ 
+      & or $\delta_{q}=\delta_{63.3}$\\ 
 \end{tabular}
 
 \subsubsection{Reconstruction}
@@ -237,16 +237,19 @@ The terms of this developed product are depicted in the following figure.
           \put(4,-3){$\xredhi$} \put(0.55,-3.15){\framebox(7.9,0.7){}}
           \put(12,-3){$\xredlo$}  \put(8.55,-3.15){\framebox(7.9,0.7){}}
 
-          \put(5,-4){$\xredhi.Q$} \put(2.05,-4.15){\framebox(7.9,0.7){}}
-          \put(13,-4){$\xredlo.Q$}  \put(10.05,-4.15){\framebox(7.9,0.7){}}
+          \put(5,-4){$\xredhi.q$} \put(2.05,-4.15){\framebox(7.9,0.7){}}
+          \put(13,-4){$\xredlo.q$}  \put(10.05,-4.15){\framebox(7.9,0.7){}}
 
         \end{picture}
       }
   \end{center}
-
-Here the  $\epsilon$ bar represents the target accuracy of $2^{-64}$.
-One can see that the term $\xredlo.q$ can be truncated. As  $\xredlo < \xredhi.2^{-53}$ and $q<x^2<2^{-12.6}$ this entails an error of $\epsilon_{trunc} =
-      \epsilon_{65.6}$
+  
+  Here the $\epsilon$ bar represents the target accuracy of $2^{-64}$.
+  One can see that the term $\xredlo.q$ can be truncated. As $\xredlo
+  < \xredhi.2^{-53}$ and $q<x^2<2^{-12.6}$ this entails an error of
+  $\epsilon_\mathrm{trunc} = \epsilon_{65.6}$ relative to $\xred$,
+  or an absolute error of $\delta_\mathrm{trunc} =
+    e.\epsilon_\mathrm{trunc} = e^3 .2^{-53} \approx \delta_{71.9}$.
 
 
 \begin{lstlisting}[caption={Reconstruction},firstnumber=1]
@@ -257,35 +260,15 @@ One can see that the term $\xredlo.q$ can be truncated. As  $\xredlo < \xredhi.2
       Add12( atanhi, atanlo, tmphi2, (tmplo2+atanlolo));
 
 \end{lstlisting}
-\begin{tabular}{ll}
-Line 5-9 & We need to add $\arctan(b_i)_{hi}+\arctan(b_i)_{lo} +
-      (\xredhi+\xredlo).(1+q)$\\
-      &
-      We compute this in tree steps $atanlolo= \xredlo+ \arctan(b_i)_{lo}
-      + \xredhi.q$.\\
-      & then we add $\xredhi+\arctan(b_i))_{hi}$ at the end we add the two results.\\
 
-      &We have two kinds of errors : 
-\end{tabular}      
-  \begin{itemize} 
-    \item .     \item Rounding error due to the operations : the computation of
-      $atanlolo$ causes 3 errors :\\
-       $ \epsilon_{53}.(\xredlo+ \arctan(b_i)_{lo}) < \delta_{100}$\\
-       $\epsilon_{53}.\xredhi.q < \delta_{53+6.3+6.3*2} < \delta_{71.9}$\\
-       $ \epsilon_{53} . atanlolo < \delta_{65.5}$\\
-       $delta_{recons} =  \delta_{71.9}$
-      \end{itemize}
-      If we add all these errors, we have \\
-      $atanlolo_{error} \leq \epsilon_{trunc}.e + \delta_{100} +
-      \epsilon_{71.9} + delta_{recons} = \delta_{68.72}$\\
-
-
+Upon entering this code we have:
 \begin{center}
  \small
  \setlength{\unitlength}{3ex}
       \framebox{
         \begin{picture}(22,3.5)(-3,-4.15)
          \put(9.5,-0.5){\line(0,-1){4}}  \put(9,-1){$\epsilon$}
+         \put(10.1,-0.5){\line(0,-1){4}}  \put(10.2,-1){$\delta_{71.9}$}
   
           \put(4,-2){$\arctan(b_i)_{hi}$} \put(0.05,-2.15){\framebox(7.9,0.7){}}
           \put(12,-2){$\arctan(b_i)_{lo}$}  \put(8.05,-2.15){\framebox(7.9,0.7){}}
@@ -293,21 +276,26 @@ Line 5-9 & We need to add $\arctan(b_i)_{hi}+\arctan(b_i)_{lo} +
           \put(4,-3){$\xredhi$} \put(0.55,-3.15){\framebox(7.9,0.7){}}
           \put(12,-3){$\xredlo$}  \put(8.55,-3.15){\framebox(7.9,0.7){}}
 
-          \put(5,-4){$\xredhi.Q$} \put(2.05,-4.15){\framebox(7.9,0.7){}}
+          \put(5,-4){$\xredhi.q$} \put(2.05,-4.15){\framebox(7.9,0.7){}}
 
         \end{picture}
       }
   \end{center}
+
+
+Before line 5, the situation is the following:
+
 \begin{center}
  \small
  \setlength{\unitlength}{3ex}
       \framebox{
         \begin{picture}(22,2.5)(-3,-4.15)
          \put(9.5,-0.5){\line(0,-1){4}}  \put(9,-1){$\epsilon$}
+         \put(10.1,-0.5){\line(0,-1){4}}  \put(10.2,-1){$\delta_{71.9}$}
   
-          \put(0.5,-3){$(\arctan(b_i)_{hi} + \xredhi)_{hi}$}
+          \put(0.5,-3){$\mathrm{tmphi2}$}
           \put(0.05,-3.15){\framebox(7.9,0.7){}}
-          \put(8.5,-3){$(\arctan(b_i)_{hi} + \xredhi)_{lo}$} \put(8.05,-3.15){\framebox(7.9,0.7){}}
+          \put(8.5,-3){$\mathrm{tmplo2}$} \put(8.05,-3.15){\framebox(7.9,0.7){}}
 
           \put(5,-4){$atanlolo$} \put(2.05,-4.15){\framebox(7.9,0.7){}}
 
@@ -315,24 +303,32 @@ Line 5-9 & We need to add $\arctan(b_i)_{hi}+\arctan(b_i)_{lo} +
         \end{picture}
       }
   \end{center}
-
 \begin{tabular}{ll}
-Line 8 & Add12 add no error\\
-Line 9 & Add12 add no error
-\end{tabular}
+Line 2 & The computation of  $atanlolo$  causes 3 errors :\\
+      & $ \epsilon_{53}.(\xredlo+ \arctan(b_i)_{lo}) < \delta_{105}$\\
+      & $\epsilon_{53}.\xredhi.q < \delta_{72}$\\
+      & $\epsilon_{53} . atanlolo < \delta_{72}$ (again) \\
+Line 4 & Add12 adds no error\\
+Line 5 & Here we have an FP addition which adds again $\delta_{72}$\\
+      & Add12 adds no error.
+\end{tabular}      
+
+Finally, we get (after  accurate computation in Maple) \\
+$ \delta_\mathrm{reconstr} \approx \delta_{71.8}$
+
 
 
 \subsubsection {Final error and rounding constant}
 
 We have to add all error : 
 \begin{equation}
-\delta_{final} = \delta_{horner} + \delta_{approx} + atanlolo_{error} = \delta_{68}
+\delta_{final} =  \delta_{approx} + \delta_{q}  + \delta_\mathrm{reconstr} = \delta_{70.2}
 \end{equation}
 
-So when $i < 10$, the relative error is $\epsilon_{61.7}$ that leads to a
-rounding constant of $1.0047$.
+So when $i < 10$, the relative error is $\epsilon_{63.8}$ that leads to a
+rounding constant of $1.001$.
 
-And when $i > 10$ the relative error is $\epsilon_{67.8}$ that leads to a
+And when $i > 10$ the relative error is $\epsilon_{68.24}$ that leads to a
 rounding constant of $1.000068$.
 
 \subsubsection{Error when there is no reduction}
@@ -347,7 +343,7 @@ rounding constant of $1.000068$.
 
 \end{lstlisting}
 
-The code is very simple so there are few errors:
+The code is very simple so there are few error terms:
 
 \begin{tabular}{ll}
 Line 1 & $\epsilon_{53}$ \\
@@ -360,11 +356,11 @@ When $x>2^{-10}$ the relative error is $\epsilon_{62.9}$. The
 constant is $1.0024$. 
 
 When $x<2^{-10}$ the relative error is $\epsilon_{70.4}$. The
-constant is $1.0000132$. 
+constant is $1.000005$. 
 
 \bigskip
 
-\subsection{Exceptional cases and Rounding}
+\subsection{Exceptional cases and rounding}
 \subsubsection{Rounding to nearest}
 \begin{lstlisting}[caption={Exceptional cases : rounding to nearest},firstnumber=1]
 

@@ -1,6 +1,6 @@
 restart:
 Digits := 100:
-with (numapprox):with(orthopoly): 
+with (numapprox):with(orthopoly):
 read "Common_Maple_Procedures.mpl";
 mkdir("TEMPATAN");
 
@@ -18,18 +18,18 @@ mkdir("TEMPATAN");
 
 log[2](evalf(min(solve(arctan(x)=nearest(Pi/2),x)))):
 xmax:=2^54:
- 
+
 
 #halfPi=Pi/2 (remark that maxvalue < Pi/2 so that atan(x) < Pi/2
 
 halfPi:=nearest(Pi/2):
 halfPi_to_plus_infinity:=nearest(nearest(Pi/2)*(1+2^(-53))):
- 
- 
+
+
 # if (xmin<xmin) : return arctan(x)=x
 
 xmin=2^(-27);
- 
+
 ieeehexa(halfPi); ieeehexa( halfPi_to_plus_infinity ); ieeehexa(2^(-27));ieeehexa(2^(54));ieeehexa(2^(-10));
 
 
@@ -47,7 +47,7 @@ nextbi := proc (x) evalf( max(solve( minx(bi) = x ,bi) )*(1-marge)); end:
 allbi := proc (n)
   local xi,nbi,x,i,j;
   global b,a, nb_of_ai, nb_of_bi, value_for_dicho;
-  x := e; 
+  x := e;
   nbi := 0;
   i := 0;
   while(i<n and nbi < 1/e and nbi >= 0) do
@@ -90,7 +90,8 @@ log[2] (infnorm( (arctan(x)-x*(1+Q) )/x,x=2^(-53)..e));
 # so abs ( (arctan(x) -Q9(x) )/x )  <= x^10 * sum((-1)^(i+1)*x^(2*i)/(2*i+1+10), i = (0 .. infinity))
 #                                   <= x^10 * 1/11
 #                                   <= 2^(-66) if x<2^(-6.3)
- 
+
+
 
 
 
@@ -99,53 +100,80 @@ log[2] (infnorm( (arctan(x)-x*(1+Q) )/x,x=2^(-53)..e));
 
 
 #Conputation of the RN constant
+
+
 #Epsilon = relative error
 #Delta = absolute error
 #1st : Error about reduction:
 
-xminusBiepsilon := 2^(-105):
+EpsilonXminusBi := 2^(-105):
 
 # 1 + x*b[i] :
-oneA22xbiEps :=  2^(-104):
+Epsilon1A22xbi :=  2^(-104):
 
-xminusbiDIV2eps := xminusBiepsilon+oneA22xbiEps + 2^(-105):
 
 # Xred = (x-b[i]) / ( 1 + x*b[i] )
 
-XredEpsilon := xminusbiDIV2eps:
-XredDelta := XredEpsilon * e:
-evalf(log[2](XredEpsilon)):
+EpsilonXred := EpsilonXminusBi+Epsilon1A22xbi + 2^(-105):
 
-log[2](infnorm(XredEpsilon,xx=e..2^60));
+DeltaXred := EpsilonXred * e:
+
+log2(EpsilonXred);
 
 #Polynomial evaluation :
 #atan ~= x - x^3/3 + x^5/5 - x^7/7 + x^9/9
 #        ~= x * ( 1 + Q(x^2) )
-#    = (xhi+xlo) * ( 1 + Q) 
+#    = (xhi+xlo) * ( 1 + Q)
 #        ~= xhi + (xhi*Q + xlo)
 
 #  Warning : the approx about x !!
 
 #calc of Q:
-errorOnxred2 := 2^(-52)+2^(-105):
 
-errlist:=errlist_quickphase_horner( degree( x^4 ),0,0,errorOnxred2, 2**(-53)):
+EpsilonXred2 := (1+2^(-53) + 2^(-105) )^2 * (1+2^(-53)) -1 :
+
+log2(EpsilonXred2);
+
+errlist:=errlist_quickphase_horner( degree( x^4 ),0,0,EpsilonXred2, 2**(-53)):
 
 rounding_error1:= compute_horner_rounding_error(Qprime,x,e,errlist,true):
 
 EpsilonQ := rounding_error1[1]:
+log2(EpsilonQ);
 
-DeltaQ := EpsilonQ*e^2:
-evalf(  log[2] (infnorm( (EpsilonQ,xx=e..2^60) ) ));
+# Since q will be multiplied in x(1+q), its absolute error term is :
+
+Qmax:=infnorm(Qprime,x=-e^2..e^2):
+
+DeltaQ := e*Qmax*EpsilonQ;
+log2(DeltaQ);
 
 # calc of xi*Q + xlo + atan(b[i])lo
-# the 2^(-105) is due to the addition of Xred_lo and atan(b[i])_lo
 
-EpsilonxibyQ := 2^(-53):
-DeltaXibyQ := EpsilonxibyQ * e^3:
-DeltaTestlo := DeltaXibyQ + 2^(-105) + 2^(-53)*e^3:
+#First the truncation of xredlo*q : at most half an ulp of xredhi*q
+DeltaTruncXredloQ :=  2^(-53) * e * Qmax:
+log2(DeltaTruncXredloQ);
+#then the sum of atanbilo and xredlo : the largest term is atanbilo
+DeltaAdd1  := 0.5*ulp(2^(-53)*(Pi/2 + e)):
+log2(DeltaAdd1);
 
-log[2](DeltaTestlo);
+#then compute xredhi*q
+DeltaXredhiQ := 0.5*ulp(e*Qmax):
+log2(DeltaXredhiQ);
+
+# and the second addition
+DeltaAdd2 :=  0.5*ulp(e*Qmax +  2^(-53)*(Pi/2 + e) ):
+log2(DeltaAdd2);
+
+DeltaAtanlolo := DeltaTruncXredloQ + DeltaAdd1 + DeltaXredhiQ + DeltaAdd2:
+log2(DeltaAtanlolo);
+
+# In the second reconstruction there is one more FP add which is
+# aligned to the previous:
+DeltaReconst := DeltaAtanlolo + DeltaAdd2 :
+log2(DeltaReconst);
+
+
 
 # error due to the approx of atan by P : < e^11/11
 Deltaapprox := infnorm( (arctan(x)-x*(1+Q)), x=0..e):
@@ -155,19 +183,15 @@ log[2](Deltaapprox);
 
 
 
-# Reconstruction :  
-# atan(x) = atan(b[i]) + atan(Xred)
-#         ~= atan(b|i])hi + xhi + xhi*q + (testlo)
 
+DeltaTotal := Deltaapprox + DeltaQ + DeltaReconst :
+log2(DeltaTotal);
+EpsilonTotal := evalf( DeltaTotal / arctan(xx) ):
 
-DeltaError := 2^(-105.)*Pi/2 + Deltaapprox + DeltaTestlo + 2^(-105.)*Pi/2:
-EpsilonError := evalf( DeltaError / arctan(xx) ):
-evalf(log[2] ( DeltaError ));
-
-EpsilonFinal := infnorm( EpsilonError,xx=2^(-6.3)..1,'xmaxmax'):
-EpsilonFinal_i_10 := infnorm( EpsilonError,xx=2^a[10]..2^60,'xmaxmax'):
-evalf(log[2] ( EpsilonFinal ));
-evalf(log[2] ( EpsilonFinal_i_10 ));
+EpsilonFinal := infnorm( EpsilonTotal,xx=2^(-6.3)..1,'xmaxmax'):
+EpsilonFinal_i_10 := infnorm( EpsilonTotal,xx=a[10]..2^60,'xmaxmax'):
+log2( EpsilonFinal );
+log2( EpsilonFinal_i_10 );
 
 
 # Computation of e and e_i_30 (which is e when i>30 (ie x>1)
@@ -178,8 +202,8 @@ E_i_10 := evalf(compute_rn_constant(EpsilonFinal_i_10));
 #An other Constant : when there is no reduction.
 #We compute the polynom and then atan(x) = x + x.Q
 
-errorOnx2 := 2^(-53):
-errlist:=errlist_quickphase_horner( degree( Qprime ),0,0,errorOnxred2, 2**(-53)):
+Epsilonx2 := 2^(-53):
+errlist:=errlist_quickphase_horner( degree( Qprime ),0,0,Epsilonx2, 2**(-53)):
 rounding_error:= compute_horner_rounding_error(Qprime,x,e,errlist,true):
 
 epsilon_Q := rounding_error[1]:
@@ -231,7 +255,7 @@ fprintf(fd, "%1.50f , /* i>10 */ \n",E_i_10*(1+2^(-20))) :
 fprintf(fd, "%1.50f , /* e > 2^-10 */ \n",E_no_reduction*(1+2^(-20))) :
 fprintf(fd, "%1.50f , /* e < 2^-10 */ \n };\n",E_no_reduction_m10*(1+2^(-20))) :
 
-fprintf(fd, "static const double delta[4] ={\n"):
+fprintf(fd, "static const double epsilon[4] ={\n"):
 fprintf(fd, "%1.50e ,\n",EpsilonFinal *(1+2^(-20))) :
 fprintf(fd, "%1.50e ,\n",EpsilonFinal_i_10*(1+2^(-20))) :
 fprintf(fd, "%1.50e ,\n",epsilon_final*(1+2^(-20))) :
@@ -257,11 +281,11 @@ for isbig from 1 to 0 by -1 do
     if(isbig=0) then
         fprintf(fd,"#else\n");
     fi:
-    
+
     if(not (nb_of_ai = nb_of_bi)) then
         printf("Warning : nb_of_ai != nb_of_bi, this should not work");
     fi:
-    
+
     fprintf(fd,"\n/* limits of the intervals [a[i],b[i]] */\n");
     fprintf(fd, "static db_number const arctan_table[%d][4] = \n{\n" , nb_of_ai );
 
@@ -322,7 +346,7 @@ for isbig from 1 to 0 by -1 do
       fprintf(fd1,"/* %d */  ",i):
       temp0 := nearest(arctan(b[i]));
       temp := nearest( arctan(b[i]) - nearest(arctan(b[i])));
-      temp1 := nearest( arctan(b[i]) - temp -temp0);     
+      temp1 := nearest( arctan(b[i]) - temp -temp0);
       printendian(fd1,temp1,isbig):
       fprintf(fd1,", \n");
    od:
