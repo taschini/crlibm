@@ -1,0 +1,57 @@
+\section{Compilation and installation}
+See the \texttt{INSTALL} file in the main directory. This library is
+developed using the GNU autotools, and can therefore be compiled on
+most Unix-like systems by \texttt{./configure; make}. 
+
+
+The command \texttt{make check} will launch the selftest.
+For more advanced testing you will need to have MPFR installed (see
+\url{www.mpfr.org}) and to pass the \texttt{--enable-mpfr} flag to
+\texttt{configure}. For other flags, see \texttt{./configure --help} .
+
+\section{Using \texttt{crlibm} functions in your program}
+
+Currently \texttt{crlibm} functions have different names from the
+standard \texttt{math.h} functions. For example, for the sine function
+(\texttt{double sin(double)} in the standard \texttt{math.h}), you
+have four different functions in \texttt{crlibm} for the four
+different rounding modes. These functions are named \texttt{sin\_rn},
+\texttt{sin\_ru}, \texttt{sin\_rd} and \texttt{sin\_rz} for round to the
+nearest, round up, round down and round to zero respectively. These
+functions are declared in the C header file \texttt{crlibm.h}.
+
+The \texttt{crlibm} library relies on double-precision IEEE-754
+compliant floating-point operations.  For some processors and some
+operating systems (most notably IA32 and IA64 processors under
+GNU/Linux), the default precision is set to double-extended.  On such
+systems you will need to call the \texttt{crlibm\_init()} function
+before using any \texttt{crlibm} function to ensure such compliance.
+This has the effect of setting the processor flags to IEEE-754
+double-precision with rounding to the nearest mode.  This function
+returns the previous processor status, so that previous mode can be
+restored using the function \texttt{crlibm\_exit()}. Note that you
+probably only need one call to \texttt{crlibm\_init()} at the beginning
+of your program, not one call before each call to a mathematical
+function.
+
+
+\section{Writing portable floating-point programs}
+
+Here are some rules to help you design programs which have to
+produce exactly the same results on different architectures and
+different operating systems.
+\begin{itemize}
+\item Try to use the same compiler on all the systems.
+\item Demand C99 compliance (pass the \texttt{-C99} flag to the compiler). For Fortran, demand F90 compliance.
+\item Call \texttt{crlibm\_init()} before you begin floating-point
+  computation. This ensures that the computations will all be done in
+  IEEE-754 double-precision with round to nearest mode. On IA32
+  processors, problems may still occur for extremely large or extremely small
+  values.
+\item Do not hesitate to rely heavily on parentheses (the compiler
+  should respect them according to the standards, although some
+  don't). Many times, wondering where the parentheses should go in an
+  expression like \texttt{a+b+c+d} will even help you improve the
+  accuracy of your code.
+\item Use \texttt{crlibm} functions in place of \texttt{math.h} functions.
+\end{itemize}
