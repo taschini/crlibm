@@ -15,7 +15,6 @@
 #define BIAS 89
 
 
-
 /* useful constants */
 static const double 
  two1000  = 0x1p1000, /* 0x7E700000, 0x00000000, 1.07150860718626732095e301 */
@@ -74,88 +73,84 @@ static const db_number
 
 static const int errd  = 73400320;                   /* 70 * 2^20 */  
 
-
-#define EVAL_EXP_DECLARATION \
-  db_number db, R1, R8, R11;\
-  double rp_hi, rp_lo, ex_hi, ex_lo;\
-  double r_hi, r_lo;\
-  double tmp;\
-  double P_r;\
-  double R2, R3_hi, R3_lo, R4, R5_hi, R5_lo, R6, R7, R9, R10, crp_hi;\
-  unsigned int hx;\
-  int k;\
+/*
+ * Evaluate the exponential of x 
+ * (res_hi + res_lo)*2^k = exp(x)
+ * used for the exp, pow function
+ */
+void exp_quick(db_number * res_hi, db_number * res_lo, int *k, double x){
+  double R1, R2, R3_hi, R3_lo, R4, R5_hi, R5_lo, R6, R7, R9, R10, crp_hi;
+  double rp_hi, rp_lo, ex_hi, ex_lo;
+  double r_hi, r_lo;
+  double P_r;
+  db_number db;
   int indx;
 
+  /* Arrondi au plus près */
+  DOUBLE2INT(*k, (x * inv_ln2));
 
-#define EVAL_EXP_STEP_2_AND_3 \
-{                                                                 \
-  /* Arrondi au plus près */                                      \
-  DOUBLE2INT(k, (x * inv_ln2));                                   \
-                                                                  \
-  if (k != 0){                                                    \
-    /* r_hi+r_lo =  x - (ln2_hi + ln2_me + ln2_lo)*k */           \
-    rp_hi =  x-ln2_hi*k;                                          \
-    rp_lo =   -ln2_lo*k;                                          \
-    Add12Cond(r_hi, r_lo, rp_hi, rp_lo);                          \
-  }else {                                                         \
-    r_hi = x;  r_lo = 0.;                                         \
-  }                                                               \
-                                                                  \
-                                                                  \
-  /*                                                              \
-   * 2) Deuxième reduction d'argument                             \
-   */                                                             \
-                                                                  \
-                                                                  \
-  /* Arrondi au plus près */                                      \
-  db.d  = (r_hi + two_44_43);                                     \
-  indx  = db.i[LO];                                        \
-  indx += BIAS;                                                   \
-  r_hi  -= (db.d - two_44_43);                                    \
-                                                                  \
-  /* Normalisation du résultat */                                 \
-  Add12(rp_hi, rp_lo, r_hi, r_lo);                             \
-                                                                  \
-  /* Lecture de table */                                          \
-  ex_hi = (tab_exp[indx][0]).d;                                   \
-  ex_lo = (tab_exp[indx][1]).d;                                   \
-                                                                  \
-                                                                  \
-  /*                                                              \
-   * 3) Evaluation Polynomiale                                    \
-   */                                                             \
-                                                                  \
-  P_r = (c_0 + rp_hi * (c_1 + rp_hi * (c_2 + (rp_hi * c_3))));    \
-                                                                  \
-                                                                  \
-  R1.d = rp_hi * rp_hi;                                           \
-                                                                  \
-  crp_hi = R1.d * rp_hi;                                          \
-  /*R1.i[HI] -= 0x00100000;*/                              \
-  R1.d *= 0.5;                                                    \
-                                                                  \
-  R2 =  P_r * crp_hi;                                             \
-                                                                  \
-  Mul12(&R3_hi, &R3_lo, ex_hi, rp_hi);                            \
-  R4 = ex_hi * rp_lo;                                             \
-                                                                  \
-  Mul12(&R5_hi, &R5_lo, ex_hi, R1.d);                             \
-  R6 = R4 + (ex_lo * (R1.d + rp_hi));                             \
-                                                                  \
-  R7  = ex_hi * R2;                                               \
-  R7 += (R6 + R5_lo) + (R3_lo + ex_lo);                           \
-                                                                  \
-  Add12(R9, R8.d, R7, R5_hi);                                     \
-                                                                  \
-  Add12(R10, tmp, R3_hi, R9);                                     \
-  R8.d += tmp;                                                    \
-                                                                  \
-  Add12(R11.d, tmp, ex_hi, R10);                                  \
-  R8.d += tmp;                                                    \
-                                                                  \
-  Add12(R11.d, R8.d, R11.d, R8.d);                                \
-                                                                  \
-} 
+  if (k != 0){
+    /* r_hi+r_lo =  x - (ln2_hi + ln2_me + ln2_lo)*k */
+    rp_hi =  x-ln2_hi*(*k);
+    rp_lo =   -ln2_lo*(*k);
+    Add12Cond(r_hi, r_lo, rp_hi, rp_lo);
+  }else {
+    r_hi = x;  r_lo = 0.;
+  }
+
+
+  /*
+   * 2) Deuxième reduction d'argument
+   */
+
+  /* Arrondi au plus près */
+  db.d  = (r_hi + two_44_43);
+  indx  = db.i[LO];
+  indx += BIAS;
+  r_hi  -= (db.d - two_44_43);
+
+  /* Normalisation du résultat */
+  Add12(rp_hi, rp_lo, r_hi, r_lo);
+
+  /* Lecture de table */
+  ex_hi = (tab_exp[indx][0]).d;
+  ex_lo = (tab_exp[indx][1]).d;
+
+
+  /*
+   * 3) Evaluation Polynomiale
+   */
+
+  P_r = (c_0 + rp_hi * (c_1 + rp_hi * (c_2 + (rp_hi * c_3))));
+
+
+  R1 = rp_hi * rp_hi;
+
+  crp_hi = R1 * rp_hi;
+  R1 *= 0.5;
+
+  R2 =  P_r * crp_hi;
+
+  Mul12(&R3_hi, &R3_lo, ex_hi, rp_hi);
+  R4 = ex_hi * rp_lo;
+
+  Mul12(&R5_hi, &R5_lo, ex_hi, R1);
+  R6 = (ex_hi * rp_lo) + (ex_lo * (R1 + rp_hi));
+
+  R7  = ex_hi * R2;
+  R7 += (R6 + R5_lo) + (R3_lo + ex_lo);
+
+  Add12(R9, (*res_lo).d, R7, R5_hi);
+
+  Add12(R10, R1, R3_hi, R9);
+  (*res_lo).d += R1;
+
+  Add12((*res_hi).d, R1, ex_hi, R10);                                  
+  (*res_lo).d += R1;                                                    
+
+  Add12((*res_hi).d, (*res_lo).d, (*res_hi).d, (*res_lo).d);                                
+}
+
 
 
 /***************************
@@ -164,10 +159,13 @@ static const int errd  = 73400320;                   /* 70 * 2^20 */
  ***************************
  ***************************/
 double exp_rn(double x){
-  EVAL_EXP_DECLARATION
-
+  db_number db, R1, R8, R11;
+  unsigned int hx;
+  int k;
+  
   db_number st_to_mem;
   int    exp_R11;
+
 
 
   /*
@@ -182,17 +180,20 @@ double exp_rn(double x){
   if (hx >= 0x40862E42){
     if (hx >= 0x7ff00000){
       if (((hx&0x000fffff)|db.i[LO])!=0)
-	return x+x;                                        /* Nan */ 
-      else return ((db.i[HI]&0x80000000)==0)? x:0.0;/* exp(+/-inf) = inf,0 */
+	return x+x;                                                  /* Nan */ 
+      else return ((db.i[HI]&0x80000000)==0)? x:0.0; /* exp(+/-inf) = inf,0 */
     }
-    if (x > o_bound) return largest_double * largest_double;       /* overflow  */ 
-    if (x < u_bound) return tiniest_double * tiniest_double;     /* underflow */ 
+    if (x > o_bound) return largest_double * largest_double;   /* overflow  */ 
+    if (x < u_bound) return tiniest_double * tiniest_double;   /* underflow */ 
   }
 
-  if (hx < 0x3C900000)                                     /* if (hx <= 2^(-54)) */
+  if (hx < 0x3C900000)                                /* if (hx <= 2^(-54)) */
     return ((hx == 0) && (db.i[LO] == 0))? 1.: 1.+tiniest_double;  
     
-  EVAL_EXP_STEP_2_AND_3;
+
+  /* The evaluation */
+  exp_quick(&R11, &R8, &k, x);
+
 
   /* Résultat = (R11 + R8) */
   exp_R11 = (R11.i[HI] & 0x7ff00000) - errd;
@@ -259,10 +260,12 @@ double exp_rn(double x){
  ***************************
  ***************************/
 double exp_ru(double x){
-  EVAL_EXP_DECLARATION
-
+  db_number db, R8, R11;
+  unsigned int hx;
+  int k;
+  
   db_number st_to_mem;
-  int           exp_R11;
+  int    exp_R11;
 
   /*
    * 1) Première réduction d'argument
@@ -292,7 +295,8 @@ double exp_ru(double x){
       return 1. + two_m52_56;                              /* 1 + 2^(-52) and inexact */
   }
 
-  EVAL_EXP_STEP_2_AND_3;
+  /* The evaluation */
+  exp_quick(&R11, &R8, &k, x);
 
   exp_R11   = (R11.i[HI] & 0x7ff00000) - errd;
 
@@ -348,7 +352,9 @@ double exp_ru(double x){
  ***************************/
 
 double exp_rd(double x){
-  EVAL_EXP_DECLARATION
+  db_number db, R8, R11;
+  unsigned int hx;
+  int k;
   
   db_number st_to_mem;
   int    exp_R11;
@@ -380,7 +386,8 @@ double exp_rd(double x){
       return 1. + tiniest_double;                           /* 1 and inexact         */
   }
 
-  EVAL_EXP_STEP_2_AND_3;
+  /* The evaluation */
+  exp_quick(&R11, &R8, &k, x);
 
   exp_R11   = (R11.i[HI] & 0x7ff00000) - errd;
 
@@ -441,3 +448,4 @@ double exp_rd(double x){
  *
  *#define exp_rz(x)  exp_rd(x);
  */
+ 

@@ -56,10 +56,13 @@
  
  
 void scs_atan(scs_ptr res_scs, scs_ptr x){
-
   scs_t X_scs, denom1_scs, denom2_scs, poly_scs, X2;
+  scs_t atanbhihi,atanbhilo, atanblo, atanbhi, atanb;
+  scs_t bsc_ptr;
   db_number db;
-  int k;
+  double test;
+  int k, i=31;
+
   
   scs_get_d(&db.d, x);  
   
@@ -70,7 +73,6 @@ void scs_atan(scs_ptr res_scs, scs_ptr x){
   /* test if x as to be reduced */
   if (db.d > MIN_REDUCTION_NEEDED) {
     /* Compute i so that  x E [a[i],a[i+1]] */
-    int i=31;
     if (db.d < arctan_table[i][A].d) i-= 16;
     else i+=16;
     if (db.d < arctan_table[i][A].d) i-= 8;
@@ -84,7 +86,6 @@ void scs_atan(scs_ptr res_scs, scs_ptr x){
     if (db.d < arctan_table[i][A].d) i-= 1;
     
     /* evaluate X = (x - b(i)) / (1 + x*b(i)) */
-    scs_t bsc_ptr;
     scs_set_d(bsc_ptr, arctan_table[i][B].d);
     
     scs_mul(denom1_scs,bsc_ptr,x);
@@ -92,7 +93,7 @@ void scs_atan(scs_ptr res_scs, scs_ptr x){
     scs_sub(X_scs,x,bsc_ptr);
     scs_div(X_scs,X_scs,denom2_scs);
     
-    double test; scs_get_d(&test,X_scs);
+    scs_get_d(&test,X_scs);
     
     /* Polynomial evaluation of atan(X) , X = (x-b(i)) / (1+ x*b(i)) */
     scs_square(X2, X_scs);
@@ -107,7 +108,6 @@ void scs_atan(scs_ptr res_scs, scs_ptr x){
     /* reconstruction : */
     
     /* 1st we load atan ( b[i] ) in a scs*/ 
-    scs_t atanbhihi,atanbhilo, atanblo, atanbhi, atanb;
     scs_set_d( atanbhihi , arctan_table[i][ATAN_BHI].d);
     scs_set_d( atanbhilo , arctan_table[i][ATAN_BLO].d);
     scs_set_d( atanblo , atan_blolo[i].d);

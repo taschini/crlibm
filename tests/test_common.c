@@ -116,7 +116,6 @@ double rand_double_normal(){
 
 
 
-
 /* For exp we will test perf on numbers with a random sign, a random mantissa, and
    a random exponent between -9 and 9. And we soaktest on all the doubles */
 
@@ -216,7 +215,25 @@ double rand_for_atan_soaktest(){
 
 }
 
+/* For pow we need to test the whole range of floating point numbers
+ * However these definition should be slightly modified (keep x^y fp).
+ */
+#define rand_for_pow_soaktest rand_for_exp_perf
 
+double rand_for_pow_perf(){
+  db_number result;
+  int e;
+
+  /*first the low bits of the mantissa*/
+  result.i[LO]=rand_int();
+  /* then the high bits of the mantissa, and the sign bit */
+  result.i[HI]=  rand_int() & 0x800fffff;
+  /* Now set the exponent between -7 and 7, 
+     enough to cover the useful range (does not overflow) */
+  e =  (int) ( (rand_double_normal()-1) * 14 );
+  result.i[HI] += (1023 + e -7)<<20;
+  return result.d;
+}
 
 
 
@@ -511,6 +528,33 @@ void test_init(/* pointers to returned value */
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_sinh;
+#endif
+    }
+
+  else if (strcmp (func_name, "pow") == 0)
+    {
+      *randfun_perf     = rand_for_pow_perf;
+      *randfun_soaktest = rand_for_pow_soaktest;
+      *worst_case= 1;
+      *testfun_libm   = pow;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = NULL;	break;
+      case RD:
+	*testfun_crlibm = NULL;	break;
+      case RZ:
+	*testfun_crlibm = NULL;	break;
+      default:
+	*testfun_crlibm = pow_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_libultim = upow;
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = __libmcr_pow;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr     = mpfr_pow; 
 #endif
     }
 

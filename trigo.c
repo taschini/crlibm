@@ -104,7 +104,7 @@ double scs_sin_rn(double x){
     return -resd;
     default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_scs_sin \n", N);
-    return 0.0;
+    exit(EXIT_FAILURE);
   }
 }
 
@@ -142,7 +142,7 @@ double scs_sin_rd(double x){
     return -resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_scs_sin \n", N);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   return resd;
 }
@@ -181,7 +181,7 @@ double scs_sin_ru(double x){
     return -resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_scs_sin \n", N);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   return resd;
 }
@@ -220,7 +220,7 @@ double scs_sin_rz(double x){
     return -resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_scs_sin \n", N);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   return resd;
 }
@@ -262,7 +262,7 @@ double scs_cos_rn(double x){
     return resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_cos \n", N);
-    return 0.0;
+    exit(EXIT_FAILURE);
   }
   
 }
@@ -299,7 +299,7 @@ double scs_cos_rd(double x){
     return resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_cos \n", N);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   return resd;
 }
@@ -336,7 +336,7 @@ double scs_cos_ru(double x){
     return resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_cos \n", N);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   return resd;
 }
@@ -374,7 +374,7 @@ double scs_cos_rz(double x){
     return resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_cos \n", N);
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   return resd;
 }

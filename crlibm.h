@@ -101,6 +101,9 @@ extern double sinh_rd(double); /* toward -inf */
 extern double sinh_ru(double); /* toward +inf */ 
 extern double sinh_rz(double); /* toward zero */ 
 
+/*  pow  */
+extern double pow_rn(double, double); /* to nearest */
+
 
 /* Unfinished functions */
 /* These functions provide correct rounding but are very slow

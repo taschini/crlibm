@@ -30,7 +30,7 @@ Copyright (C) 2002  David Defour and Florent de Dinechin
 #define SCS_PRIVATE_H 1
 
 
-#define SCS_RADIX   (1<<SCS_NB_BITS)
+#define SCS_RADIX   ((unsigned int)(1<<SCS_NB_BITS))
 
 #define SCS_MASK_RADIX ((unsigned int)(SCS_RADIX-1))
 

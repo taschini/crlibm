@@ -65,9 +65,10 @@
 
 
 
-
-
-static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_number * py, int E) {
+/*
+ * Function used to evaluate log and pow functions
+ */
+void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_number * py, int E) {
    double ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo;
    double z, res, P_hi, P_lo;
    int k, i;
@@ -182,7 +183,6 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
    /* Call the actual computation */
    log_quick(&res_hi, &res_lo, &rndcstindex, &y, E);
    roundcst = rncst[rndcstindex];
-
 
   /* Test for rounding to the nearest */
   if(res_hi == (res_hi + (res_lo * roundcst)))

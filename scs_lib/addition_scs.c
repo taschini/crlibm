@@ -196,14 +196,14 @@ void scs_renorm_no_cancel_check(scs_ptr result){
 static void do_add_no_renorm(scs_ptr result, scs_ptr x, scs_ptr y){
   unsigned int RES[SCS_NB_WORDS];
   unsigned int i, j, Diff;
-  
+
   if (x->exception.i[HI]==0){scs_set(result, y); return; }
   if (y->exception.i[HI]==0){scs_set(result, x); return; }  
   
   for (i=0; i<SCS_NB_WORDS; i++)
     RES[i] = X_HW[i];
 
-  Diff  = X_IND - Y_IND;
+  Diff  = (unsigned int)(X_IND - Y_IND);
   R_EXP = X_EXP + Y_EXP - 1; 
   R_IND = X_IND;
   R_SGN = X_SGN;
@@ -255,8 +255,9 @@ void  scs_add_no_renorm(scs_ptr result, scs_ptr x, scs_ptr y)
 static void do_add(scs_ptr result, scs_ptr x, scs_ptr y)
 {
 #if (SCS_NB_WORDS==8)  /* in this case we unroll all the loops */
-  int carry, Diff;
-  int r0,r1,r2,r3,r4,r5,r6,r7;
+  int Diff;
+  unsigned int carry; 
+  unsigned int r0,r1,r2,r3,r4,r5,r6,r7;
   
   Diff  = X_IND - Y_IND;
   R_EXP = X_EXP + Y_EXP - 1; 
@@ -340,7 +341,7 @@ static void do_add(scs_ptr result, scs_ptr x, scs_ptr y)
     }
 #else
   switch (Diff){
-    case 0:
+  case 0:
     r0 = X_HW[0] + Y_HW[0]; r1 = X_HW[1] + Y_HW[1];
     r2 = X_HW[2] + Y_HW[2]; r3 = X_HW[3] + Y_HW[3];
     r4 = X_HW[4] + Y_HW[4]; r5 = X_HW[5] + Y_HW[5];
@@ -400,7 +401,7 @@ static void do_add(scs_ptr result, scs_ptr x, scs_ptr y)
   carry = r1 >> SCS_NB_BITS; r0 += carry;  r1 = r1 & SCS_MASK_RADIX;
   carry = r0 >> SCS_NB_BITS;
    
-  if (carry){
+  if (carry!=0){
     R_HW[7] = r6; R_HW[6] = r5;  R_HW[5] = r4; R_HW[4] = r3; 
     R_HW[3] = r2; R_HW[2] = r1;  R_HW[1] = r0 & SCS_MASK_RADIX;
     R_HW[0] = 1 ;  
@@ -463,30 +464,6 @@ static void do_add(scs_ptr result, scs_ptr x, scs_ptr y)
 
 
 
-
-
-
-
-/*
- * Compare only the mantissa of x and y without the index or sign field
- * Return : 
- * - 1    if x > y
- * - (-1) if x < y
- * - (0)  if x = y
- */
-
-int inline scs_cmp_mant(scs_ptr x, scs_ptr y){
-  int i;
-  /* Tried to unroll this loop, it doesn't work  */
-  for(i=0; i< SCS_NB_WORDS; i++){
-    if (X_HW[i] == Y_HW[i]) continue;
-    else if (X_HW[i] > Y_HW[i]) return 1;
-    else return -1;}
-  return 0;
-}
-
-
-
 /*/////////////////////////////////////////////////////////////////
 /////////////////////// SUBTRACTION //////////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -516,8 +493,13 @@ static void do_sub(scs_ptr result, scs_ptr x, scs_ptr y){
     /* 0 <= Diff <= (SCS_NB_WORDS-1) */
     carry = 0;
     if(Diff==0) { 
-      cp = scs_cmp_mant(x, y);
-      
+
+      i=0;
+      while((X_HW[i] == Y_HW[i]) && (i<SCS_NB_WORDS)) i++;
+      if (X_HW[i] > Y_HW[i]) cp=1;
+      else if (X_HW[i] < Y_HW[i]) cp=-1;
+      else cp=0;
+
       if (cp == 0) {
 	/* Yet another easy case: result = 0 */
 	scs_zero(result);
@@ -529,9 +511,9 @@ static void do_sub(scs_ptr result, scs_ptr x, scs_ptr y){
 
 	  R_SGN = X_SGN; 
 	  for(i=(SCS_NB_WORDS-1); i>=0 ;i--){
-	    s = X_HW[i] - Y_HW[i] - carry;
-	    carry = (s&SCS_RADIX)>>SCS_NB_BITS;
-	    res[i] = (s&SCS_RADIX) + s;
+	    s = (int)(X_HW[i] - Y_HW[i] - carry);
+	    carry = (int)((s&SCS_RADIX)>>SCS_NB_BITS);
+	    res[i] = (int)((s&SCS_RADIX) + s);
 	  }	  
 	}
 	else { /* cp < 0  */
@@ -539,9 +521,9 @@ static void do_sub(scs_ptr result, scs_ptr x, scs_ptr y){
 
 	  R_SGN = - X_SGN;
 	  for(i=(SCS_NB_WORDS-1); i>=0 ;i--){
-	    s = - X_HW[i] + Y_HW[i] - carry;
-	    carry = (s&SCS_RADIX)>>SCS_NB_BITS;
-	    res[i] = (s&SCS_RADIX) + s;
+	    s = (int)(- X_HW[i] + Y_HW[i] - carry);
+	    carry = (int)((s&SCS_RADIX)>>SCS_NB_BITS);
+	    res[i] = (int)((s&SCS_RADIX) + s);
 	  }
 	}
       }
@@ -553,11 +535,11 @@ static void do_sub(scs_ptr result, scs_ptr x, scs_ptr y){
       R_SGN = X_SGN; 
       for(i=(SCS_NB_WORDS-1), j=((SCS_NB_WORDS-1)-Diff); i>=0 ;i--,j--){
 	if(j>=0)
-	  s = X_HW[i] - Y_HW[j] - carry;
+	  s = (int)(X_HW[i] - Y_HW[j] - carry);
 	else
-	  s = X_HW[i] - carry;
-	carry = (s&SCS_RADIX)>>SCS_NB_BITS;
-	res[i] = (s&SCS_RADIX) + s;
+	  s = (int)(X_HW[i] - carry);
+	carry = (int)((s&SCS_RADIX)>>SCS_NB_BITS);
+	res[i] = (int)((s&SCS_RADIX) + s);
       }
     }
     /* check for cancellations */
@@ -566,12 +548,12 @@ static void do_sub(scs_ptr result, scs_ptr x, scs_ptr y){
 
     if(i>0) { /* cancellation, shift result*/
       R_IND -= i;
-      for(j=0; i<SCS_NB_WORDS; i++,j++)    R_HW[j] = res[i];
+      for(j=0; i<SCS_NB_WORDS; i++,j++)    R_HW[j] = (unsigned int)(res[i]);
       for(   ; j<SCS_NB_WORDS; j++) 	   R_HW[j] = 0;
     }
     else {
       for(i=0; i<SCS_NB_WORDS; i++)
-	R_HW[i] =  res[i];
+	R_HW[i] =  (unsigned int)(res[i]);
     }
   }
   return;

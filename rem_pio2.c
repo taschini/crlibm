@@ -155,14 +155,14 @@ int rem_pio2_scs(scs_ptr result, const scs_ptr x){
   for(i=(SCS_NB_WORDS+1); i>0; i--) {tmp=r[i]>>30;   r[i-1] += tmp;  r[i] -= (tmp<<30);}  
       
   /* The integer part is in r[0] */
-  N = r[0];
+  N = (unsigned int)(r[0]);
 #if 0
   printf("r[0] = %d\n", N);
 #endif
 
 
-
-  if (r[1] > (SCS_RADIX)/2){	/* test if the reduced part is bigger than Pi/4 */
+  /* test if the reduced part is bigger than Pi/4 */
+  if (r[1] > (unsigned long long int)(SCS_RADIX)/2){
     N += 1;
     sign = -1;
     for(i=1; i<(SCS_NB_WORDS+3); i++) { r[i]=((~(unsigned int)(r[i])) & 0x3fffffff);}
@@ -180,7 +180,7 @@ int rem_pio2_scs(scs_ptr result, const scs_ptr x){
     else           i = 2;
   else             i = 1;
 
-  for(j=0; j<SCS_NB_WORDS; j++) { R_HW[j] = r[i+j];}
+  for(j=0; j<SCS_NB_WORDS; j++) { R_HW[j] = (unsigned int)(r[i+j]);}
 
 
   R_EXP   = 1;
@@ -191,7 +191,7 @@ int rem_pio2_scs(scs_ptr result, const scs_ptr x){
    *   Multiplication by pi/2
    */
   scs_mul(result, Pio2_ptr, result);
-  return N*X_SGN;
+  return X_SGN*N;
 }
  
 

@@ -11,7 +11,7 @@ icc  -mcpu=itanium  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe 
 #include <stdlib.h>
 #include "crlibm.h"
 #include "crlibm_private.h"
-#include "double_ext.h"
+#include "double-extended.h"
 
 #define DEBUG 0
 double dde_atan_rn(double x) {
@@ -30,7 +30,7 @@ double atan_rz(double x) {
   return 0;
 }
 
-#include "double_ext.h"
+#include "double-extended.h"
 
 static const double  HALFPI = 1.57079632679489655799898173427209258079528808593750e+00;
 #define MIN_REDUCTION_NEEDED ULL(3F89FDF8BCCE533D)

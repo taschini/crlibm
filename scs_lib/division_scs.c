@@ -32,12 +32,12 @@ Copyright (C) 2002  David Defour and Florent de Dinechin
 #include "scs_private.h"
 
 
-void scs_div_2(scs_t num) {
+void scs_div_2(scs_ptr num) {
   /* small function to divide by 2 any SCS number */
   unsigned int carry, mask, old_value;
   int i;
   carry = 0x00000000;
-  mask = ((0x1) << SCS_NB_BITS)-1;/*we now have a mask for the used bits in a word*/
+  mask = (unsigned int)(((0x1) << SCS_NB_BITS)-1);/*we now have a mask for the used bits in a word*/
   /* if it's a normal number, i.e. not zero nor NaN */
   if( (num->exception).d == (double) 1) {
     /* first, a loop to rotate all numbers to the right*/

@@ -366,7 +366,7 @@ void get_d_directed0(double *result, scs_ptr x,int rndMantissaUp)
 void scs_get_d_minf(double *result, scs_ptr x){ 
 
   /* round up the mantissa if negative  */
-  get_d_directed(result, x, (X_SGN<0));
+  get_d_directed(result, x, (int)(X_SGN<0));
 }
 
 
@@ -377,7 +377,7 @@ void scs_get_d_minf(double *result, scs_ptr x){
 void scs_get_d_pinf(double *result, scs_ptr x){ 
 
   /* round up the mantissa if positive  */
-  get_d_directed(result, x, (X_SGN>=0));
+  get_d_directed(result, x, (int)(X_SGN>=0));
 }
 
 

@@ -1,9 +1,7 @@
-
 /* 
 Beware to compile without optimizations
 
 */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,10 +49,13 @@ extern int crlibm_second_step_taken;
 int crlibm_first_step_taken;
 #endif
 
+#ifdef HAVE_MPFR_H  
+/* The rounding mode for mpfr function */
+mp_rnd_t mpfr_rnd_mode;
+#endif
 
-/* Basic-like programming with global variables: */
-db_number input, res_crlibm, res_mpfr, res_ibm, res_libm;
-
+/* Global variable for time stamping */
+static unsigned long long tbx_time;
 
 /* Unused random number generator*/
 double (*randfun_soaktest) () = NULL;
@@ -74,102 +75,343 @@ double (*testfun_libmcr)   () = NULL;
 
 /* TESTSIZE doubles should be enough to flush the cache */
 #define TESTSIZE 200000 
-double inputs[TESTSIZE];
+static double inputs[TESTSIZE];
+static double inputs2[TESTSIZE];
+
+
+/* indicate the number of argument taken by the function */
+static int nbarg;          
 
 
 
 
-
-
-
-void fill_and_flush(int seed) {
+static void fill_and_flush(int seed) {
   int i;
   srandom(seed);
-  for (i=0; i<TESTSIZE; i++)
+  for (i=0; i<TESTSIZE; i++){
     inputs[i] = randfun();
+    inputs2[i] = randfun();
+  }
 }
 
 
 
-void usage(char *fct_name){
+static void usage(char *fct_name){
   /*fprintf (stderr, "\n%s: Performance test for crlibm and other mathematical libraries\n", fct_name);*/
   fprintf (stderr, "\nUsage: %s function (RN|RU|RD|RZ) iterations \n", fct_name);
   fprintf (stderr, " function      : name of function to test \n");
   fprintf (stderr, " (RN|RU|RD|RZ) : rounding mode, \n");
   fprintf (stderr, " iterations    : number of iterations, also seed for the random number generator \n");
-  exit (1);
+  exit (EXIT_FAILURE);
+}
+
+
+
+static void test_with_cache(const char *name, double (*testfun)(), int n){
+  int i, j, k;
+  double i1, i2, rd;
+  tbx_tick_t   t1, t2; 
+  unsigned long long dt, min_dtsum, dtsum;
+
+  if(testfun!=NULL) { /* test if some functions are missing */
+    printf("\n%s\n",name);
+    for(i=1; i<=10000; i*=10) { /* i=1,10,100...*/
+      min_dtsum=1<<30; 
+      for(k=0;k<10;k++) { /* do the whole test 10 times and take the min */
+	fill_and_flush(n);
+	dtsum=0;
+	for (j=0; j<i; j++) {
+	  i1 = inputs[i];
+	  i2 = inputs2[i];
+
+	  if (nbarg==1){
+	    TBX_GET_TICK(t1);
+	    rd = testfun(i1);
+	    TBX_GET_TICK(t2);
+	  }else{
+	    TBX_GET_TICK(t1);
+	    rd = testfun(i1, i2);
+	    TBX_GET_TICK(t2);
+	  }
+
+	  dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
+	  dtsum += dt;
+	}
+	if (dtsum < min_dtsum) min_dtsum=dtsum; 
+      }
+      printf("  %d loops: \t avg time = %f ticks\n",i, ((double)min_dtsum)/i);
+    }
+  }
+}
+
+
+static void test_without_cache(const char *name, 
+			double (*testfun)(), 
+			double i1,
+			double i2,
+			unsigned long long *lib_dtmin,
+			unsigned long long *lib_dtmax,
+			unsigned long long *lib_dtsum,
+			int func_type){
+  double result;
+  unsigned long long dt, dtmin;
+  tbx_tick_t   t1, t2; 
+  int j, k;
+#ifdef HAVE_MPFR_H  
+  mpfr_t mp_res, mp_inpt;
+  mpfr_t mp_inpt2; /* For the pow function */
+
+  mpfr_init2(mp_res,  53);
+  mpfr_init2(mp_inpt, 53);
+  mpfr_init2(mp_inpt2, 53);
+#endif
+
+  if(testfun!=NULL) { /* test if some functions are missing */
+    dtmin=1<<30;
+    /* take the min of N1 consecutive calls */
+    for(j=0; j<N1; j++) {
+
+      if (func_type == 0){              /* func_type = normal function */
+	if (nbarg==1){
+	  TBX_GET_TICK(t1);
+#ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
+	  for(k=0; k<50;k++)
+#endif
+	    result = testfun(i1);
+	  TBX_GET_TICK(t2);
+	}else{
+	  TBX_GET_TICK(t1);
+#ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
+	  for(k=0; k<50;k++)
+#endif
+	    result = testfun(i1,i2);
+	  TBX_GET_TICK(t2);	  
+	}
+      }else{                             /* func_type = MPFR function  */
+#ifdef   HAVE_MPFR_H 
+	if (nbarg==1){
+	  TBX_GET_TICK(t1);
+#ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
+	  for(k=0; k<50;k++){
+#endif    
+	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
+	    testfun(mp_res, mp_inpt, GMP_RNDN);
+	    result = mpfr_get_d(mp_res, mpfr_rnd_mode);
+#ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
+	  }
+#endif
+	  TBX_GET_TICK(t2);
+	}else{
+	  TBX_GET_TICK(t1);
+#ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
+	  for(k=0; k<50;k++){
+#endif    
+	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
+	    mpfr_set_d(mp_inpt2, i2, GMP_RNDN);
+	    testfun(mp_res, mp_inpt, mp_inpt2, GMP_RNDN);
+	    result = mpfr_get_d(mp_res, mpfr_rnd_mode);
+#ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
+	  }
+#endif 
+	  TBX_GET_TICK(t2);
+	}
+#endif /*HAVE_MPFR_H*/
+      }
+
+      dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time;
+      if (dt<dtmin)  dtmin=dt;
+    }
+    *lib_dtsum+=dtmin;
+    if (dtmin<*lib_dtmin)  *lib_dtmin=dtmin;
+    if (dtmin>*lib_dtmax)  *lib_dtmax=dtmin;
+#if      DETAILED_REPORT
+    printf("\n input=%1.15e\tT%s=%lld", i1, name, dtmin);
+#endif /*DETAILED_REPORT*/
+  }
+
+  /* release memory */
+#ifdef   HAVE_MPFR_H
+  mpfr_clear(mp_inpt2);
+  mpfr_clear(mp_inpt);
+  mpfr_clear(mp_res);
+#endif /*HAVE_MPFR_H*/
+
 }
 
 
 
 
+static void test_worst_case(double (*testfun)(), 
+		     double i1, 
+		     double i2, 
+		     unsigned long long *lib_dtwc, 
+		     int func_type){
 
-int main (int argc, char *argv[]) 
-{ 
-  
+
+  double res;
+  tbx_tick_t   t1, t2; 
+  unsigned long long dtmin, dt;
+  int j, k;
+#ifdef HAVE_MPFR_H  
+  mpfr_t mp_res, mp_inpt;
+  mpfr_t mp_inpt2; /* For the pow function */
+
+  mpfr_init2(mp_res,  53);
+  mpfr_init2(mp_inpt, 53);
+  mpfr_init2(mp_inpt2, 53);
+#endif
+
+  if(testfun!=NULL) { /* test if some functions are missing  */
+    dtmin=1<<30;
+    for(j=0; j<N1; j++) {
+      if (func_type == 0){    /* func_type = normal function */
+	if (nbarg==1){
+	  TBX_GET_TICK(t1);
+#ifdef TIMING_USES_GETTIMEOFDAY
+	  for(k=0; k<50;k++)
+#endif
+	    res = testfun(i1);
+	  TBX_GET_TICK(t2);
+	}else{
+	  TBX_GET_TICK(t1);
+#ifdef TIMING_USES_GETTIMEOFDAY
+	  for(k=0; k<50;k++)
+#endif
+	    res = testfun(i1,i2);
+	  TBX_GET_TICK(t2);
+	}
+      }else{                   /* func_type = MPFR function  */
+#ifdef HAVE_MPFR_H 
+	if (nbarg==1){
+	  TBX_GET_TICK(t1);
+#ifdef TIMING_USES_GETTIMEOFDAY
+	  for(k=0; k<50;k++){
+#endif
+	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
+	    testfun(mp_res, mp_inpt, GMP_RNDN);
+	    res = mpfr_get_d1(mp_res);
+#ifdef TIMING_USES_GETTIMEOFDAY
+	  }
+#endif
+	  TBX_GET_TICK(t2);
+	}else{
+	  TBX_GET_TICK(t1);
+#ifdef TIMING_USES_GETTIMEOFDAY
+	  for(k=0; k<50;k++){
+#endif
+	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
+	    mpfr_set_d(mp_inpt2, i2, GMP_RNDN);
+	    testfun(mp_res, mp_inpt, mp_inpt2, GMP_RNDN);
+	    res = mpfr_get_d1(mp_res);
+#ifdef TIMING_USES_GETTIMEOFDAY
+	  }
+#endif
+	  TBX_GET_TICK(t2);
+	}
+#endif /*HAVE_MPFR_H*/
+      }
+      dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
+      if (dt<dtmin)  dtmin=dt;
+    }
+    *lib_dtwc = dtmin;
+  }
+
+  /* release memory */
+#ifdef   HAVE_MPFR_H
+  mpfr_clear(mp_inpt2);
+  mpfr_clear(mp_inpt);
+  mpfr_clear(mp_res);
+#endif /*HAVE_MPFR_H*/
+}
+
+
+
+static void normal_output(const char *name,
+		   double (*testfun)(),
+		   unsigned long long lib_dtmin,
+		   unsigned long long lib_dtmax,
+		   unsigned long long lib_dtsum,
+		   unsigned long long lib_dtwc,
+		   int n){
+  if(testfun!=NULL) { /* some functions are missing in libultim (cosh, ...  */
+    printf("\n%s\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n",
+	   name, lib_dtmin, lib_dtmax, ((double)lib_dtsum) / ((double) n), lib_dtwc);
+  }
+}
+
+static void latex_output(const char *name,
+		  double (*testfun)(),
+		  unsigned long long lib_dtmin,
+		  unsigned long long lib_dtmax,
+		  unsigned long long lib_dtsum,
+		  unsigned long long lib_dtwc,
+		  int n){
+    if(testfun!=NULL) { /* some functions are missing in libultim (cosh, ...  */
+      if (lib_dtwc > lib_dtmax) lib_dtmax=lib_dtwc;
+      printf(" \\texttt{%s}  \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
+	     name, lib_dtmin, ((double)lib_dtsum) / ((double) n), lib_dtmax);
+    }
+}
+
+
+
+int main (int argc, char *argv[]){ 
   int i, j, k, n;
   int counter;
-  double input, result;
+  double i1, i2;
   char* rounding_mode;
   char* function_name;
   double worstcase;
   tbx_tick_t   t1, t2; 
   unsigned long long 
-    dt, dtmin, 
+    dt,
     libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc,
     crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc,
     mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc,
     libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, 
     libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, 
-    tbx_time,
     dtsum, min_dtsum;
   unsigned long seed = 42;
   int output_latex=0;
-#ifdef HAVE_MPFR_H  
-  mpfr_t mp_res, mp_inpt; 
-mp_rnd_t mpfr_rnd_mode;
-#endif
   short Original_Mode;
 
 
 
-
-
   if ((argc !=4)) usage(argv[0]);
-  else{
-    function_name = argv[1];
-    rounding_mode = argv[2];
-    sscanf(argv[3],"%d", &n);
-    
-    
-    crlibm_init();
 
-    test_init(/* pointers to returned value */
-	       &randfun, 
-	       &randfun_soaktest, /* unused here */ 
-	       &testfun_crlibm, 
-	       &testfun_mpfr,
-	       &testfun_libultim,
-	       &testfun_libmcr,
-	       &testfun_libm,
-	       &worstcase,
-	       /* arguments */
-	       function_name,
-	       rounding_mode ) ;
+  function_name = argv[1];
+  rounding_mode = argv[2];
+  sscanf(argv[3],"%d", &n);
     
+
 #ifdef HAVE_MPFR_H  
-    mpfr_init2(mp_res,  53);
-    mpfr_init2(mp_inpt, 53);
-    if      (strcmp(rounding_mode,"RU")==0) mpfr_rnd_mode = GMP_RNDU;
-    else if (strcmp(rounding_mode,"RD")==0) mpfr_rnd_mode = GMP_RNDD;
-    else if (strcmp(rounding_mode,"RZ")==0) mpfr_rnd_mode = GMP_RNDZ;
-    else {
-      mpfr_rnd_mode = GMP_RNDN; 
-      rounding_mode="RN" ;
-    }
+  if      (strcmp(rounding_mode,"RU")==0) mpfr_rnd_mode = GMP_RNDU;
+  else if (strcmp(rounding_mode,"RD")==0) mpfr_rnd_mode = GMP_RNDD;
+  else if (strcmp(rounding_mode,"RZ")==0) mpfr_rnd_mode = GMP_RNDZ;
+  else {
+    mpfr_rnd_mode = GMP_RNDN; 
+    rounding_mode="RN" ;
+  }
 #endif
+    
+  if (strcmp(function_name,"pow")==0) nbarg=2;
+  else nbarg=1;
 
+  crlibm_init();
 
+  test_init(/* pointers to returned value */
+	    &randfun, 
+	    &randfun_soaktest, /* unused here */ 
+	    &testfun_crlibm, 
+	    &testfun_mpfr,
+	    &testfun_libultim,
+	    &testfun_libmcr,
+	    &testfun_libm,
+	    &worstcase,
+	    /* arguments */
+	    function_name,
+	    rounding_mode ) ;
+  
 
 
   crlibm_dtmin=1<<30; crlibm_dtmax=0; crlibm_dtsum=0;
@@ -177,7 +419,6 @@ mp_rnd_t mpfr_rnd_mode;
   libultim_dtmin=1<<30;    libultim_dtmax=0;    libultim_dtsum=0;
   libmcr_dtmin=1<<30;    libmcr_dtmax=0;    libmcr_dtsum=0;
   mpfr_dtmin=1<<30;   mpfr_dtmax=0;   mpfr_dtsum=0;
-
 
   
   /* take the min of N1 consecutive calls */
@@ -196,229 +437,47 @@ mp_rnd_t mpfr_rnd_mode;
      matter */
 
   /* libm */
-  printf("\nLIBM\n");
-    for(i=1; i<=10000; i*=10) { /* i=1,10,100...*/
-      min_dtsum=1<<30; 
-      for(k=0;k<10;k++) { /* do the whole test 10 times and take the min */
-	fill_and_flush(n);
-	dtsum=0;
-	for (j=0; j<i; j++) {
-	  input=inputs[i];
-	  TBX_GET_TICK(t1);
-	  result = testfun_libm(input);
-	  TBX_GET_TICK(t2);
-	  dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-	  dtsum += dt;
-	}
-	if (dtsum < min_dtsum) min_dtsum=dtsum; 
-      }
-      printf("  %d loops: \t avg time = %f ticks\n",i, ((double)min_dtsum)/i);
-    }
-
-  printf("\nCRLIBM\n");
-    for(i=1; i<=10000; i*=10) { /* i=1,10,100...*/
-      min_dtsum=1<<30; 
-      for(k=0;k<10;k++) { /* do the whole test 10 times and take the min */
-	fill_and_flush(n);
-	dtsum=0;
-	for (j=0; j<i; j++) {
-	  input=inputs[i];
-	  TBX_GET_TICK(t1);
-	  result = testfun_crlibm(input);
-	  TBX_GET_TICK(t2);
-	  dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-	  dtsum += dt;
-	}
-	if (dtsum < min_dtsum) min_dtsum=dtsum; 
-      }
-      printf("  %d loops: \t avg time = %f ticks\n",i, ((double)min_dtsum)/i);
-    }
-
+  printf("TEST WITH CACHE CONSIDERATION \n");
+  test_with_cache("LIBM", testfun_libm, n);
+  test_with_cache("CRLIBM", testfun_crlibm, n);
 #ifdef HAVE_MATHLIB_H
-    if(testfun_libultim!=NULL) { /* some functions are missing in libultim (cosh, ...  */
-      printf("\nIBM\n");
-      for(i=1; i<=10000; i*=10) { /* i=1,10,100...*/
-	min_dtsum=1<<30; 
-	for(k=0;k<10;k++) { /* do the whole test 10 times and take the min */
-	  fill_and_flush(n);
-	  dtsum=0;
-	  for (j=0; j<i; j++) {
-	    input=inputs[i];
-	    TBX_GET_TICK(t1);
-	    result = testfun_libultim(input);
-	    TBX_GET_TICK(t2);
-	    dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-	    dtsum += dt;
-	  }
-	  if (dtsum < min_dtsum) min_dtsum=dtsum; 
-	}
-	printf("  %d loops: \t avg time = %f ticks\n",i, ((double)min_dtsum)/i);
-      }
-    }
+  Original_Mode = Init_Lib();
+  test_with_cache("IBM", testfun_libultim, n);
+  Exit_Lib(Original_Mode);
 #endif
 #ifdef HAVE_LIBMCR_H
-    if(testfun_libmcr!=NULL) {
-      printf("\nSun\n");
-      for(i=1; i<=10000; i*=10) { /* i=1,10,100...*/
-	min_dtsum=1<<30; 
-	for(k=0;k<10;k++) { /* do the whole test 10 times and take the min */
-	  fill_and_flush(n);
-	  dtsum=0;
-	  for (j=0; j<i; j++) {
-	    input=inputs[i];
-	    TBX_GET_TICK(t1);
-	    result = testfun_libmcr(input);
-	    TBX_GET_TICK(t2);
-	    dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-	    dtsum += dt;
-	  }
-	  if (dtsum < min_dtsum) min_dtsum=dtsum; 
-	}
-	printf("  %d loops: \t avg time = %f ticks\n",i, ((double)min_dtsum)/i);
-      }
-    }
+  test_with_cache("SUN", testfun_libmcr, n);
 #endif
 
 #endif /* TEST_CACHE*/
-  /************  TESTS WITHOUT CACHES  *********************/
-  srandom(n);
 
+  /************  TESTS WITHOUT CACHES  *******************/
+  srandom(n);
 #if EVAL_PERF==1  
   crlibm_second_step_taken=0; 
 #endif
-
   counter=0;
 
   /* take the min of N1 identical calls to leverage interruptions */
   /* As a consequence, the cache impact of these calls disappear...*/
-
-
   for(i=0; i< n; i++){ 
-    input = randfun();
-
-    /* libm timing */
-    dtmin=1<<30;
-    /* take the min of N1 consecutive calls */
-    for(j=0; j<N1; j++) {
-      TBX_GET_TICK(t1);
-#ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
-      for(k=0; k<50;k++)
-#endif
-        result = testfun_libm(input);
-      TBX_GET_TICK(t2);
-      dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time;
-      if (dt<dtmin)  dtmin=dt;
-    }
-    libm_dtsum+=dtmin;
-    if (dtmin<libm_dtmin)  libm_dtmin=dtmin;
-    if (dtmin>libm_dtmax)  libm_dtmax=dtmin;
-#if DETAILED_REPORT
-    printf("\n input=%1.15e\tTlibm=%lld", input, dtmin);
-#endif /*DETAILED_REPORT*/
-
-    /* crlibm timing */
-    dtmin=1<<30;
-    /* take the min of N1 consecutive calls */
-    for(j=0; j<N1; j++) {
-      counter++;
-      TBX_GET_TICK(t1);
-#ifdef TIMING_USES_GETTIMEOFDAY 
-      counter+=49; for(k=0; k<50;k++)
-#endif
-	result = testfun_crlibm(input);
-      TBX_GET_TICK(t2);
-      dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-      if (dt<dtmin)  dtmin=dt;
-    }
-    crlibm_dtsum+=dtmin;
-    if (dtmin<crlibm_dtmin)  crlibm_dtmin=dtmin;
-    if (dtmin>crlibm_dtmax)  crlibm_dtmax=dtmin;
-
-#if DETAILED_REPORT
-    printf("\tTcrlibm=%lld", dtmin);
-#endif /*DETAILED_REPORT*/
-
-
-#ifdef HAVE_MPFR_H
-    /* mpfr timing */
-    dtmin=1<<30;
-    /* take the min of N1 consecutive calls */
-    for(j=0; j<N1; j++) {
-      TBX_GET_TICK(t1);
-#ifdef TIMING_USES_GETTIMEOFDAY
-      for(k=0; k<50;k++) {
-#endif
-      mpfr_set_d(mp_inpt, input, GMP_RNDN);
-      testfun_mpfr(mp_res, mp_inpt, GMP_RNDN);
-      result = mpfr_get_d(mp_res,mpfr_rnd_mode);
-#ifdef TIMING_USES_GETTIMEOFDAY
-      }
-#endif
-      TBX_GET_TICK(t2);
-      dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-      if (dt<dtmin)  dtmin=dt;  
-    }
-    mpfr_dtsum+=dtmin;
-    if (dtmin<mpfr_dtmin)  {
-      mpfr_dtmin=dtmin; 
-      /*printf("j=%d  dt=%lld   %1.20e\n",j,dtmin, input);*/
-    }
-    if (dtmin>mpfr_dtmax)  mpfr_dtmax=dtmin;
-#if DETAILED_REPORT
-    printf("\tTmpfr=%lld",dtmin);
-#endif /*DETAILED_REPORT*/
-#endif /* HAVE_MPFR */
-
-#ifdef HAVE_MATHLIB_H
-    if(testfun_libultim!=NULL) { /* some functions are missing in libultim (cosh, ...  */
-      Original_Mode = Init_Lib(); 
-      dtmin=1<<30;
-      /* take the min of N1 consecutive calls */
-      for(j=0; j<N1; j++) {
-	TBX_GET_TICK(t1);
-#ifdef TIMING_USES_GETTIMEOFDAY
-	for(k=0; k<50;k++)
-#endif
-	  result = testfun_libultim(input);
-	TBX_GET_TICK(t2);
-	dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-	if (dt<dtmin)  dtmin=dt;
-      }
-      Exit_Lib(Original_Mode);
-      libultim_dtsum+=dtmin;
-      if (dtmin<libultim_dtmin)  libultim_dtmin=dtmin;
-      if (dtmin>libultim_dtmax)  libultim_dtmax=dtmin;
-#if DETAILED_REPORT
-      printf("\tTultim=%lld",dtmin);
-#endif /*DETAILED_REPORT*/
-    }
+    i1 = randfun();
+    i2 = randfun();
+    
+    test_without_cache("libm", testfun_libm, i1, i2, &libm_dtmin, &libm_dtmax, &libm_dtsum, 0);
+    test_without_cache("crlibm", testfun_crlibm, i1, i2, &crlibm_dtmin, &crlibm_dtmax, &crlibm_dtsum, 0);
+#ifdef   HAVE_MATHLIB_H
+    Original_Mode = Init_Lib(); 
+    test_without_cache("ultim", testfun_libultim, i1, i2, &libultim_dtmin, &libultim_dtmax, &libultim_dtsum, 0);
+    Exit_Lib(Original_Mode);
 #endif /*HAVE_MATHLIB_H*/
-
-#ifdef HAVE_LIBMCR_H
-    if(testfun_libmcr!=NULL) { /* */
-      dtmin=1<<30;
-      /* take the min of N1 consecutive calls */
-      for(j=0; j<N1; j++) {
-	TBX_GET_TICK(t1);
-#ifdef TIMING_USES_GETTIMEOFDAY
-	for(k=0; k<50;k++)
-#endif
-	  result = testfun_libmcr(input);
-	TBX_GET_TICK(t2);
-	dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-	if (dt<dtmin)  dtmin=dt;
-      }
-      libmcr_dtsum+=dtmin;
-      if (dtmin<libmcr_dtmin)  libmcr_dtmin=dtmin;
-      if (dtmin>libmcr_dtmax)  libmcr_dtmax=dtmin;
-#if DETAILED_REPORT
-      printf("\tTlibmcr=%lld",dtmin);
-#endif /*DETAILED_REPORT*/
-    }
+#ifdef   HAVE_LIBMCR_H
+    test_without_cache("libmcr", testfun_libmcr, i1, i2, &libmcr_dtmin, &libmcr_dtmax, &libmcr_dtsum, 0);
 #endif /*HAVE_LIBMCR_H*/
+#ifdef   HAVE_MPFR_H
+    test_without_cache("mpfr", testfun_mpfr, i1, i2, &mpfr_dtmin, &mpfr_dtmax, &mpfr_dtsum, 1);
+#endif /*HAVE_MPFR_H*/
   } 
-
-
 
 #if EVAL_PERF==1  
   printf("\nCRLIBM : Second step taken %d times out of %d\n",
@@ -428,194 +487,52 @@ mp_rnd_t mpfr_rnd_mode;
 
   /************  WORST CASE TESTS   *********************/
   /* worst case test */
-  input = worstcase;
-  /* libm timing */
-  dtmin=1<<30;
-  for(j=0; j<N1; j++) {
-    TBX_GET_TICK(t1);
-#ifdef TIMING_USES_GETTIMEOFDAY
-      for(k=0; k<50;k++)
-#endif
-    result = testfun_libm(input);
-    TBX_GET_TICK(t2);
-    dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-    if (dt<dtmin)  dtmin=dt;
-  }
-  libm_dtwc = dtmin;
-  /* crlibm timing */
-  dtmin=1<<30;
-  for(j=0; j<N1; j++) {
-    TBX_GET_TICK(t1);
-#ifdef TIMING_USES_GETTIMEOFDAY
-      for(k=0; k<50;k++)
-#endif
-    result = testfun_crlibm(input);
-    TBX_GET_TICK(t2);
-    dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-    if (dt<dtmin)  dtmin=dt;
-  }
-  crlibm_dtwc = dtmin;
+  i1 = worstcase;
 
-#ifdef HAVE_MPFR_H
-    /* mpfr timing */
-    dtmin=1<<30;
-    for(j=0; j<N1; j++) {
-      TBX_GET_TICK(t1);
-#ifdef TIMING_USES_GETTIMEOFDAY
-      for(k=0; k<50;k++){
-#endif
-      mpfr_set_d(mp_inpt, input, GMP_RNDN);
-      testfun_mpfr(mp_res, mp_inpt, GMP_RNDN);
-      result = mpfr_get_d1(mp_res);
-#ifdef TIMING_USES_GETTIMEOFDAY
-      }
-#endif
-      TBX_GET_TICK(t2);
-      dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-      if (dt<dtmin)  dtmin=dt;
-    }
-    mpfr_dtwc = dtmin;
+  test_worst_case(testfun_libm, i1, i2, &libm_dtwc, 0);
+  test_worst_case(testfun_crlibm, i1, i2, &crlibm_dtwc, 0);
+#ifdef   HAVE_MPFR_H
+  test_worst_case(testfun_mpfr, i1, i2, &mpfr_dtwc, 1);
 #endif /*HAVE_MPFR_H*/
-
-#ifdef HAVE_MATHLIB_H
-    if(testfun_libultim!=NULL) { /* some functions are missing in libultim (cosh, ...  */
-      
-      Original_Mode = Init_Lib(); 
-      dtmin=1<<30;
-      for(j=0; j<N1; j++) {
-	TBX_GET_TICK(t1);
-#ifdef TIMING_USES_GETTIMEOFDAY
-	for(k=0; k<50;k++)
-#endif
-	  result = testfun_libultim(input);
-	TBX_GET_TICK(t2);
-	dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-	if (dt<dtmin)  dtmin=dt;
-      }
-      Exit_Lib(Original_Mode);
-      libultim_dtwc = dtmin;
-    }
+#ifdef   HAVE_MATHLIB_H
+  Original_Mode = Init_Lib(); 
+  test_worst_case(testfun_libultim, i1, i2, &libultim_dtwc, 0);
+  Exit_Lib(Original_Mode);
 #endif /*HAVE_MATHLIB_H*/
-
-
-#ifdef HAVE_LIBMCR_H
-    if(testfun_libmcr!=NULL) { /* some functions are missing in libultim (cosh, ...  */
-      
-      dtmin=1<<30;
-      for(j=0; j<N1; j++) {
-	TBX_GET_TICK(t1);
-#ifdef TIMING_USES_GETTIMEOFDAY
-	for(k=0; k<50;k++)
-#endif
-	  result = testfun_libmcr(input);
-	TBX_GET_TICK(t2);
-	dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
-	if (dt<dtmin)  dtmin=dt;
-      }
-      libmcr_dtwc = dtmin;
-    }
+#ifdef   HAVE_LIBMCR_H
+  test_worst_case(testfun_libmcr, i1, i2, &libmcr_dtwc, 0);
 #endif /*HAVE_LIBMCR_H*/
 
     /*************Normal output*************************/
-
-    printf("\nLIBM\n");
-    printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n ",  
-	   libm_dtmin, libm_dtmax,
-	   (((double)libm_dtsum) / ((double) n)),
-	   libm_dtwc
-	   );
-    
-#ifdef HAVE_MPFR_H
-    printf("\nMPFR\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n",
-	   mpfr_dtmin, mpfr_dtmax,
-	   ((double)mpfr_dtsum) / ((double) n),
-	   mpfr_dtwc
-	 );
+  normal_output("LIBM", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, n);
+#ifdef   HAVE_MPFR_H
+  normal_output("MPFR", testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
 #endif /*HAVE_MPFR_H*/
-    
-
-#ifdef HAVE_MATHLIB_H
-    if(testfun_libultim!=NULL) { /* some functions are missing in libultim (cosh, ...  */
-      printf("\nIBM\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n",
-	     libultim_dtmin, libultim_dtmax,
-	     ((double)libultim_dtsum) / ((double) n),
-	     libultim_dtwc
-	     );
-    }
+#ifdef   HAVE_MATHLIB_H
+  normal_output("IBM", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);
 #endif /*HAVE_MATHLIB_H*/
-
-
-#ifdef HAVE_LIBMCR_H
-    if(testfun_libmcr!=NULL) { /*   */
-      printf("\nSun\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n",
-	     libmcr_dtmin, libmcr_dtmax,
-	     ((double)libmcr_dtsum) / ((double) n),
-	     libmcr_dtwc
-	     );
-    }
+#ifdef   HAVE_LIBMCR_H
+  normal_output("SUN", testfun_libmcr, libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, n);
 #endif /*HAVE_LIBMCR_H*/
-    
-    printf("\nCRLIBM\n");
-    printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n ",  
-	   crlibm_dtmin, 
-	   crlibm_dtmax,
-	   ((double)crlibm_dtsum) / ((double) n),
-	   crlibm_dtwc
-	   );
+  normal_output("CRLIBM", testfun_crlibm, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, n);
 
 
-    /******************* Latex output ****************/
-    printf("\\multicolumn{4}{|c|}{Processor / system / compiler}   \\\\ \n \\hline");
-    printf("\n                   \t& min time \t & avg time \t& max time \t  \\\\ \n \\hline\n");
-    printf(" \\texttt{libm}     \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n ",  
-	   libm_dtmin,
-	   (((double)libm_dtsum) / ((double) n)),  
-	   libm_dtmax
-	   );
-#ifdef HAVE_MPFR_H
-    if (mpfr_dtwc > mpfr_dtmax) mpfr_dtmax=mpfr_dtwc;
-    printf("\\texttt{mpfr}     \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
-	   mpfr_dtmin,
-	   ((double)mpfr_dtsum) / ((double) n),
-	   mpfr_dtmax
-	 );
+  /******************* Latex output ****************/
+  printf("\\multicolumn{4}{|c|}{Processor / system / compiler}   \\\\ \n \\hline");
+  printf("\n                   \t& min time \t & avg time \t& max time \t  \\\\ \n \\hline\n");
+  latex_output("LIBM", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, n);
+#ifdef   HAVE_MPFR_H
+  latex_output("MPFR", testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
 #endif /*HAVE_MPFR_H*/
-
-#ifdef HAVE_MATHLIB_H
-    if(testfun_libultim!=NULL) { /* some functions are missing in libultim (cosh, ...  */
-      if (libultim_dtwc > libultim_dtmax) libultim_dtmax=libultim_dtwc;
-      printf(" \\texttt{libultim}  \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
-	     libultim_dtmin,
-	     ((double)libultim_dtsum) / ((double) n), 
-	     libultim_dtmax);
-    }
+#ifdef   HAVE_MATHLIB_H
+  latex_output("IBM", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);
 #endif /*HAVE_MATHLIB_H*/
-
-#ifdef HAVE_MATHLIB_H
-    if(testfun_libmcr!=NULL) { 
-      if (libmcr_dtwc > libmcr_dtmax) libmcr_dtmax=libmcr_dtwc;
-      printf(" \\texttt{libmcr}  \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
-	     libmcr_dtmin,
-	     ((double)libmcr_dtsum) / ((double) n), 
-	     libmcr_dtmax);
-    }
-#endif /*HAVE_MATHLIB_H*/
-
-    if (crlibm_dtwc > crlibm_dtmax) crlibm_dtmax=crlibm_dtwc;
-    printf("\\texttt{crlibm}     \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
-	   crlibm_dtmin,
-	   ((double)crlibm_dtsum) / ((double) n), 
-	   crlibm_dtmax
-	   );
-
-
-  /* release memory */
-#ifdef HAVE_MPFR_H
-  mpfr_clear(mp_inpt);
-  mpfr_clear(mp_res);
-#endif /*HAVE_MPFR_H*/
+#ifdef   HAVE_LIBMCR_H
+  latex_output("SUN", testfun_libmcr, libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, n);
+#endif /*HAVE_LIBMCR_H*/
+  latex_output("CRLIBM", testfun_crlibm, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, n);
 
   return 0;
-  }  
 }
+
 

@@ -15,7 +15,11 @@
 
 /* Stupidely soak-tests a function against mpfr */
 
-/* if set to 1, print out detailed errors (vith values of x and exp(x))
+/* if set to 1, print out the worst error (wiht values of x)
+   if set to 0, don't print out worst error information */
+#define WORST_ERROR_REPORT 1 
+
+/* if set to 1, print out detailed errors (vith values of x)
    if set to 0, only count the errors and print out the count */
 #define DETAILED_REPORT 1
 
@@ -33,8 +37,8 @@
    tested exhaustively by the other programs of this directory. */ 
 
 /* Basic-like programming with global variables: */
-db_number input, res_crlibm, res_mpfr, res_libultim, res_libmcr, res_libm;
-mpfr_t mp_res, mp_inpt; 
+db_number input, input2, res_crlibm, res_mpfr, res_libultim, res_libmcr, res_libm;
+mpfr_t mp_res, mp_inpt, mp_inpt2; 
 
 /* The random number generator*/
 double (*randfun)       () = NULL;
@@ -60,8 +64,15 @@ mp_rnd_t mpfr_rnd_mode;
 
 
 
+/* indicate the number of argument taken by the function */
+int nbarg;          
 
 
+#define PRINT_INPUT_ERROR\
+  printf("  x =%.70e \n         (%08x %08x) \n", input.d, input.i[HI], input.i[LO]);\
+if (nbarg==2){\
+  printf("  y =%.70e \n         (%08x %08x) \n",input2.d,input2.i[HI],input2.i[LO]);\
+}\
 
 
 /*
@@ -76,25 +87,49 @@ void test_all() {
     failures_libultim=0,
     failures_libmcr=0;
   long long int i;
+  double worst_err, global_worst_err=-200;
+  db_number global_worst_inpt, global_worst_inpt2;
+
+
+
 
   i=0; 
   while(1+1==2){
     input.d = randfun();
-    res_crlibm.d = testfun_crlibm(input.d);
-    res_libm.d = testfun_libm(input.d);
-
+    input2.d = randfun();  
+    if (nbarg==1){
+      res_crlibm.d = testfun_crlibm(input.d);
+      res_libm.d = testfun_libm(input.d);
 #ifdef HAVE_MATHLIB_H
     if(mpfr_rnd_mode==GMP_RNDN && testfun_libultim != NULL) /* not all the functions are in libultim */
       res_libultim.d = testfun_libultim(input.d);
 #endif
 #ifdef HAVE_LIBMCR_H
-    if(mpfr_rnd_mode==GMP_RNDN && testfun_libmcr != NULL) /* not all the functions are in libultim */
+    if(mpfr_rnd_mode==GMP_RNDN && testfun_libmcr != NULL)   /* not all the functions are in libmcr */
       res_libmcr.d = testfun_libmcr(input.d);
 #endif
     mpfr_set_d(mp_inpt, input.d, GMP_RNDN);
     testfun_mpfr(mp_res, mp_inpt, mpfr_rnd_mode);
     res_mpfr.d = mpfr_get_d(mp_res, mpfr_rnd_mode);
+    }
 
+    if (nbarg==2){
+      res_crlibm.d = testfun_crlibm(input.d, input2.d);
+      res_libm.d = testfun_libm(input.d, input2.d);
+#ifdef HAVE_MATHLIB_H
+    if(mpfr_rnd_mode==GMP_RNDN && testfun_libultim != NULL) /* not all the functions are in libultim */
+      res_libultim.d = testfun_libultim(input.d, input2.d);
+#endif
+#ifdef HAVE_LIBMCR_H
+    if(mpfr_rnd_mode==GMP_RNDN && testfun_libmcr != NULL)   /* not all the functions are in libmcr */
+      res_libmcr.d = testfun_libmcr(input.d, input2.d);
+#endif
+    mpfr_set_d(mp_inpt, input.d, GMP_RNDN);
+    mpfr_set_d(mp_inpt2, input2.d, GMP_RNDN);
+    testfun_mpfr(mp_res, mp_inpt, mp_inpt2, mpfr_rnd_mode);
+    res_mpfr.d = mpfr_get_d(mp_res, mpfr_rnd_mode);
+    }
+    
 
 #if PRINT_NAN
     if(1){
@@ -102,24 +137,48 @@ void test_all() {
       if((res_mpfr.i[HI] & 0x7ff00000) != 0x7ff00000){
 #endif
 	if( (res_crlibm.i[LO] != res_mpfr.i[LO]) 
-	    || (res_crlibm.i[HI] != res_mpfr.i[HI]) ) 
-	  {
-#if DETAILED_REPORT	  
-	  printf("CRLIBM ERROR  x=%.70e \n            (%08x %08x) \n", 
-		 input.d, 
-		 input.i[HI], 
-		 input.i[LO]);
+	    || (res_crlibm.i[HI] != res_mpfr.i[HI]) ){
+#if DETAILED_REPORT
+	  printf("*** CRLIBM ERROR ***\n");
+	  PRINT_INPUT_ERROR;
 	  printf("crlibm gives    %.50e \n         (%08x %08x) \n", 
 		 res_crlibm.d, 
 		 res_crlibm.i[HI], 
 		 res_crlibm.i[LO]);
-	  printf("MPFR gives %.50e \n         (%08x %08x) \n\n", 
+	  printf("MPFR gives      %.50e \n         (%08x %08x) \n\n", 
 		 res_mpfr.d, 
 		 res_mpfr.i[HI], 
 		 res_mpfr.i[LO]);
 #endif
-	  failures_crlibm++;
+#if WORST_ERROR_REPORT
+	  mpfr_set_d(mp_inpt, res_crlibm.d, GMP_RNDN);  
+	  mpfr_sub(mp_inpt, mp_inpt, mp_res, GMP_RNDN);  
+	  mpfr_div(mp_inpt, mp_inpt, mp_res, GMP_RNDN);
+	  mpfr_abs(mp_inpt, mp_inpt, GMP_RNDN);
+	  mpfr_log2(mp_inpt, mp_inpt, GMP_RNDN);
+	  worst_err=mpfr_get_d(mp_inpt, GMP_RNDN);
+
+	  if (worst_err>global_worst_err){
+	    global_worst_err=worst_err;
+	    global_worst_inpt.d  = input.d;
+	    global_worst_inpt2.d = input2.d;
 	  }
+	  printf("Worst relatives error : %e \n",global_worst_err);
+	  printf("for input :\n");
+	  printf(" x =%.50e          (%08x %08x) \n", 
+		 global_worst_inpt.d, 
+		 global_worst_inpt.i[HI], 
+		 global_worst_inpt.i[LO]);
+	  if (nbarg==2){
+	  printf(" y =%.50e          (%08x %08x) \n", 
+		 global_worst_inpt2.d, 
+		 global_worst_inpt2.i[HI], 
+		 global_worst_inpt2.i[LO]);
+	  }
+#endif
+
+	  failures_crlibm++;
+	}
 	
 	if( (res_libm.i[LO] != res_mpfr.i[LO]) 
 	    || (res_libm.i[HI] != res_mpfr.i[HI]) ) failures_libm++;
@@ -127,50 +186,44 @@ void test_all() {
 #ifdef HAVE_MATHLIB_H
 	if(mpfr_rnd_mode==0  && testfun_libultim != NULL 
 	   && ((res_libultim.i[LO] != res_mpfr.i[LO]) 
-	       || (res_libultim.i[HI] != res_mpfr.i[HI]) )) 
-	  {
+	       || (res_libultim.i[HI] != res_mpfr.i[HI]) )){
 #if DETAILED_REPORT
-	      printf("IBM ULTIM ERROR  x=%.50e \n            (%08x %08x) \n", 
-		     input.d, 
-		     input.i[HI], 
-		     input.i[LO]);
-	      printf("libultim gives    %.50e \n         (%08x %08x) \n", 
-		     res_libultim.d, 
-		     res_libultim.i[HI], 
-		     res_libultim.i[LO]);
-	      printf("MPFR gives %.50e \n         (%08x %08x) \n\n", 
-		     res_mpfr.d, 
-	       res_mpfr.i[HI], 
-		     res_mpfr.i[LO]);
+	  printf("*** IBM ULTIM ERROR ***\n");
+	  PRINT_INPUT_ERROR;
+	  printf("libultim gives    %.50e \n         (%08x %08x) \n", 
+		 res_libultim.d, 
+		 res_libultim.i[HI], 
+		 res_libultim.i[LO]);
+	  printf("MPFR gives        %.50e \n         (%08x %08x) \n\n", 
+		 res_mpfr.d, 
+		 res_mpfr.i[HI], 
+		 res_mpfr.i[LO]);
 #endif
-	      failures_libultim++;
-	  }
+	  failures_libultim++;
+	}
 #endif
 #ifdef HAVE_LIBMCR_H
 	if(mpfr_rnd_mode==0  && testfun_libmcr != NULL 
 	   && ((res_libmcr.i[LO] != res_mpfr.i[LO]) 
-	       || (res_libmcr.i[HI] != res_mpfr.i[HI]) )) 
-	  {
+	       || (res_libmcr.i[HI] != res_mpfr.i[HI]) )){
 #if DETAILED_REPORT
-	      printf("LIBMCR ERROR  x=%.50e \n            (%08x %08x) \n", 
-		     input.d, 
-		     input.i[HI], 
-		     input.i[LO]);
-	      printf("libmcr gives    %.50e \n         (%08x %08x) \n", 
-		     res_libmcr.d, 
-		     res_libmcr.i[HI], 
-		     res_libmcr.i[LO]);
-	      printf("MPFR gives %.50e \n         (%08x %08x) \n\n", 
-		     res_mpfr.d, 
-	       res_mpfr.i[HI], 
-		     res_mpfr.i[LO]);
+	  printf("*** LIBMCR ERROR ***\n");
+	  PRINT_INPUT_ERROR;
+	  printf("libmcr gives    %.50e \n         (%08x %08x) \n", 
+		 res_libmcr.d, 
+		 res_libmcr.i[HI], 
+		 res_libmcr.i[LO]);
+	  printf("MPFR gives      %.50e \n         (%08x %08x) \n\n", 
+		 res_mpfr.d, 
+		 res_mpfr.i[HI], 
+		 res_mpfr.i[LO]);
 #endif
 	      failures_libmcr++;
 	  }
 #endif
       }
       i++;
-      if((i % 1000000)==0) {
+      if((i % 10000)==0) {
 	printf(" CRLIBM       : %lld failures out of %lld (ratio %e) \n",failures_crlibm, i,
 	       ((double)failures_crlibm)/(double)i);
 	printf(" LIBM         : %lld failures out of %lld (ratio %e) \n",failures_libm, i,
@@ -230,7 +283,10 @@ int main (int argc, char *argv[])
     function_name = argv[1];
     rounding_mode = argv[2];
     sscanf(argv[3],"%d", &seed);
-    
+
+    if (strcmp(function_name,"pow")==0) nbarg=2;
+    else nbarg=1;
+
     crlibm_init();
 
     test_init(/* pointers to returned value */
@@ -248,6 +304,7 @@ int main (int argc, char *argv[])
     
     mpfr_init2(mp_res,  153);
     mpfr_init2(mp_inpt, 53);
+    mpfr_init2(mp_inpt2, 53);
     if      (strcmp(rounding_mode,"RU")==0) mpfr_rnd_mode = GMP_RNDU;
     else if (strcmp(rounding_mode,"RD")==0) mpfr_rnd_mode = GMP_RNDD;
     else if (strcmp(rounding_mode,"RZ")==0) mpfr_rnd_mode = GMP_RNDZ;

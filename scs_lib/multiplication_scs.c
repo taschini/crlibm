@@ -466,7 +466,7 @@ void scs_square(scs_ptr result, scs_ptr x){
     for(i=(SCS_NB_WORDS-1); i>0; i--)
       X_HW[i] = X_HW[i-1];
 
-    X_HW[0] = val;
+    X_HW[0] = (unsigned int)val;
     X_IND  += 1;
   }
   

@@ -63,16 +63,16 @@ void scs_fma(scs_ptr result,  scs_ptr x,  scs_ptr y,  scs_ptr z){
     /* Store the result */
     if(val != 0){
       /* shift all the digits ! */     
-      R_HW[0] = val;
-      R_HW[1] = RES[0] - (val<<SCS_NB_BITS);
+      R_HW[0] = (unsigned int)val;
+      R_HW[1] = (unsigned int)(RES[0] - (val<<SCS_NB_BITS));
       for(i=2; i<SCS_NB_WORDS; i++)
-	R_HW[i] = RES[i-1];
+	R_HW[i] = (unsigned int)RES[i-1];
       
       R_IND += 1;
     }
     else {
       for(i=0; i<SCS_NB_WORDS; i++)
-	R_HW[i] = RES[i];
+	R_HW[i] = (unsigned int)RES[i];
     }
     
     R_EXP = (z->exception.d + (X_EXP * Y_EXP)) - 1;
@@ -92,16 +92,16 @@ void scs_fma(scs_ptr result,  scs_ptr x,  scs_ptr y,  scs_ptr z){
     /* Store the result */
     if(val != 0){
       /* shift all the digits ! */     
-      R_HW[0] = val;
-      R_HW[1] = RES[0] - (val<<SCS_NB_BITS);
+      R_HW[0] = (unsigned int)val;
+      R_HW[1] = (unsigned int)(RES[0] - (val<<SCS_NB_BITS));
       for(i=2; i<SCS_NB_WORDS; i++)
-	R_HW[i] = RES[i-1];
+	R_HW[i] = (unsigned int)RES[i-1];
       
       R_IND += 1;
     }
     else {
       for(i=0; i<SCS_NB_WORDS; i++)
-	R_HW[i] = RES[i];
+	R_HW[i] = (unsigned int)RES[i];
     }
     
     R_EXP = (X_EXP * Y_EXP);

@@ -55,15 +55,12 @@ extern double atan_rn(double x) {
   db_number x_db;
   unsigned int hx;
   double sign;
-  double u;
-  double comp;
-  double atanhi, atanlo, atanlo_u;
+  double atanhi, atanlo;
 
   long double Xred;
   long double Xred2;
   long double q;
   long double atan;
-  long double eps;
   int i;
   
   if(x>=0)
@@ -152,17 +149,19 @@ extern double atan_rn(double x) {
 #if NICOLASTEST
 #define epsilon 2.04221581890623872536809598138553304900554884091659e-19
       if(atanlo<0) atanlo = -atanlo;
-      u = ((atanhi+(TWO_M_64*atanhi))-atanhi)*TWO_10; // = 1/2 * ulp(atanhi)
-      comp = epsilon*atanhi;
-      atanlo_u = u-atanlo;
-      if( atanlo_u > comp ) {
-	_FPU_SETCW(RN_Double);
-	return sign*atanhi;
+      {
+	double u, comp, atanlo_u;
+	u = ((atanhi+(TWO_M_64*atanhi))-atanhi)*TWO_10; // = 1/2 * ulp(atanhi)
+	comp = epsilon*atanhi;
+	atanlo_u = u-atanlo;
+	if( atanlo_u > comp ) {
+	  _FPU_SETCW(RN_Double);
+	  return sign*atanhi;
+	}
       }
 #else /* test à la Ziv */
       _FPU_SETCW(RN_Double);
-    if(atanhi==atanhi+(atanlo*1.00368))
-      {     
+    if(atanhi==atanhi+(atanlo*1.00368)) {     
 	return sign*atanhi;
       }
 
@@ -174,11 +173,8 @@ extern double atan_rn(double x) {
     long double x0hi, x0lo;
     long double xmBihi, xmBilo;
     long double Xredhi, Xredlo;
-    long double Xred2;
     long double qhi,qlo; /* q = polynomial */
-    long double q;
     long double Xred2hi,Xred2lo;
-    long double atanhi,atanlo;
     int j;
   
 #if NICOLASTEST

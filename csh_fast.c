@@ -8,7 +8,14 @@
  *
  * Author : Matthieu Gallet, Florent de Dinechin
  * E-Mail : Matthieu.Gallet, ens-lyon.fr
- * Date of creation : 16/06/2004   
+ * Date of creation : 16/06/2004  
+ *
+ * TODO :
+ * - function cosh_rn(double x), sinh_rn(double x) 
+ *      there exist tests unreacheable that need to be check
+ * - in csh_fast.h : declaration of c8, c1, s1 unused, can we removed it ?
+ *
+ * 
  */
 
 #include <stdio.h>
@@ -21,10 +28,8 @@
 
 /* switches on various printfs. Default 0 */
 #define DEBUG 0
-
 static const double largest_double = 0x1.fffffffffffffp1023;
 static const double tiniest_double = 0x1.0p-1074;
-
 
 enum{RN,RD,RU,RZ};
  
@@ -204,6 +209,7 @@ double cosh_rn(double x){
 	y.i[HI] = 0x7FF00000; 
 	return (y.d);
       }
+      /* !!! the following test is unreachable !!! */
       if (x > max_input_csh.d || x < -max_input_csh.d) 
 	return largest_double * largest_double;     /* overflow  */ 
     }
@@ -520,6 +526,7 @@ double sinh_rn(double x){
       else {/* otherwise the result should be +infty */
 	return (y.d);
       }
+      /* !!! the following tests is unreachable !!! */
       if (x > max_input_csh.d) 
 	return largest_double * largest_double;     /* overflow  */ 
       if (x < -max_input_csh.d) 

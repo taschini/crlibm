@@ -139,7 +139,7 @@ extern double atan_rn(double x) {
   int index_of_e;
   double sign;
   db_number x_db;
-  unsigned int absxhi;
+  int absxhi;
 
   x_db.d = x;
   absxhi = x_db.i[HI] & 0x7fffffff; 
@@ -183,7 +183,7 @@ extern double atan_rd(double x) {
   int index_of_e;
   double roundcst;
   db_number x_db;
-  unsigned int absxhi;
+  int absxhi;
   int sign;
 
   x_db.d = x;
@@ -246,7 +246,7 @@ extern double atan_ru(double x) {
   int sign;
   double roundcst;
   db_number x_db;
-  unsigned int absxhi;
+  int absxhi;
 
   x_db.d = x;
   absxhi = x_db.i[HI] & 0x7FFFFFFF; 

@@ -145,12 +145,12 @@ void scs_set_d(scs_ptr result, double x){
   Convert an integer number in it scs multiprecision
   representation
  */
-void scs_set_si(scs_ptr result, signed int x){
+void scs_set_si(scs_ptr result, int x){
   unsigned int ux;
   int i;
   
-  if(x>=0){R_SGN = 1;   ux = x;}
-  else    {R_SGN = -1;  ux = -x;}
+  if(x>=0){R_SGN = 1;   ux = (unsigned int)x;}
+  else    {R_SGN = -1;  ux = (unsigned int)-x;}
   
 
   if (ux > SCS_RADIX){
