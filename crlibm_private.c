@@ -130,6 +130,7 @@ s = xh-r+yh+yl+xl;
  */
   
 
+#ifndef CRLIBM_TYPECPU_POWERPC  /* otherwise they have been #defined using FMAs */
   
 void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl)
 {
@@ -149,5 +150,6 @@ double mh, ml;
   *zh = mh+ml;
   *zl = mh - (*zh) + ml;
 }
+#endif /* ifndef CRLIBM_TYPECPU_POWERPC */ 
 
 #endif  /*DEKKER_AS_FUNCTIONS */

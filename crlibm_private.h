@@ -246,6 +246,29 @@ s = xh-r+yh+yl+xl;\
 		       );                             \
 }
 #define Mul12 Mul12Cond  /* TODO check this ! */
+#define Mul22(pzh,pzl,xh,xl,yh,yl)                      \
+{                                                     \
+double mh, ml;                                        \
+  mh = xh*yh;                                          \
+  /* The following means: *rl = FMS(xh*yh-*mh) */       \
+  __asm__ __volatile__("fmsub %0, %1, %2, %3\n ;;\n"   \
+		       : "=f"(ml)                    \
+		       : "f"(xh), "f"(yh), "f"(mh)     \
+		       );                             \
+ 					      \
+ /* ml += xh*yl + xl*yh;	*/			      \
+  __asm__ __volatile__("fmadd %0, %1, %2, %3\n ;;\n"   \
+		       : "=f"(ml)                    \
+		       : "f"(xh), "f"(yl), "f"(ml)     \
+		       );                             \
+  __asm__ __volatile__("fmadd %0, %1, %2, %3\n ;;\n"   \
+		       : "=f"(ml)                    \
+		       : "f"(xl), "f"(yh), "f"(ml)     \
+		       );                             \
+						      \
+  *pzh = mh+ml;					      \
+  *pzl = mh - (*pzh) + ml;                              \
+}
 #endif /* CRLIBM_TYPECPU_POWERPC */
 
 
@@ -260,11 +283,11 @@ extern void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, d
 #ifndef CRLIBM_TYPECPU_POWERPC  /* otherwise they have been defined just above */
 extern void Mul12(double *rh, double *rl, double u, double v);
 extern void Mul12Cond(double *rh, double *rl, double a, double b);
+extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl);
 #endif /* ifndef CRLIBM_TYPECPU_ITANIUM */ 
 #endif /* ifndef CRLIBM_TYPECPU_POWERPC */ 
 
 
-extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl);
 
 
 #else /* if DEKKER_AS_FUNCTIONS  */
