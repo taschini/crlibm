@@ -8,6 +8,8 @@
 #define XMAX_RETURN_1_FOR_COS 0x3E400000
 #define XMAX_COS_FAST  0x3F800000
 #define XMAX_COS_FAST2 0x3FE00000
+#define XMAX_RETURN_X_FOR_TAN 0x3E500000
+#define XMAX_TAN_FAST  0x3FC00000
 
 #define RN_CST_SINFAST1 1.000086 
 #define RN_CST_SINFAST2 1.007843 
@@ -15,6 +17,8 @@
 #define RN_CST_COSFAST1 1.000189 
 #define RN_CST_COSFAST2 1.007843 
 #define RN_CST_COSFAST3 1.000122 
+#define RN_CST_TANFAST1 1.003914 
+#define RN_CST_TANFAST2 1.031746 
 
 #define INV_PIO256 81.48733086305041191366848684672735336164333861911370 
 
@@ -43,6 +47,15 @@ static db_number const s7 = {{0xBF2A01A0,0x1A01A01A}} /* -1.9841269841e-04 */;
 static db_number const c2 = {{0xBFE00000,0x00000000}} /* -5.0000000000e-01 */;
 static db_number const c4 = {{0x3FA55555,0x55555555}} /* +4.1666666667e-02 */;
 static db_number const c6 = {{0xBF56C16C,0x16C16C17}} /* -1.3888888889e-03 */;
+
+static db_number const t3h = {{0x3FD55555,0x55555555}} /* +3.3333333333e-01 */;
+static db_number const t3l = {{0x3C755A48,0x8575AF65}} /* +1.8520488171e-17 */;
+static db_number const t5 = {{0x3FC11111,0x1111110D}} /* +1.3333333333e-01 */;
+static db_number const t7 = {{0x3FABA1BA,0x1BA1F6AD}} /* +5.3968253968e-02 */;
+static db_number const t9 = {{0x3F9664F4,0x877686A0}} /* +2.1869488495e-02 */;
+static db_number const t11 = {{0x3F8226E4,0x58E49D11}} /* +8.8632430676e-03 */;
+static db_number const t13 = {{0x3F6D6BC2,0x0F1378F9}} /* +3.5914221013e-03 */;
+static db_number const t15 = {{0x3F586368,0x16BE38E1}} /* +1.4885441296e-03 */;
 
 
 
@@ -321,6 +334,15 @@ static db_number const s7 = {{0x1A01A01A,0xBF2A01A0}} /* -1.9841269841e-04 */;
 static db_number const c2 = {{0x00000000,0xBFE00000}} /* -5.0000000000e-01 */;
 static db_number const c4 = {{0x55555555,0x3FA55555}} /* +4.1666666667e-02 */;
 static db_number const c6 = {{0x16C16C17,0xBF56C16C}} /* -1.3888888889e-03 */;
+
+static db_number const t3h = {{0x55555555,0x3FD55555}} /* +3.3333333333e-01 */;
+static db_number const t3l = {{0x8575AF65,0x3C755A48}} /* +1.8520488171e-17 */;
+static db_number const t5 = {{0x1111110D,0x3FC11111}} /* +1.3333333333e-01 */;
+static db_number const t7 = {{0x1BA1F6AD,0x3FABA1BA}} /* +5.3968253968e-02 */;
+static db_number const t9 = {{0x877686A0,0x3F9664F4}} /* +2.1869488495e-02 */;
+static db_number const t11 = {{0x58E49D11,0x3F8226E4}} /* +8.8632430676e-03 */;
+static db_number const t13 = {{0x0F1378F9,0x3F6D6BC2}} /* +3.5914221013e-03 */;
+static db_number const t15 = {{0x16BE38E1,0x3F586368}} /* +1.4885441296e-03 */;
 
 
 
