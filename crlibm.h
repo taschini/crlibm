@@ -23,13 +23,22 @@
 
 #ifdef CRLIBM_TYPECPU_X86
 #include <fpu_control.h>
-#ifndef __setfpucw
-#define __setfpucw(cw) __asm__ ("fldcw %0" : : "m" (cw))
+/* don't remember why it's here, but it doesn't hurt to keep it (2004) */
+#ifndef _FPU_SETCW
+#define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
+#endif
+#ifndef _FPU_GETCW
+#define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
 #endif 
 #endif
+
 /* An init function which sets FPU flags when needed (mostly on Intel
    architectures with default double extended) */
-extern void crlibm_init(void);
+extern unsigned short crlibm_init(void);
+
+/* An init function which sets FPU flags when needed (mostly on Intel
+   architectures with default double extended) */
+extern  void crlibm_exit(unsigned short);
 
 
 /* Finished functions */

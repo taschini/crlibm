@@ -11,20 +11,44 @@
 #include <stdlib.h>
 #include "crlibm.h"
 #include "crlibm_private.h"
+
+/* I wish I could use C99 fenv.h, but as of 2004 it doesn't specify
+   anything about precision, only rounding direction. */  #include <fenv.h>
+
 #ifdef HAVE_FENV_H
 #include <fenv.h>
 #endif
+
+#ifdef FENV_H
+#pragma STDC FENV_ACCESS ON
+#endif
+
 #ifdef CRLIBM_TYPECPU_X86
 #include <fpu_control.h>
 #endif
 
 /* An init function which sets FPU flags when needed */
-void crlibm_init() {
+unsigned short crlibm_init() {
+#ifdef CRLIBM_TYPECPU_X86
+  unsigned short oldcw, cw;
+  /* save old state */
+  _FPU_GETCW(oldcw);
+  /* Set FPU flags to use double, not double extended, 
+     with rounding to nearest */  
+  cw = (_FPU_DEFAULT & ~_FPU_EXTENDED)|_FPU_DOUBLE;
+  _FPU_SETCW(cw);
+  return oldcw;
+#else
+  return 0;
+#endif
+}
+
+/* An exit function which sets FPU flags to initial value */
+void crlibm_exit(unsigned short oldcw) {
 #ifdef CRLIBM_TYPECPU_X86
   /* Set FPU flags to use double, not double extended, 
      with rounding to nearest */
-  unsigned int cw = (_FPU_DEFAULT & ~_FPU_EXTENDED)|_FPU_DOUBLE;
-  _FPU_SETCW(cw);
+  _FPU_SETCW(oldcw);
 #else
 
 #endif
