@@ -9,6 +9,7 @@ history. A cleaner, portable version of an exponential using
 double-extended arithmetic will be available as exp-de.c
 
    To test within crlibm: (tested with Intel icc compiler version 8.1)
+
 icc -mcpu=itanium  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c exp-itanium.c;\
     mv exp-itanium.o exp_fast.o; make
 

@@ -30,7 +30,7 @@ on pentium,
 double log_rn(double x) {
   double wi;
   db_number y;
-  long double r, logirh, logirl, z, t;
+  long double r, logirh, logirl, z, z2, t,evenp,oddp;
   long double  th, tl, eh,el;
   int E, i, index, roundtestmask;
 
@@ -61,13 +61,25 @@ double log_rn(double x) {
    if((y.i[HI]>MINYFAST) && (y.i[HI]<MAXYFAST)) {
      roundtestmask=0x7fc;
      z = x - 1 ; /* Sterbenz exact */
+#if 0
      t = c6;
      t = c5 + z*t;
      t = c4 + z*t;
      t = c3 + z*t;
      t = c2 + z*t;
      t = c1 + z*t;
+#else
+     z2 = z*z;
+     evenp = c[0];                /* c6 */
+     oddp  = c[1];                /* c5 */
+     evenp = c[2]  +  z2 * evenp;   /* c4 */
+     oddp  = c[3]  +  z2 * oddp;    /* c3 */
+     evenp = c[4]  +  z2 * evenp;   /* c2 */
+
+     t  = c[5] + (z * evenp + z2 * oddp);
+#endif
      t = z*t;
+
      //printf("z= %1.20e,  t=%1.20e  \n  ", (double)z, (double)t);
      
    }    
@@ -80,7 +92,7 @@ double log_rn(double x) {
      index = index  >> (20-L); 
      /* now y.d holds 1+f, and E is the exponent */
      
-     if(E>24 || E<-24)
+     if(E>12 || E<-12)
        roundtestmask=0x7fe;
      else
        roundtestmask=0x7f0;
@@ -88,16 +100,36 @@ double log_rn(double x) {
      logirh = argredtable[index].h;
      r = (long double) (argredtable[index].r); /* approx to 1/y.d */
 
-     z = r*y.d - 1. ; /* even without an FMA, all exact */
+     z = r*(long double)y.d - 1. ; /* even without an FMA, all exact */
      
      //   printf("  z=%1.20e\n  r=%1.20e\n  logirh=%1.20e\n  ", (double)z, (double)r, (double)logirh);
      /* Polynomial evaluation, unrolled to go through Gappa */
+#if 0
      t = c6;
      t = c5 + z*t;
      t = c4 + z*t;
      t = c3 + z*t;
      t = c2 + z*t;
      t = c1 + z*t;
+#else
+#if 0 // Horner or Estrin ?
+     t=c[0];
+     t=c[1] + z*t;
+     t=c[2] + z*t;
+     t=c[3] + z*t;
+     t=c[4] + z*t;
+     t=c[5] + z*t;
+#else
+     z2 = z*z;
+     evenp = c[0];                /* c6 */
+     oddp  = c[1];                /* c5 */
+     evenp = c[2]  +  z2 * evenp;   /* c4 */
+     oddp  = c[3]  +  z2 * oddp;    /* c3 */
+     evenp = c[4]  +  z2 * evenp;   /* c2 */
+
+     t  = c[5] + (z * evenp + z2 * oddp);
+#endif
+#endif
 
      //printf("t=%1.20e  \n  ", (double)t);
      

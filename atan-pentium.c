@@ -143,7 +143,11 @@ extern double atan_rn(double x) {
       atan = q*x + x;
     
     }
-  
+#if 1 /* To time the first step alone */ 
+  BACK_TO_DOUBLE_MODE;
+  return sign*atan;
+#endif
+
   TEST_AND_RETURN_RN2(atan, sign*atan, 0x7fe);
   /* or : 
   TEST_AND_RETURN_RN_ZIV(sign*atan, 1.003);

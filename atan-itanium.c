@@ -10,15 +10,8 @@ history. A cleaner, portable version of an exponential using
 double-extended arithmetic will be available as atan-de.c
 
    To test within crlibm: (tested with Intel icc compiler version 8.1)
-icc  -mcpu=itanium  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c atan-itanium.c; mv atan-itanium.o atan_fast.o; make
+icc  -mcpu=itanium2  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c atan-itanium.c; mv atan-itanium.o atan_fast.o; make
 
-icc -D__ICC__ -DHAVE_CONFIG_H  -mcpu=itanium2  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c atan-itanium.c;
-mv atan-itanium.o atan_fast.o; rm -f libcrlibm.a;
-ar cru libcrlibm.a crlibm_private.o exp_fast.o exp_accurate.o log_fast.o log_accurate.o \
-log10_accurate.o log2_accurate.o rem_pio2_accurate.o trigo_fast.o trigo_accurate.o atan_fast.o \
-atan_accurate.o csh_fast.o scs_lib/scs_private.o scs_lib/addition_scs.o scs_lib/division_scs.o \
-scs_lib/print_scs.o  scs_lib/double2scs.o scs_lib/zero_scs.o scs_lib/multiplication_scs.o scs_lib/scs2double.o;\
-ranlib libcrlibm.a; cd tests; make ; cd ..
 
 
 
@@ -27,74 +20,9 @@ This file is completely self-contained so that we can change the crlibm infrastr
 
  */
 
-
-
-typedef enum {
-    _PC_S        = 1        /* single .s */
-   ,_PC_D        = 2        /* double .d */
-   ,_PC_NONE     = 3        /* dynamic   */
-} _Asm_pc;
-
-/* Table 1-22: legal getf/setf floating-point register access completers */
-typedef enum {
-    _FR_S        = 1        /* single form      .s   */
-   ,_FR_D        = 2        /* double form      .d   */
-   ,_FR_EXP      = 3        /* exponent form    .exp */
-   ,_FR_SIG      = 4        /* significand form .sig */
-} _Asm_fr_access;
-
-/* Table 1-24: legal floating-point FPSR status field completers (.sf) */
-typedef enum {
-    _SF0         = 0        /* FPSR status field 0 .s0 */
-   ,_SF1         = 1        /* FPSR status field 1 .s1 */
-   ,_SF2         = 2        /* FPSR status field 2 .s2 */
-   ,_SF3         = 3        /* FPSR status field 3 .s3 */
-} _Asm_sf;
-
-
-#define Add12_ext(s, r, a, b)         \
-        { long double _z, _a=a, _b=b;    \
-         s = _a + _b;             \
-         _z = s - _a;              \
-         r = _b - _z; }            
-
-#define Add22_ext(zh,zl,xh,xl,yh,yl) \
-do {\
-long double r,s;\
-r = (xh)+(yh);\
-s = (xh)-r+(yh)+(yl)+(xl);\
-*zh = r+s;\
-*zl = r - (*zh) + s;\
-} while(0)
-
-
-#define Mul12_ext(_prh,_prl,_u,_v)                    \
-{                                                     \
-  *_prh = _u*_v;                                      \
-  *_prl = *_prh - _u*_v;                              \
-}
-
-
-#define Mul22_ext(pzh,pzl, xh,xl, yh,yl)              \
-{                                                     \
-long double ph, pl;                                   \
-  ph = xh*yh;                                         \
-  pl = xh*yh - ph;                                    \
-  pl = xh*yl + pl;                                    \
-  pl = xl*yh + pl;                                    \
-  *pzh = ph+pl;					      \
-  *pzl = ph - (*pzh);                                 \
-  *pzl += pl;                                         \
-}
-
-
-#define  Div22_ext(pzh,pzl,xh,xl,yh,yl)\
-{long double ch,cl,uh,ul;  \
-           ch=(xh)/(yh);   Mul12_ext(&uh,&ul,ch,(yh));  \
-           cl=(((((xh)-uh)-ul)+(xl))-ch*(yl))/(yh);   *(pzh)=ch+cl;   *(pzl)=(ch-*(pzh))+cl;\
-}
-
-
+/* WARNING Due to some quantum effect not understood so far, 
+   turning debugging on may change the result */
+#define DEBUG 0
 
 
 
@@ -119,6 +47,100 @@ typedef struct __XC_FLOAT_TYPE_TAG {
 } XC_FLOAT_TYPE;
 
 
+/* For debugging */
+typedef union {
+  int i[3];                 
+  long double d;
+} db_ext_number;
+
+
+typedef enum {
+    _PC_S        = 1        /* single .s */
+   ,_PC_D        = 2        /* double .d */
+   ,_PC_NONE     = 3        /* dynamic   */
+} _Asm_pc;
+
+/* Table 1-22: legal getf/setf floating-point register access completers */
+typedef enum {
+    _FR_S        = 1        /* single form      .s   */
+   ,_FR_D        = 2        /* double form      .d   */
+   ,_FR_EXP      = 3        /* exponent form    .exp */
+   ,_FR_SIG      = 4        /* significand form .sig */
+} _Asm_fr_access;
+
+/* Table 1-24: legal floating-point FPSR status field completers (.sf) */
+typedef enum {
+    _SF0         = 0        /* FPSR status field 0 .s0 */
+   ,_SF1         = 1        /* FPSR status field 1 .s1 */
+   ,_SF2         = 2        /* FPSR status field 2 .s2 */
+   ,_SF3         = 3        /* FPSR status field 3 .s3 */
+} _Asm_sf;
+
+#define print_debug(msg, _z) {\
+  db_ext_number dbg;\
+  dbg.d=_z;\
+  printf(msg);\
+  printf(" %08x %08x %08x \n", (dbg.i[2]<<16)>>16, dbg.i[1], dbg.i[0]);\
+}
+
+
+#define Add12_ext(s, r, a, b)            \
+    { L_FLOAT_TYPE _z, _a, _b, _s;       \
+      _a= (a); _b=(b);                   \
+      s = (_a + _b);                     \
+      _z= ( a - s );                     \
+      r = (_b + _z); }            
+
+
+#define Add22_ext(zh,zl,xh,xl,yh,yl) \
+do {\
+L_FLOAT_TYPE r,s;\
+r = (xh)+(yh);\
+s = (xh)-r;\
+s+= (yh);\
+s+= (yl);\
+s+= (xl);\
+zh = r+s;\
+zl = r - (zh);\
+zl+=  s;\
+} while(0)
+
+
+
+#define Mul12_ext(_rh,_rl,_u,_v)                    \
+{                                                     \
+  _rh = _u*_v;                                      \
+  _rl = _Asm_fms( 3/*_PC_NONE*/, _u, _v, _rh, 1/*_SF1*/ );\
+}
+#define Mul22_ext(zh,zl, xh,xl, yh,yl)              \
+{                                                     \
+L_FLOAT_TYPE ph, pl;                                   \
+  ph = (xh)*(yh);                                         \
+  pl = _Asm_fms( 3/*_PC_NONE*/, xh, yh, ph, 1/*_SF1*/ );;  \
+  pl = (xh)*(yl) + pl;                                    \
+  pl = (xl)*(yh) + pl;                                    \
+  zh = ph+pl;					      \
+  zl = ph - zh;                                 \
+  zl += pl;                                         \
+}
+
+#define  Div22_ext(zh,zl,xh,xl,yh,yl) \
+  {           \
+L_FLOAT_TYPE _ch,_cl,_uh,_ul;                        \
+  _ch=(xh)/(yh);  \
+  Mul12_ext(_uh,_ul,_ch,(yh));    \
+  _cl=(xh)-_uh;                                   \
+  _cl -= _ul;                                       \
+  _cl += (xl);                                      \
+  _cl -= _ch*(yl);                               \
+  _cl /= (yh);                                   \
+  zh = _ch + _cl;                                  \
+  zl=(_ch-(zh)); zl += _cl;                  \
+}
+
+
+
+
 
 #define ULL(bits) 0x##bits##uLL
 
@@ -139,7 +161,6 @@ typedef struct __XC_FLOAT_TYPE_TAG {
 
 
 
-#define DEBUG 0
 double dde_atan_rn(double x) {
   return 0;
 }
@@ -531,18 +552,16 @@ extern double atan_rn(double xd) {
     xe=xd;
 
 
-  //  printf("\n%llx %llx %llx  %e %e\n",x_val,x_abs,sign_mask,sign,xd);
   /* Filter cases */
   if (__builtin_expect( x_abs >= ULL(4350000000000000), 0)) {           /* x >= 2^54 */
-    /*   was: if(x_db.i[LO_ENDIAN] == 0) && (hx & 0x000fffff) == 0x00080000 */
-    if (x_val & ULL(000fffff00000000) == ULL(0008000000000000)  )
+    if (xd!=xd )
       return xd+xd;                /* NaN */
     else {/* atan(x) = +/- Pi/2 */
       if(sign_mask) return -HALFPI; else return HALFPI;
     }
   }
   else if (__builtin_expect( x_abs < ULL(3E40000000000000), 0))
-    /* TODO Add sstuff to raise inexact flag */ 
+    /* TODO Add stuff to raise inexact flag */ 
     return xd;                   /* x<2^-27 then atan(x) =~ x */
 
 
@@ -561,7 +580,6 @@ extern double atan_rn(double xd) {
       rn_constant = 1.002;
       
       /* compute i so that a[i] < x < a[i+1] */
-      //  printf("\n  %ld    %e     \n", (a_table[61]), (b_table[61]));
 
      if (x_abs>ab_table[61].a)
         i=61;
@@ -579,9 +597,7 @@ extern double atan_rn(double xd) {
         else i+= 1;
         if (x_abs < ab_table[i].a) i-= 1;
      }
-     
-     //      printf("\n i = %d ", i);
-     
+          
      bi= ab_table[i].b;
      atanbhi = atanb_table[i].hi;
      
@@ -647,7 +663,6 @@ extern double atan_rn(double xd) {
       q = tmp + xred4 * tmp2;
       q *= xred2;
       
-      //      printf("%le   %le \n",(double)q ,(double)xe);
 
       /* compute q*xe+xe with round to double */
       res = _Asm_fma( _PC_NONE, q, xe, xe, _SF1 );
@@ -665,7 +680,6 @@ extern double atan_rn(double xd) {
     i1 = _Asm_getf( _FR_SIG, res);
     m =  i1 & (0xff<<3);
     if(__builtin_expect((m!=(0x7f<<3) && m!=(0x80<<3)), 1+1==2)) {
-    //if(__builtin_expect(   ((unsigned long long)(m - (0x7f<<3))) > 1<<3) , 1+1==2)) {
       if(sign_mask) 
 	return -reshi; 
       else 
@@ -679,7 +693,6 @@ extern double atan_rn(double xd) {
   test=_Asm_fma( _PC_D, reslo, rn_constant, reshi, _SF0 );
   
   if (__builtin_expect(reshi == test, 1+1==2)) {
-    // if(1+1==3) {
     if(sign_mask) 
       return -reshi; 
     else 
@@ -696,11 +709,15 @@ extern double atan_rn(double xd) {
     int j;
 
 
+
+
 #if EVAL_PERF
     crlibm_second_step_taken++;
 #endif
 
-    //   printf("Toto\n");
+#if DEBUG
+       printf("Toto\n");
+#endif
 
   if (__builtin_expect(x_abs > MIN_REDUCTION_NEEDED, 0))  {/* test if reduction is necessary : */
     if(i==61){
@@ -711,16 +728,16 @@ extern double atan_rn(double xd) {
       xmBilo = 0.0;
     }
     
-    Mul12_ext(&tmphi,&tmplo, xe, (ab_table[i].b));
+    Mul12_ext(tmphi,tmplo, xe, (ab_table[i].b));
 
     if (xe > 1) /* TODO remplacer par xabs */
-      Add22_ext(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
+      Add22_ext(x0hi,x0lo,tmphi,tmplo, 1.0,0.0);
     else {
-      Add22_ext( &x0hi , &x0lo , 1.0,0.0,tmphi,tmplo);
+      Add22_ext(x0hi , x0lo , 1.0,0.0,tmphi,tmplo);
     }
     
 #if 1
-    Div22_ext( &Xredhi, &Xredlo, xmBihi , xmBilo , x0hi,x0lo);
+    Div22_ext(Xredhi, Xredlo, xmBihi , xmBilo , x0hi,x0lo);
 #else
     Xredhi=1; Xredlo=0; /* to time the Div22*/
 #endif
@@ -731,7 +748,7 @@ extern double atan_rn(double xd) {
 #endif
 
     Xred2 = Xredhi*Xredhi;
-    Mul22_ext( &Xred2hi,&Xred2lo,Xredhi,Xredlo,Xredhi, Xredlo);
+    Mul22_ext(Xred2hi,Xred2lo,Xredhi,Xredlo,Xredhi, Xredlo);
     
       /*poly eval */
       
@@ -741,57 +758,87 @@ extern double atan_rn(double xd) {
 	   (coef_poly[7][0]+
 	    (Xred2*coef_poly[8][0])))));
       
-    Mul12_ext(&qhi, &qlo, q, Xred2);
+    Mul12_ext(qhi, qlo, q, Xred2);
     
     for(j=3;j>=0;j--)
       {
-	Add22_ext(&qhi,&qlo, (coef_poly[j][0]), (coef_poly[j][1]), qhi,qlo);
-	Mul22_ext(&qhi,&qlo, qhi,qlo, Xred2hi,Xred2lo);
+	Add22_ext(qhi,qlo, (coef_poly[j][0]), (coef_poly[j][1]), qhi,qlo);
+	Mul22_ext(qhi,qlo, qhi,qlo, Xred2hi,Xred2lo);
       }
       
-    Mul22_ext(&qhi,&qlo, Xredhi,Xredlo, qhi,qlo);
-    Add22_ext(&qhi,&qlo, Xredhi,Xredlo, qhi,qlo);
+    Mul22_ext(qhi,qlo, Xredhi,Xredlo, qhi,qlo);
+    Add22_ext(qhi,qlo, Xredhi,Xredlo, qhi,qlo);
     
     /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
-    Add22_ext(&atanhi,&atanlo, atanb_table[i].hi, atanb_table[i].lo, qhi,qlo);
+    Add22_ext(atanhi,atanlo, atanb_table[i].hi, atanb_table[i].lo, qhi,qlo);
   }
   else
-    // no reduction needed
+    /* no reduction needed */
     {
+
+#if DEBUG
+       printf("Tata\n");
+#endif
       /* Polynomial evaluation */
-      Mul12_ext( &Xred2hi,&Xred2lo,xe,xe);
+      Mul12_ext( Xred2hi,Xred2lo,xe,xe);
 
       /*poly eval - don't take risks, keep plain Horner */
-      q = Xred2hi*(coef_poly[5][0]+Xred2hi*
-              (coef_poly[6][0]+Xred2hi*
-               (coef_poly[7][0]+Xred2hi*
-                (coef_poly[8][0]))));
+
+      q = coef_poly[8][0];
+      q = coef_poly[7][0]+Xred2hi*q;
+      q = coef_poly[6][0]+Xred2hi*q;
+      q = coef_poly[5][0]+Xred2hi*q;
       
-      Add12_ext(qhi,qlo, (coef_poly[4][0]),q);
-      Mul22_ext(&qhi,&qlo, qhi,qlo, Xred2hi,Xred2lo);
+      Add12_ext(qhi,qlo, coef_poly[4][0], Xred2hi*q);
+#if DEBUG
+      printf("    qhi+ql = %1.50Le + %1.50Le\n",(long double)qhi, (long double)qlo);
+      print_debug("qhi", qhi);
+      print_debug("qlo", qlo);
+#endif
+      Mul22_ext(qhi,qlo, qhi,qlo, Xred2hi,Xred2lo);
+#if DEBUG
+      printf("    Xred2  = %1.50Le + %1.50Le\n",(long double)Xred2hi, (long double)Xred2lo);
+      printf("    qhi+ql = %1.50Le + %1.50Le\n",(long double)qhi, (long double)qlo);
+      print_debug("qhi", qhi);
+      print_debug("qlo", qlo);
+#endif
       
       for(j=3;j>=0;j--)
         {
-          Add22_ext(&qhi,&qlo, (coef_poly[j][0]), (coef_poly[j][1]), qhi,qlo);
-          Mul22_ext(&qhi,&qlo, qhi,qlo, Xred2hi,Xred2lo);
+          Add22_ext(qhi,qlo, (coef_poly[j][0]), (coef_poly[j][1]), qhi,qlo);
+          Mul22_ext(qhi,qlo, qhi,qlo, Xred2hi,Xred2lo);
         }
       
-      Mul22_ext (&qhi,&qlo, xe,0, qhi,qlo);
-      Add12_ext (atanhi,atanlo,xe,qhi);
+      Mul22_ext (qhi,qlo, xe,0, qhi,qlo);
+
+#if DEBUG
+      printf("    qhi+ql = %1.50Le + %1.50Le\n",(long double)qhi, (long double)qlo);
+      print_debug("qhi", qhi);
+      print_debug("qlo", qlo);
+#endif
+      /* Now comes the addition sequence proven in the TOMS paper */
+      Add12_ext(atanhi,atanlo,xe,qhi);
+#if DEBUG
+      print_debug("atanhi", atanhi);
+      printf(" atan hi+lo  %1.50Le + %1.50Le\n",(long double)atanhi, (long double)atanlo);
+#endif
       atanlo += qlo;
 
     }
+
 #if DEBUG
-  printf("             %1.50Le + %1.50Le\n",(long double)atanhi, (long double)atanlo);
+  printf(" atan hi+lo  %1.50Le + %1.50Le\n",(long double)atanhi, (long double)atanlo);
   printf("             %1.50e + %1.50e\n",(double)atanhi,(double) atanlo);
   printf("             %1.50Le\n",(long double)(atanhi + atanlo));
+  printf("             ");
 #endif
   
     if(sign_mask) 
-      return -(double) (atanhi+atanlo);
+      res= -(double) (atanhi+atanlo);
     else 
-      return (double) (atanhi+atanlo);
+      res= (double) (atanhi+atanlo);
 
+    return res;
     
   }
 } 
