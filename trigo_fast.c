@@ -446,42 +446,44 @@ static void compute_trig_with_argred(double* prh, double* prl,  double x, int ab
 
  trigzero:
   switch(function) {
+ 
   case SIN: 
-  if (quadrant&1)
-    do_cos_k_zero(prh, prl, yh,yl);
-  else 
-    do_sin_k_zero(prh, prl, yh,yl);
-  if ((quadrant==2)||(quadrant==3)) {
-    *prl=-*prl; *prh=-*prh;
-  }
-  return;
-
+    if (quadrant&1)
+      do_cos_k_zero(prh, prl, yh,yl);
+    else 
+      do_sin_k_zero(prh, prl, yh,yl);
+    if ((quadrant==2)||(quadrant==3)) {
+      *prl=-*prl; *prh=-*prh;
+    }
+    return;
+    
   case COS: 
-  if (quadrant&1)
-    do_sin_k_zero(prh, prl, yh,yl);
-  else 
-    do_cos_k_zero(prh, prl, yh,yl);
-  if ((quadrant==1)||(quadrant==2)) {
-    *prl=-*prl; *prh=-*prh;
-  }
-  return;
+    if (quadrant&1)
+      do_sin_k_zero(prh, prl, yh,yl);
+    else 
+      do_cos_k_zero(prh, prl, yh,yl);
+    if ((quadrant==1)||(quadrant==2)) {
+      *prl=-*prl; *prh=-*prh;
+    }
+    return;
 
   case TAN: 
-  if (quadrant&1) {
-    do_sin_k_zero(&ch, &cl, yh,yl);
-    do_cos_k_zero(&sh, &sl, yh,yl);
-    sh=-sh; sl=-sl;
-  } else {
-    do_sin_k_zero(&sh, &sl, yh,yl);
-    do_cos_k_zero(&ch, &cl, yh,yl);
+    if (quadrant&1) {
+      do_sin_k_zero(&ch, &cl, yh,yl);
+      do_cos_k_zero(&sh, &sl, yh,yl);
+      sh=-sh; sl=-sl;
+    } else {
+      do_sin_k_zero(&sh, &sl, yh,yl);
+      do_cos_k_zero(&ch, &cl, yh,yl);
+    }
+    Div22(prh, prl, sh, sl, ch, cl);
+    return;
   }
-  Div22(prh, prl, sh, sl, ch, cl);
-  return;
-  }
-
+  
  trignotzero:
   LOAD_TABLE_SINCOS();
   switch(function) {
+
   case SIN: 
     if (quadrant&1)   
       do_cos_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
@@ -501,17 +503,18 @@ static void compute_trig_with_argred(double* prh, double* prl,  double x, int ab
       *prl=-*prl; *prh=-*prh;
     }
     return;
+
   case TAN: 
-  if (quadrant&1) {
-    do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
-    do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-    sh=-sh; sl=-sl;
-  } else {
-    do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-    do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
-  }
-  Div22(prh, prl, sh, sl, ch, cl);
-  return;
+    if (quadrant&1) {
+      do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+      do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+      sh=-sh; sl=-sl;
+    } else {
+      do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+      do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+    }
+    Div22(prh, prl, sh, sl, ch, cl);
+    return;
   }
 }
 
