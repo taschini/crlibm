@@ -117,7 +117,9 @@ int crlibm_second_step_taken;
 
 
 
-/* On the Itanium 1 we have here we lose 10 cycles when using the FMA !?! */ 
+/* On the Itanium 1 / gcc we lose 10 cycles when using the FMA !?! 
+   It probably breaks the scheduling algorithms somehow... 
+*/ 
 
 #ifdef CRLIBM_TYPECPU_ITANIUM
 #define PROCESSOR_HAS_FMA 1
@@ -314,10 +316,10 @@ extern void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, d
 #define Add22Cond(zh,zl,xh,xl,yh,yl)                             \
 do {                                                             \
   double r,s;                                                    \
-  r = xh+yh;                                                     \
-  s = ((ABS(xh)) > (ABS(yh)))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);\
+  r = (xh)+(yh);                                                     \
+  s = ((ABS(xh)) > (ABS(yh)))? ((xh)-r+(yh)+(yl)+(xl)) : ((yh)-r+(xh)+(xl)+(yl));\
   *zh = r+s;                                                     \
-  *zl = r - (*zh) + s;                                           \
+  *zl = (r - (*zh)) + s;                                           \
 } while(2+2==5)
 
   
@@ -326,9 +328,9 @@ do {                                                             \
 do {\
 double r,s;\
 r = (xh)+(yh);\
-s = (xh)-r+(yh)+(yl)+(xl);\
+s = ((((xh)-r) +(yh)) + (yl)) + (xl);\
 *zh = r+s;\
-*zl = r - (*zh) + s;\
+*zl = (r - (*zh)) + s;\
 } while(0)
 
 #endif /* ADD22_AS_FUNCTIONS */
