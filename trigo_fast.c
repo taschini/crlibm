@@ -226,7 +226,7 @@ double sin_rn(double x){
   int k;
   int absxhi;
   db_number xx;
-return scs_sin_rn(x); 
+
 #if INLINE_SINCOS
   double sah,sal,cah,cal;
 #endif
@@ -499,9 +499,14 @@ double tan_rn(double x){
      fprintf(stderr,"ERREUR: %d is not a valid value in sn_tan \n", quadrant);
      return 0.0;
   }
-  
+
+#if INLINE_SINCOS
+DO_SIN;
+DO_COS;
+#else  
   do_sin(&sh, &sl, yh, yl);
   do_cos(&ch, &cl, yh, yl);
+#endif
 
    Div22(&reshi, &reslo, sh, sl, ch, cl);
 
