@@ -101,7 +101,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       res += (Poly_h[i][k]).d;
     }
 
-    if(E <= EMIN_FASTPATH) {
+    if(E <= 185/* EMIN_FASTPATH*/) {
       /* Slow path */
       if(E==0) {
 	*prndcstindex = 0 ;
@@ -113,7 +113,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       } 
       else
 	{
-	  if(E > EMIN_MEDIUMPATH)
+	  if(E > 24/* EMIN_MEDIUMPATH*/)
 	    *prndcstindex = 2; 
 	  else 
 	    *prndcstindex =1;

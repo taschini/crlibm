@@ -243,42 +243,42 @@ for isbig from 1 to 0 by -1 do
     fprintf(fd,"#else\n"):
   fi;
 
-  fprintf(fd, "db_number const pio256hi = "):
+  fprintf(fd, "static db_number const pio256hi = "):
   printendian(fd, pio256hi, isbig):
   fprintf(fd, " ;\n"):
 
-  fprintf(fd, "db_number const mpio256lo = "):
+  fprintf(fd, "static db_number const mpio256lo = "):
   printendian(fd, -pio256lo, isbig):
   fprintf(fd, " ;\n"):
 
-  fprintf(fd, "db_number const mpio256med1 = "):
+  fprintf(fd, "static db_number const mpio256med1 = "):
   printendian(fd, -pio256med1, isbig):
   fprintf(fd, " ;\n"):
 
-  fprintf(fd, "db_number const mpio256med2 = "):
+  fprintf(fd, "static db_number const mpio256med2 = "):
   printendian(fd, -pio256med2, isbig):
   fprintf(fd, " ;\n"):
 
-  fprintf(fd, "db_number const mpio256lo2 = "):
+  fprintf(fd, "static db_number const mpio256lo2 = "):
   printendian(fd, -pio256lo2, isbig):
   fprintf(fd, " ;\n"):
 
-  fprintf(fd, "db_number const invpio256 = "):
+  fprintf(fd, "static db_number const invpio256 = "):
   printendian(fd, invpio256, isbig):
   fprintf(fd, " ;\n\n"):
 
   # The sine polynomial
 
-  fprintf(fd, "db_number const s3 = "):
+  fprintf(fd, "static db_number const s3 = "):
   printendian(fd, coeff(polySin,x,3), isbig):
   fprintf(fd, ";\n"):
-  fprintf(fd, "db_number const s5 = "):
+  fprintf(fd, "static db_number const s5 = "):
   printendian(fd, coeff(polySin,x,5), isbig):
   fprintf(fd, ";\n"):
-  fprintf(fd, "db_number const s7 = "):
+  fprintf(fd, "static db_number const s7 = "):
   printendian(fd, coeff(polySinFast,x,7), isbig):
   fprintf(fd, ";\n"):
-  fprintf(fd, "db_number const s9 = "):
+  fprintf(fd, "static db_number const s9 = "):
   printendian(fd, coeff(polySinFast,x,9), isbig):
   fprintf(fd, ";\n\n"):
 
@@ -286,13 +286,13 @@ for isbig from 1 to 0 by -1 do
   # the cos polynomial
   
 
-  fprintf(fd, "db_number const c2 = "):
+  fprintf(fd, "static db_number const c2 = "):
   printendian(fd, coeff(polyCos,x,2), isbig):
   fprintf(fd, ";\n"):
-  fprintf(fd, "db_number const c4 = "):
+  fprintf(fd, "static db_number const c4 = "):
   printendian(fd, coeff(polyCos,x,4), isbig):
   fprintf(fd, ";\n"):
-  fprintf(fd, "db_number const c6 = "):
+  fprintf(fd, "static db_number const c6 = "):
   printendian(fd, coeff(polyCos,x,6), isbig):
   fprintf(fd, ";\n"):
 
@@ -302,7 +302,7 @@ for isbig from 1 to 0 by -1 do
 
   fprintf(fd, "\n/*  sine and cos of kPi/256 in double-double */\n"):
   SinCosSize:= 128;
-  fprintf(fd, "db_number const sincosTable[%d] =\n{\n",  4*(SinCosSize/2+1)):
+  fprintf(fd, "static db_number const sincosTable[%d] =\n{\n",  4*(SinCosSize/2+1)):
   for i from 0 to SinCosSize/2 do
     if(1+1=2) then # normal tables
       s:=hi_lo(sin(i*Pi/(2*SinCosSize)));

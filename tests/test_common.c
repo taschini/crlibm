@@ -14,9 +14,6 @@
 #include <MathLib.h>
 #endif
 
-#ifndef CHANGED_FL
-#define CHANGED_FL
-#endif
 
 /* A variable equal to zero, stored here so that the compiler doesn't
    know its value in the other functions, which allows to prevent some
@@ -107,10 +104,8 @@ double rand_for_exp(){
   return result.d;
 }
 
-#if CHANGED_FL
 #define rand_for_cosh rand_for_exp
 #define rand_for_sinh rand_for_exp
-#endif
 
 
 /* For log we only test the positive numbers*/
@@ -219,7 +214,6 @@ void test_init(/* pointers to returned value */
 #endif
     }
 
-#if CHANGED_FL
   else if (strcmp (func_name, "cosh") == 0)
     {
       *randfun        = rand_for_cosh;
@@ -236,7 +230,8 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = cosh_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = ucosh;
+      /* No hyperbolic function in Ziv library */ 
+      *testfun_ibm    = NULL;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_cosh;
@@ -259,14 +254,14 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = sinh_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = usinh;
+      /* No hyperbolic function in Ziv library */ 
+      *testfun_ibm    = NULL;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_sinh;
 #endif
     }
 
-#endif  /* CHANGED_FL */
   else  if (strcmp (func_name, "log") == 0)
     {
       *randfun        = rand_for_log;

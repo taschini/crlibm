@@ -7,26 +7,26 @@
 #define XMAX_SIN_FAST 0x3FB00000
 #define RND_CST_SINFAST 1.005483 
 #ifdef WORDS_BIGENDIAN
-db_number const pio256hi = {{0x3F8921FB,0x54400000}} /* +1.2271846303e-02 */ ;
-db_number const mpio256lo = {{0xBD60B461,0x1A626331}} /* -4.7477347707e-13 */ ;
-db_number const mpio256med1 = {{0xBD60B461,0x00000000}} /* -4.7477343237e-13 */ ;
-db_number const mpio256med2 = {{0xBBEA6263,0x31000000}} /* -4.4696786895e-20 */ ;
-db_number const mpio256lo2 = {{0xBA01701B,0x839A2520}} /* -2.7512186447e-29 */ ;
-db_number const invpio256 = {{0x40545F30,0x6DC9C883}} /* +8.1487330863e+01 */ ;
+static db_number const pio256hi = {{0x3F8921FB,0x54400000}} /* +1.2271846303e-02 */ ;
+static db_number const mpio256lo = {{0xBD60B461,0x1A626331}} /* -4.7477347707e-13 */ ;
+static db_number const mpio256med1 = {{0xBD60B461,0x00000000}} /* -4.7477343237e-13 */ ;
+static db_number const mpio256med2 = {{0xBBEA6263,0x31000000}} /* -4.4696786895e-20 */ ;
+static db_number const mpio256lo2 = {{0xBA01701B,0x839A2520}} /* -2.7512186447e-29 */ ;
+static db_number const invpio256 = {{0x40545F30,0x6DC9C883}} /* +8.1487330863e+01 */ ;
 
-db_number const s3 = {{0xBFC55555,0x55555555}} /* -1.6666666667e-01 */;
-db_number const s5 = {{0x3F811111,0x11111111}} /* +8.3333333333e-03 */;
-db_number const s7 = {{0xBF2A01A0,0x1A01A01A}} /* -1.9841269841e-04 */;
-db_number const s9 = {{0x3EC71DE3,0xA556C734}} /* +2.7557319224e-06 */;
+static db_number const s3 = {{0xBFC55555,0x55555555}} /* -1.6666666667e-01 */;
+static db_number const s5 = {{0x3F811111,0x11111111}} /* +8.3333333333e-03 */;
+static db_number const s7 = {{0xBF2A01A0,0x1A01A01A}} /* -1.9841269841e-04 */;
+static db_number const s9 = {{0x3EC71DE3,0xA556C734}} /* +2.7557319224e-06 */;
 
-db_number const c2 = {{0xBFE00000,0x00000000}} /* -5.0000000000e-01 */;
-db_number const c4 = {{0x3FA55555,0x55553C98}} /* +4.1666666667e-02 */;
-db_number const c6 = {{0xBF56C16A,0x15693E50}} /* -1.3888870214e-03 */;
+static db_number const c2 = {{0xBFE00000,0x00000000}} /* -5.0000000000e-01 */;
+static db_number const c4 = {{0x3FA55555,0x55553C98}} /* +4.1666666667e-02 */;
+static db_number const c6 = {{0xBF56C16A,0x15693E50}} /* -1.3888870214e-03 */;
 
 
 
 /*  sine and cos of kPi/256 in double-double */
-db_number const sincosTable[260] =
+static db_number const sincosTable[260] =
 {
 {{0x00000000,0x00000000}} /* +0.0000000000e+00 */ ,
 {{0x00000000,0x00000000}} /* +0.0000000000e+00 */ ,
@@ -292,26 +292,26 @@ db_number const sincosTable[260] =
 };
 
 #else
-db_number const pio256hi = {{0x54400000,0x3F8921FB}} /* +1.2271846303e-02 */ ;
-db_number const mpio256lo = {{0x1A626331,0xBD60B461}} /* -4.7477347707e-13 */ ;
-db_number const mpio256med1 = {{0x00000000,0xBD60B461}} /* -4.7477343237e-13 */ ;
-db_number const mpio256med2 = {{0x31000000,0xBBEA6263}} /* -4.4696786895e-20 */ ;
-db_number const mpio256lo2 = {{0x839A2520,0xBA01701B}} /* -2.7512186447e-29 */ ;
-db_number const invpio256 = {{0x6DC9C883,0x40545F30}} /* +8.1487330863e+01 */ ;
+static db_number const pio256hi = {{0x54400000,0x3F8921FB}} /* +1.2271846303e-02 */ ;
+static db_number const mpio256lo = {{0x1A626331,0xBD60B461}} /* -4.7477347707e-13 */ ;
+static db_number const mpio256med1 = {{0x00000000,0xBD60B461}} /* -4.7477343237e-13 */ ;
+static db_number const mpio256med2 = {{0x31000000,0xBBEA6263}} /* -4.4696786895e-20 */ ;
+static db_number const mpio256lo2 = {{0x839A2520,0xBA01701B}} /* -2.7512186447e-29 */ ;
+static db_number const invpio256 = {{0x6DC9C883,0x40545F30}} /* +8.1487330863e+01 */ ;
 
-db_number const s3 = {{0x55555555,0xBFC55555}} /* -1.6666666667e-01 */;
-db_number const s5 = {{0x11111111,0x3F811111}} /* +8.3333333333e-03 */;
-db_number const s7 = {{0x1A01A01A,0xBF2A01A0}} /* -1.9841269841e-04 */;
-db_number const s9 = {{0xA556C734,0x3EC71DE3}} /* +2.7557319224e-06 */;
+static db_number const s3 = {{0x55555555,0xBFC55555}} /* -1.6666666667e-01 */;
+static db_number const s5 = {{0x11111111,0x3F811111}} /* +8.3333333333e-03 */;
+static db_number const s7 = {{0x1A01A01A,0xBF2A01A0}} /* -1.9841269841e-04 */;
+static db_number const s9 = {{0xA556C734,0x3EC71DE3}} /* +2.7557319224e-06 */;
 
-db_number const c2 = {{0x00000000,0xBFE00000}} /* -5.0000000000e-01 */;
-db_number const c4 = {{0x55553C98,0x3FA55555}} /* +4.1666666667e-02 */;
-db_number const c6 = {{0x15693E50,0xBF56C16A}} /* -1.3888870214e-03 */;
+static db_number const c2 = {{0x00000000,0xBFE00000}} /* -5.0000000000e-01 */;
+static db_number const c4 = {{0x55553C98,0x3FA55555}} /* +4.1666666667e-02 */;
+static db_number const c6 = {{0x15693E50,0xBF56C16A}} /* -1.3888870214e-03 */;
 
 
 
 /*  sine and cos of kPi/256 in double-double */
-db_number const sincosTable[260] =
+static db_number const sincosTable[260] =
 {
 {{0x00000000,0x00000000}} /* +0.0000000000e+00 */ ,
 {{0x00000000,0x00000000}} /* +0.0000000000e+00 */ ,
