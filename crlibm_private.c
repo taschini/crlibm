@@ -141,10 +141,10 @@ double mh, ml;
 
 
 void Div22(double* pzh, double* pzl, double xh, double xl, double yh, double yl){
-  double ch,cl,uh,ul;  
-  ch=(xh)/(yh);   Mul12(&uh,&ul,ch,(yh));  
-  cl=(((((xh)-uh)-ul)+(xl))-ch*(yl))/(yh);   
-  *pzh=ch+cl;   *pzl=(ch-(*pzh))+cl;
+  double _ch,_cl,_uh,_ul;  
+  _ch=(xh)/(yh);   Mul12(&_uh,&_ul,_ch,(yh));  
+  _cl=(((((xh)-_uh)-_ul)+(xl))-_ch*(yl))/(yh);   
+  *pzh=_ch+_cl;   *pzl=(_ch-(*pzh))+_cl;
 }
 
 #endif /* DEKKER_AS_FUNCTIONS && (!defined PROCESSOR_HAS_FMA)  */
