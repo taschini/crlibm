@@ -77,7 +77,7 @@ static void do_sin(double* reshi, double* reslo, double yh, double yl) {
   else {
    
     Mul12(&cahyh_h,&cahyh_l, cah, yh);
-    Add12(thi, tlo,     sah,cahyh_h);
+    Add12(thi, tlo, sah,cahyh_h);
     
     ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
     /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */
@@ -132,9 +132,6 @@ int static trig_range_reduction(double* pyh, double* pyl,
   double kd;
   if  (absxhi < XMAX_CODY_WAITE_3) {
     DOUBLE2INT(k, x * INV_PIO256);
-#if DEBUG
-    printf("k=%d  \n", k);
-#endif
     kd = (double) k;
     if(((k&127) == 0)) { 
       /* Here we risk a large cancellation on yh+yl; 
@@ -166,18 +163,15 @@ int static trig_range_reduction(double* pyh, double* pyl,
     double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
     DOUBLE2LONGINT(kl, x*INV_PIO256);
     kd=(double)kl;
-    k = (int) (kl & 0xFFFFFFFFLL);
+    k = (int) kl;
 #if DEBUG
-    printf("kl=%lld     k= %d  (%d) \n", kl, k, k&127);
+    printf("kl=%lld  \n", kl);
 #endif
     if((k&127) == 0) { 
       scs_t X, Y,Yh,Yl;
       scs_set_d(X, x*128.0); 
       k= rem_pio2_scs(Y, X);
-#if DEBUG
-    printf("krempio2 = %d  (%d) \n", k, k&127);
-#endif
-       /* TODO an optimized procedure for the following */
+      /* TODO an optimized procedure for the following */
       scs_get_d(pyh, Y);
       scs_set_d(Yh, *pyh);
       scs_sub(Yl, Y,Yh);
@@ -222,7 +216,7 @@ int static trig_range_reduction(double* pyh, double* pyl,
 
 /*************************************************************
  *************************************************************
- *               ROUNDED  TO NEAREST			     *
+ *              SIN ROUNDED  TO NEAREST			     *
  *************************************************************
  *************************************************************/ 
 
@@ -232,7 +226,7 @@ double sin_rn(double x){
   int k;
   int absxhi;
   db_number xx;
-
+return scs_sin_rn(x); 
 #if INLINE_SINCOS
   double sah,sal,cah,cal;
 #endif
@@ -279,7 +273,6 @@ double sin_rn(double x){
 #if DEBUG
 	printf("sah=%1.30e sal=%1.30e  \n", sah,sal);
 	printf("cah=%1.30e cal=%1.30e  \n", cah,cal);
- 	printf("yh=%1.30e   yl=%1.30e  \n", yh,yl);
 #endif
 
 #if INLINE_SINCOS
@@ -394,25 +387,15 @@ double cos_rn(double x){
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*************************************************************
+ *************************************************************
+ *              TAN ROUNDED  TO NEAREST			     *
+ *************************************************************
+ *************************************************************/ 
 double tan_rn(double x){  
-  double reshi, reslo, sh, sl, ch, cl, cahyh_h, cahyh_l, sahyh_h, sahyh_l, kd, yh, yl, yh2, tc, ts, th, tl, sah, sal, cah, cal;
+  double reshi, reslo, sh, sl, ch, cl, kd, yh, yl, sah, sal, cah, cal;
   db_number y;
-  double rnconstant = 1.0502;
+  double rnconstant = 1.00502;
   int k, quadrant;
 
 
@@ -439,50 +422,9 @@ double tan_rn(double x){
   /* Otherwise : Range reduction then standard evaluation */
   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
 
-
-
-#if 0
-  /* Argument reduction */  
-  /* Compute k */
-  DOUBLE2INT(k, x * invpio256.d);
-      /* Argument reduction  by Cody & Waite algorithm */
-      /* all this is exact but the rightmost multiplication */
-      Add12 (yh,yl,  (x - kd*pio256hi.d),  (kd*mpio256lo.d) ) ;
-      /* Now y_h is in -Pi/512, Pi/512 */
- /* Here we risk a large cancellation on yh+yl; on the other hand we have sa=0 and ca=1*/
- 
-
-if(k==0)
-      { 
-	/* all this is exact */
-  	Add12 (th,tl,  (x - kd*pio256hi.d),  (kd*mpio256med1.d) ) ;
-	/* error on the last multiplication, and on the Add22 */
-	Add22 (&yh, &yl, th, tl, kd*mpio256med2.d, kd*mpio256lo2.d) ;
-#endif
-
   quadrant = (k>>7)&3;	/* Pi is divided in 4 quarters */	
   kd = (double) k;
   k=(k&127)<<2;
-  
-  #if DEBUG
-    printf("k = %d\n", k);
-  #endif
- if(k==0)
-      { 
-	yh2 = yh*yh;
-	
-	/* Sine computation */
-	ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
-	/* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */
-	/* Now we need to compute (1+ts)*(yh+yl) */
-	Add12(sh, sl,   yh, yl+ ts*yh);
-	
-	/* Cosine computation */
-	tc = yh2 * (c2.d + yh2*(c4.d + yh2*(c6.d)));
-	/* 1+ tc is an approx to cos(yh+yl) */
-	Add12(ch, cl, 1., tc);
-      }
-  else{
 
   switch (quadrant){
    case(0):
@@ -556,48 +498,16 @@ if(k==0)
    default:
      fprintf(stderr,"ERREUR: %d is not a valid value in sn_tan \n", quadrant);
      return 0.0;
-    }
-  
-      yh2 = yh*yh ;
- 
-      /* Sine computation, our numerator */      
-      Mul12( &cahyh_h, &cahyh_l, cah, yh);
-      Add12(th, tl, sah, cahyh_h);
-      ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
-      /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */
-       
-      tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));
-      /* 1+ tc is an approx to cos(yh+yl) */
-      /* now we compute an approximation to cos(a)sin(x) + sin(a)cos(x)   */
-      /* read the sine and cos */ 
-      
-      Add12(sh, sl, th,    tc*sah + (ts*cahyh_h  +(sal + (tl + (cahyh_l  + (cal*yh + cah*yl)) ) ) )  );
-
-/* Cosine computation, our denominator */
-    /* now we compute an approximation to cos(a)cos(x) - sin(a)sin(x)   */
-       
-    Mul12(&sahyh_h,&sahyh_l, sah, yh);
-
-    ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
-    /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */
-    tc = yh2 * (c2.d + yh2*(c4.d + yh2*(c6.d)));
-    /* 1+ tc is an approx to cos(yh+yl) */
-
-    Add12(th, tl,  cah, -sahyh_h);
-    Add12(ch, cl, th, tc*cah - (ts*sahyh_h -  (cal + (tl  - (sahyh_l + (sal*yh + sah*yl)) )))   );
   }
+  
+  do_sin(&sh, &sl, yh, yl);
+  do_cos(&ch, &cl, yh, yl);
 
    Div22(&reshi, &reslo, sh, sl, ch, cl);
- 
-   /*  
-   printf("ch = %0.10 cl = %0.10e       sh = %0.10e  sl = %0.10e     reshi = %0.10e\nreslo = %0.10e\n\n", ch,cl,sh,sl,reshi, reslo);
-   DIV2(reshi, reslo, sh, sl, ch, cl);
-   printf("reshi = %0.20f\nreslo = %0.20f\n", reshi, reslo);*/
-
 
   /* ROUNDING TO NEAREST */
  
-  if(reshi == (reshi + (reslo * 1.08))){
+  if(reshi == (reshi + (reslo * rnconstant))){
 #if DEBUG
   printf("1ere etape\n");
 #endif   
