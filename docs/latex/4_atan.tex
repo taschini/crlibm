@@ -530,13 +530,29 @@ computed 50000 atan in rounding to nearest mode. The second step of
  \hline
                          & min time      & max time      & avg time \\ 
  \hline
- \texttt{libm}           & 324          & 1960          &        445 \\ 
+                         & min time      & max time      & avg time \\ 
  \hline
-  \texttt{mpfr}          & 572          & 10193528      &    2559673 \\ 
+ \texttt{libm}           & 180          & 344           &        231 \\ 
  \hline
-  \texttt{libultim}      & 132          & 4812          &        423 \\ 
+  \texttt{mpfr}          & 417016       & 3956992       &     446362 \\ 
  \hline
- \texttt{crlibm}         & 128          & 30324         &        317 \\ 
+  \texttt{libultim}      & 48           & 257616        &        189 \\ 
+ \hline
+ \texttt{crlibm}         & 36           & 46428         &        381 \\ 
+ \hline
+ \hline
+  \multicolumn{4}{|c|}{PowerPC G4 / MacOS X / gcc2.95}   \\
+ \hline
+                         & min time      & max time      & avg time \\
+ \hline
+ \texttt{libm}           & 6            & 11            &          9 \\
+ \hline
+  \texttt{mpfr}          & 35291        & 303019        &      37022 \\
+ \hline
+  \texttt{libultim}      & 7            & 13251         &         14 \\
+ \hline
+ \texttt{crlibm}         & 5            & 1037          &         19 \\
+ \hline
  \hline
 
 \end{tabular}
@@ -560,16 +576,15 @@ Table size is
   If we add all : $10*11*8 + 62*8 = 1376$
 \end{itemize}
 If we add the fast phase and the acurate one, we have a total of 3472
-Bytes.
+bytes. 
 
 
 \section{Conclusion and perspectives}
 
-Our $\arctan$ is faster than Ziv's and \texttt{Libm} $\arctan$.
-The first one makes about $0.14\%$ of error in rounding
-to nearest mode and we didn't find any error on Ziv's. Moreover we need
-less memory than Ziv (he has 241 polynomials of degree 7 and 241 of degree
-16 that represents more than 40ko !) since we use less than 4ko.
+Our $\arctan$ is reasonably fast.  Libultim is faster but requires ten
+times more memory (241 polynomials of degree 7 and 241 of degree 16
+that represents more than 40ko !). Instead, our argument reduction
+performs a division, which is an expensive operation.
 
 To improve performances we could inline the code of \texttt{atan\_quick},
 but we prefer to keep it as it is in order to ease the evolution of the

@@ -514,13 +514,24 @@ operating systems.
  \hline
                          & min time      & max time      & avg time \\ 
  \hline
- \texttt{libm}           & 784          & 1312          &       1034 \\ 
+ \texttt{libm}           & 116          & 920           &        323 \\ 
  \hline
-  \texttt{mpfr}          & 53944        & 141460        &      63796 \\ 
+  \texttt{mpfr}          & 19464        & 224896        &      30338 \\ 
  \hline
- \texttt{crlibm}         & 788          & 39720         &       1283 \\ 
+ \texttt{crlibm}         & 132          & 55036         &        547 \\ 
  \hline
-\hline
+
+ \hline
+  \multicolumn{4}{|c|}{PowerPC G4 / MacOS X / gcc2.95}   \\
+ \hline
+                         & min time      & max time      & avg time \\
+ \hline
+ \texttt{libm}           & 15           & 23            &         22 \\
+ \hline
+  \texttt{mpfr}          & 1315         & 11021         &       1707 \\
+ \hline
+ \texttt{crlibm}         & 6            & 1195          &         24 \\
+ \hline
 \end{tabular}
 \end{center}
 \caption{Absolute timings for the hyperbolic cosine
@@ -534,6 +545,11 @@ Contributions to this table for new processors/OS/compiler combinations are welc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion and perspectives}
 
-No cosh function exists in Ziv's libultim library, so the only quick hyperbolic cosine which was available for testing is in system libm. Our hyperbolic cosine is 30\% slower than this cosh, but this drawback is compensated by the fact that crlibm can ensure correct rounding, and 4 different rounding modes. System libm has only one rounding mode, and an average failure ratio of 42\%; most of the time only the last bit is false, but sometimes 11 or 12 bits can be false. 
-
+No cosh function exists in Ziv's libultim library, so the only quick
+hyperbolic cosine which was available for testing is in system libm.
+Our hyperbolic cosine is 30\% slower than this cosh, but this drawback
+is compensated by the fact that crlibm can ensure correct rounding,
+and 4 different rounding modes. System libm has only one rounding
+mode, and an average failure ratio of 42\%; most of the time only the
+last bit is false, but sometimes up to  12 bits can be false.
 

@@ -1873,81 +1873,46 @@ Our libray was tuned to take into account the adequation of the evaluation schem
 
 \subsection{Results}
 
-Tables \ref{tbl:timings_norm} gives a summary of the timings of the
-various libraries. The timings are normalized to the average time of
-the default \texttt{libm} on each system, which should be taken with
-care as the \texttt{libm}s used by default on the tested systems are
-all different. Table \ref{tbl:abstime} gives absolute times.
+Tables \ref{tbl:exp_abstime} gives a summary of the timings of the
+various libraries. The \accurate\ phase is called about 2 times out of 100000.
 
 
 \begin{table}[!htb]
 \begin{center}
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{|r||c|c||c|c|c|}
+\begin{tabular}{|l|r|r|r|}
 \hline
- &\multicolumn{2}{|c||}{default libm} &   \multicolumn{3}{|c|}{correctly rounded libraries}          \\
-\cline{2-6}
-Processor           &\# errors& time &{crlibm}&{MPFR}&{libultim}       \\ \hline\hline
-
-             &       & 1     & 1.21   & 45   & 0.9      \\ \cline{3-6}
-\raisebox{1.5ex}[0pt]{Pentium III}&\raisebox{1.5ex}[0pt]{${1}/{587}$}
-                     & 1.81     & 39.8     & 93.8     & 3339     \\ \hline\hline
-
-             &       & 1     & 2.6    & 153  & 1.8      \\ \cline{3-6}
-\raisebox{1.5ex}[0pt]{Itanium}&\raisebox{1.5ex}[0pt]{${1}/{491}$}
-                     & 13.7     & 46     & 165.3  & 14499    \\ \hline\hline
-
-             &       & 1     & 2.66   & 83   & 1.2      \\ \cline{3-6}
-\raisebox{1.5ex}[0pt]{UltraSparc IIi}&\raisebox{1.5ex}[0pt]{${1}/{41}$}
-                     & 12.9     & 147    & 383  & 3576     \\ \hline\hline
-
-             &       & 1     & 0.91   & 13.5 & 0.93     \\ \cline{3-6}
-\raisebox{1.5ex}[0pt]{PowerPC G4}&\raisebox{1.5ex}[0pt]{${1}/{4739}$}
-                     & 1.32     & 9.25     & 26.9 & 1477     \\ \hline
-
+ \multicolumn{4}{|c|}{Pentium 4 Xeon / Linux Debian sarge / gcc 3.3}   \\ 
+ \hline
+ \hline
+ \texttt{libm}           & 236          & 5528          &        365 \\ 
+ \hline
+  \texttt{mpfr}          & 14636        & 204736        &      23299 \\ 
+ \hline
+  \texttt{libultim}      & 44           & 3105632       &        210 \\ 
+ \hline
+ \texttt{crlibm}         & 316          & 41484         &        432 \\ 
+ \hline
+ \hline
+  \multicolumn{4}{|c|}{PowerPC G4 / MacOS X / gcc2.95}   \\
+ \hline
+                         & min time      & max time      & avg time \\
+ \hline
+ \texttt{libm}           & 7            & 14            &         12 \\
+ \hline
+  \texttt{mpfr}          & 972          & 2819          &       1367 \\
+ \hline
+  \texttt{libultim}      & 8            & 169390        &         12 \\
+ \hline
+ \texttt{crlibm}         & 4            & 916           &         15 \\
+ \hline
 \end{tabular}
 \end{center}
-\caption{
-  Accuracy and timings for the exponential function from various libraries. 
-  Timings are normalized to the average time for the default \texttt{libm}. 
-  For each processor, the first line gives the average time, 
-  and the second line gives the worst-case time.
-  \label{tbl:timings_norm}}
+\caption{Absolute timings for the exponential (arbitrary units)
+  \label{tbl:exp_abstime}}
 \end{table}
 
 
-
-
-\begin{table}[!htb]
-\begin{center}
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{|r|l|c|c|c|c|}
-\hline
-Processor &  & libm   & crlibm & MPFR  & libultim\\ \hline \hline
-             & average time    & 462    & 562    & 21114 & 413     \\ \cline{2-6}
-Pentium III (cycles) & overall worst-case time  & 837    & 18413  & 43316 & 66050   \\ \cline{2-6}
-             & correct rounding worst case time & 448    & 15963  & 38969 & 1542415 \\ \hline\hline
-
-             & average time     & 982    & 1178   & 24991 & 942     \\ \cline{2-6}
-Xeon (cycles)        & overall worst-case time  & 3124   & 34236  & 138768& 108920  \\ \cline{2-6}
-             & correct rounding worst case time & 1080   & 30384  & 50436 & 2592660 \\ \hline\hline
-
-             & average time     & 202    & 518    & 30995 & 371     \\ \cline{2-6}
-Itanium (cycles)     & overall worst-case time  & 2767   & 9349   & 70660 & 139415  \\ \cline{2-6}
-             & correct rounding worst case time & 131    & 6434   & 33388 & 2928718 \\ \hline\hline
-
-             & average time     & 762    & 2033   & 63570 & 950     \\ \cline{2-6}
-UltraSparc IIi (cycles) &overall worst-case time  & 9823   & 112366 & 292129& 157987  \\ \cline{2-6}
-             & correct rounding worst case time & 292    & 91190  & 126827& 2724912 \\ \hline\hline
-
-             & average time     & 2.27   & 2.07   & 30.7  & 2.1     \\ \cline{2-6}
-PowerPC G4 (ms)  & overall worst-case time  & 3      & 21     & 61    & 116     \\ \cline{2-6}
-             & correct rounding worst case time & 2      & 20     & 59    & 3354    \\ \hline
-\end{tabular}
-\end{center}
-\caption{Absolute timings for the exponential
-  \label{tbl:abstime}}
-\end{table}
 
 
 
@@ -2002,11 +1967,6 @@ perfectly fulfill the performance requirement of the second step.
 
 
 \subsubsection*{Relations between the two steps of \emph{crlibm}}
-For some of our test, we have disconnected the call to the second
-phase in the evaluation scheme and counted  one miss-rounding result
-over $2097152$ ($\approx 2^{21}$). As we can see in the first column
-of table \ref{tbl:timings_norm}, it mean that we are far more precise
-than others library.
 
 Our second phase is $30$ times slower than the first step and is
 called only once over $2^{13}$. The cost of the second step over the
@@ -2016,7 +1976,7 @@ $$
 \frac{1 \times (2^{13}-1) + 30 \times 1}{2^{13}} = 1.003540039
 $$
 which corresponds to a $0.35\%$ overhead. This small overhead in
-average  means that a possible performance improvment
+average  means that a possible performance improvement
 is to reduce the precision of the first step, and by the same way the
 number of instructions, to increase to number of time that the second
 step is called. It will also make the proof simpler.
