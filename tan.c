@@ -11,10 +11,8 @@
 #include "tan.h"
 #include <coefpi2.h>
 
-#define DEBUG 1
-
-void scs_tan(scs_ptr);
-/*void cotan(scs_ptr); */
+void tan(scs_ptr);
+void cotan(scs_ptr);
 int rem_pio2_scs(scs_ptr, scs_ptr);
 
 /**
@@ -39,7 +37,6 @@ int rem_pio2_scs(scs_ptr, scs_ptr);
  *
  */
 
-
 /*
  * CALCUL JUSTE ....
  * Compute the tan (or cotan) of x in double floating point arithmetic with
@@ -56,7 +53,7 @@ void scs_tan(scs_ptr x_scs){
  
 scs_square(x2, x_scs);
    
-  /* x < 2^-18  => tan(x)~x+x^3/3+x^5/15+x^7/315 with accuracy 2^-149 */
+  /* x < 2^-18  => tan(x)~x+x^3/3+x^5/15+x^7/315 with accuracy 2^-143 */
   
       if(x_scs->exception.i[HI_ENDIAN] < 0x5f76b88){	/* Test if x<2^(-18) */
         scs_mul(res_scs, cste_poly_ptr[0], x2);
@@ -99,46 +96,25 @@ double scs_tan_rn(double x){
   scs_t sc2;
   double resd;
   int N;
+#if DEBUG
+    double deb1, deb2;
+#endif
+
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1); 	/* x (=sc2) is in [-Pi/4,Pi/4] */ 
-  N = N & 0x0000003;		/* extract the 2 last bits of  N */
+  N = N & 0x0000001;		/* extract the 2 last bits of  N */
 
     switch (N){
     case 0:
-    #if DEBUG
-      printf("Case SCS 0\n");
-    #endif
 	scs_tan(sc2);
 	scs_get_d(&resd, sc2);
 	return resd;
    	break;
     case 1:
-    #if DEBUG
-      printf("Case SCS 1\n");
-    #endif
 	scs_tan(sc2);
 	scs_inv(sc2, sc2);
 	scs_get_d(&resd, sc2);
-	return -(resd);
-	break;
-    case 2:
-    #if DEBUG
-      printf("Case SCS 2 ET TOC\n");
-    #endif
-	scs_sub(sc2, Pio2_ptr, sc2);
-	scs_tan(sc2);
-	scs_inv(sc2,sc2);
-	scs_get_d(&resd, sc2);
-	return resd;
-	break;
-    case 3:
-    #if DEBUG
-      printf("Case SCS 3\n");
-    #endif
-	scs_sub(sc2, Pio2_ptr, sc2);
-	scs_tan(sc2);
-	scs_get_d(&resd, sc2);	
 	return -(resd);
 	break;
     default:
@@ -160,7 +136,7 @@ double scs_tan_rd(double x){
  
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1); 	/* x is in [-Pi/4,Pi/4] */ 
-  N = N & 0x0000003;		/* extract the 2 last bits of  N */
+  N = N & 0x0000001;		/* extract the 2 last bits of  N */
 
     switch (N){
       case 0:
@@ -174,20 +150,7 @@ double scs_tan_rd(double x){
 	scs_get_d_pinf(&resd, sc2);
 	return -(resd);
 	break;
-      case 2:
-	scs_sub(sc2, Pio2_ptr, sc2);
-	scs_tan(sc2);
-	scs_inv(sc2, sc2);
-	scs_get_d_minf(&resd, sc2);	/*don't understand why we need a & */
-	return resd;
-	break;
-      case 3:
-	scs_sub(sc2, Pio2_ptr, sc2);
-	scs_tan(sc2);
-	scs_get_d_pinf(&resd, sc2);
-	return -(resd);
-	break;
-      default:
+    default:
 	fprintf(stderr,"ERREUR: %d is not a valid value in tan_rd \n", N);
 	exit(1);
     }
@@ -207,7 +170,7 @@ double scs_tan_ru(double x){
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1); 	/* x is in [-Pi/4,Pi/4] */ 
-  N = N & 0x0000003;		/* extract the 2 last bits of  N */
+  N = N & 0x0000001;		/* extract the 2 last bits of  N */
 
     switch (N){
     case 0:
@@ -218,19 +181,6 @@ double scs_tan_ru(double x){
     case 1:
 	scs_tan(sc2);
 	scs_inv(sc2, sc2);
-	scs_get_d_minf(&resd, sc2);
-	return -(resd);
-	break;
-    case 2:
-	scs_sub(sc2, Pio2_ptr, sc2);
-	scs_tan(sc2);
-	scs_inv(sc2, sc2);
-	scs_get_d_pinf(&resd, sc2);
-	return resd;
-	break;
-    case 3:
-	scs_sub(sc2, Pio2_ptr, sc2);
-	scs_tan(sc2);
 	scs_get_d_minf(&resd, sc2);
 	return -(resd);
 	break;
