@@ -47,7 +47,7 @@ int rem_pio2_scs(scs_ptr, scs_ptr);
  * - we consider each scs digit to store 30 bits 
  * - It computes the polynom in one time ...
  */
-void tan(scs_ptr x_scs){
+void scs_tan(scs_ptr x_scs){
   scs_t res_scs;
   scs_t x2;
   int i;
@@ -103,27 +103,27 @@ double tan_rn(double x){
   
     switch (N){
     case 0:
-	tan(sc2);
+	scs_tan(sc2);
 	scs_get_d(&resd, sc2);
 	return resd;
    	break;
     case 1:
-	tan(sc2);
+	scs_tan(sc2);
 	scs_inv(sc2, sc2);
 	scs_get_d(&resd, sc2);
 	return -(resd);
 	break;
     case 2:
 	scs_sub(sc2, Pio2_ptr, sc2);
-	tan(sc2);
+	scs_tan(sc2);
 	scs_inv(sc2,sc2);
 	scs_get_d(&resd, sc2);
 	return resd;
 	break;
     case 3:
 	scs_sub(sc2, Pio2_ptr, sc2);
-	tan(sc2);
-	scs_get_d(&resd, sc2);		/* don't know why we need a & */
+	scs_tan(sc2);
+	scs_get_d(&resd, sc2);	
 	return -(resd);
 	break;
     default:
@@ -148,26 +148,26 @@ double tan_rd(double x){
  
     switch (N){
       case 0:
-	tan(sc2);
+	scs_tan(sc2);
 	scs_get_d_minf(&resd, sc2);
 	return resd;
    	break;
       case 1:
-	tan(sc2);
+	scs_tan(sc2);
 	scs_inv(sc2, sc2);
 	scs_get_d_pinf(&resd, sc2);
 	return -(resd);
 	break;
       case 2:
 	scs_sub(sc2, Pio2_ptr, sc2);
-	tan(sc2);
+	scs_tan(sc2);
 	scs_inv(sc2, sc2);
 	scs_get_d_minf(&resd, sc2);	/*don't understand why we need a & */
 	return resd;
 	break;
       case 3:
 	scs_sub(sc2, Pio2_ptr, sc2);
-	tan(sc2);
+	scs_tan(sc2);
 	scs_get_d_pinf(&resd, sc2);
 	return -(resd);
 	break;
@@ -194,26 +194,26 @@ double tan_ru(double x){
    
     switch (N){
     case 0:
-	tan(sc2);
+	scs_tan(sc2);
 	scs_get_d_pinf(&resd, sc2);
 	return resd;
    	break;
     case 1:
-	tan(sc2);
+	scs_tan(sc2);
 	scs_inv(sc2, sc2);
 	scs_get_d_minf(&resd, sc2);
 	return -(resd);
 	break;
     case 2:
 	scs_sub(sc2, Pio2_ptr, sc2);
-	tan(sc2);
+	scs_tan(sc2);
 	scs_inv(sc2, sc2);
 	scs_get_d_pinf(&resd, sc2);
 	return resd;
 	break;
     case 3:
 	scs_sub(sc2, Pio2_ptr, sc2);
-	tan(sc2);
+	scs_tan(sc2);
 	scs_get_d_minf(&resd, sc2);
 	return -(resd);
 	break;
