@@ -225,7 +225,7 @@ extern double atan_rd(double x) {
         return x_db.d;
         }
       else
-        return x;
+        return -x;
       }
   
   atan_quick(&atanhi, &atanlo,&index_of_e, x);
