@@ -50,9 +50,6 @@
  *
  */
 
-
-
-
 /* The prototypes of the second step */
 extern double scs_log_rn(db_number, int);
 extern double scs_log_ru(db_number, int);
@@ -69,9 +66,9 @@ extern double scs_log_rd(db_number, int);
  db_number y, z;
  int k, i = 0, E = 0;
   
- y.d = x;
+  y.d = x;
   /* Filter cases */
- if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
+  if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
     if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
       return 1.0/0.0;     
     }                    		   /* log(+/-0) = -Inf */
@@ -104,7 +101,7 @@ extern double scs_log_rd(db_number, int);
   else{
     i = ((i-1)>>1);
   }
- 
+
   z.d = y.d - (middle[i]).d; 	/* evaluate the value of x in the ii-th interval */ 						/* Sterbenz Lemma */
  
   /*
@@ -118,16 +115,16 @@ extern double scs_log_rd(db_number, int);
   }
    
    /* Multiply S2 by x = P2 */
- Mul12(&P_hi, &P_lo, res, z.d);
+  Mul12(&P_hi, &P_lo, res, z.d);
  
   /* add S1 = a1_hi + a1_lo to P2 */ 
   Add22(&reshi, &reslo, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
  
   /* multiply S1 by x = P1 */ 
-  Mul22( &P_hi, &P_lo, reshi, reslo, z.d, 0.);
+  Mul22(&P_hi, &P_lo, reshi, reslo, z.d, 0.);
        
   /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
-  Add22( &reshi, &reslo,(poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
+  Add22(&reshi, &reslo, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
   
   if (!(E==0)){
   
@@ -135,33 +132,17 @@ extern double scs_log_rd(db_number, int);
   Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
    
    /* REBUILDING */
-   Add22( &reshi, &reslo, ln2_times_E_HI, ln2_times_E_LO, reshi, reslo);
+   Add22(&reshi, &reslo, ln2_times_E_HI, ln2_times_E_LO, reshi, reslo);
 }
       
   /* ROUNDING TO NEAREST */
 
-  if(reshi == (reshi + (reslo * (1.0078125)))){	/* 2^-7 = 0.0078125 */
+  if(reshi == (reshi + (reslo * (delta[i])))){	
      return reshi;
-      }else{
-	return scs_log_rn(y, E);
-      }
+  }else{
+     return scs_log_rn(y, E);
+  }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*************************************************************
  *************************************************************
  *               ROUNDED  TOWARD  -INFINITY		     *
@@ -226,21 +207,21 @@ extern double scs_log_rd(db_number, int);
  Mul12(&P_hi, &P_lo, res, z.d);
  
   /* add S1 = a1_hi + a1_lo to P2 */ 
-  Add22( &reshi.d, &reslo.d,(poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
+  Add22(&reshi.d, &reslo.d, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
  
   /* multiply S1 by x = P1 */ 
   Mul22(&P_hi, &P_lo, reshi.d, reslo.d, z.d, 0.);
        
   /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
-  Add22( &reshi.d, &reslo.d, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
+  Add22(&reshi.d, &reslo.d, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
   
   if (!(E==0)){
   
   /* sc_ln2_times_E = E*log(2)  */
-  Mul22( &ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
+  Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
    
    /* RECONSTRUCTION */
-   Add22( &reshi.d, &reslo.d, ln2_times_E_HI, ln2_times_E_LO, reshi.d, reslo.d);
+   Add22(&reshi.d, &reslo.d, ln2_times_E_HI, ln2_times_E_LO, reshi.d, reslo.d);
 }
    
   /* ROUNDING TO - INFINITY */
@@ -324,16 +305,16 @@ double log_ru(double x){
  Mul12(&P_hi, &P_lo, res, z.d);
  
   /* add S2 = a2_hi to P3 */ 
- Add22( &reshi.d, &reslo.d, (poly_log_fast_b[i][2]).d, 0., P_hi, P_lo);
+ Add22(&reshi.d, &reslo.d, (poly_log_fast_b[i][2]).d, 0., P_hi, P_lo);
  
   /* Multiply S2 by x = P2 */
- Mul22( &P_hi, &P_lo, reshi.d, reslo.d, z.d, 0.);
+ Mul22(&P_hi, &P_lo, reshi.d, reslo.d, z.d, 0.);
  
   /* add S1 = a1_hi + a1_lo to P2 */ 
-  Add22( &reshi.d, &reslo.d, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
+  Add22(&reshi.d, &reslo.d, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
  
   /* multiply S1 by x = P1 */ 
-  Mul22( &P_hi, &P_lo, reshi.d, reslo.d, z.d, 0.);
+  Mul22(&P_hi, &P_lo, reshi.d, reslo.d, z.d, 0.);
        
   /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
   Add22(&reshi.d, &reslo.d, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
@@ -341,10 +322,10 @@ double log_ru(double x){
   if (!(E==0)){
   
   /* sc_ln2_times_E = E*log(2)  */
-  Mul22( &ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
+  Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
    
    /* RECONSTRUCTION */
-   Add22( &reshi.d, &reslo.d, ln2_times_E_HI, ln2_times_E_LO, reshi.d, reslo.d);
+   Add22(&reshi.d, &reslo.d, ln2_times_E_HI, ln2_times_E_LO, reshi.d, reslo.d);
 }
    
   /* ROUNDING TO + INFINITY */
