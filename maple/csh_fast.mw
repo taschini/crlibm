@@ -1,67 +1,186 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout alignment="left" bullet="none" name="Error"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout alignment="left" bullet="none" firstindent="0.0" leftmargin="0.0" linebreak="space" name="Normal" rightmargin="0.0" spaceabove="0.0" spacebelow="0.0"/><Layout alignment="centred" bullet="none" linespacing="0.5" name="Maple Output"/><Font background="[0,0,0]" bold="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" opaque="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[255,0,255]" name="Error" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" family="Lucida Bright" foreground="[0,0,255]" name="2D Output" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" opaque="false" size="12"/><Font background="[0,0,0]" family="Monospaced" foreground="[0,0,255]" name="Line Printed Output" opaque="false" readonly="true" size="12"/></Styles><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">restart:
+<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout alignment="left" bullet="none" name="Error"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout alignment="left" bullet="none" firstindent="0.0" leftmargin="0.0" linebreak="space" name="Normal" rightmargin="0.0" spaceabove="0.0" spacebelow="0.0"/><Layout alignment="centred" bullet="none" linespacing="0.5" name="Maple Output"/><Font background="[0,0,0]" bold="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" opaque="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[255,0,255]" name="Error" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" family="Lucida Bright" foreground="[0,0,255]" name="2D Output" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" opaque="false" size="12"/><Font background="[0,0,0]" family="Monospaced" foreground="[0,0,255]" name="Line Printed Output" opaque="false" readonly="true" size="12"/></Styles><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Initialization</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">restart:
 Digits := 150;
-with (numapprox):with(orthopoly):</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSdEaWdpdHNHNiIiJF0i</Equation></Text-field></Output></Group><Text-field/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "Common_maple_procedures.m";
+with (numapprox):with(orthopoly):</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSdEaWdpdHNHNiIiJF0i</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "Common_Maple_Procedures.mpl";
 deg:=18;
-mkdir("TEMPLOG");
+mkdir("TEMPCSH");
 
 </Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSRkZWdHNiIiIz0=</Equation></Text-field><Text-field layout="Error" style="Error">Error, (in mkdir) directory exists and is not empty
-</Text-field></Output></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">Variables</Text-field></Title><Text-field layout="Normal" style="Text">n_double : maximal degree of the interpolation polynom
-n_double_double : maximal coefficient which is coded on 2 doubles</Text-field><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">n_double_ch := 16:
-n_double_double_ch := 3:
-n_double_sh := 15:
-n_double_double_sh := 4:
-x_max := ln(2.)/2.:
-</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Computation of bounds</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">max_inf_input_ch := arccosh(hexa2ieee(["7FEFFFFF","FFFFFFFF"])):
-max_input_ch := solve(exp(x) = 2**160*exp(-x),x):
-k_max_ch := max_input_ch / ln(2):
-min_inf_input_ch := -arccosh(hexa2ieee(["7FEFFFFF","FFFFFFFF"])):
-min_input_ch := solve(exp(-x) = 2**160*exp(x),x):
-min_absolute_input_ch := 2^(-27.):
-k_min_ch := min_input_ch / ln(2):
-ieeehexa(cosh(min_absolute_input_ch)) = ieeehexa(1.);
-
-max_inf_input_exp := ln(hexa2ieee(["7FEFFFFF","FFFFFFFF"])):
-
-max_inf_input_sh := arcsinh(hexa2ieee(["7FEFFFFF","FFFFFFFF"])):
-max_input_sh := solve(exp(x) = 2**160*exp(-x),x):
-k_max_sh := max_input_sh / ln(2):
-min_inf_input_sh := -arcsinh(hexa2ieee(["FFEFFFFF","FFFFFFFF"])):
-min_absolute_input_sh := 2^(-26.):
-min_input_sh := solve(exp(-x) = 2**160*exp(x),x):
-k_min_sh := min_input_sh / ln(2):
-ieeehexa(sinh(min_absolute_input_sh)) = ieeehexa(min_absolute_input_sh);
-
-inv_ln_2 := 1/ln(2.):
+</Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Variables</Text-field></Title><Text-field layout="Normal" style="Text">n_double : maximal degree of the interpolation polynom
+n_double_double : maximal coefficient which is coded on 2 doubles</Text-field><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">n_double_ch := 9:
+n_double_double_ch := -1:
+n_double_sh := 8:
+n_double_double_sh := -1:
+x_max := 2**(-9.):
+</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Constants</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">inv_ln_2 := 1/ln(2.):
 ln2_hi := hexa2ieee(["3FE62E42", "FEFA3800"]):
 ln2_lo := ln(2.)-hexa2ieee(["3FE62E42", "FEFA3800"]):
+two_43_44 := 2^43+2^44:
+bias := convert(op(2,ieeehexa(ln(2.)/2.+two_43_44)),'decimal','hex'):</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Computation of bounds</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">max_input_ch := arccosh(hexa2ieee(["7FEFFFFF","FFFFFFFF"])):
+k_max_ch := ceil(evalf(max_input_ch / ln(2))):
+max_input_sh := arcsinh(hexa2ieee(["7FEFFFFF","FFFFFFFF"])):
+k_max_sh := ceil(evalf(max_input_sh / ln(2))):
+k_max := k_max_sh:
 
 
-</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMvNyRRKTNGRjAwMDAwNiJRKTAwMDAwMDAwRiZGJA==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMvNyRRKTNFNTAwMDAwNiJRKTAwMDAwMDAwRiZGJA==</Equation></Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Computation of polynomial coefficients</Text-field></Title><Group><Input><Text-field layout="Normal" style="Maple Input">poly_ch :=series(cosh(x),x,n_double_ch):
-poly_ch := convert(poly_ch,polynom);</Text-field></Input><Input><Text-field layout="Normal" style="Maple Input">poly_sh :=series(sinh(x),x,n_double_sh):
-poly_sh := convert(poly_sh,polynom);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SShwb2x5X2NoRzYiLDIiIiJGJyokSSJ4R0YlIiIjI0YnRioqJEYpIiIlI0YnIiNDKiRGKSIiJyNGJyIkPygqJEYpIiIpI0YnIiY/LiUqJEYpIiM1I0YnIigrKUdPKiRGKSIjNyNGJyIqKzsreiUqJEYpIiM5I0YnIiwrN0h5cik=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SShwb2x5X3NoRzYiLDBJInhHRiUiIiIqJEYnIiIkI0YoIiInKiRGJyIiJiNGKCIkPyIqJEYnIiIoI0YoIiVTXSokRiciIiojRigiJyEpR08qJEYnIiM2I0YoIikrbyIqUiokRiciIzgjRigiKyszLUZp</Equation></Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Computation of errors</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">horner_error_ch := compute_abs_rounding_error(poly_ch,x_max,n_double_double_ch);
-sprintf("In bits :"); -log2(horner_error_ch);</Text-field></Input><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 13, consider decreasing xmax
-</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 11, consider decreasing xmax
-</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 9, consider decreasing xmax
-</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 7, consider decreasing xmax
+
+</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Computation of polynomial coefficients</Text-field></Title><Group><Input><Text-field layout="Normal" style="Maple Input">poly_ch :=series(cosh(x),x,n_double_ch):
+poly_ch := convert(poly_ch,polynom)-1;</Text-field></Input><Input><Text-field layout="Normal" style="Maple Input">poly_sh :=series(sinh(x)/x,x,n_double_sh):
+poly_sh := (convert(poly_sh,polynom))-1;</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SShwb2x5X2NoRzYiLCoqJEkieEdGJSIiIyMiIiJGKSokRigiIiUjRisiI0MqJEYoIiInI0YrIiQ/KCokRigiIikjRisiJj8uJQ==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SShwb2x5X3NoRzYiLCgqJEkieEdGJSIiIyMiIiIiIicqJEYoIiIlI0YrIiQ/IiokRihGLCNGKyIlU10=</Equation></Text-field></Output></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Computation of errors</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">horner_error_ch := compute_abs_rounding_error(poly_ch,x_max,n_double_double_ch);
+sprintf("In bits :"); -log2(horner_error_ch);</Text-field></Input><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 7, consider decreasing xmax
 </Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 5, consider decreasing xmax
 </Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 3, consider decreasing xmax
 </Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 1, consider decreasing xmax
-WARNING Add22 cannot be used at step 1, use Add22Cond
-    coeff=0.00000000000000000000e+00,  xmax*Smax=1.75028258012441631295e-01</Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STBob3JuZXJfZXJyb3JfY2hHNiI2JSQiYXQrRGYzO1V0WGkjUmhVMDR0TyZbNlksKXA/eW1McnRuJFF5KWUjejsoSD5cQTdFX0g6VUopPiFmUkQjZmVzZDpZYyYqPiEpUWo5KWYuJTMpbzc1cCMhJG8iJCJhdHBaRGZyIylvVDBdXygzbFEneUs5Oj9DQyRcLClHYj14TT1hcGRpSi9DT2tjdTZfY2xQbWdSIjNwSiQpeWAhKXojMyFmY09xSkpyeSxBRylSJFIqISRdIiQiYXRidkBrUkl0ZUkjZVt2RiUqMztbJm86dyUqXHo8KEc1KGYwdFgpUXUkZSQ+c1YhXEE/SiJHOVVMYSZcIVInW1pGeHcsM1RWakhvb0dAKXo8PGcxMSIhJFwi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRKklufmJpdHN+OjYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0bSMqSGNIISl6IVJ6dC96anQoUWQqKTMjNCFlcHVSUnMyO1EkR2YleTlfVHlUR296JWZnIj5idShHTywocClRS0BEUFInXFVEZykpZnRFIWU0WVspb2ghJFsi</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">horner_error_sh := compute_abs_rounding_error(poly_sh,x_max,n_double_double_sh);
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 0, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STBob3JuZXJfZXJyb3JfY2hHNiI2JSQiYXQhXDNSTnhUdlR0VE5FLy15InoyISkpPnZIRncjenI1LTZjIiopKT1mQmVAR2RAcj4kZSpwOTBMLFtXVHcrJCl6NiFlbCgqZSFHTFk5aUoiKip5InplNSEkcSIkIWF0L00oeTA+KnonKT4qbyoqPSZHKXlkI2ZRJFJDbixMKEdmbD5DPGU2KW8sckxXJzNpQmcvWzIhZVRGJHBRSUFcSS0jKSlbOypHbnVgZyIqeUI5UiNcdCE+ISRiIiQiYXRjSXFcJEdqXi5BemxUQiRlVExAS2tcQz1XLlk/XVJXJypIV0VhZ3NjXTRPOF89cDVGJSkzKy1APUJwNTotK15NKSlcTnEmUiR6QjlSI1x0IT5GLA==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRKklufmJpdHN+OjYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0Wm1oajEmM11CbSEqWzVpZ1c0RWwiUSVIS1N6YXAvKXpJWy0sQ1hMNzlxUihcXSpbVGJxaHpEUyJwXW4qKmVPeWQ3JyplNGYkXHgqZmZ6NTJ5J3AhJFsi</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">horner_error_sh := compute_abs_rounding_error(poly_sh,x_max,n_double_double_sh);
 sprintf("In bits : \n");
--log2(horner_error_sh);</Text-field></Input><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 12, consider decreasing xmax
-</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 10, consider decreasing xmax
-</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 8, consider decreasing xmax
-</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 6, consider decreasing xmax
-</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 4, consider decreasing xmax
-</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 2, consider decreasing xmax
-WARNING Add22 cannot be used at step 2, use Add22Cond
-    coeff=0.00000000000000000000e+00,  xmax*Smax=5.81101594628725919816e-02</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 0, consider decreasing xmax
-WARNING Add22 cannot be used at step 0, use Add22Cond
-    coeff=0.00000000000000000000e+00,  xmax*Smax=3.53553390593273762123e-01</Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STBob3JuZXJfZXJyb3Jfc2hHNiI2JSQiYXQ5aycqWyg0ZmRePjRhYGZqWlYpR0BbYmp0YCl5RDssdE5rNiJbTipvcUlSOipmZnpULlF3Q2pRbEUhKls9XGRxdTcmKXljMyFvdDciKSlSSixoPSEkcCIkIWF0RjtcYjNRMCJIeXUoRy4lUWE5MHNfbCIqZiYpKXkuJikqKXopeTlaV0ZrRFFEYVx0YHlaak9qPT9QeCtdbkpwa0ZiYSo9cSZSQkB3dEtmIVJgTk4hJF0iJCJhdHdcInllNFNYKCp5TSJSaS5CPzMtJCplVk5GJXlhczQkW0w8K3UmSG50VyNHJW9hYSRvLHpTOV0qb3khZVs2W08mMzhnKj1xJlJCQHd0S2YhUmBOTkYs</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRLElufmJpdHN+On58KzYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0XExiNnUqbzZTSDFUbXgxcCMpR2N4MTFdJCl5K29DJFE/RCZIW0ZYR0cjem9Wa1hNK0hwbjxjcidIIlE2NVY9eF4yOVZwXHpiXTdnbHRDYWwhJFsi</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">approx_error_ch := infnorm((cosh(x)-poly_ch)/cosh(x),x= -x_max..x_max):
--log2(approx_error_ch);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0S3EnRygqKno3amdKLVQzKHAteHZoX1IlKSozdSQ+MnB4cG8xJSlISk8sRkopM2c3Z0hCPW4leXhgZ1pwI0dCJlxvXjQ3dSQpKnkzZW9XSmQpeiV6byEkWyI=</Equation></Text-field></Output></Group><Group><Output><Text-field layout="Maple Output" style="2D Output"/></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">approx_error_sh := infnorm((sinh(x)-poly_sh)/sinh(x),x= -x_max..x_max):
--log2(approx_error_sh);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0Ql4kUlInKmZfNnE2JCk0UFJ6PGIjPXIhenE2cltQVyIzaEN2UzRpOG4wJGZtdnRPcCRwNyYzW2wuIylvWThkL0FoR3V1TCc0O3VdZ3IqKSkqNG9oISRbIg==</Equation></Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Output</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text"><Font executable="false">Some little routines to convert numbers to string with a good format, for inserting them into .h header file</Font></Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">IEEE2db_number_BE := proc(ieee_number)
+-log2(horner_error_sh);</Text-field></Input><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 5, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 3, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 1, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 0, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STBob3JuZXJfZXJyb3Jfc2hHNiI2JSQiYXRDJT4kKlwlR1wzPzZUInpoZClbeWF3SHUoenlMZSJvQUg3K1gqPSJmWUhPT3EzKj1qRyczUCspekpGMFVSTTlhI3lhJ0goeVszLC07TWVlXklITiEkciIkIWF0RiN6QTprY1Z1TVs4P3RWWVciWy02cyczVkd6Ok1BVSdbQz8jUT1JMlhjdydlamJfMDdJYk5jYlw4Y3h2KSpbVCQ0TXN0SypHIlEsKCkpKkh5TichJGMiJCJhdC1SXzcxLmM6RVkjKlFUL0B4ZyoqemBMQEciSGZDVjtVPzEkRyplV3FLQEBxNS1WbC9rY0ZoRDQwTWh6S0M1cVtFTz8jXDVxI1EsKCkpKkh5TidGLA==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRLElufmJpdHN+On58KzYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0SHMwKio+eVx2PXk0OWU/JVFAeCMzQiYpKTM4bjEqcHUpSCc+ZEwheSMzQiIpNCY0YzltSiRbKXo3O0QncCxPMD84aWc/I3AieXE7clN5QjAiUi5qNyghJFsi</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">approx_error_ch := infnorm((cosh(x)-1-poly_ch)/(cosh(x)-1),x= -x_max..x_max):
+-log2(approx_error_ch);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0TlstYEQ2WGwiKls9UVQib140XHRJKVw5XCMqSGtQSCgqKilceXFgX1FZIVwheiIzcSs4YWIkXHUnKUdAJmYlKTNcNWNodTEoUjdyTHJkVztgaDV6IyohJFsi</Equation></Text-field></Output></Group><Group><Output><Text-field layout="Maple Output" style="2D Output"/></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">approx_error_sh := infnorm((sinh(x)/x-1-poly_sh)/(sinh(x)/x-1),x= -x_max..x_max):
+-log2(approx_error_sh);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0KSopb3ckWzlwKltqRyhwLl0lXD47QylbUFZfI3Amb3NdUD5gRilSUTpXbW55Ti03PnRSaU1LTU8penVDX1d1WnQkUT5lLyYpKmYiZSRcVXVxVCkpcCEkWyI=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">round_cst_cosh := 1.0020;</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SS9yb3VuZF9jc3RfY29zaEc2IiQiJj8rIiEiJQ==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">round_cst_sinh := 1.0020;</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SS9yb3VuZF9jc3Rfc2luaEc2IiQiJj8rIiEiJQ==</Equation></Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Proof</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">ln2 := ln(2.);
+invln2:= nearest(1/ln2);
+reminvln2 := evalf(1/ln2 - invln2);
+expln2:=ieeedouble(ln2)[2]:   #get the exponent of ln2 in its IEEE representation
+# Fastest reduction using two-part Cody and Waite
+bits_ln2_hi_0 := ceil(log2(k_max));
+# 1/2 &lt;= ln2/2^(expln2 + 1) &lt;  1 
+ln2_hi := round(evalf(ln2 * 2^(52 - bits_ln2_hi_0 - expln2)))/2^(52 - bits_ln2_hi_0 - expln2);#this trick is used to get a truncated mantissa for ln2_hi
+#ln2_hi is a now exactly representable in the IEEE format and bits_ln2_hi_0 last bits of its mantissa are set to 0
+#and bits_ln2_hi_0 is exactly the max number of bits to represent k
+#so the k * ln2_hi-product is exact :)
+ln2_lo:=nearest(ln2 - ln2_hi):
+
+
+# The error in this case (we need absolute error) 
+delta_repr_ln2 := abs(ln2 - ln2_hi - ln2_lo);
+delta_round := 1/2 * ulp(ln2_lo) ;
+delta_cody_waite := k_max * (delta_repr_ln2 + delta_round);
+
+delta_table_cosh := delta_table_cosh_func();
+delta_table_sinh := delta_table_sinh_func();<Font encoding="ISO8859-1">
+#both used polynoms are even (x\262, x^4, x^6, ...) and we can use this fact</Font>
+y_max := x_max ^ 2;
+<Font encoding="ISO8859-1">
+# remove the first x and compute the polynomial of y = x\262</Font>
+poly_ch2 :=  subs(x=sqrt(y), expand(poly_ch));
+errlist_cosh := errlist_quickphase_horner(degree(poly_ch2), 0, 0, 2**(-53), 2**(-70)):
+rounding_error_ch := compute_horner_rounding_error(poly_ch2, y, y_max, errlist_cosh, true);
+<Font encoding="ISO8859-1">
+# remove the first x and compute the polynomial of y = x\262</Font>
+poly_sh2 :=  subs(x=sqrt(y), expand(poly_sh));
+errlist_sinh := errlist_quickphase_horner(degree(poly_sh2), 0, 0, 2**(-53), 2**(-70)):
+rounding_error_sh := compute_horner_rounding_error(poly_sh2, y, y_max, errlist_sinh, true);
+
+
+
+
+</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSRsbjJHNiIkImF0Tjt2cUUuZDA4ZWRCP2JvTGRvcTAtIlssP2Eobz1rKnBLamVnOlpwcD5pJFIkXDQrbz9URGItT00sXXYhb2w8ZTk3S3NUNGAlKmYwPVpKcCEkXSI=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSdpbnZsbjJHNiIjIjEqUnlVVWcnW0siMVtfbzgpKnpeQQ==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSpyZW1pbnZsbjJHNiIkImBzQWVAbT9Ga2Ykb3JvLEpmYlVhXyc0JD12KnBcV2pdJCpHaUViKSl6XT0iPT4jNDYkcFNcYThNNDYiW1NXNGImXD8uSjR1dF9OPyEkXCI=</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SS5iaXRzX2xuMl9oaV8wRzYiIiM2</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSdsbjJfaGlHNiIjIi5WIlJOXFtJIi4vNl5ZISlSJQ==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SS9kZWx0YV9yZXByX2xuMkc2IiQiYHMrKysrKytdal4ybktxYkkiZWRCP2JvTGRvcTAtIlssP2Eobz05aW51TjcmKUc0KilIRyZ5LVFGTExkZnplXipcMlEjNFhxJT4hJGoi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSxkZWx0YV9yb3VuZEc2IiMiIiIiP1c4IWU8dS5OZHEwXUUicEo=</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STFkZWx0YV9jb2R5X3dhaXRlRzYiJCJhdCsrKysrKysrKysrKyt2ZVU/dltlNCNRM187Q2V3LXhHJlwzWSE9OmIhKTQib25GemFDWi86IUguKnlqWGs1JTNFUihIJmVBc188dkwkPSFSViQhJHci</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STFkZWx0YV90YWJsZV9jb3NoRzYiJCJgcysrKysrKysreDAnby4qZW5yUEojbzRgbmEsJ0dSLWhPLk0pXG9sWDVkIzNheWZ2Qyo9LzxrQDdjZHhDZ1s2Nik9IVx0MyczJyEkbCI=</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STFkZWx0YV90YWJsZV9zaW5oRzYiJCJhcysrKysrKysrLjlISXotM3YiPkZaSSYqcGFoVj4jeTZ6dihmUXJzZ1MkKSk9IWZ0M1loJDNrZUM+ZSVlKHB6REhgdSlma18/LFoiISRtIg==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSZ5X21heEc2IiQiYXQrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrK11pbHNwOVEhJGIi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSlwb2x5X2NoMkc2IiwqSSJ5R0YlIyIiIiIiIyokRidGKiNGKSIjQyokRiciIiQjRikiJD8oKiRGJyIiJSNGKSImPy4l</Equation></Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">step 4   epsmulk=2.2204e-16  deltaaddk=1.0842e-19   minSk=1.3889e-03   maxSk=1.3889e-03
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">step 3   epsmulk=3.0011e-16  deltaaddk=3.4694e-18   minSk=4.1667e-02   maxSk=4.1667e-02
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">step 2   epsmulk=3.0531e-16  deltaaddk=5.5511e-17   minSk=5.0000e-01   maxSk=5.0000e-01
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">step 1   epsmulk=3.3307e-16  deltaaddk=6.3528e-22   minSk=0.0000e+00   maxSk=1.9073e-06
+</Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STJyb3VuZGluZ19lcnJvcl9jaEc2IjYmJCJhdCsrKysrKysrRylRaC5OKXotVTBYRWJLKVJgdnZFdXkjcHFjbDtOIjRpVVAnXEJPUEgxKilHeiEqW25DUSNlJHBKKUcjUUx3ZFpJL15PKFJxMUwkISRsIiQiYXRMZGdKb0pLbFQzZyx4Q1glUlEsUWVSY211aEclcFVGI3BbNlBkVS0iMzAoWyNvJClwYWs5QV9cXl82XiFSSVUyelByWkEmZVV1JFsjWzt2X2ohJHIiIiIhJCJhdDlkRzlkRzlkRzlkRzlkRzlkRzlkRzlkRzlkRzlkRzlkRzlkRzlkLmUwK3N0YVk+YTUjM0lFYi0sQilRYkg9dl1jeTJHeUI5UiNcdCE+ISRiIg==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSlwb2x5X3NoMkc2IiwoSSJ5R0YlIyIiIiIiJyokRiciIiMjRikiJD8iKiRGJyIiJCNGKSIlU10=</Equation></Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">step 3   epsmulk=2.2204e-16  deltaaddk=8.6736e-19   minSk=8.3333e-03   maxSk=8.3333e-03
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">step 2   epsmulk=3.2613e-16  deltaaddk=1.3878e-17   minSk=1.6667e-01   maxSk=1.6667e-01
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">step 1   epsmulk=3.0531e-16  deltaaddk=1.9411e-22   minSk=0.0000e+00   maxSk=6.3578e-07
+</Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STJyb3VuZGluZ19lcnJvcl9zaEc2IjYmJCJhdCsrKysrKysrNkVNRikpKikqPjskb3o2cSV6MilRXjVhQ1lWeWplPSFlOSRmPiFSKSkqPmlweUVlNGktS2x4SEpfM3RgSThNLjliRXpkKTQ5SjAkISRsIiQiYXQ8MDVZejYiUVImMzVVJW9DdlZvVXdtbGpzTyRbUU4nPjM+InkyJj1aLkskUiQqeVkhPnB0KSk+KWVrXj4jbyV6JVxmLmcxNEh1NUE/ZCdbUCE9NiU+ISRyIiIiISQiYXQsRlQpcDclKXA3JSlwNyUpcDclKXA3JSlwNyUpcDclKXA3JSlwNyUpcDclKXA3JSlwNyUpcDclKXA3JSlwNyUpPitKXVApM1NlIjRvSyN6PDFXPDx6OHEpKSpIeU4nISRjIg==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">size_of_table := convert(op(2,ieeehexa(two_43_44+ln(2.)/2.)),decimal,hex);
+
+next_float := proc(value)
+local hex1,hex2,hexcat,result;
+hex1:= op(1, value):
+hex2:= op(2, value):
+hexcat:= cat(hex1, hex2);
+result := convert(convert(convert(hexcat,decimal,hex)+1+2**64,hex),string);
+result := [substring(result,2..9), substring(result,10..18)];
+end:
+
+delta_table_cosh_func := proc()
+local result, i, value, temp, tmp;
+value := ieeehexa(two_43_44-ln(2.)/2.);
+result := 0;
+for i from -size_of_table to size_of_table do
+	tmp := cosh(hexa2ieee(value)-two_43_44):
+	temp := nearest(tmp):
+	result := max(result, abs(tmp - temp - nearest(tmp-temp)));
+	value:=next_float(value):
+	
+	
+od:
+result;
+end;
+
+delta_table_sinh_func := proc()
+local result, i, value, temp, tmp;
+value := ieeehexa(two_43_44-ln(2.)/2.);
+result := 0;
+for i from -size_of_table to size_of_table do
+	tmp := sinh(hexa2ieee(value)-two_43_44):
+	temp := nearest(tmp):
+	result := max(result, abs(tmp - temp - nearest(tmp-temp)));
+	value:=next_float(value):
+	
+	
+od:
+result;
+end;</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SS5zaXplX29mX3RhYmxlRzYiIiMqKQ==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STZkZWx0YV90YWJsZV9jb3NoX2Z1bmNHNiJmKkYlNidJJ3Jlc3VsdEdGJUkiaUdGJUkmdmFsdWVHRiVJJXRlbXBHRiVJJHRtcEdGJUYlRiVDJj44Ji1JKWllZWVoZXhhR0YlNiMsJkkqdHdvXzQzXzQ0R0YlIiIiKiYtSSNsbkc2JEkqcHJvdGVjdGVkR0Y6SShfc3lzbGliR0YlNiMkIiIjIiIhRjVGPSEiIkZAPjgkRj8/KDglLCRJLnNpemVfb2ZfdGFibGVHRiVGQEY1RkZJJXRydWVHRjpDJj44KC1JJWNvc2hHRjk2IywmLUkqaGV4YTJpZWVlR0YlNiNGL0Y1RjRGQD44Jy1JKG5lYXJlc3RHRiU2I0ZKPkZCLUkkbWF4R0Y6NiRGQi1JJGFic0dGOjYjLChGSkY1RlNGQC1GVTYjLCZGSkY1RlNGQEZAPkYvLUkrbmV4dF9mbG9hdEdGJUZRRkJGJUYlRiU=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STZkZWx0YV90YWJsZV9zaW5oX2Z1bmNHNiJmKkYlNidJJ3Jlc3VsdEdGJUkiaUdGJUkmdmFsdWVHRiVJJXRlbXBHRiVJJHRtcEdGJUYlRiVDJj44Ji1JKWllZWVoZXhhR0YlNiMsJkkqdHdvXzQzXzQ0R0YlIiIiKiYtSSNsbkc2JEkqcHJvdGVjdGVkR0Y6SShfc3lzbGliR0YlNiMkIiIjIiIhRjVGPSEiIkZAPjgkRj8/KDglLCRJLnNpemVfb2ZfdGFibGVHRiVGQEY1RkZJJXRydWVHRjpDJj44KC1JJXNpbmhHRjk2IywmLUkqaGV4YTJpZWVlR0YlNiNGL0Y1RjRGQD44Jy1JKG5lYXJlc3RHRiU2I0ZKPkZCLUkkbWF4R0Y6NiRGQi1JJGFic0dGOjYjLChGSkY1RlNGQC1GVTYjLCZGSkY1RlNGQEZAPkYvLUkrbmV4dF9mbG9hdEdGJUZRRkJGJUYlRiU=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">delta_table_cosh_func();
+delta_table_sinh_func();</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImBzKysrKysrKyt4MCdvLiplbnJQSiNvNGBuYSwnR1ItaE8uTSlcb2xYNWQjM2F5ZnZDKj0vPGtAN2NkeENnWzY2KT0hXHQzJzMnISRsIg==</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImFzKysrKysrKysuOUhJei0zdiI+RlpJJipwYWhWPiN5Nnp2KGZRcnNnUyQpKT0hZnQzWWgkM2tlQz5lJWUocHpESGB1KWZrXz8sWiIhJG0i</Equation></Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Tabulation</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">
+IEEE2db_db_number := proc(number,big_little)
+local hexstring1,hexstring2, hex1,hex2,hex3,hex4;
+hexstring1 := ieeehexa(number);
+hexstring2 := ieeehexa(lo_part(number));
+if (big_little = 1) then
+hex1:= op(1, hexstring1):
+hex2:= op(2, hexstring1):
+hex3:= op(1, hexstring2):
+hex4:= op(2, hexstring2):
+else 
+hex1:= op(2, hexstring1):
+hex2:= op(1, hexstring1):
+hex3:= op(2, hexstring2):
+hex4:= op(1, hexstring2):
+fi;
+"	{{{0x"||hex1||", 0x"||hex2||"}}, {{0x"||hex3||", 0x"||hex4||"}}}, \n";
+end:
+
+IEEE2db_db_number_sinh := proc(number,big_little)
+local hexstring1,hexstring2, hex1,hex2,hex3,hex4;
+hexstring1 := ieeehexa(number);
+hexstring2 := ieeehexa(lo_part(number));
+if (big_little = 1) then
+hex1:= op(1, hexstring1):
+hex2:= op(2, hexstring1):
+hex3:= op(1, hexstring2):
+hex4:= op(2, hexstring2):
+else 
+hex1:= op(2, hexstring1):
+hex2:= op(1, hexstring1):
+hex3:= op(2, hexstring2):
+hex4:= op(1, hexstring2):
+fi;
+"	  {{0x"||hex1||", 0x"||hex2||"}}, {{0x"||hex3||", 0x"||hex4||"}}},\n";
+end:
+
+IEEE2db_db_number_cosh := proc(number,big_little)
+local hexstring1,hexstring2, hex1,hex2,hex3,hex4;
+hexstring1 := ieeehexa(number);
+hexstring2 := ieeehexa(lo_part(number));
+if (big_little = 1) then
+hex1:= op(1, hexstring1):
+hex2:= op(2, hexstring1):
+hex3:= op(1, hexstring2):
+hex4:= op(2, hexstring2):
+else 
+hex1:= op(2, hexstring1):
+hex2:= op(1, hexstring1):
+hex3:= op(2, hexstring2):
+hex4:= op(1, hexstring2):
+fi;
+"	{{{0x"||hex1||", 0x"||hex2||"}}, {{0x"||hex3||", 0x"||hex4||"}},\n";
+end:
+
+
+</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Output</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text"><Font executable="false">Some little routines to convert numbers to string with a good format, for inserting them into .h header file</Font></Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">IEEE2db_number_BE := proc(ieee_number)
 local hex1, hex2, hexcat;
 hexcat=ieeehexa(ieee_number);
 hex1:= op(1, ieeehexa(ieee_number)):
@@ -75,6 +194,7 @@ hex1:= op(2, ieeehexa(ieee_number)):
 hex2:= op(1, ieeehexa(ieee_number)):
 cat(cat("{{0x"||hex1||",0x"||hex2||"}};     /*",sprintf("%.10e",ieee_number)),"*/  \n");
 end:
+
 IEEE2db_number := proc(ieee_number, big_little)
 if (big_little = 1) then
 IEEE2db_number_BE(ieee_number):
@@ -82,9 +202,14 @@ else
 IEEE2db_number_LE(ieee_number):
 fi;
 end:
+
 lo_part := proc(ieee_number)
-ieee_number - hexa2ieee(ieeehexa(ieee_number));
-end:</Text-field></Input><Input><Text-field prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">IEEE2db_number(12., 1);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRV3xmcnxmcjB4NDAyODAwMDAsMHgwMDAwMDAwMHxocnxocjt+fn5+fi8qMS4yMDAwMDAwMDAwZSswMSovfn58KzYi</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">filename := "TEMPLOG/csh_fast.h":
+if (ieee_number &lt;&gt; 0) then
+ieee_number - nearest(ieee_number);
+else
+0;
+end if;
+end:</Text-field></Input><Input><Text-field prompt="&gt; " style="Maple Input"/></Input></Group><Group><Output><Text-field layout="Maple Output" style="2D Output"/></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">filename := "TEMPCSH/csh_fast.h":
 fd := fopen(filename, WRITE, TEXT):
 fprintf(fd, "\n /* File generated by maple/csh_fast.mw */ \n"):
 fprintf(fd, "\n"):
@@ -95,39 +220,45 @@ for big_little from 1 to 2 do
 	if (big_little = 2) then
 		fprintf(fd,                "#else  \n"):
 	fi:
-	fprintf(fd, cat(  "  db_number const max_inf_input_ch = ",IEEE2db_number(max_inf_input_ch,big_little))):
-	fprintf(fd, cat(  "  db_number const max_input_ch = ",IEEE2db_number(max_input_ch,big_little))):
-	fprintf(fd, cat(  "  db_number const min_inf_input_ch = ",IEEE2db_number(min_inf_input_ch,big_little))):
-	fprintf(fd, cat(  "  db_number const min_input_ch = ",IEEE2db_number(min_inf_input_ch,big_little))):
-	fprintf(fd, cat(  "  db_number const min_absolute_input_ch = ",IEEE2db_number(min_absolute_input_ch,big_little))):
-	fprintf(fd, cat(  "  db_number const max_inf_input_exp = ",IEEE2db_number(max_inf_input_exp,big_little))):
-	
-	fprintf(fd, cat(  "  db_number const max_inf_input_sh = ",IEEE2db_number(max_inf_input_sh,big_little))):
-	fprintf(fd, cat(  "  db_number const max_input_sh = ",IEEE2db_number(max_input_sh,big_little))):
-	fprintf(fd, cat(  "  db_number const min_inf_input_sh = ",IEEE2db_number(min_inf_input_sh,big_little))):
-	fprintf(fd, cat(  "  db_number const min_input_sh = ",IEEE2db_number(min_input_sh,big_little))):
-	fprintf(fd, cat(  "  db_number const min_absolute_input_sh = ",IEEE2db_number(min_absolute_input_sh,big_little))):
-	
 	fprintf(fd, cat(  "  db_number const inv_ln_2 =   ",IEEE2db_number(inv_ln_2,big_little))):
 	fprintf(fd, cat(  "  db_number const ln2_hi = ",IEEE2db_number(ln2_hi,big_little))):
 	fprintf(fd, cat(  "  db_number const ln2_lo = ",IEEE2db_number(ln2_lo,big_little))):
+	fprintf(fd, cat(  "  db_number const two_43_44 = ", IEEE2db_number(two_43_44,big_little))):
+	fprintf(fd, cat(  "  db_number const two_minus_30 = ", IEEE2db_number(2**(-30),big_little))):
+	fprintf(fd,  "  int const bias = %d ;\n", bias):
+	fprintf(fd, "\n");
+
+	fprintf(fd,"/* some bounds */ \n"):
+	fprintf(fd, cat(  "  db_number const max_input_ch = ",IEEE2db_number(max_input_ch,big_little))):
+	fprintf(fd, cat(  "  db_number const max_input_sh = ",IEEE2db_number(max_input_sh,big_little))):
+	fprintf(fd, cat(  "  db_number const round_cst_cosh = ", IEEE2db_number(round_cst_cosh,big_little))):
+	fprintf(fd, cat(  "  db_number const round_cst_sinh = ", IEEE2db_number(round_cst_sinh,big_little))):
+
+	fprintf(fd, cat(cat("static const db_number cosh_sinh_table[",convert(2*size_of_table+1,string)),"][4] = { \n"));
+	value := ieeehexa(two_43_44-ln(2.)/2.);
+	for i from -size_of_table to size_of_table do
+		fprintf(fd, IEEE2db_db_number_cosh(cosh(hexa2ieee(value)-two_43_44),big_little));
+		fprintf(fd, IEEE2db_db_number_sinh(sinh(hexa2ieee(value)-two_43_44),big_little));
+		value:=next_float(value):
+	od:
+	fprintf(fd,"}; \n");
 
 	fprintf(fd,"/* the coefficients for the cosh-approximations */ \n"):
 	for i from 1 to ((n_double_double_ch+1)/2) do
-		fprintf(fd, cat(cat(cat(  "  db_number const c",convert(i-1,string)),"_hi =   "),IEEE2db_number(coeff(poly_ch,x,2*(i-1)),big_little))):
-		fprintf(fd, cat(cat(cat(  "  db_number const c",convert(i-1,string)),"_lo =   "),IEEE2db_number(lo_part(coeff(poly_ch,x,2*(i-1))),big_little))):
+		fprintf(fd, cat(cat(cat(  "  db_number const c",convert(2*(i-1),string)),"_hi =   "),IEEE2db_number(coeff(poly_ch,x,2*(i-1)),big_little))):
+		fprintf(fd, cat(cat(cat(  "  db_number const c",convert(2*(i-1),string)),"_lo =   "),IEEE2db_number(lo_part(coeff(poly_ch,x,2*(i-1))),big_little))):
 	od:
 	for i from 1 to (n_double_ch/2) do
-		fprintf(fd, cat(cat(cat(  "  db_number const c",convert(i-1,string))," =   "),IEEE2db_number(coeff(poly_ch,x,2*(i-1)),big_little))):
+		fprintf(fd, cat(cat(cat(  "  db_number const c",convert(2*(i-1),string))," =   "),IEEE2db_number(coeff(poly_ch,x,2*(i-1)),big_little))):
 	od:
-
+	
 	fprintf(fd,"/* the coefficients for the sinh-approximations */\n"):
 	for i from 1 to ((n_double_double_sh+1)/2) do
-		fprintf(fd, cat(cat(cat(  "  db_number const s",convert(i-1,string)),"_hi =   "),IEEE2db_number(coeff(poly_sh,x,2*i-1),big_little))):
-		fprintf(fd, cat(cat(cat(  "  db_number const s",convert(i-1,string)),"_lo =   "),IEEE2db_number(lo_part(coeff(poly_sh,x,2*i-1)),big_little))):
+		fprintf(fd, cat(cat(cat(  "  db_number const s",convert(2*i-1,string)),"_hi =   "),IEEE2db_number(coeff(poly_sh,x,2*i-1),big_little))):
+		fprintf(fd, cat(cat(cat(  "  db_number const s",convert(2*i-1,string)),"_lo =   "),IEEE2db_number(lo_part(coeff(poly_sh,x,2*i-1)),big_little))):
 	od:
 	for i from 1 to (n_double_sh/2) do
-		fprintf(fd, cat(cat(cat(  "  db_number const s",convert(i-1,string))," =   "),IEEE2db_number(coeff(poly_sh,x,2*i-1),big_little))):
+		fprintf(fd, cat(cat(cat(  "  db_number const s",convert(2*i-1,string))," =   "),IEEE2db_number(coeff(poly_sh,x,2*i-1),big_little))):
 	od:
 od:
 
@@ -135,4 +266,44 @@ od:
 fprintf(fd, "#endif  \n"):
 
 fclose(fd):
-</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Scratch</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Text-field/></Section><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
+</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Scratch</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">low_part := proc(x) nearest(lo_part(x)); end:
+
+
+simul_cosh := proc(x) 
+local k, b_hi, b_lo, index, tcb_hi, tcb_lo, tsb_hi, tsb_lo, ca_hi, ca_lo, sa_hi, sa_lo, temp, cb_hi, cb_lo, sb_hi, sb_lo,
+cosh_hi, cosh_lo, sinh_hi, sinh_lo;
+
+k := round(x / ln(2.));<Font encoding="ISO8859-1">
+print("premi\350re r\351duction d'argument");</Font>
+print("k = ", k);
+b_hi := x - k*ln(2.);
+b_lo := low_part(b_hi);
+b_hi := nearest(b_hi);
+print("b_hi = ", ieeehexa(b_hi), "b_lo = ",ieeehexa(b_lo));
+<Font encoding="ISO8859-1">
+print("seconde r\351duction d'argument");</Font>
+temp := nearest(b_hi + 2**44 + 2**43);
+index := temp - 2**44 - 2**43;
+b_hi := b_hi - index;
+print("index = ", convert(op(2,ieeehexa(temp)),decimal,hex));
+print("b_hi = ", ieeehexa(b_hi), "b_lo = ",ieeehexa(b_lo));
+
+print("tables");
+ca_hi := nearest(cosh(index)); ca_lo := low_part(cosh(index));
+print("ca_hi = ", ieeehexa(ca_hi), "ca_lo = ", ieeehexa(ca_lo));
+sa_hi := nearest(sinh(index)); sa_lo := low_part(sinh(index));
+print("sa_hi = ", ieeehexa(sa_hi), "sa_lo = ", ieeehexa(sa_lo));
+print("calculs...");
+cb_hi := nearest(cosh(b_hi+b_lo)); cb_lo := low_part(cosh(b_hi+b_lo));
+print("cb_hi = ", ieeehexa(cb_hi), "cb_lo = ", ieeehexa(cb_lo));
+sb_hi := nearest(sinh(b_hi+b_lo)); sb_lo := low_part(sinh(b_hi+b_lo));
+print("sb_hi = ", ieeehexa(sb_hi), "sb_lo = ", ieeehexa(sb_lo));
+
+
+print("reconstruction");
+cosh_hi := nearest(cosh(b_hi + index + b_lo));cosh_lo := low_part(cosh(b_hi + index + b_lo));
+sinh_hi := nearest(sinh(b_hi + index + b_lo));sinh_lo := low_part(sinh(b_hi + index + b_lo));
+print("cosh_hi := ", ieeehexa(cosh_hi), "cosh_lo := ", ieeehexa(cosh_lo));
+print("sinh_hi := ", ieeehexa(sinh_hi), "sinh_lo := ", ieeehexa(sinh_lo));
+end:
+	</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">simul_cosh(1.7447608751915879565785871818661689758300781250000000000000000000000000e+01);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRPnByZW1pfGN5cmV+cnxkeWR1Y3Rpb25+ZCdhcmd1bWVudDYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiRRJWt+PX42IiIjRA==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiZRKGJfaGl+PX42IjckUSkzRkJFNzIyNUYkUSk4MzY0OEQxRUYkUShiX2xvfj1+RiQ3JFEpM0M0Q0E0NjFGJFEpQkIxM0NFQTNGJA==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRPXNlY29uZGV+cnxkeWR1Y3Rpb25+ZCdhcmd1bWVudDYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiRRKWluZGV4fj1+NiIiI0k=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiZRKGJfaGl+PX42IjckUSkzRjVDODk2MEYkUSlEOTIzNDc4MEYkUShiX2xvfj1+RiQ3JFEpM0M0Q0E0NjFGJFEpQkIxM0NFQTNGJA==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRJ3RhYmxlczYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiZRKWNhX2hpfj1+NiI3JFEpM0ZGMDFDMjhGJFEpM0U1NzQwQzVGJFEpY2FfbG9+PX5GJDckUSkzQzk1RDI5NUYkUSk5RUMwMjExN0Yk</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiZRKXNhX2hpfj1+NiI3JFEpM0ZCRTExOTdGJFEpMTc0NjM5OTFGJFEpc2FfbG9+PX5GJDckUSkzQzVFMUZDQUYkUSk0MTBFNjFBOUYk</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRK2NhbGN1bHMuLi42Ig==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiZRKWNiX2hpfj1+NiI3JFEpM0ZGMDAwMDFGJFEpOTcyQjdBRTVGJFEpY2JfbG9+PX5GJDckUSkzQzk1MkVERUYkUSlBNzNENEUzM0Yk</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiZRKXNiX2hpfj1+NiI3JFEpM0Y1Qzg5NjFGJFEpQ0IzNEE0OUNGJFEpc2JfbG9+PX5GJDckUSlCQkYxNkZGMkYkUSk2QzVFRUVBQkYk</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRL3JlY29uc3RydWN0aW9uNiI=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiZRLGNvc2hfaGl+Oj1+NiI3JFEpM0ZGMDFEMDBGJFEpNUMyQTgzQzJGJFEsY29zaF9sb346PX5GJDckUSkzQkM0MTQ5RUYkUSlBNUY5NTRDOUYk</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiZRLHNpbmhfaGl+Oj1+NiI3JFEpM0ZCRTg0ODhGJFEpN0M2QjU2MDZGJFEsc2luaF9sb346PX5GJDckUSlCQzU4RDEyREYkUSk2REUyMzkwNkYk</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>

@@ -27,9 +27,6 @@
 #define __setfpucw(cw) __asm__ ("fldcw %0" : : "m" (cw))
 #endif 
 #endif
-#ifndef CHANGED_FL
-#define CHANGED_FL 1
-#endif
 /* An init function which sets FPU flags when needed (mostly on Intel
    architectures with default double extended) */
 extern void crlibm_init(void);
@@ -90,11 +87,15 @@ extern double log10_rn(double); /* to nearest  */
 extern double log10_rd(double); /* toward -inf */ 
 extern double log10_ru(double); /* toward +inf */ 
 
-#if CHANGED_FL
 /* Compute the hyperbolic cosine*/
 extern double cosh_rn(double); /* to nearest */
+extern double cosh_rd(double); /* toward -inf */ 
+extern double cosh_ru(double); /* toward +inf */ 
+extern double cosh_rz(double); /* toward zero */ 
 /* Compute the hyperbolic sine */
 extern double sinh_rn(double); /* to nearest */
-#endif /*CHANGED_FL */
+extern double sinh_rd(double); /* toward -inf */ 
+extern double sinh_ru(double); /* toward +inf */ 
+extern double sinh_rz(double); /* toward zero */ 
 
 #endif /* ifdef CRLIBM_H*/

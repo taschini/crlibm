@@ -249,11 +249,11 @@ void test_init(/* pointers to returned value */
       *testfun_libm   = cosh;
       switch(crlibm_rnd_mode){
       case 2:
-	*testfun_crlibm = exp_ru;	break;
+	*testfun_crlibm = cosh_ru;	break;
       case 3:
-	*testfun_crlibm = exp_rd;	break;
+	*testfun_crlibm = cosh_rd;	break;
       case 4:
-	*testfun_crlibm = exp_rz;	break;
+	*testfun_crlibm = cosh_rz;	break;
       default:
 	*testfun_crlibm = cosh_rn;
       }
@@ -273,11 +273,11 @@ void test_init(/* pointers to returned value */
       *testfun_libm   = sinh;
       switch(crlibm_rnd_mode){
       case 2:
-	*testfun_crlibm = exp_ru;	break;
+	*testfun_crlibm = sinh_ru;	break;
       case 3:
-	*testfun_crlibm = exp_rd;	break;
+	*testfun_crlibm = sinh_rd;	break;
       case 4:
-	*testfun_crlibm = exp_rz;	break;
+	*testfun_crlibm = sinh_rz;	break;
       default:
 	*testfun_crlibm = sinh_rn;
       }
