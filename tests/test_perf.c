@@ -56,6 +56,8 @@ int crlibm_first_step_taken;
 db_number input, res_crlibm, res_mpfr, res_ibm, res_libm;
 
 
+/* Unused random number generator*/
+double (*randfun_soaktest) () = NULL;
 /* The random number generator*/
 double (*randfun)       () = NULL;
 /* The function we test */
@@ -90,11 +92,11 @@ void fill_and_flush(int seed) {
 
 
 void usage(char *fct_name){
-  fprintf (stderr, "\n\n Performance test for crlibm \n");
-  fprintf (stderr, "Usage: %s name (RN|RU|RD|RZ) iterations \n", fct_name);
-  fprintf (stderr, " name          : name of function to test \n");
-  fprintf (stderr, " (RN/RU/RD/RZ) : rounding mode, \n");
-  fprintf (stderr, " iterations    : integer, seed for the random number generator \n");
+  /*fprintf (stderr, "\n%s: Performance test for crlibm and other mathematical libraries\n", fct_name);*/
+  fprintf (stderr, "\nUsage: %s function (RN|RU|RD|RZ) iterations \n", fct_name);
+  fprintf (stderr, " function      : name of function to test \n");
+  fprintf (stderr, " (RN|RU|RD|RZ) : rounding mode, \n");
+  fprintf (stderr, " iterations    : number of iterations, also seed for the random number generator \n");
   exit (1);
 }
 
@@ -144,6 +146,7 @@ mp_rnd_t mpfr_rnd_mode;
 
     test_init(/* pointers to returned value */
 	       &randfun, 
+	       &randfun_soaktest, /* unused here */ 
 	       &testfun_crlibm, 
 	       &testfun_mpfr,
 	       &testfun_libultim,

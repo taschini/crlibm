@@ -26,11 +26,12 @@
 
 
 void usage(char *fct_name){
-  fprintf (stderr, "\nCompares results between different library (crlibm, mpfr, Ziv, libm,  libmcr) \n");
-  fprintf (stderr, "Usage: %s fun mode val \n", fct_name);
-  fprintf (stderr, " fun : name of function to test \n");
-  fprintf (stderr, " mode : rounding mode [RN, RD, RU, RZ] \n");
-  fprintf (stderr, " val  : double precision input number \n");
+  /*fprintf (stderr, "\n%s: single-value test for crlibm and other mathematical libraries\n", fct_name);*/
+  fprintf (stderr, "\nUsage: %s [-x] function (RN|RU|RD|RZ) value\n", fct_name);
+  fprintf (stderr, " function      : name of function to test \n");
+  fprintf (stderr, " (RN|RU|RD|RZ) : rounding mode, \n");
+  fprintf (stderr, " iterations    : number of iterations, also seed for the random number generator \n");
+  fprintf (stderr, " value         : double precision input number (in hexa option -x is given) \n");
   exit (1);
 }
 
@@ -39,55 +40,63 @@ void usage(char *fct_name){
 
 int main (int argc, char *argv[]) 
 { 
-  char* rounding_mode;
+  char* option;
   char* function_name;
-  double input;
+  char* rounding_mode;
   double worstcase;
 
   
-  db_number res_crlibm, res_mpfr, res_ibm, res_libmcr, res_libm;
+  db_number input, res_crlibm, res_mpfr, res_ibm, res_libmcr, res_libm;
 #ifdef HAVE_MPFR_H
   mp_rnd_t mpfr_rnd_mode;
   mpfr_t mp_res, mp_input; 
 #endif
 
 
-/* The random number generator (unused here) */
-double (*randfun)       () = NULL;
-/* The function we test */
-double (*testfun_crlibm)() = NULL;
-/* The function we trust */
-int    (*testfun_mpfr)  () = NULL;
-/* The function to show off against for accuracy  */
-double (*testfun_libm)  () = NULL;
-/* The function to show off against for performance */
-double (*testfun_libultim)   () = NULL;
-/*  */
-double (*testfun_libmcr)   () = NULL;
+  /* The random number generator (unused here) */
+  double (*randfun)       () = NULL;
+  /* The function we test */
+  double (*testfun_crlibm)() = NULL;
+  /* The function we trust */
+  int    (*testfun_mpfr)  () = NULL;
+  /* The function to show off against for accuracy  */
+  double (*testfun_libm)  () = NULL;
+  /* The function to show off against for performance */
+  double (*testfun_libultim)   () = NULL;
+  /* The last to join the family */
+  double (*testfun_libmcr)   () = NULL;
 
 
-  if ((argc != 4)) usage(argv[0]);
-  else{
+  if ((argc != 4) && argc!=5) usage(argv[0]);
+  if(argc == 4) {
     function_name = argv[1];
     rounding_mode = argv[2];
-    sscanf(argv[3],"%le", &input);
-    
-    crlibm_init();
+    sscanf(argv[3],"%le", &input.d);
+  }
+  if(argc == 5) {
+    option = argv[1];
+    if(!(option[0]=='-' && option[1]=='x')) usage(argv[0]);
+    function_name = argv[2];
+    rounding_mode = argv[3];
+    sscanf(argv[4],"%llx", &input.l);
+  }
+  crlibm_init();
 #ifdef HAVE_MATHLIB_H
   Init_Lib(); /* we don't save the state, no need here */ 
 #endif
 
     test_init(/* pointers to returned value */
-	       &randfun, 
-	       &testfun_crlibm, 
-	       &testfun_mpfr,
-	       &testfun_libultim,
-	       &testfun_libmcr,
-	       &testfun_libm,
-	       &worstcase,
-	       /* arguments */
-	       function_name,
-	       rounding_mode ) ;
+	      &randfun, /* unused */ 
+	      &randfun, /* unused */ 
+	      &testfun_crlibm, 
+	      &testfun_mpfr,
+	      &testfun_libultim,
+	      &testfun_libmcr,
+	      &testfun_libm,
+	      &worstcase,
+	      /* arguments */
+	      function_name,
+	      rounding_mode ) ;
     
 
 
@@ -105,10 +114,11 @@ double (*testfun_libmcr)   () = NULL;
 
 
 
+  printf("Input      : %.50e  %8x %8x\n", input.d, input.i[HI_ENDIAN], input.i[LO_ENDIAN] ); 
   printf("cr_libm    : "); 
   fflush(stdout); /* To help debugging */
   if(testfun_crlibm != NULL)   {
-    res_crlibm.d = testfun_crlibm(input);
+    res_crlibm.d = testfun_crlibm(input.d);
     printf("%.50e  %8x %8x\n", 
 	   res_crlibm.d, 
 	   res_crlibm.i[HI_ENDIAN], 
@@ -122,7 +132,7 @@ double (*testfun_libmcr)   () = NULL;
   printf("mpfr_libm  : ");
   fflush(stdout);
   if(testfun_mpfr != NULL){
-    mpfr_set_d(mp_input, input,  GMP_RNDN);
+    mpfr_set_d(mp_input, input.d,  GMP_RNDN);
     testfun_mpfr(mp_res, mp_input, mpfr_rnd_mode);
     res_mpfr.d = mpfr_get_d(mp_res, mpfr_rnd_mode);
     printf("%.50e  %8x %8x \n", 
@@ -140,7 +150,7 @@ double (*testfun_libmcr)   () = NULL;
   printf("libultim   : ");
   fflush(stdout);
   if(testfun_libultim != NULL)  {
-    res_ibm.d = testfun_libultim(input);
+    res_ibm.d = testfun_libultim(input.d);
     printf("%.50e  %8x %8x \n", 
 	   res_ibm.d, 
 	   res_ibm.i[HI_ENDIAN], 
@@ -155,7 +165,7 @@ double (*testfun_libmcr)   () = NULL;
   printf("libmcr     : ");
   fflush(stdout);
   if(testfun_libmcr != NULL)  {
-    res_libmcr.d = testfun_libmcr(input);
+    res_libmcr.d = testfun_libmcr(input.d);
     printf("%.50e  %8x %8x \n", 
 	   res_libmcr.d, 
 	   res_libmcr.i[HI_ENDIAN], 
@@ -170,11 +180,11 @@ double (*testfun_libmcr)   () = NULL;
 
   /* Last in the list because it segfaults more often than the
      others.  */
-  printf("System libm : ");
+  printf("System libm: ");
   fflush(stdout);
   if(testfun_libm != NULL) 
     {
-      res_libm.d = testfun_libm(input);
+      res_libm.d = testfun_libm(input.d);
       printf("%.50e  %8x %8x \n", 
 	     res_libm.d, 
 	     res_libm.i[HI_ENDIAN], 
@@ -191,7 +201,7 @@ double (*testfun_libmcr)   () = NULL;
 #endif
 
   return 0;
-  }
 }
+
 
 

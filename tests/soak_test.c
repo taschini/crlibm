@@ -38,6 +38,9 @@ mpfr_t mp_res, mp_inpt;
 
 /* The random number generator*/
 double (*randfun)       () = NULL;
+/* Another unused random number generator*/
+double (*randfun_perf)       () = NULL;
+
 /* The function we test */
 double (*testfun_crlibm)() = NULL;
 /* The function we trust */
@@ -205,11 +208,11 @@ void test_random_gen() {
 
 
 void usage(char *fct_name){
-  fprintf (stderr, "\n\n Soak-test for crlibm and several other libraries \n");
-  fprintf (stderr, "Usage: %s name seed [RN/RU/RD/RZ] \n", fct_name);
-  fprintf (stderr, " name          : name of function to test \n");
-  fprintf (stderr, " seed          : integer, seed for the random number generator \n");
-  fprintf (stderr, " [RN/RU/RD/RZ] : rounding mode, (default RN) \n");
+  /* fprintf (stderr, "\n%s: Soak-test for crlibm and other mathematical libraries \n", fct_name); */
+  fprintf (stderr, "\nUsage: %s function (RN|RU|RD|RZ) seed \n", fct_name);
+  fprintf (stderr, " function      : name of function to test \n");
+  fprintf (stderr, " (RN|RU|RD|RZ) : rounding mode, \n");
+  fprintf (stderr, " seed          : integer seed for the random number generator \n");
   exit (1);
 }
 
@@ -222,29 +225,26 @@ int main (int argc, char *argv[])
   int seed;
   double worstcase;
 
-  if ((argc < 3)||(argc > 4)) usage(argv[0]);
+  if ((argc != 4)) usage(argv[0]);
   else{
     function_name = argv[1];
-    sscanf(argv[2],"%d", &seed);
-    
-    if(argc==4)
-      rounding_mode = argv[3];
-    else 
-      rounding_mode = "RN";
+    rounding_mode = argv[2];
+    sscanf(argv[3],"%d", &seed);
     
     crlibm_init();
 
     test_init(/* pointers to returned value */
-	       &randfun, 
-	       &testfun_crlibm, 
-	       &testfun_mpfr,
-	       &testfun_libultim,
-	       &testfun_libmcr,
-	       &testfun_libm,
-	       &worstcase,
-	       /* arguments */
-	       function_name,
-	       rounding_mode ) ;
+	      &randfun_perf, /* unused here*/ 
+	      &randfun, 
+	      &testfun_crlibm, 
+	      &testfun_mpfr,
+	      &testfun_libultim,
+	      &testfun_libmcr,
+	      &testfun_libm,
+	      &worstcase,
+	      /* arguments */
+	      function_name,
+	      rounding_mode ) ;
     
     mpfr_init2(mp_res,  153);
     mpfr_init2(mp_inpt, 53);
