@@ -6,17 +6,25 @@
 #include "crlibm.h"
 #include "crlibm_private.h"
 #ifdef WORDS_BIGENDIAN
-static const db_number HALFPI = {{0x3FF921FB,0x54442D18}};
+static const db_number HALFPI = {{0x3FF921FB,0x54442D18}};static const db_number HALFPI_TO_PLUS_INFINITY = {{0x3FF921FB,0x54442D19}};
 #else
-static const db_number HALFPI = {{0x54442D18,0x3FF921FB}};
+static const db_number HALFPI = {{0x54442D18,0x3FF921FB}};static const db_number HALFPI_TO_PLUS_INFINITY = {{0x54442D19,0x3FF921FB}};
 #endif
 #define MIN_REDUCTION_NEEDED 0.01269144369306618004077670910586377580133132772550
 #define nb_of_ai 62
 #define nb_of_bi 62
-#define e 1.00087694894477340356925776853561776968959406985960
-#define e_i_10 1.00001358846257447656930083623814248250383229787985
-#define e_no_reduction 1.00209960345199723726573557433614652945053080657090
-#define e_no_reduction_m10 1.00001230394925100534254221922112609854949027976545
+static const double rncst[4] ={
+ 1.00087694894477340356925776853561776968959406985960 , /* i<10 */ 
+ 1.00001358846257447656930083623814248250383229787985 , /* i>10 */ 
+ 1.00209960345199723726573557433614652945053080657090 , /* e > 2^-10 */ 
+ 1.00001230394925100534254221922112609854949027976545 , /* e < 2^-10 */ 
+ };
+static const double delta[4] ={
+ 4.86037620368041737590161736988091497853827131323059e-20 ,
+ 7.01366290712749605537005581421981293150222548752504e-22 ,
+ 1.16270929125451212103987494922861105090779663187326e-19 ,
+ 6.30062021375935078809848939868227439691640319281502e-22 ,
+ };
 #define DEGREE 4
 static double const coef_poly[4] = 
 {
@@ -33,7 +41,7 @@ static double const coef_poly[4] =
 #ifdef WORDS_BIGENDIAN
  
 /* limits of the intervals [a[i],b[i]] */
-static db_number const value[62][4] = 
+static db_number const arctan_table[62][4] = 
 {
 {
 /*a[0]     */ {{0x3F89FDF8,0xBCCE533D}} /* +1.2691443693e-02 */ ,
@@ -350,7 +358,7 @@ static db_number const value[62][4] =
 #else
 
 /* limits of the intervals [a[i],b[i]] */
-static db_number const value[62][4] = 
+static db_number const arctan_table[62][4] = 
 {
 {
 /*a[0]     */ {{0xBCCE533D,0x3F89FDF8}} /* +1.2691443693e-02 */ ,

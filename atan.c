@@ -11,7 +11,7 @@
 #include <atan.h>
 #include <atan_fast.h>
 
-void atan(scs_ptr, scs_ptr);
+void scs_atan(scs_ptr, scs_ptr);
 double scs_atan_rd(double);
 double scs_atan_ru(double);
 double scs_atan_rn(double);
@@ -71,24 +71,24 @@ void scs_atan(scs_ptr res_scs, scs_ptr x){
 #endif
   
   /* test if x as to be reduced */
-  if (db.d > my_e) {
+  if (db.d > MIN_REDUCTION_NEEDED) {
     /* Compute i so that  x E [a[i],a[i+1]] */
     int i=31;
-    if (db.d < value[i][A].d) i-= 16;
+    if (db.d < arctan_table[i][A].d) i-= 16;
     else i+=16;
-    if (db.d < value[i][A].d) i-= 8;
+    if (db.d < arctan_table[i][A].d) i-= 8;
     else i+= 8;
-    if (db.d < value[i][A].d) i-= 4;
+    if (db.d < arctan_table[i][A].d) i-= 4;
     else i+= 4;
-    if (db.d < value[i][A].d) i-= 2;
+    if (db.d < arctan_table[i][A].d) i-= 2;
     else i+= 2;
-    if (db.d < value[i][A].d) i-= 1;
+    if (db.d < arctan_table[i][A].d) i-= 1;
     else if (i<61) i+= 1;
-    if (db.d < value[i][A].d) i-= 1;
+    if (db.d < arctan_table[i][A].d) i-= 1;
     
     /* evaluate X = (x - b(i)) / (1 + x*b(i)) */
     scs_t bsc_ptr;
-    scs_set_d(bsc_ptr, value[i][B].d);
+    scs_set_d(bsc_ptr, arctan_table[i][B].d);
     
     scs_mul(denom1_scs,bsc_ptr,x);
     scs_add(denom2_scs,denom1_scs,SCS_ONE);
@@ -111,8 +111,8 @@ void scs_atan(scs_ptr res_scs, scs_ptr x){
     
     /* 1st we load atan ( b[i] ) in a scs*/ 
     scs_t atanbhihi,atanbhilo, atanblo, atanbhi, atanb;
-    scs_set_d( atanbhihi , value[i][ATAN_BHI].d);
-    scs_set_d( atanbhilo , value[i][ATAN_BLO].d);
+    scs_set_d( atanbhihi , arctan_table[i][ATAN_BHI].d);
+    scs_set_d( atanbhilo , arctan_table[i][ATAN_BLO].d);
     scs_set_d( atanblo , atan_blolo[i].d);
     scs_add(atanbhi,atanbhihi,atanbhilo);
     scs_add(atanb,atanbhi,atanblo);

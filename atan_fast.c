@@ -13,85 +13,54 @@
 #include <crlibm_private.h>
 #include <atan_fast.h>
 
-#define  DIV2(x,xx,y,yy,z,zz)\
-do \
-{double __c,__cc,__u,__uu;  \
-           __c=(x)/(y);   Mul12(&__u,&__uu,__c,y);  \
-           __cc = (((((x)-__u)-__uu)+(xx))-__c*(yy))/(y);   z=__c+__cc;   zz=(__c-z)+__cc;\
-} \
-while(0)
-
 /* the second step :   A VOIR PLUS TARD */ 
 double scs_atan_rn(double); 
+double scs_atan_rd(double); 
+double scs_atan_ru(double); 
 
-/*
- * 1) Argument reduction : 
- * 
- *  tan(x) = tan( b(i) ) + tan ( (x-b(i)) / (1+x*b(i)))
- *
- *                                                     6.3
- * we choose 63 b(i) so that (x-b(i)) / (1+x*b(i)) < 2^
- */ 
+static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x) {
 
-static double atan_rn2(double x);
-
-extern double atan_rn (double x) {
-  if (x>=0)
-    return atan_rn2(x);
-  else
-    return -atan_rn2(-x);
-}
-
-static double atan_rn2 (double x) {  
-  
-  double atanhi,atanlo;
   double tmphi,tmplo, x0hi,x0lo;
   double q,Xred2,x2;
   double Xredhi,Xredlo;
   
-  
   int i;
-  db_number x_db;
-  x_db.d = x;
-  unsigned int hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
-  
-  /* Filter cases */
-  if ( hx >= 0x43500000)           /* x >= 2^54 */
-    {
-      if ( ( (hx & 0x000fffff) | x_db.i[LO_ENDIAN] ) == 0)
-        return x+x;                /* NaN */
-      else
-        return HALFPI.d;           /* atan(x) = Pi/2 */
-    }
-  else
-    if ( hx < 0x3E400000 )
-      {return x;                   /* x<2^-27 then atan(x) =~ x */}
   
   if (x > MIN_REDUCTION_NEEDED) /* test if reduction is necessary : */
     {
+      /*
+       * 1) Argument reduction : 
+       * 
+       *  tan(x) = tan( b(i) ) + tan ( (x-b(i)) / (1+x*b(i)))
+       *
+       *                                                     6.3
+       * we choose 62 b(i) so that (x-b(i)) / (1+x*b(i)) < 2^
+       */ 
+      
       double xmBihi, xmBilo;
       
-      if (x > value[61][B].d) {
+      if (x > arctan_table[61][B].d) {
         i=61;
-        Add12( xmBihi , xmBilo , x , -value[61][B].d);
+        Add12( xmBihi , xmBilo , x , -arctan_table[61][B].d);
       }
-      else {
-        /* determine i so that a[i] < x < a[i+1] */
-        i=31;
-        if (x < value[i][A].d) i-= 16;
-        else i+=16;
-        if (x < value[i][A].d) i-= 8;
-        else i+= 8;
-        if (x < value[i][A].d) i-= 4;
-        else i+= 4;
-        if (x < value[i][A].d) i-= 2;
-        else i+= 2;
-        if (x < value[i][A].d) i-= 1;
-        else i+= 1;
-        if (x < value[i][A].d) i-= 1;     
-        xmBihi = x-value[i][B].d;
-        xmBilo = 0.0;
-      }
+      else 
+        {
+          /* compute i so that a[i] < x < a[i+1] */
+          i=31;
+          if (x < arctan_table[i][A].d) i-= 16;
+          else i+=16;
+          if (x < arctan_table[i][A].d) i-= 8;
+          else i+= 8;
+          if (x < arctan_table[i][A].d) i-= 4;
+          else i+= 4;
+          if (x < arctan_table[i][A].d) i-= 2;
+          else i+= 2;
+          if (x < arctan_table[i][A].d) i-= 1;
+          else i+= 1;
+          if (x < arctan_table[i][A].d) i-= 1;     
+          xmBihi = x-arctan_table[i][B].d;
+          xmBilo = 0.0;
+        }
         
       /* we now compute Xred = ( x-b[i] ) / ( 1 + x*b[i] )
        * 
@@ -105,13 +74,13 @@ static double atan_rn2 (double x) {
        *                   
        */
       
-      Mul12(&tmphi,&tmplo, x, value[i][B].d);
+      Mul12(&tmphi,&tmplo, x, arctan_table[i][B].d);
 
       if (x > 1)
         Add22(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
       else {Add22( &x0hi , &x0lo , 1.0,0.0,tmphi,tmplo);}
 
-      DIV2( xmBihi , xmBilo , x0hi,x0lo, Xredhi,Xredlo);
+      Div22( Xredhi, Xredlo, xmBihi , xmBilo , x0hi,x0lo);
 
       /* Polynomial evaluation : 
        *  
@@ -128,11 +97,15 @@ static double atan_rn2 (double x) {
                    coef_poly[0]))) ;
 
       /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
-      double testlo = Xredlo+ value[i][ATAN_BLO].d + Xredhi*q;
+      double testlo = Xredlo+ arctan_table[i][ATAN_BLO].d + Xredhi*q;
       double tmphi2, tmplo2;
-      Add12( tmphi2, tmplo2, value[i][ATAN_BHI].d, Xredhi);
-      Add12( atanhi, atanlo, tmphi2, (tmplo2+testlo));
-
+      Add12( tmphi2, tmplo2, arctan_table[i][ATAN_BHI].d, Xredhi);
+      Add12( *atanhi, *atanlo, tmphi2, (tmplo2+testlo));
+      
+      if (i<10)
+        *index_of_e = 0;
+      else
+        *index_of_e = 1;
     }
   else 
     // no reduction needed
@@ -146,31 +119,215 @@ static double atan_rn2 (double x) {
       
       x2 = x*x;
       q = x2*(coef_poly[3]+x2*
-                 (coef_poly[2]+x2*
-                  (coef_poly[1]+x2*
-                   coef_poly[0]))) ;
-      Add12(atanhi,atanlo, x , x*q);
+              (coef_poly[2]+x2*
+               (coef_poly[1]+x2*
+                coef_poly[0]))) ;
+      Add12(*atanhi,*atanlo, x , x*q);
       
-      if ( (atanhi == (atanhi + (atanlo*e_no_reduction)))
-           || ( (hx <= 0x3F500000 ) && 
-                atanhi == (atanhi + (atanlo*e_no_reduction_m10) ) ) )
-        /* there is two cases : x > 2^-10 and x < 2^-10 */
-        {
-          return atanhi;}
+      if (x > 0x3F500000)
+        *index_of_e = 2;
       else
-        {/* more accuracy is needed , lauch accurate phase */ 
-          return scs_atan_rn(x);
-        }
+        *index_of_e = 3;
     }
+}
+
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TO NEAREST			     *
+ *************************************************************
+ *************************************************************/
+
+static double atan_rn2(double x);
+
+extern double atan_rn (double x) {  
+  if(x>0)
+    return atan_rn2(x);
+  else
+    return -atan_rn2(-x);
+}
+
+extern double atan_rn2(double x) {
+  double atanhi,atanlo;
+  int index_of_e;
+  db_number x_db;
+  x_db.d = x;
+  unsigned int hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
   
-  /* test if rounding is possible */
-  if (atanhi == (atanhi + (atanlo*e)) 
-      || ( i>=10 && (atanhi == (atanhi + (atanlo*e_i_10)) )))
+  /* Filter cases */
+  if ( hx >= 0x43500000)           /* x >= 2^54 */
     {
-      return atanhi;}
+      if ( ( (hx & 0x000fffff) | x_db.i[LO_ENDIAN] ) == 0)
+        return x+x;                /* NaN */
+      else
+        return HALFPI.d;           /* atan(x) = Pi/2 */
+    }
+  else
+    if ( hx < 0x3E400000 )
+      {return x;}                   /* x<2^-27 then atan(x) =~ x */
+
+  atan_quick(&atanhi, &atanlo,&index_of_e ,x);
+  
+  if (atanhi == (atanhi + (atanlo*rncst[index_of_e]))) 
+    return atanhi;
   else
     {
       /* more accuracy is needed , lauch accurate phase */ 
       return scs_atan_rn(x);
     }
+}
+
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TOWARD  -INFINITY		     *
+ *************************************************************
+ *************************************************************/
+extern double atan_rd(double x) {
+  double atanhi,atanlo;
+  db_number absyh, absyl, u, u53;
+  int index_of_e;
+  double roundcst;
+  db_number x_db;
+  x_db.d = x;
+  unsigned int hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
+
+  int sign;
+  if (x<0)
+    {sign = -1;
+    x = -x;}
+  else sign = 1;
+  
+  /* Filter cases */
+  if ( hx >= 0x43500000)           /* x >= 2^54 */
+    {
+      if ( ( (hx & 0x000fffff) | x_db.i[LO_ENDIAN] ) == 0)
+        return x+x;                /* NaN */
+      else
+        if (sign>0)
+          return HALFPI.d;
+        else
+          return -HALFPI_TO_PLUS_INFINITY.d;           /* atan(x) = Pi/2 */
+    }
+  else
+    if ( hx < 0x3E400000 )
+      {if (sign>0)
+        {if(x==0)
+          {x_db.i[HI_ENDIAN]  = 0x80000000;
+          x_db.i[LO_ENDIAN] = 0;}
+        else
+          x_db.l--;
+        return x_db.d;
+        }
+      else
+        return x;
+      }
+  
+  atan_quick(&atanhi, &atanlo,&index_of_e, x);
+  roundcst = delta[index_of_e];
+  atanhi = sign*atanhi;
+  atanlo = sign*atanlo;
+  
+  /* Rounding test to - infinity */ 
+  
+  absyh.d=atanhi;
+  absyl.d=atanlo;
+  
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l   = u53.l - 0x0350000000000000LL;
+  
+  if(absyl.d > roundcst*u53.d){
+    if(atanlo<0.)
+      {atanhi -= u.d;}
+    return atanhi;
+  }
+  else {
+    return scs_atan_rd(sign*x);
+  }
+}
+
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TOWARD  +INFINITY		     *
+ *************************************************************
+ *************************************************************/
+
+extern double atan_ru(double x) {
+  double atanhi,atanlo;
+  db_number absyh, absyl, u, u53;
+  int index_of_e;
+  int sign;
+  double roundcst;
+
+  if (x<0)
+    {sign = -1;
+    x = -x;}
+  else 
+    sign = 1;
+  
+  db_number x_db;
+  x_db.d = x;
+  unsigned int hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
+  
+  /* Filter cases */
+  if ( hx >= 0x43500000)           /* x >= 2^54 */
+    {
+      if ( ( (hx & 0x000fffff) | x_db.i[LO_ENDIAN] ) == 0)
+        return x+x;                /* NaN */
+      else
+        {if (sign>0)
+          return HALFPI_TO_PLUS_INFINITY.d;
+        else
+          return -HALFPI.d;           /* atan(x) = Pi/2 */
+        }
+    }
+  else
+    
+    if ( hx < 0x3E400000 )
+      {if (sign<0)
+        {x_db.l--;
+        return -x_db.d;
+        }
+      else
+        if(x==0)
+          return 0;
+      return x;
+      }                   /* x<2^-27 then atan(x) =~ x */
+  
+  atan_quick(&atanhi, &atanlo, &index_of_e, x);
+  roundcst = delta[index_of_e];
+  atanhi = sign*atanhi;
+  atanlo = sign*atanlo;
+  
+  /* Rounding test to + infinity */ 
+  
+  absyh.d=atanhi;
+  absyl.d=atanlo;
+  
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l   = u53.l - 0x0350000000000000LL;
+  
+  if(absyl.d > roundcst*u53.d){
+    if(atanlo>0.)
+      {atanhi += u.d;}
+    return atanhi;
+  }
+  else {
+    return scs_atan_ru(sign*x);
+  }
+}
+
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TOWARD  ZERO		     *
+ *************************************************************
+ *************************************************************/
+
+extern double atan_rz(double x) {
+  if (x>0)
+    return atan_rd(x);
+  else
+    return atan_ru(x);
 }
