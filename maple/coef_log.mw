@@ -4,9 +4,9 @@ Digits := 100:</Text-field></Input><Input><Text-field layout="_pstyle33" prompt=
 mkdir("TEMPLOG");
 deg:=12;</Text-field></Input></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">First, quick phase</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" style="Text">Approach for the first function:</Text-field><Text-field layout="Normal" style="Text">log(x) = E*log(2) + P(R)
 where P(R) is defined over such an interval [11/16; 12/16] ... [21/16; 23/16]
-At all, there is 8 intervals, corresponding to 8 polynomials.</Text-field></Input><Input><Text-field layout="Normal" style="Text"/></Input></Group><Section><Title><Text-field layout="Heading 2" style="Heading 2">Interval parameters</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">Xmax:=[2**(-5), 2**(-5), 2**(-5), 2**(-5), 2**(-4), 2**(-4), 2**(-4), 2**(-4)]:
+At all, there is 8 intervals, corresponding to 8 polynomials.</Text-field></Input><Input><Text-field layout="Normal" style="Text"/></Input></Group><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Interval parameters</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">Xmax:=[2**(-5), 2**(-5), 2**(-5), 2**(-5), 2**(-4), 2**(-4), 2**(-4), 2**(-4)]:
 Ilist:=[[11/16,12/16],[12/16,13/16],[13/16,14/16],[14/16,15/16],[15/16,17/16],[17/16,19/16],[19/16,21/16],[21/16,23/16]]:
-midI:=[23/32,25/32,27/32,29/32,1,18/16,20/16,22/16]:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save Xmax, Ilist, midI, "TEMPLOG/parameterlog.m";</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 2" style="Heading 2">Computation of the polynomials</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">This is the function we use on all the intervals except i=5 (the one around 1)</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_log_2 := proc(i,deg) 
+midI:=[23/32,25/32,27/32,29/32,1,18/16,20/16,22/16]:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save Xmax, Ilist, midI, "TEMPLOG/parameterlog.m";</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Computation of the polynomials</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">This is the function we use on all the intervals except i=5 (the one around 1)</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_log_2 := proc(i,deg) 
  local p, e, pt, rel_approx_error, abs_rounding_error, minptr, maxptr, maxpt, delta, miny, deltaZero, deltaEgt24 ;
 
   pt, rel_approx_error,  maxpt := poly_trunc_f2d_2( log(x+midI[i]) ,  deg, -Xmax[i], Xmax[i]):
@@ -171,9 +171,9 @@ for isbig from 1 to 0 by -1 do
   printendian(fd,midI[8],isbig):
   fprintf(fd, "\n};\n\n"):
 
-  #Write poly_log_fast_h
+  #Write Poly_h
 
-  fprintf(fd,"db_number const poly_log_fast_h[%d][%d] =\n{\n", npol, deg+1):
+  fprintf(fd,"db_number const Poly_h[%d][%d] =\n{\n", npol, deg+1):
   for k from 1 to 8 do<Font italic="false" size="12" underline="false">
     fprintf(fd," /* polynomial %d */\n",k):</Font>
     fprintf(fd,"{\n");
@@ -189,9 +189,9 @@ for isbig from 1 to 0 by -1 do
 
   fprintf(fd, "\n};\n\n"):
 
-  #Write poly_log_fast_l
+  #Write Poly_fast_l
 
-  fprintf(fd,"db_number const poly_log_fast_l[%d][%d] =\n{\n",8,n):
+  fprintf(fd,"db_number const Poly_l[%d][%d] =\n{\n",8,n):
   for k from 1 to 8 do
     fprintf(fd," /* polynomial %d */\n",k):
     fprintf(fd,"{\n");
