@@ -74,7 +74,12 @@ future, we may want to try 8 or 7, which will trade off speed for the
 first step and % of taking second step
 */
 #define CONST_FASTPATH 8
-#define ROUNDCST_FASTPATH (1.0000000000000009 +(4. / (((double)(4<<CONST_FASTPATH)) -1.) ))
+
+/* constant for directed rounding, do not edit */
+#define DRCST_FASTPATH (1. / ((double)(2<<CONST_FASTPATH)) )
+
+/* constant for rounding to nearest, do not edit */
+#define RNCST_FASTPATH (1.0000000000000009 +(4. / (((double)(4<<CONST_FASTPATH)) -1.) ))
 
 
 
@@ -85,9 +90,9 @@ static void log_quick(double *pres_hi, double *pres_lo, double * proundcst, db_n
    double res, P_hi, P_lo;
    int k, i, E;
 
-   y.d = *py;
-
-
+   y = *py;
+   E=*pE;
+   
     /* E belongs to {-52-1023 .. 2046-1023} */
     
     /* find the interval including y.d */
@@ -117,7 +122,7 @@ static void log_quick(double *pres_hi, double *pres_lo, double * proundcst, db_n
     if(ABS(ln2_times_E_HI) < ((double)(1<<CONST_FASTPATH))+0.5) {
       
       /* Slow path */
-      roundcst = delta[i];
+      roundcst = rncst[i];
       
       /* Multiply S2 by x = P2 */
       Mul12(&P_hi, &P_lo, res, z.d);
@@ -137,7 +142,7 @@ static void log_quick(double *pres_hi, double *pres_lo, double * proundcst, db_n
     }
 
     else { /* Fast path */
-      roundcst=ROUNDCST_FASTPATH;
+      roundcst=RNCST_FASTPATH;
       res =  (poly_log_fast_h[i][0]).d + z.d*((poly_log_fast_h[i][1]).d + z.d*res);
       
       /* REBUILDING */
@@ -264,7 +269,7 @@ static void log_quick(double *pres_hi, double *pres_lo, double * proundcst, db_n
     if(ABS(ln2_times_E_HI) < ((double)(1<<CONST_FASTPATH))+0.5) {
       
       /* Slow path */
-      roundcst = delta[i];
+      roundcst = rncst[i];
       
       /* Multiply S2 by x = P2 */
       Mul12(&P_hi, &P_lo, res, z.d);
@@ -284,7 +289,7 @@ static void log_quick(double *pres_hi, double *pres_lo, double * proundcst, db_n
     }
 
     else { /* Fast path */
-      roundcst=ROUNDCST_FASTPATH;
+      roundcst=RNCST_FASTPATH;
       res =  (poly_log_fast_h[i][0]).d + z.d*((poly_log_fast_h[i][1]).d + z.d*res);
       
       /* REBUILDING */
@@ -373,10 +378,10 @@ static void log_quick(double *pres_hi, double *pres_lo, double * proundcst, db_n
    u.l     = absyh.l & 0x7fff000000000000LL;
    u53.l   = u.l     + 0x0035000000000000LL; /* exp + 53  */
 
-   if(absyl.d > delta*u53.d){
+   if(absyl.d > 0.5*u53.d){ /* FIXME 0.5*/
      if(res_lo<0.)
        res_hi -= u.d;
-    return res_hi.d;
+    return res_hi;
   }else{
     return scs_log_rd(y, E);
   }
