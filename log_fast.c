@@ -102,7 +102,9 @@ extern double scs_log_rd(db_number, int);
     i = ((i-1)>>1);
   }
 
-  z.d = y.d - (middle[i]).d; 	/* evaluate the value of x in the ii-th interval */ 						/* Sterbenz Lemma */
+  z.d = y.d - (middle[i]).d; 	/* evaluate the value of x in the
+				   ii-th interval (exact thanks to
+				   Sterbenz Lemma) */
  
   /*
    * Polynomial evaluation of log(1 + R) with an error less than 2^(-60)
@@ -119,9 +121,9 @@ extern double scs_log_rd(db_number, int);
  
   /* add S1 = a1_hi + a1_lo to P2 */ 
   Add22(&reshi, &reslo, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
- 
+
   /* multiply S1 by x = P1 */ 
-  Mul22(&P_hi, &P_lo, reshi, reslo, z.d, 0.);
+  Mul22(&P_hi, &P_lo, reshi, reslo, z.d, 0.); 
        
   /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
   Add22(&reshi, &reslo, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
@@ -130,7 +132,7 @@ extern double scs_log_rd(db_number, int);
   
   /* sc_ln2_times_E = E*log(2)  */
   Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.);
-   
+
    /* REBUILDING */
    Add22(&reshi, &reslo, ln2_times_E_HI, ln2_times_E_LO, reshi, reslo);
 }
