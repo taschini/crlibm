@@ -26,9 +26,11 @@ mkdir("TEMPTRIG"):
 ########################################################
 
 xmax_return_x_for_sin := 2^(-26):
-xmax_return_1_for_cos := 2^(-26):
-xmax_return_x_for_tan := 2^(-26):
+xmax_return_1_for_cos_RN := sqrt(2^(-53)):
+xmax_return_1_for_cos_RDIR:=2^(-26):
+one_rounded_down := evalf(1-ulp(1/2)):
 
+xmax_return_x_for_tan := 2^(-26):
 
 
 
@@ -37,119 +39,8 @@ xmax_return_x_for_tan := 2^(-26):
 # Case 2 : simple polynomial approximation
 ########################################################
 
-
-
-########################## Fast sine ###########################
-
-# These are the parameters to vary for case 2
-xmaxSinCase2   := Pi/256; #  Should always be larger than Pi/512
-degreeSinCase2 := 8;
-
-
-
-
-# Compute the Taylor series
-polySinCase2:=  poly_exact2 (convert( series(sin(x), x=0, degreeSinCase2), polynom),2);
-
-# An attempt to use Chebychev polynomials, less accurate in our case after poly_exact2
-# If we need extra precision for the polynomial evaluation use Chebpade as follows :
-#with(orthopoly):
-#Poly_P := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, degreeSinCase2*4):
-#Poly_Q := convert(Poly_P,polynom):
-#Poly_cheb := numapprox[chebpade](Poly_Q, x=0..xmaxSinCase2^2, [degreeSinCase2/2-2,0]):
-#polySinCase2 := poly_exact2 ( expand(x + x^3 * subs(x=x^2, Poly_cheb)), 2);
-#
-
-approx_errorSinCase2:=numapprox[infnorm](1 - polySinCase2 / sin(x), x=-xmaxSinCase2..xmaxSinCase2):
-log2(approx_errorSinCase2);
-
-# remove the first x and compute the polynomial of x**2
-polySinCase22 :=  subs(x=sqrt(y), expand(polySinCase2/x-1));
-x2maxSinCase2:= xmaxSinCase2**2;
-
-# evaluate this polynomial in double. The error on x*x is at most half an ulp
-errlist:=errlist_quickphase_horner(degree(polySinCase22),0,0,2**(-53), 0):
-rounding_error1:=compute_horner_rounding_error(polySinCase22,y,x2maxSinCase2, errlist, true):
-maxeps1 := rounding_error1[1]:
-log2(maxeps1);
-# get the max value of this polynomial
-maxP1:= rounding_error1[4];
-
-# now we multiply this result by x
-# Here x is exact, so $x\otimes P(y) = x P(y)(1+\epsilon_{-53})$
-# therefore the relative error respective to the stored polynomial is
-
-maxeps2 := (1+maxeps1)*(1+2**(-53))-1:
-log2(maxeps2);
-# the maximum value of maxP is scaled down, of course
-maxP2 := xmaxSinCase2*maxP1;
-
-# and use a fast2Sum to add the last x. Again x is exact
-
-maxeps3 := (maxP1*maxeps2 + 2**(-100)*(1+maxP1)*(1+maxeps2) )   / (1-maxP1) ;
-log2(maxeps3);
-
-
-maxepstotalSinCase2 := (1+maxeps3) * (1+approx_errorSinCase2) - 1 ;
-rnconstantSinCase2 := evalf(compute_rn_constant(maxepstotalSinCase2));
-
-
-
-
-
-##################################### Case2 cos ###########################
-# These are the parameters to vary
-xmaxCosCase2   := Pi/256;
-degreeCosCase2 := 7;
-
-# Compute the Taylor series
-polyCosCase2  := poly_exact2 (convert( series(cos(x), x=0, degreeCosCase2), polynom),2);
-delta_approx := numapprox[infnorm](polyCosCase2 - cos(x), x=-xmaxCosCase2..xmaxCosCase2):
-log2(%);
-
-# remove the first 1 and compute the polynomial of x**2
-polyCosCase22 := subs(x=sqrt(y), expand(polyCosCase2-1));
-x2maxCosCase2 := xmaxCosCase2**2;
-
-# evaluate this polynomial in double. The error on x*x is at most half an ulp
-errlist        := errlist_quickphase_horner(degree(polyCosCase22),0,0,2**(-53), 0):
-rounding_error1:= compute_horner_rounding_error(polyCosCase22,y,x2maxCosCase2, errlist, true):
-delta_round    := rounding_error1[2]:
-log2(%);
-
-# Then we have an Add12 which is exact. The result is greater then cos(xmaxCosCase2):
-miny := cos(xmaxCosCase2);
-maxepstotalCosCase2 :=  (delta_round + delta_approx) / miny ;
-log2(%);
-rnconstantCosCase2 := evalf(compute_rn_constant(maxepstotalCosCase2));
-
-
-
-
-######################## Case2 Tangent #########################
-#
-xmaxTanCase2   := 2**(-3);
-degreeTanCase2 := 16;
-rnconstantTanCase21 := evalf(compute_rn_constant(2**(-62)));
-rnconstantTanCase22 := evalf(compute_rn_constant(2**(-59)));
-
-# Compute the Taylor series
-with(orthopoly):
-Poly_P := convert(series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, degreeTanCase2*4),polynom):
-Poly_cheb := numapprox[chebpade](Poly_P, x=0..xmaxTanCase2^2, [degreeTanCase2/2-2,0]):
-polyTanCase2 :=  poly_exact2(expand(x + x^3 * subs(x=x^2, Poly_cheb)), 4);
-
-
-
-approx_errorTanCase2:=numapprox[infnorm](1 - polyTanCase2 / tan(x), x=0..xmaxTanCase2):
-log2(approx_errorTanCase2);
-
-
-
-
-
-
-
+# We want to use the same polynomial in case 2 and 3.
+# So see after arg red
 
 #################################################
 #   Case 3 : Argument reduction
@@ -332,10 +223,136 @@ log2(eps_ArgRed);
 
 
 
-################################## Polynomials for do_sine and do_cos
 
-ymax  := Pi/512;
-y2max := ymax**2;
+
+
+
+######################
+
+
+# An attempt to use Chebychev polynomials, less accurate in our case after poly_exact2
+# If we need extra precision for the polynomial evaluation use Chebpade as follows :
+#with(orthopoly):
+#Poly_P := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, degreeSinCase2*4):
+#Poly_Q := convert(Poly_P,polynom):
+#Poly_cheb := numapprox[chebpade](Poly_Q, x=0..xmaxSinCase2^2, [degreeSinCase2/2-2,0]):
+#polySinCase2 := poly_exact2 ( expand(x + x^3 * subs(x=x^2, Poly_cheb)), 2);
+#
+
+
+###########
+# Polynomials for do_sine and do_cos, and for the case 2
+degreeSin := 8:
+degreeCos := 7:
+ymaxCase3  := Pi/512:
+y2maxCase3 := ymaxCase3^2:
+# These are the parameters to vary  (they should always be larger than Pi/512
+xmaxCosCase2   := Pi/512:
+xmaxSinCase2   := Pi/256:
+x2maxSinCase2:= xmaxSinCase2^2:
+x2maxCosCase2:= xmaxCosCase2^2:
+
+# The difficulty here is to find polynomials which are good for case 2
+# as well as for case 3. A simple solution is to set xmaxCosCase2 =ymaxCase3...
+
+
+# For the sine: simple approach using Taylor is better than minimax
+if(1+1=2) then
+polySin:=  poly_exact(convert( series(sin(x), x=0, degreeSin+1), polynom)):
+polyTs := expand(polySin/x-1):
+polyTs2 := subs(x=sqrt(y), polyTs):
+else
+# More accurate. Compute the minimax up to the case 2 limit
+# THIS MINIMAX MINIMIZES ABS ERROR AND NOT REL ERROR
+polyTs2x := poly_exact(numapprox[minimax]((sin(sqrt(x))/sqrt(x)), x=2^(-2048)..x2maxSinCase2, [3,0]) ) -1:
+polyTs2 := subs(x=y, polyTs2x):
+polySin := expand(x*(1+ subs(y=x^2, polyTs2))):
+end if:
+
+# For the cos: compute a minimax
+if(1+1=3) then
+# simple approach using Taylor
+polyCos  := poly_exact (convert( series(cos(x), x=0, degreeCos+1), polynom)):
+polyTc2 := subs(x=sqrt(y), polyCos - 1):
+else
+# More accurate. Compute the minimax up to the case 2 limit
+polyTc2x := poly_exact(numapprox[minimax](cos(sqrt(x)), x=2^(-2048)..x2maxCosCase2, [3,0]) ) -1:
+polyTc2 := subs(x=y,polyTc2x):
+polyCos := expand(1+ subs(y=x^2, polyTc2)):
+end if:
+
+
+eps_approx_Sin_Case2 := numapprox[infnorm]((x*polyTs+x -sin(x))/sin(x), x=0..xmaxSinCase2):
+log2(%);
+eps_approx_Sin_Case3 := numapprox[infnorm]((x*polyTs +x -sin(x))/sin(x), x=0..ymaxCase3):
+log2(%);
+
+delta_approx_Tc_Case2:= numapprox[infnorm](polyCos -  cos(x), x=0..xmaxCosCase2):
+log2(%);
+delta_approx_Tc_Case3:= numapprox[infnorm](polyCos -  cos(x), x=0..ymaxCase3):
+log2(%);
+
+
+
+########################## Case 2 for sine  ###########################
+
+
+
+# evaluate this polynomial in double. The error on x*x is at most half an ulp
+errlist:=errlist_quickphase_horner(degree(polyTs2),0,0,2^(-53), 0):
+(eps_rounding_Ts, delta_rounding_Ts, minTs, maxTs):=
+	compute_horner_rounding_error(polyTs2,y,x2maxSinCase2, errlist, true):
+
+eps_poly_Ts_Case2 := numapprox[infnorm]((x*polyTs)/(sin(x)-x) -1, x=0..xmaxSinCase2):
+maxeps2 := (1+eps_poly_Ts_Case2)*(1+eps_rounding_Ts)*(1+2^(-53))-1:
+
+maxepstotalSinCase2 := maxeps2 * numapprox[infnorm](1-x/sin(x), x=0..xmaxSinCase2);
+rnconstantSinCase2 := evalf(compute_rn_constant(maxepstotalSinCase2));
+
+
+
+
+
+##################################### Case2 cos ###########################
+
+# evaluate this polynomial in double. The error on x*x is at most half an ulp
+errlist        := errlist_quickphase_horner(degree(polyTc2),0,0,2**(-53), 0):
+(eps_rounding_Tc, delta_rounding_Tc, minTc, maxTc):=
+              compute_horner_rounding_error(polyTc2,y,x2maxCosCase2, errlist, true):
+
+# Then we have an Add12 which is exact. The result is greater then cos(xmaxCosCase2):
+miny := cos(xmaxCosCase2);
+maxepstotalCosCase2 :=  (delta_rounding_Tc + delta_approx_Tc_Case2) / miny ;
+log2(%);
+rnconstantCosCase2 := evalf(compute_rn_constant(maxepstotalCosCase2));
+
+
+
+
+######################## Case2 Tangent #########################
+#
+xmaxTanCase2   := 2**(-3);
+degreeTanCase2 := 16;
+rnconstantTanCase21 := evalf(compute_rn_constant(2**(-62)));
+rnconstantTanCase22 := evalf(compute_rn_constant(2**(-59)));
+
+# Compute the Taylor series
+with(orthopoly):
+Poly_P := convert(series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, degreeTanCase2*4),polynom):
+Poly_cheb := numapprox[chebpade](Poly_P, x=0..xmaxTanCase2^2, [degreeTanCase2/2-2,0]):
+polyTanCase2 :=  poly_exact2(expand(x + x^3 * subs(x=x^2, Poly_cheb)), 4);
+
+
+
+approx_errorTanCase2:=numapprox[infnorm](1 - polyTanCase2 / tan(x), x=0..xmaxTanCase2):
+log2(approx_errorTanCase2);
+
+
+
+
+###############################################################################
+#   Computing errors for Case3 : now we have an error due to arg red
+
 
 # The error on yh*yh
 # we had $y_h+y_l = y + \abserr{CodyWaite}$.
@@ -344,43 +361,36 @@ y2max := ymax**2;
 
 epsy2 := evalf(((1+eps_ArgRed)**2) *  (1+2**(-53))**2 - 1):
 
-############### Computing Ts
+############### Errors in computing Ts and Tc
 
-polySin:=  poly_exact (convert( series(sin(x), x=0, 9), polynom),x):
-polyTs :=  expand(polySin/x-1):
-delta_approx_Ts := numapprox[infnorm](polyTs - (sin(x)/x-1), x=-ymax..ymax):
-maxTs   := numapprox[infnorm](polyTs, x=-ymax..ymax):
-polyTs2 := subs(x=sqrt(y),polyTs):
 
 errlist:=errlist_quickphase_horner(degree(polyTs2),0,0, epsy2 , 0):
 (eps_rounding_Ts, delta_rounding_Ts, minTs, maxTs):=
-	compute_horner_rounding_error(polyTs2,y,y2max, errlist, true):
-
-
-############### Computing Tc
-
-polyCos:= polyCosCase2 -x^8*coeff(polyCosCase2,x,8):
-# More accurate
-#poly_exact(subs(y=x^2, numapprox[minimax]((cos(sqrt(y))), y=2^(-2048)..y2max, [3,0])), x);
-
-polyTc:=polyCos - 1:
-delta_approx_Tc:= numapprox[infnorm](polyCos -  cos(x), x=-ymax..ymax):
-maxTc   := numapprox[infnorm](polyTc, x=-ymax..ymax):
-polyTc2 := subs(x=sqrt(y),polyTc):
+	compute_horner_rounding_error(polyTs2,y,y2maxCase3, errlist, true):
 
 errlist:=errlist_quickphase_horner(degree(polyTc2),0,0, epsy2 , 0):
-(eps_rounding_Tc, delta_rounding_Tc, minTc, maxTc):=compute_horner_rounding_error(polyTc2,y,y2max, errlist, true):
+(eps_rounding_Tc, delta_rounding_Tc, minTc, maxTc):=
+              compute_horner_rounding_error(polyTc2,y,y2maxCase3, errlist, true):
+
+
+
+##############   Case  k&127 = 0
+# See above. As the error will always be smaller than in the case
+# k&127 != 0, no need to recompute it. It could be useful to have a
+# better rounding constant, but it will be statistically
+# unsignificant.
 
 
 
 
-###### The extreme cases for tabulated values for the case k&127 != 0
+
+###### The extreme Cases for tabulated values for the Case k&127 != 0
 minsca := sin(Pi/256);
 minscah:= nearest(minsca);
 maxsca := cos(Pi/256);
 maxscah:= nearest(maxsca);
 
-# Worst case of approximation error
+# Worst Case of approximation error
 
 ################ Summing everything up
 # The only error is in
@@ -392,14 +402,17 @@ delta_round_tlo := 2*ulp(maxTc*maxsca) ; # TODO c'est à la louche
 delta_do_cos := delta_round_tlo;
 min_sin := sin(Pi/512); # TODO Add error on k here
 
-delta_sincos := delta_round_tlo / min_sin; # TODO hum
+epsilon_sincos := delta_round_tlo / min_sin; # TODO hum
 
-rnconstant_sincos := compute_rn_constant(delta_sincos);
+rnconstant_sincos := compute_rn_constant(epsilon_sincos);
+
+
 
 
 
 ##############################################
 ## Compute constants for SCS arg red
+oldDigits:=Digits;
 Digits:=1000;
 # for 2/Pi:
 n:=round(2^(30*48)*evalf(2/Pi));
@@ -422,16 +435,25 @@ for i from 1 to 48 do
   digitlist:=[hexstring, op(digitlist)]:
 end:
 digitlist;
-
+Digits:=oldDigits;
 
 
 
 # an auxiliary output function:
-# Outputs the high part of a double, and the double in comment
+# Outputs the high part of a double, and the double in comment.
+# As all these high parts are used in code as
+# if(absxhi < XMAX_COS_CASE2)
+# we have to remove one LSB to the high part, or, divide var by
+# (1+2^(-20))
+# Now we have absxhi<highpart(var/(1+2^(-20))
+# => absxhi*(1+2^(-20))<var
+# => x<var
 outputHighPart:=proc(cvarname, var)
+  local varMinusLSB:
   Digits:=8:
-  ("#define " || cvarname || " 0x" || (ieeehexa(var)[1])
-    ||  "        /* " || (convert(evalf(var),string)) ||  " */" )
+  varMinusLSB:=var/(1+2^(-20)):
+  ("#define " || cvarname || " 0x" || (ieeehexa(varMinusLSB)[1])
+    ||  "        /* " || (convert(evalf(varMinusLSB),string)) ||  " */" )
 end proc:
 
 
@@ -452,7 +474,8 @@ fprintf(fd, "\n"):
 fprintf(fd,  "%s\n",  outputHighPart("XMAX_RETURN_X_FOR_SIN", xmax_return_x_for_sin) ):
 fprintf(fd,  "%s\n",  outputHighPart("XMAX_SIN_CASE2        ", xmaxSinCase2) ):
 
-fprintf(fd,  "%s\n",  outputHighPart("XMAX_RETURN_1_FOR_COS", xmax_return_1_for_cos) ):
+fprintf(fd,  "%s\n",  outputHighPart("XMAX_RETURN_1_FOR_COS_RN", xmax_return_1_for_cos_RN) ):
+fprintf(fd,  "%s\n",  outputHighPart("XMAX_RETURN_1_FOR_COS_RDIR", xmax_return_1_for_cos_RDIR) ):
 fprintf(fd,  "%s\n",  outputHighPart("XMAX_COS_CASE2        ", xmaxCosCase2) ):
 
 fprintf(fd,  "%s\n",  outputHighPart("XMAX_RETURN_X_FOR_TAN", xmax_return_x_for_tan) ):
@@ -469,7 +492,7 @@ fprintf(fd, "#define EPS_COS_CASE2     %1.25e \n", maxepstotalCosCase2):
 fprintf(fd, "#define RN_CST_COS_CASE2  %1.25f \n", rnconstantCosCase2):
 fprintf(fd, "#define EPS_COS_CASE3     %1.25e \n", maxepstotalCosCase3):
 fprintf(fd, "#define RN_CST_COS_CASE3  %1.25f \n", rnconstantCosCase3):
-fprintf(fd, "#define ONE_ROUNDED_DOWN  %1.25e \n", evalf(1-ulp(1/2)) ):
+fprintf(fd, "#define ONE_ROUNDED_DOWN  %1.25e \n", one_rounded_down):
 
 fprintf(fd, "#define RN_CST_TAN_CASE21 %1.25e \n", rnconstantTanCase21):
 fprintf(fd, "#define RN_CST_TAN_CASE22 %1.25e \n", rnconstantTanCase22):
@@ -528,26 +551,26 @@ for isbig from 1 to 0 by -1 do
   # The sine polynomial
 
   fprintf(fd, "static db_number const s3 = "):
-  printendian(fd, coeff(polySinCase2,x,3), isbig):
+  printendian(fd, coeff(polySin,x,3), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const s5 = "):
-  printendian(fd, coeff(polySinCase2,x,5), isbig):
+  printendian(fd, coeff(polySin,x,5), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const s7 = "):
-  printendian(fd, coeff(polySinCase2,x,7), isbig):
+  printendian(fd, coeff(polySin,x,7), isbig):
   fprintf(fd, ";\n\n"):
 
 
   # the cos polynomial
 
   fprintf(fd, "static db_number const c2 = "):
-  printendian(fd, coeff(polyCosCase2,x,2), isbig):
+  printendian(fd, coeff(polyCos,x,2), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const c4 = "):
-  printendian(fd, coeff(polyCosCase2,x,4), isbig):
+  printendian(fd, coeff(polyCos,x,4), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const c6 = "):
-  printendian(fd, coeff(polyCosCase2,x,6), isbig):
+  printendian(fd, coeff(polyCos,x,6), isbig):
   fprintf(fd, ";\n\n"):
 
 
@@ -606,6 +629,8 @@ fprintf(fd,"#endif /* WORDS_BIGENDIAN */\n\n\n"):
 
 fclose(fd):
 
+print("************DONE************");
+
 
 
 #################################################
@@ -637,8 +662,6 @@ end:
 
 fi:
 
-
-print("************DONE************");
 
 
 #####################################################################
