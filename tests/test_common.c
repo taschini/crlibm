@@ -545,7 +545,9 @@ void test_init(/* pointers to returned value */
       case RZ:
 	*testfun_crlibm = NULL;	break;
       default:
-	*testfun_crlibm = pow_rn;
+	/*	*testfun_crlibm = pow_rn;*/
+	*testfun_crlibm = NULL;
+
       }
 #ifdef HAVE_MATHLIB_H
       *testfun_libultim = upow;
