@@ -13,69 +13,63 @@ mkdir("TEMPTRIG"):
 #don't forget the error on k in Cody and Waite
 
 
+# - Evaluation scheme :
+# case 1 : return x
+# case 2 (or Fast) : compute a simple polynomial
+# case 3 : do an argument reduction...
 
 
-#########################################################
-# Small arguments
 
-# When do we return x ?
+########################################################
+#  Case 1 : Small arguments
+# return x for sine and tan, return 1 for cos
+########################################################
+
 xmax_return_x_for_sin := 2^(-26):
 xmax_return_1_for_cos := 2^(-27):
 xmax_return_x_for_tan := 2^(-26):
 
-#################################### Fast Tangent #########################
-#
-xmaxTanFast   := 2**(-3);
-degreeTanFast := 16;
-rnconstantTanFast1 := evalf(compute_rn_constant(2**(-62)));
-rnconstantTanFast2 := evalf(compute_rn_constant(2**(-59)));
-
-# Compute the Taylor series
-with(orthopoly):
-Poly_P := convert(series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, degreeTanFast*4),polynom):
-Poly_cheb := numapprox[chebpade](Poly_P, x=0..xmaxTanFast^2, [degreeTanFast/2-2,0]):
-polyTanFast :=  poly_exact2(expand(x + x^3 * subs(x=x^2, Poly_cheb)), 4);
 
 
 
-approx_errorTanFast:=numapprox[infnorm](1 - polyTanFast / tan(x), x=0..xmaxTanFast):
-log2(approx_errorTanFast);
+
+########################################################
+# Case 2 : simple polynomial approximation
+########################################################
 
 
-##################################### Fast sine ###########################
-# - Evaluation scheme :
-# - x < 2^-7 : Polynomial evaluation of degree 7 (give a precision of 2^-67
-# - x < 2^-1 : Split the evaluation to use table and simple polynomial evaluation.
-#
-# These are the parameters to vary
-xmaxSinFast   := Pi/256; # Should always be larger than Pi/512
-degreeSinFast := 8;
+
+########################## Fast sine ###########################
+
+# These are the parameters to vary for case 2 
+xmaxSinCase2   := Pi/256; #  Should always be larger than Pi/512
+degreeSinCase2 := 8;
+
+
 
 
 # Compute the Taylor series
-polySinFast:=  poly_exact2 (convert( series(sin(x), x=0, degreeSinFast), polynom),2);
+polySinCase2:=  poly_exact2 (convert( series(sin(x), x=0, degreeSinCase2), polynom),2);
 
-# If we need extra precision for the polynomial evaluation use Chebpade as follow:
+# An attempt to use Chebychev polynomials, less accurate in our case after poly_exact2
+# If we need extra precision for the polynomial evaluation use Chebpade as follows :
 #with(orthopoly):
-#Poly_P := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, degreeSinFast*4):
+#Poly_P := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, degreeSinCase2*4):
 #Poly_Q := convert(Poly_P,polynom):
-#Poly_cheb := numapprox[chebpade](Poly_Q, x=0..xmaxSinFast^2, [degreeSinFast/2-2,0]):
-#polySinFast :=  expand(x + x^3 * subs(x=x^2, Poly_cheb));
+#Poly_cheb := numapprox[chebpade](Poly_Q, x=0..xmaxSinCase2^2, [degreeSinCase2/2-2,0]):
+#polySinCase2 := poly_exact2 ( expand(x + x^3 * subs(x=x^2, Poly_cheb)), 2);
 #
-#If you use this technique, don't forget to make the interval
-#of the form 0..xmaxSinFast when looking for the 'infnorm' !
 
-
-approx_errorSinFast:=numapprox[infnorm](1 - polySinFast / sin(x), x=-xmaxSinFast..xmaxSinFast):
-log2(approx_errorSinFast);
+approx_errorSinCase2:=numapprox[infnorm](1 - polySinCase2 / sin(x), x=-xmaxSinCase2..xmaxSinCase2):
+log2(approx_errorSinCase2);
 
 # remove the first x and compute the polynomial of x**2
-polySinFast2 :=  subs(x=sqrt(y), expand(polySinFast/x-1));
-x2maxSinFast:= xmaxSinFast**2;
+polySinCase22 :=  subs(x=sqrt(y), expand(polySinCase2/x-1));
+x2maxSinCase2:= xmaxSinCase2**2;
 
 # evaluate this polynomial in double. The error on x*x is at most half an ulp
-errlist:=errlist_quickphase_horner(degree(polySinFast2),0,0,2**(-53), 0):
-rounding_error1:=compute_horner_rounding_error(polySinFast2,y,x2maxSinFast, errlist, true):
+errlist:=errlist_quickphase_horner(degree(polySinCase22),0,0,2**(-53), 0):
+rounding_error1:=compute_horner_rounding_error(polySinCase22,y,x2maxSinCase2, errlist, true):
 maxeps1 := rounding_error1[1]:
 log2(maxeps1);
 # get the max value of this polynomial
@@ -88,7 +82,7 @@ maxP1:= rounding_error1[4];
 maxeps2 := (1+maxeps1)*(1+2**(-53))-1:
 log2(maxeps2);
 # the maximum value of maxP is scaled down, of course
-maxP2 := xmaxSinFast*maxP1;
+maxP2 := xmaxSinCase2*maxP1;
 
 # and use a fast2Sum to add the last x. Again x is exact
 
@@ -96,41 +90,61 @@ maxeps3 := (maxP1*maxeps2 + 2**(-100)*(1+maxP1)*(1+maxeps2) )   / (1-maxP1) ;
 log2(maxeps3);
 
 
-maxepstotalSinCase2 := (1+maxeps3) * (1+approx_errorSinFast) - 1 ;
+maxepstotalSinCase2 := (1+maxeps3) * (1+approx_errorSinCase2) - 1 ;
 rnconstantSinCase2 := evalf(compute_rn_constant(maxepstotalSinCase2));
-maxepstotalSinCase3:=2**(-67); # TODO
-rnconstantSinCase3 := evalf(compute_rn_constant(maxepstotalSinCase3)):
 
 
 
-##################################### Fast cos ###########################
+
+
+##################################### Case2 cos ###########################
 # These are the parameters to vary
-xmaxCosFast   := 2**(-7);
-xmaxCosFast2  := 2**(-1); # range for the second step
-degreeCosFast := 7;
+xmaxCosCase2   := Pi/256;
+degreeCosCase2 := 7;
 
 
 # Compute the Taylor series
-polyCosFast  := poly_exact2 (convert( series(cos(x), x=0, degreeCosFast), polynom),2);
-delta_approx := numapprox[infnorm](polyCosFast - cos(x), x=-xmaxCosFast..xmaxCosFast):
+polyCosCase2  := poly_exact2 (convert( series(cos(x), x=0, degreeCosCase2), polynom),2);
+delta_approx := numapprox[infnorm](polyCosCase2 - cos(x), x=-xmaxCosCase2..xmaxCosCase2):
 log2(%);
 
 # remove the first 1 and compute the polynomial of x**2
-polyCosFast2 := subs(x=sqrt(y), expand(polyCosFast-1));
-x2maxCosFast := xmaxCosFast**2;
+polyCosCase22 := subs(x=sqrt(y), expand(polyCosCase2-1));
+x2maxCosCase2 := xmaxCosCase2**2;
 
 # evaluate this polynomial in double. The error on x*x is at most half an ulp
-errlist        := errlist_quickphase_horner(degree(polyCosFast2),0,0,2**(-53), 0):
-rounding_error1:= compute_horner_rounding_error(polyCosFast2,y,x2maxCosFast, errlist, true):
+errlist        := errlist_quickphase_horner(degree(polyCosCase22),0,0,2**(-53), 0):
+rounding_error1:= compute_horner_rounding_error(polyCosCase22,y,x2maxCosCase2, errlist, true):
 delta_round    := rounding_error1[2]:
 log2(%);
 
-# Then we have an Add12 which is exact. The result is greater then cos(xmaxCosFast):
-miny := cos(xmaxCosFast);
-maxepstotalCosFast :=  (delta_round + delta_approx) / miny ;
+# Then we have an Add12 which is exact. The result is greater then cos(xmaxCosCase2):
+miny := cos(xmaxCosCase2);
+maxepstotalCosCase2 :=  (delta_round + delta_approx) / miny ;
 log2(%);
-rnconstantCosFast2 := evalf(compute_rn_constant(maxepstotalCosFast));
-rnconstantCosFast3 := evalf(compute_rn_constant(2**(-67))):
+rnconstantCosCase22 := evalf(compute_rn_constant(maxepstotalCosCase2));
+rnconstantCosCase23 := evalf(compute_rn_constant(2**(-67))):
+
+
+
+
+######################## Case2 Tangent #########################
+#
+xmaxTanCase2   := 2**(-3);
+degreeTanCase2 := 16;
+rnconstantTanCase21 := evalf(compute_rn_constant(2**(-62)));
+rnconstantTanCase22 := evalf(compute_rn_constant(2**(-59)));
+
+# Compute the Taylor series
+with(orthopoly):
+Poly_P := convert(series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, degreeTanCase2*4),polynom):
+Poly_cheb := numapprox[chebpade](Poly_P, x=0..xmaxTanCase2^2, [degreeTanCase2/2-2,0]):
+polyTanCase2 :=  poly_exact2(expand(x + x^3 * subs(x=x^2, Poly_cheb)), 4);
+
+
+
+approx_errorTanCase2:=numapprox[infnorm](1 - polyTanCase2 / tan(x), x=0..xmaxTanCase2):
+log2(approx_errorTanCase2);
 
 
 
@@ -139,12 +153,19 @@ rnconstantCosFast3 := evalf(compute_rn_constant(2**(-67))):
 
 
 
+#################################################
+#   Case 3 : Argument reduction
+#################################################
 
 
 
+# TODO  This value seems to work but needs proving
+
+maxepstotalSinCase3:=2**(-65); 
+rnconstantSinCase3 := evalf(compute_rn_constant(maxepstotalSinCase3)):
 
 
-
+#The following is not finished
 
 #################################################
 # CODY and WAITE  Argument reduction
@@ -166,7 +187,7 @@ expC:=ieeedouble(C)[2]:
 
 
 
-# Fastest reduction using two-part Cody and Waite (up to |k|=2^22)
+# Case2est reduction using two-part Cody and Waite (up to |k|=2^22)
 
 bitsCh_0:=32:  # ensures at least 53+11 bits
 
@@ -336,7 +357,7 @@ errlist:=errlist_quickphase_horner(degree(polyTs2),0,0, epsy2 , 0):
 
 ############### Computing Tc
 
-polyCos:= polyCosFast -x^8*coeff(polyCosFast,x,8):
+polyCos:= polyCosCase2 -x^8*coeff(polyCosCase2,x,8):
 # More accurate
 #poly_exact(subs(y=x^2, numapprox[minimax]((cos(sqrt(y))), y=2^(-2048)..y2max, [3,0])), x);
 
@@ -374,7 +395,20 @@ delta_sincos := delta_round_tlo / min_sin; # TODO hum
 rnconstant_sincos := compute_rn_constant(delta_sincos);
 
 
-# Output
+
+# an auxiliary output function:
+# Outputs the high part of a double, and the double in comment
+outputHighPart:=proc(cvarname, var)
+  Digits:=8:
+  ("#define " || cvarname || " 0x" || (ieeehexa(var)[1]) 
+    ||  "    /* " || (convert(evalf(var),string)) ||  " */" )
+end proc;
+
+
+
+
+
+# Output:
 
 filename:="TEMPTRIG/trigo_fast.h":
 fd:=fopen(filename, WRITE, TEXT):
@@ -384,27 +418,39 @@ fprintf(fd, "#include \"crlibm.h\"\n#include \"crlibm_private.h\"\n"):
 fprintf(fd, "\n/*File generated by maple/coef_sine.mw*/\n"):
 
 
-fprintf(fd, "#define XMAX_RETURN_X_FOR_SIN 0x%s\n", ieeehexa(xmax_return_x_for_sin)[1]):
-fprintf(fd, "#define XMAX_SIN_FAST  0x%s\n", ieeehexa(xmaxSinFast)[1]):
+fprintf(fd,  "%s\n",  outputHighPart("XMAX_RETURN_X_FOR_SIN", xmax_return_x_for_sin) ):
+fprintf(fd,  "%s\n",  outputHighPart("XMAX_SIN_FAST", xmaxSinCase2) ):
 
-fprintf(fd, "#define XMAX_RETURN_1_FOR_COS 0x%s\n", ieeehexa(xmax_return_1_for_cos)[1]):
-fprintf(fd, "#define XMAX_COS_FAST  0x%s\n", ieeehexa(xmaxCosFast)[1]):
-fprintf(fd, "#define XMAX_COS_FAST2 0x%s\n", ieeehexa(xmaxCosFast2)[1]):
+fprintf(fd,  "%s\n",  outputHighPart("XMAX_RETURN_1_FOR_COS", xmax_return_1_for_cos) ):
+fprintf(fd,  "%s\n",  outputHighPart("XMAX_COS_FAST", xmaxCosCase2) ):
 
-fprintf(fd, "#define XMAX_RETURN_X_FOR_TAN 0x%s\n", ieeehexa(xmax_return_x_for_tan)[1]):
-fprintf(fd, "#define XMAX_TAN_FAST  0x%s\n", ieeehexa(xmaxTanFast)[1]):
+fprintf(fd,  "%s\n",  outputHighPart("XMAX_RETURN_X_FOR_TAN", xmax_return_x_for_tan) ):
+fprintf(fd,  "%s\n",  outputHighPart("XMAX_TAN_FAST", xmaxTanCase2) ):
+
+
+# TODO remove the following
+#fprintf(fd, "#define XMAX_RETURN_1_FOR_COS 0x%s\n", ieeehexa(xmax_return_1_for_cos)[1]):
+#fprintf(fd, "#define XMAX_COS_FAST  0x%s\n", ieeehexa(xmaxCosCase2)[1]):
+#fprintf(fd, "#define XMAX_COS_FAST2 0x%s\n", ieeehexa(xmaxCosCase22)[1]):
+
+#fprintf(fd, "#define XMAX_RETURN_X_FOR_TAN 0x%s\n", ieeehexa(xmax_return_x_for_tan)[1]):
+#fprintf(fd, "#define XMAX_TAN_FAST  0x%s\n", ieeehexa(xmaxTanCase2)[1]):
 
 
 fprintf(fd, "\n"):
 
+fprintf(fd, "#define EPS_SIN_CASE2 %e \n",    maxepstotalSinCase2);
 fprintf(fd, "#define RN_CST_SIN_CASE2 %f \n", rnconstantSinCase2);
+fprintf(fd, "#define EPS_SIN_CASE3 %e \n",    maxepstotalSinCase3);
 fprintf(fd, "#define RN_CST_SIN_CASE3 %f \n", rnconstantSinCase3);
-fprintf(fd, "#define EPS_SIN_CASE2 %f \n",    maxepstotalSinCase2);
-fprintf(fd, "#define EPS_SIN_CASE3 %f \n",    maxepstotalSinCase3);
-fprintf(fd, "#define RN_CST_COS_CASE2 %f \n", rnconstantCosFast2);
-fprintf(fd, "#define RN_CST_COS_CASE3 %f \n", rnconstantCosFast3);
-fprintf(fd, "#define RN_CST_TANFAST1 %f \n", rnconstantTanFast1);
-fprintf(fd, "#define RN_CST_TANFAST2 %f \n", rnconstantTanFast2);
+
+fprintf(fd, "#define EPS_COS_CASE2 %e \n",    maxepstotalCosCase2);
+fprintf(fd, "#define RN_CST_COS_CASE2 %f \n", rnconstantCosCase2);
+fprintf(fd, "#define EPS_COS_CASE3 %e \n",    maxepstotalCosCase3);
+fprintf(fd, "#define RN_CST_COS_CASE3 %f \n", rnconstantCosCase3);
+
+fprintf(fd, "#define RN_CST_TANFAST1 %e \n", rnconstantTanCase21);
+fprintf(fd, "#define RN_CST_TANFAST2 %e \n", rnconstantTanCase22);
 fprintf(fd, "\n"):
 
 fprintf(fd, "#define INV_PIO256 %1.50f \n", 1/C);
@@ -444,32 +490,32 @@ for isbig from 1 to 0 by -1 do
   # The sine polynomial
 
   fprintf(fd, "static db_number const s3 = "):
-  printendian(fd, coeff(polySinFast,x,3), isbig):
+  printendian(fd, coeff(polySinCase2,x,3), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const s5 = "):
-  printendian(fd, coeff(polySinFast,x,5), isbig):
+  printendian(fd, coeff(polySinCase2,x,5), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const s7 = "):
-  printendian(fd, coeff(polySinFast,x,7), isbig):
+  printendian(fd, coeff(polySinCase2,x,7), isbig):
   fprintf(fd, ";\n\n"):
 
 
   # the cos polynomial
 
   fprintf(fd, "static db_number const c2 = "):
-  printendian(fd, coeff(polyCosFast,x,2), isbig):
+  printendian(fd, coeff(polyCosCase2,x,2), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const c4 = "):
-  printendian(fd, coeff(polyCosFast,x,4), isbig):
+  printendian(fd, coeff(polyCosCase2,x,4), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const c6 = "):
-  printendian(fd, coeff(polyCosFast,x,6), isbig):
+  printendian(fd, coeff(polyCosCase2,x,6), isbig):
   fprintf(fd, ";\n\n"):
 
 
   # the tan polynomial
 
-  t3h, t3l := hi_lo(coeff(polyTanFast,x,3)):
+  t3h, t3l := hi_lo(coeff(polyTanCase2,x,3)):
   fprintf(fd, "static db_number const t3h = "):
   printendian(fd, t3h, isbig):
   fprintf(fd, ";\n"):
@@ -477,22 +523,22 @@ for isbig from 1 to 0 by -1 do
   printendian(fd, t3l, isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const t5 = "):
-  printendian(fd, coeff(polyTanFast,x,5), isbig):
+  printendian(fd, coeff(polyTanCase2,x,5), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const t7 = "):
-  printendian(fd, coeff(polyTanFast,x,7), isbig):
+  printendian(fd, coeff(polyTanCase2,x,7), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const t9 = "):
-  printendian(fd, coeff(polyTanFast,x,9), isbig):
+  printendian(fd, coeff(polyTanCase2,x,9), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const t11 = "):
-  printendian(fd, coeff(polyTanFast,x,11), isbig):
+  printendian(fd, coeff(polyTanCase2,x,11), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const t13 = "):
-  printendian(fd, coeff(polyTanFast,x,13), isbig):
+  printendian(fd, coeff(polyTanCase2,x,13), isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const t15 = "):
-  printendian(fd, coeff(polyTanFast,x,15), isbig):
+  printendian(fd, coeff(polyTanCase2,x,15), isbig):
   fprintf(fd, ";\n\n"):
 
 
