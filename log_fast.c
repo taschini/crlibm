@@ -71,18 +71,10 @@ extern void scs_log(scs_ptr,db_number, int);
 
 
 
-static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_number * py, int *pE) {
+static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_number * py, int E) {
    double ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo;
    double z, res, P_hi, P_lo;
    int k, i;
-
-   /* reduce to  y.d such that sqrt(2)/2 < y.d < sqrt(2) */
-   (*pE) += ((*py).i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
-   (*py).i[HI_ENDIAN] =  ((*py).i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
-   if ((*py).d > SQRT_2){
-     (*py).d *= 0.5;
-     (*pE)++;
-   }
 
     
     /* find the interval including y.d */
@@ -91,27 +83,28 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       i = i>>1;
     else
       i = ((i-1)>>1);
-
     
     z = (*py).d - (middle[i]).d;  /* (exact thanks to Sterbenz Lemma) */
     
 
     /* Compute ln2_times_E = E*log(2)   in double-double */
-    Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, (double)(*pE), 0.);
+    Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, (double)E, 0.);
+
 
     /* Now begin the polynomial evaluation of log(1 + z)      */
 
     res = (poly_log_fast_h[i][DEGREE]).d;
 
-
     for(k=DEGREE-1; k>1; k--){
       res *= z;
       res += (poly_log_fast_h[i][k]).d;
     }
+
     if((ln2_times_E_HI*ln2_times_E_HI < MIN_FASTPATH*MIN_FASTPATH)) {
       /* Slow path */
-      if((*pE)==0) {
+      if(E==0) {
 	*prndcstindex = 0 ;
+	/* In this case we start with a double-double multiplication to get enough relative accuracy */ 
 	Mul12(&P_hi, &P_lo, res, z); 
 	Add22(&res_hi, &res_lo, (poly_log_fast_h[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
 	Mul22(&P_hi, &P_lo, res_hi, res_lo, z, 0.); 
@@ -161,7 +154,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
    E=0;
    y.d=x;
 
- /* Filter cases */
+   /* Filter cases */
    if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
      if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
        return -1.0/0.0;     
@@ -171,15 +164,24 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
      }
      /* Subnormal number */
      E = -52; 		
-     y.d *= two52.d; 	  /* make x as normal number = x's mantissa    */ 
+     y.d *= two52.d; 	  /* make x a normal number    */ 
    }
     
    if (y.i[HI_ENDIAN] >= 0x7ff00000){
-     return  x+x;				    /* Inf or Nan       */
+     return  x+x;				 /* Inf or Nan       */
    }
    
-  log_quick(&res_hi, &res_lo, &rndcstindex, &y, &E);
-  roundcst = rncst[rndcstindex];
+   /* reduce to  y.d such that sqrt(2)/2 < y.d < sqrt(2) */
+   E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
+   y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
+   if (y.d > SQRT_2){
+     y.d *= 0.5;
+     E++;
+   }
+
+   /* Call the actual computation */
+   log_quick(&res_hi, &res_lo, &rndcstindex, &y, E);
+   roundcst = rncst[rndcstindex];
 
 
   /* Test for rounding to the nearest */
@@ -241,7 +243,14 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
    }
    
  
-   log_quick(&res_hi, &res_lo, &rndcstindex, &y, &E);
+   E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
+   y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
+   if (y.d > SQRT_2){
+     y.d *= 0.5;
+     E++;
+   }
+
+  log_quick(&res_hi, &res_lo, &rndcstindex, &y, E);
    roundcst = delta[rndcstindex];
    
    /* Rounding test to + infinity */
@@ -305,8 +314,14 @@ double log_ru(double x){
      return  x+x;				    /* Inf or Nan       */
    }
    
- 
-   log_quick(&res_hi, &res_lo, &rndcstindex, &y, &E);
+    E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
+   y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
+   if (y.d > SQRT_2){
+     y.d *= 0.5;
+     E++;
+   }
+
+   log_quick(&res_hi, &res_lo, &rndcstindex, &y, E);
    roundcst = delta[rndcstindex];
 
 
