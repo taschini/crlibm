@@ -1,0 +1,59 @@
+yh = <float64ce>(yy);
+yl = yy - yh;
+sah = <float64ce>(sa);
+sal = sa - sah;
+cah = <float64ce>(ca);
+cal = ca - cah;
+
+# constantes
+s3 = -6004799503160661b-55;
+s5 = +4803839602528529b-59;
+s7 = -7320136537186330b-65;
+s9 = +6506788033054516b-71;
+c2 = -4503599627370496b-53;
+c4 = +6004799503154328b-57;
+c6 = -6405110857547344b-62;
+c8 = +7320136537186330b-68;
+
+# yh2 = yh * yh;
+yh2 = <float64ce>(yh * yh);
+
+# ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
+ts = <float64ce>(yh2 * <float64ce>(s3 + <float64ce>(yh2 * <float64ce>(s5 + <float64ce>(yh2 * s7)))));
+
+# tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d));
+tc = <float64ce>(yh2 * <float64ce>(c2 + <float64ce>(yh2 * <float64ce>(c4 + <float64ce>(yh2 * c6)))));
+
+# Mul12(&cahyh_h,&cahyh_l, cah, yh);
+cahyh = cah * yh;
+cahyh_h = <float64ce>(cahyh);
+cahyh_l = cahyh - cahyh_h;
+
+# Add12(thi, tlo, sah, cahyh_h);
+t = sah + cahyh_h;
+thi = <float64ce>(t);
+tlo1 = t - thi;
+
+#  tlo = tc*sah+(ts*cahyh_h+(sal+(tlo+(cahyh_l+(cal*yh + cah*yl))))) ;
+tlo = <float64ce>(<float64ce>(tc * sah) + <float64ce>(<float64ce>(ts * cahyh_h)
+ + <float64ce>(sal + <float64ce>(tlo1 + <float64ce>(cahyh_l
+ + <float64ce>(<float64ce>(cal * yh) + <float64ce>(cah * yl)))))));
+tlo_r = tc*sah+(ts*cahyh_h+(sal+(tlo1+(cahyh_l+(cal*yh + cah*yl))))) ;
+
+# Add12(*reshi, *reslo, thi, tlo);
+res = thi + tlo;
+
+{
+   yy in [0,0.0061362]    # ymaxCase3 computed by Maple
+/\ ca in [0,1] /\ sa in [0,0.702754744458] # should be refined
+->
+  res - ((1 + ts) * ca * yy + (1 + tc) * sa ) in ?
+}
+
+# This is a hint to the reduction engine. It tells it what we intend
+# to compute by pointing out that res - ((1 + ts) * ca * yy + (1 + tc) * sa ) 
+# is equal to tlo - tlo_r + the neglected terms
+
+res - ((1 + ts) * ca * yy + (1 + tc) * sa ) ->
+  tlo  - tlo_r + (sal*tc + cal*yl + ts*(cahyh_l + cah*yl + cal*yh + cal*yl)) ;
+
