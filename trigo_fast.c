@@ -132,6 +132,9 @@ int static trig_range_reduction(double* pyh, double* pyl,
   double kd;
   if  (absxhi < XMAX_CODY_WAITE_3) {
     DOUBLE2INT(k, x * INV_PIO256);
+#if DEBUG
+    printf("k=%d  \n", k);
+#endif
     kd = (double) k;
     if(((k&127) == 0)) { 
       /* Here we risk a large cancellation on yh+yl; 
@@ -163,15 +166,18 @@ int static trig_range_reduction(double* pyh, double* pyl,
     double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
     DOUBLE2LONGINT(kl, x*INV_PIO256);
     kd=(double)kl;
-    k = (int) kl;
+    k = (int) (kl & 0xFFFFFFFFLL);
 #if DEBUG
-    printf("kl=%lld  \n", kl);
+    printf("kl=%lld     k= %d  (%d) \n", kl, k, k&127);
 #endif
     if((k&127) == 0) { 
       scs_t X, Y,Yh,Yl;
       scs_set_d(X, x*128.0); 
       k= rem_pio2_scs(Y, X);
-      /* TODO an optimized procedure for the following */
+#if DEBUG
+    printf("krempio2 = %d  (%d) \n", k, k&127);
+#endif
+       /* TODO an optimized procedure for the following */
       scs_get_d(pyh, Y);
       scs_set_d(Yh, *pyh);
       scs_sub(Yl, Y,Yh);
@@ -273,6 +279,7 @@ double sin_rn(double x){
 #if DEBUG
 	printf("sah=%1.30e sal=%1.30e  \n", sah,sal);
 	printf("cah=%1.30e cal=%1.30e  \n", cah,cal);
+ 	printf("yh=%1.30e   yl=%1.30e  \n", yh,yl);
 #endif
 
 #if INLINE_SINCOS
@@ -564,7 +571,7 @@ if(k==0)
       /* now we compute an approximation to cos(a)sin(x) + sin(a)cos(x)   */
       /* read the sine and cos */ 
       
-      Add12( sl, sh, th,    tc*sah + (ts*cahyh_h  +(sal + (tl + (cahyh_l  + (cal*yh + cah*yl)) ) ) )  );
+      Add12(sh, sl, th,    tc*sah + (ts*cahyh_h  +(sal + (tl + (cahyh_l  + (cal*yh + cah*yl)) ) ) )  );
 
 /* Cosine computation, our denominator */
     /* now we compute an approximation to cos(a)cos(x) - sin(a)sin(x)   */
@@ -578,18 +585,19 @@ if(k==0)
 
     Add12(th, tl,  cah, -sahyh_h);
     Add12(ch, cl, th, tc*cah - (ts*sahyh_h -  (cal + (tl  - (sahyh_l + (sal*yh + sah*yl)) )))   );
-}
+  }
 
    Div22(&reshi, &reslo, sh, sl, ch, cl);
-   printf("reshi = %0.20f\nreslo = %0.20f\n\n", reshi, reslo);
- /*  
+ 
+   /*  
+   printf("ch = %0.10 cl = %0.10e       sh = %0.10e  sl = %0.10e     reshi = %0.10e\nreslo = %0.10e\n\n", ch,cl,sh,sl,reshi, reslo);
    DIV2(reshi, reslo, sh, sl, ch, cl);
    printf("reshi = %0.20f\nreslo = %0.20f\n", reshi, reslo);*/
 
 
   /* ROUNDING TO NEAREST */
  
-  if(reshi == (reshi + (reslo * 1.3008))){
+  if(reshi == (reshi + (reslo * 1.08))){
 #if DEBUG
   printf("1ere etape\n");
 #endif   
