@@ -49,12 +49,12 @@ xmax_return_x_for_tan := 2^(-26):
 
 
 # TODO  This value seems to work but needs proving. Besides maybe it
-# should be the same for sine and cos
+# should not be the same for sine and cos
 
-maxepstotalSinCase3:=2**(-65);
+maxepstotalSinCase3:=2**(-64);
 rnconstantSinCase3 := evalf(compute_rn_constant(maxepstotalSinCase3)):
 
-maxepstotalCosCase3:=2**(-65);
+maxepstotalCosCase3:=2**(-64);
 rnconstantCosCase3 := evalf(compute_rn_constant(maxepstotalCosCase3)):
 
 
