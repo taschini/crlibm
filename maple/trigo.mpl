@@ -1,7 +1,7 @@
 
 Digits := 100:
 interface(quiet=true):
-read "Common_Maple_Procedures.mpl":
+read "common-procedures.mpl":
 
 
 mkdir("TEMPTRIG"):

@@ -5,7 +5,7 @@ Digits := 100:
 
 interface(quiet=true);
 
-read "Common_Maple_Procedures.mpl";
+read "common-procedures.mpl";
 mkdir("TEMPLOG");
 deg:=12;
 # Error, (in mkdir) directory exists and is not empty

@@ -1190,7 +1190,7 @@ end:
 We also have procedures for computing good truncated polynomial
 approximation for a function. As they are useless to the proof, we do
 not describe them here, the interested reader is referred to file
-\texttt{maple/Common\_maple\_procedures.mw} for more details.
+\texttt{maple/common-procedures.mpl} for more details.
 
 
 
@@ -1305,3 +1305,12 @@ compute_rn_constant := proc(delta)
 end proc:
 \end{lstlisting}
 \vspace{0.5cm}
+
+
+
+\subsection{Using double-extended}
+
+The file \texttt{maple/double-extended.mpl} contains procedures
+similar to those previously described to handle double-extended
+precision (64 bits of mantissa and 15 bits of exponent). This is currently used
+in experimental code only. For more details see \cite{DinDefLau2004LIP,DinGast2004LIP}.

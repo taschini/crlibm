@@ -1,7 +1,7 @@
 restart:
 Digits := 100:
 with (numapprox):with(orthopoly):
-read "Common_Maple_Procedures.mpl";
+read "common-procedures.mpl";
 mkdir("TEMPATAN");
 
 #First, quick phase
