@@ -5,15 +5,15 @@
 \section{Overview}
 
 We compute atan in two steps : the first one gives us a precision around 64
-bits. The second one compute about 130 bits of precision is order to have
-correct rounding in all cases (the worst-case is ...).
+bits. The second one compute 136 bits of precision is order to have
+correct rounding in all cases.
 
 \subsubsection{Definition interval and exceptional cases}
 
 The inverse tangent is defined over all real number.
 
 \begin{itemize}
-\item If $x = Nan$ , then $\arctan(x)$ should return $NaN$
+\item If $x = NaN$ , then $\arctan(x)$ should return $NaN$
 \item If $x = \pm\infty$ , then $\arctan(x)$ should return
 $\pm\round(\pi/2)$. 
 \end{itemize}
@@ -22,15 +22,17 @@ $\pm\round(\pi/2) =\pm\rounddown(\pi/2) $. That could be a probem for
 rounding up but we choose not to have a x with $\arctan(x) > \pi/2$.
 \section{Quick phase}
 
-We try to have about 64 bits of precision. This phase is computed in double
-or double.
+We have five function : one which compute $\arctan(x)$ in double-double
+precision and four which compute the correct rounding. First we'll see the
+main algorithm and then the rounding.
 
 \subsection{Overview of the algorithm.}
 
+We try to have about 64 bits of precision. This phase is computed in double
+or double.
+
 There are two steps in the algorithm: an argument reduction and a polynomial
-approximation with a degree 9 polynomial. We return $\arctan(x)$ when
-$x>0$ and $-\arctan(-x)$ when $x<0$ in order to compute $\arctan(x)$ for positive
-values only.
+approximation with a 9 degree polynomial. 
 
 We compute $\arctan(x)$ as 
 \begin{equation}
@@ -55,14 +57,16 @@ in order to have 66 bits of precision.
 \begin{equation}
 \begin{split} \arctan(x)& \approx x - \dfrac{1}{3} .x^3 + \frac{1}{5}.x^5
 - \frac{1}{7}.x^7 + \frac{1}{9}.x^9 \nonumber \\ \label{eq:poly_eval}
-  & \approx x . ( 1 + Q(x^2))
+  & \approx x . + x.Q(x^2)
 \end{split}
 \end{equation}
-where 
+ 
 Q is evaluated thanks to a Horner scheme:
 $ Q(z) = z. (-\frac{1}{3} + z.(\frac{1}{5} + z.(-\frac{1}{7} +
 z.\frac{1}{9}))) $
 where each operation is computed in double.
+
+As $|z| \leq e$, $Q(z) \leq e^2$
 
 At the end, the reconstruction implements equation and (\ref{eq:poly_eval})  
 (\ref{eq:arctan_redu}) in double-double
@@ -74,53 +78,6 @@ arithmetic.
 
 
 \subsection{Details of computer program}
-  
-\subsubsection{Exceptional cases}
-\begin{lstlisting}[caption={Exceptional cases},firstnumber=1]
-
-  db_number x_db;
-  x_db.d = x;
-  unsigned int hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
-
-  /* Filter cases */
-  if ( hx >= 0x43500000)           /* x >= 2^54 */
-    {
-      if ( ( (hx & 0x000fffff) | x_db.i[LO_ENDIAN] ) == 0)
-        return x+x;                /* NaN */
-      else
-        return HALFPI.d;           /* \arctan(x) = Pi/2 */
-    }
-  else
-    if ( hx < 0x3E400000 )
-      {return x;                   /* x<2^-27 then \arctan(x) =~ x */}
-
-\end{lstlisting}
-\begin{tabular}{ll}
-Lines 3 & Test if x is greatear than $2^{54}$, $\infty$ or $NaN$. \\
-Line 5,6 & return $\arctan(NaN) = NaN$\\
-Line 8 & \texttt{HALFPI} is the greatest double smaller than
-&$\dfrac{\pi}{2}$ in order not to have $\arctan(x) > \dfrac{pi}{2}$.\\
-Line 11 & When $x<2^{-27}$ : $x^2 < 2^{-54}$. Plus we know that $\arctan(x) = \displaystyle {\sum_{i=0}^{\infty}
-\frac{x^{2i+1}}{2i+1}(-1)^i}$.
-\end{tabular}
-
-So:
-\begin{equation}
-   \begin{split}
-       \Big| \frac{\arctan(x)-x}{x}  \Big| & = 
-       \Bigg|\frac{ \displaystyle {\sum_{i=0}^{\infty}
-       \Big( \frac{x^{2i+1}}{2i+1}(-1)^i} \Big) - x}{x} \Bigg|
-       \nonumber\\
-       & = \Big|\displaystyle {\sum_{i=1}^{\infty}}
-       \frac{x^{2i}}{2i+1}(-1)^i\Big|\nonumber \\ 
-       & < \frac{x^2}{3}\nonumber \\
-       & < 2^{-54} \nonumber
-   \end{split}
-\end{equation}
-
-Then : $\arctan(x) \approx x $
-\bigskip
-
 
 \subsubsection{Argument reduction}
 \begin{lstlisting}[caption={Reduction},firstnumber=1]
@@ -129,26 +86,26 @@ Then : $\arctan(x) \approx x $
   {
     double xmBIhi,xmBIlo;      
 
-      if (x > value[61][B].d) {
+      if (x > arctan_table[61][B].d) {
         i=61;
-        Add12( xmBIhi , xmBIlo , x , -value[61][B].d);
+        Add12( xmBIhi , xmBIlo , x , -arctan_table[61][B].d);
       }
       else {
         /* determine i so that a[i] < x < a[i+1] */
         i=31;
-        if (x < value[i][A].d) i-= 16;
+        if (x < arctan_table[i][A].d) i-= 16;
         else i+=16;
-        if (x < value[i][A].d) i-= 8;
+        if (x < arctan_table[i][A].d) i-= 8;
         else i+= 8;
-        if (x < value[i][A].d) i-= 4;
+        if (x < arctan_table[i][A].d) i-= 4;
         else i+= 4;
-        if (x < value[i][A].d) i-= 2;
+        if (x < arctan_table[i][A].d) i-= 2;
         else i+= 2;
-        if (x < value[i][A].d) i-= 1;
+        if (x < arctan_table[i][A].d) i-= 1;
         else i+= 1;
-        if (x < value[i][A].d) i-= 1;
+        if (x < arctan_table[i][A].d) i-= 1;
           
-        xmBIhi = x-value[i][B].d;
+        xmBIhi = x-arctan_table[i][B].d;
         xmBIlo = 0.0;
       }
 \end{lstlisting}
@@ -165,7 +122,7 @@ Line 7 and 23 & compute $xmBIhi + xmBIlo = x - b_i$
 
 \begin{lstlisting}[caption={Reduction : 2nd part},firstnumber=1]
 
-      Mul12(&tmphi,&tmplo, x, value[i][B].d);
+      Mul12(&tmphi,&tmplo, x, arctan_table[i][B].d);
 
       if (x > 1)
         Add22(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
@@ -194,9 +151,9 @@ Line 7 & compute $\xred = \dfrac{x-b_i}{1+x.b_i}$
                    coef_poly[0]))) ;
 
       /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
-      double testlo = Xredlo+ value[i][ATAN_BLO].d + Xredhi*q;
+      double testlo = Xredlo+ arctan_table[i][ATAN_BLO].d + Xredhi*q;
       double tmphi2, tmplo2;
-      Add12( tmphi2, tmplo2, value[i][ATAN_BHI].d, Xredhi);
+      Add12( tmphi2, tmplo2, arctan_table[i][ATAN_BHI].d, Xredhi);
       Add12( atanhi, atanlo, tmphi2, (tmplo2+testlo));
 
 \end{lstlisting}
@@ -293,16 +250,16 @@ that prove us that $\xred$ is always smaller than $e$.
 \subsubsection{Error about argument reduction}
 \begin{lstlisting}[caption={Reduction part 1},firstnumber=1]
 
-      if (x > value[61][B].d) {
+      if (x > arctan_table[61][B].d) {
         i=61;
-        Add12( xmBihi , xmBilo , x , -value[61][B].d);
+        Add12( xmBihi , xmBilo , x , -arctan_table[61][B].d);
       }
       else
       {
         ...
         /* determine i so that a[i] < x < a[i+1] */
         ...          
-        xmBihi = x-value[i][B].d;
+        xmBihi = x-arctan_table[i][B].d;
         xmBilo = 0.0;
       }
       
@@ -313,7 +270,7 @@ $x-b_i$.
 
 \begin{lstlisting}[caption={Reduction part 2},firstnumber=1]
 
-      Mul12(&tmphi,&tmplo, x, value[i][B].d);
+      Mul12(&tmphi,&tmplo, x, arctan_table[i][B].d);
 
       if (tmphi > 1)
         Add22(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
@@ -331,8 +288,8 @@ Line 6 & DIV2 makes $\epsilon_{104}$ (according to Ziv ... ref) error so we have
 
 \begin{equation}
 \begin{split}
-   \xred & = \frac{(x-b_i).(1+\epsilon_{105})}{(1+x.b_i.(1+\epsilon_{105})
-          .(1+\epsilon_{105}) )}.(1+\epsilon_105) \\
+   \round\big(\xred\big) & = \frac{(x-b_i).(1+\epsilon_{105})}{(1+x.b_i).(1+\epsilon_{105})
+          .(1+\epsilon_{105}) )}.(1+\epsilon_{105}) \\
          & =
           \frac{x-b_i}{1+x.b_i}.(1+\epsilon_{105})(1+\epsilon_{105}+\epsilon_{105}+\epsilon_{104})\\
          & = \xred . (1+\epsilon_{102.6})\nonumber
@@ -352,9 +309,9 @@ So: \epsilon_{\xred} & = \epsilon_{102.6} \label{eps:equation}
                    coef_poly[0]))) ;
 
       /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
-      double testlo = Xredlo+ value[i][ATAN_BLO].d + Xredhi*q;
+      double testlo = Xredlo+ arctan_table[i][ATAN_BLO].d + Xredhi*q;
       double tmphi2, tmplo2;
-      Add12( tmphi2, tmplo2, value[i][ATAN_BHI].d, Xredhi);
+      Add12( tmphi2, tmplo2, arctan_table[i][ATAN_BHI].d, Xredhi);
       Add12( atanhi, atanlo, tmphi2, (tmplo2+testlo));
 
 \end{lstlisting}
@@ -441,6 +398,143 @@ constant is $1.0021$.
 When $x<2^{-10}$ the relative error is $\epsilon_{70.4}$. The
 constant is $1.0000114$. 
 
+\bigskip
+
+\subsection{Rounding}
+\subsubsection{Rounding to nearest}
+\begin{lstlisting}[caption={Exceptional cases : rounding to nearest},firstnumber=1]
+
+  db_number x_db;
+  x_db.d = x;
+  unsigned int hx = x_db.i[HI_ENDIAN] & 0x7FFFFFFF; 
+
+  /* Filter cases */
+  if ( hx >= 0x43500000)           /* x >= 2^54 */
+    {
+      if ( ( (hx & 0x000fffff) | x_db.i[LO_ENDIAN] ) == 0)
+        return x+x;                /* NaN */
+      else
+        return HALFPI.d;           /* \arctan(x) = Pi/2 */
+    }
+  else
+    if ( hx < 0x3E400000 )
+      {return x;                   /* x<2^-27 then \arctan(x) =~ x */}
+
+\end{lstlisting}
+\begin{tabular}{ll}
+Lines 3 & Test if x is greatear than $2^{54}$, $\infty$ or $NaN$. \\
+Line 5,6 & return $\arctan(NaN) = NaN$\\
+Line 8 & \texttt{HALFPI} is the greatest double smaller than
+$\frac{\pi}{2}$ in order not to have $\arctan(x) > \dfrac{pi}{2}$ \\
+Line 11 & When $x<2^{-27}$ : $x^2 < 2^{-54}$ so $o(\arctan(x)) = x$
+\end{tabular}
+\\
+
+\textbf{Proof}
+
+ we know that $\arctan(x) = \displaystyle {\sum_{i=0}^{\infty}
+\frac{x^{2i+1}}{2i+1}(-1)^i}$.
+
+So:
+\begin{equation}
+   \begin{split}
+       \Big| \frac{\arctan(x)-x}{x}  \Big| & = 
+       \Bigg|\frac{ \displaystyle {\sum_{i=0}^{\infty}
+       \Big( \frac{x^{2i+1}}{2i+1}(-1)^i} \Big) - x}{x} \Bigg|
+       \nonumber\\
+       & = \Big|\displaystyle {\sum_{i=1}^{\infty}}
+       \frac{x^{2i}}{2i+1}(-1)^i\Big|\nonumber \\ 
+       & < \frac{x^2}{3}\nonumber \\
+       & < 2^{-54} \nonumber
+   \end{split}
+\end{equation}
+
+Then : $\arctan(x) \approx x $
+\bigskip
+
+\subsubsection{Rounding toward $-\infnty$}
+\begin{lstlisting}[caption={Exceptional cases : rounding up},firstnumber=1]
+
+  if ( hx >= 0x43500000)           /* x >= 2^54 */
+    {
+      if ( ( (hx & 0x000fffff) | x_db.i[LO_ENDIAN] ) == 0)
+        return x+x;                /* NaN */
+      else
+        if (x>0)
+          return HALFPI.d;
+        else
+          return -HALFPI_TO_PLUS_INFINITY.d;           /* atan(x) = Pi/2 */
+    }
+  else
+    if ( hx < 0x3E400000 )
+      {if (sign>0)
+        {absyh.d = x;
+        u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+        u.l   = u53.l - 0x0350000000000000LL;
+        x -= u.d;}
+      return x;
+      }
+  
+\end{lstlisting}
+
+The differences with rounding to nearest mode are for $frac{pi}{2}$ for
+$x<2^(-27)$.
+
+\subsubsection{Rounding toward $-\infnty$}
+
+\begin{lstlisting}[caption={Exceptional cases : rounding up},firstnumber=1]
+
+  if ( hx >= 0x43500000)           /* x >= 2^54 */
+    {
+      if ( ( (hx & 0x000fffff) | x_db.i[LO_ENDIAN] ) == 0)
+        return x+x;                /* NaN */
+      else
+        if (x>0)
+          return HALFPI.d;
+        else
+          return -HALFPI_TO_PLUS_INFINITY.d;           /* atan(x) = Pi/2 */
+    }
+  else
+    if ( hx < 0x3E400000 )
+      {if (sign>0)
+        {absyh.d = x;
+        u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+        u.l   = u53.l - 0x0350000000000000LL;
+        x -= u.d;}
+      return x;
+      }
+
+\end{lstlisting}
+
+There are the same differences for rounding down.
+
+\subsubsection{Rounding to zero}
+
+This function is quite simple: it call one of the two function defineded
+before.
+
+\begin{lstlisting}[caption={Rounding to zero},firstnumber=&]
+
+extern double atan_rz(double x) {
+  if (x>0)
+    return atan_rd(x);
+  else
+    return atan_ru(x);
+}
+\end{lstlisting}
+
+\subsubsection{Test if rounding is possible}
+This test use the theorem \ref{th:roundingRN1}.
+The code is the same than in the theorem except that we have 4 rounding
+constants : 
+\begin{itemize}
+\item 1.000877 when $i<10$
+\item 1.000014 when $i\geq10$
+\item 1.002100 when $x>2^{-10}$
+\item 1.000013 when $x<2^{-10}$
+\end{itemize}
+
+
 \section{Accurate phase}
 The accurate phase is the same as the quick phase, except that number are
 scs and not double.
@@ -460,7 +554,8 @@ x-\frac{1}{3}.x^3+\frac{1}{5}.x^5-\frac{1}{7}.x^7+\frac{1}{9}.x^9-\frac{1}{11}.x
 
 \subsection{Speed}
 Table \ref{tbl:arctan_abstime} (produced by the \texttt{crlibm\_testperf}
-executable) gives absolute timings for a variety of processors and
+executable) gives absolute timings for a variety of processors. The test
+compute over 10000 atan in rounding to nearest mode.
 
 \begin{table}[!htb]
 \begin{center}
@@ -473,27 +568,27 @@ executable) gives absolute timings for a variety of processors and
  \hline
                          & min time      & max time      & avg time \\
  \hline
- \texttt{libm}           & 832          & 920           &        890 \\
+ \texttt{libm}           & 880          & 976           &        944 \\
  \hline
-  \texttt{mpfr}          & 882740       & 2203288       &     933186 \\
+  \texttt{mpfr}          & 901100       & 1891404       &     942681 \\
  \hline
-  \texttt{libultim}      & 656          & 2256          &        831 \\
+  \texttt{libultim}      & 712          & 2236          &        885 \\
  \hline
- \texttt{crlibm}         & 688          & 30908         &        964 \\
+ \texttt{crlibm}         & 732          & 1300          &        976 \\
  \hline
-
 
 \multicolumn{4}{|c|}{PowerPC G4 / Macos X.2 / gcc }   \\
+
  \hline
-                         & min time      & max time      & avg time \\
+                         & min time      & max time      & avg time \\ 
  \hline
- \texttt{libm}           & 8            & 13            &          9 \\
+ \texttt{libm}           & 8            & 13            &         11 \\ 
  \hline
-  \texttt{mpfr}          & 67196        & 894424        &     205574 \\
+  \texttt{mpfr}          & 68094        & 136943        &      70649 \\ 
  \hline
-  \texttt{libultim}      & 9            & 19            &          9 \\
+  \texttt{libultim}      & 9            & 50            &         14 \\ 
  \hline
- \texttt{crlibm}         & 7            & 25            &          8 \\
+ \texttt{crlibm}         & 7            & 23            &         15 \\ 
  \hline
 
 \end{tabular}
@@ -508,14 +603,36 @@ Table size is
 \item for the \quick\ phase,
   $62\times (1+1+2) \times8=1984$ bytes for the 62 $a_i$, $b_i$,
   $\arctan(b_i)$ (hi and lo), plus another $8$ bytes for the rounding
-  constant, plus $4\times8$ for the polynomial and $8$ Bytes for
-  $\frac{\pi}{2}$ or $2032$ Bytes in total.
+  constant, plus $4\times8$ for the polynomial, $8$ Bytes for
+  $\frac{\pi}{2}$ and $64$ for the rounding constants or $2096$ Bytes in
+  total.
   
 \item for the \accurate\ phase, we just have $10$ SCS constants for the
   polynomial, and 62 other double for $\arctan(b_i)_{lo_{lo}}$.
   If we add all : $10*11*8 + 62*8 = 1376$
 \end{itemize}
-If we add the fast phase and the acurate one, we have a total of 3408
+If we add the fast phase and the acurate one, we have a total of 3472
 Bytes.
+
+
 \section{Conclusion and perspectives}
 
+Our $\arctan$ is almost as fast as the one of \texttt{Libm} but is quite
+slower then Ziv's. The first one makes about $0.14\%$ of error in rounding
+to nearest mode and we didn't find any error on Ziv's but none of them
+compute it with directed rounding.
+
+To improve performances we could inline the code of \texttt{atan\_quick}
+but we prefer to keep it as it is in order to ease the evolution of the
+algorithm.
+
+The main problem of our $\arctan$ is that our first part is too accurate:
+the second part is taken less than $1/10000$. That's why i think that we
+could search on two different way to improve performances. \\ The first is
+to change the argument reduction: the one we comprise a \texttt{Div22} wich
+is very slow because too accurate. It gives more than 100 bits of
+precisions although we just need about 60 bits. \\The other one could be
+computing this reduction more efficiently, using double-extended for
+exemple. A double-extended has a mantissa of 64 bits which could transform
+all double-double operation in double-extended operation. This format
+number is present in most of the Intel recent processors.
