@@ -137,8 +137,8 @@ double rand_for_sin(){
   e =  (int) ( (rand_double_normal()-1) * 25 );
   result.i[HI_ENDIAN] += (1023 + e -10)<<20;
 #else
-  e =  (int) ( (rand_double_normal()-1) * 40 ); /* never Payne Hanek : 34 */
-  result.i[HI_ENDIAN] += (1023 + e -10)<<20;
+  e =  (int) ( (rand_double_normal()-1) * 20 ); /* never Payne Hanek : 34 */
+  result.i[HI_ENDIAN] += (1023 + e +35)<<20;
 #endif
   return result.d;
 
