@@ -170,3 +170,42 @@ double scs_cos_ru(double x){
   return resd;
 }
 
+
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TOWARD  ZERO		     *	
+ *************************************************************
+ *************************************************************/
+double scs_cos_rz(double x){ 
+  scs_t sc1, sc2;
+  double resd;
+  int N;
+
+  scs_set_d(sc1, x);
+  N = rem_pio2_scs(sc2, sc1);
+  N = N & 0x0000003;		/* extract the 2 last bits of  N */
+  switch (N){
+  case 0:
+    cosine(sc2);
+    scs_get_d_zero(&resd, sc2);
+    return resd;
+    break;
+  case 1:
+    sine(sc2); /* Change rounding mode */
+    scs_get_d_zero(&resd, sc2);
+    return -resd;
+  case 2:
+    cosine(sc2); /* Change rounding mode */
+    scs_get_d_zero(&resd, sc2);
+    return -resd;
+  case 3:
+    sine(sc2);
+    scs_get_d_zero(&resd, sc2);
+    return resd;
+  default:
+    fprintf(stderr,"ERREUR: %d is not a valid value in s_cos \n", N);
+    exit(1);
+  }
+  return resd;
+}
+
