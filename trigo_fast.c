@@ -16,7 +16,7 @@ extern double scs_tan_rn(double); /* to nearest  */
 extern double scs_tan_rd(double); /* toward -inf */ 
 extern double scs_tan_ru(double); /* toward +inf */ 
 
-#define DEBUG 1
+#define DEBUG 0
 
 #define INLINE_SINCOS 0
 
@@ -95,9 +95,17 @@ static void do_sin(double* reshi, double* reslo, double yh, double yl) {
 static void do_cos(double* reshi, double* reslo, double yh, double yl) {
   double yh2, ts, tc, thi, tlo, sahyh_h,sahyh_l; 
 
-  /* Add optimizations for small yh / k  here */
-  
   yh2 = yh*yh ;
+
+  if(sah==0.0)
+    { /*  sa=0 and ca=1, which simplifies computations */
+    tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));
+    /* 1+ tc is an approx to cos(yh+yl) */
+
+      /* Now we need to compute 1+tc */
+      Add12(*reshi,*reslo, 1., tc);
+    }
+  else {
   
   /* now we compute an approximation to cos(a)cos(x) - sin(a)sin(x)   */
   
@@ -112,8 +120,8 @@ static void do_cos(double* reshi, double* reslo, double yh, double yl) {
   Add12(thi, tlo,  cah, -sahyh_h);
   tlo = tc*cah - (ts*sahyh_h -  (cal + (tlo  - (sahyh_l + (sal*yh + sah*yl)) ))) ;
   Add12(*reshi, *reslo,    thi, tlo );
+  }
 }
-
 
 #endif /* INLINE_SINCOS */
 
@@ -332,20 +340,6 @@ double cos_rn(double x){
 
   xx.d=x;
   absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
-
-  if (absxhi < XMAX_COS_FAST){
-    if (absxhi < XMAX_RETURN_1_FOR_COS)
-      return 1.;
-    /* Fast Taylor series */
-    yh=x*x;
-    tc = yh * (c2.d + yh*(c4.d + yh*(c6.d + yh*(c8.d))));
-    Add12(reshi,reslo, 1., tc);
-    if(reshi == (reshi + (reslo * RN_CST_COSFAST))){	
-      return reshi;
-    }else{ 
-      return scs_cos_rn(x); 
-    } 
-  }
   
   /* Otherwise : Range reduction then standard evaluation */
   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
@@ -355,6 +349,10 @@ double cos_rn(double x){
   
   quadrant = (k>>7)&3;
   k=(k&127)<<2;
+  
+#if DEBUG
+    printf("k = %d\nquadrant = %d\n", k>>2, quadrant);
+#endif
   
   if(k<=(64<<2)) {
     sah=sincosTable[k+0].d; /* sin(a), high part */
@@ -372,6 +370,7 @@ double cos_rn(double x){
 #if DEBUG
 	printf("sah=%1.30e sal=%1.30e  \n", sah,sal);
 	printf("cah=%1.30e cal=%1.30e  \n", cah,cal);
+	printf("yh = %1.30e yl = %1.30e\n", yh, yl);
 #endif
 
 #if INLINE_SINCOS
@@ -488,15 +487,21 @@ double tan_rn(double x){
   }    
      break;
    case(2):
-    #if DEBUG
-      printf("Case 2\n");
-    #endif
+#if DEBUG
+   printf("Case 2\n");
+#endif
       if(k<=(64<<2)) {  /* sah <= cah */
+#if DEBUG
+printf("k = %d\n", k);
+#endif
     sah=-sincosTable[k].d; /* sin(a), high part */
     sal=-sincosTable[k+1].d; /* sin(a), low part */
     cah=-sincosTable[k+2].d; /* cos(a), high part */
     cal=-sincosTable[k+3].d; /* cos(a), low part */
   } else { /* cah <= sah */
+#if DEBUG
+printf("64 < k < 128\n");
+#endif
     int k1=(128<<2) - k;
     cah=-sincosTable[k1].d; 
     cal=-sincosTable[k1+1].d;
