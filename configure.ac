@@ -25,6 +25,8 @@ powerpc*)
 	AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_POWERPC,1,[Processor type]);;
 i*86|k6|k7|pentium*|athlon*)
 	AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_X86,1,[Processor type]);;
+x86_64|amd64)
+        AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_AMD64,1,[Processor type]);;
 ia64)
 	AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_ITANIUM,1,[Processor type]);;
 esac;
@@ -33,9 +35,15 @@ esac;
 AC_CONFIG_SRCDIR([exp.c])
 AC_PROG_MAKE_SET
 
+dnl Check for compiler
+
+AC_PROG_CC(gcc icc cc)
+
+dnl send this information to automake to set up compilation flags
+dnl (add your compiler here)
+AM_CONDITIONAL(COMPILER_ICC, test x$CC = xicc)
+
 dnl Checks for programs.
-AC_PROG_CC(gcc-3.3 gcc-3.2 gcc cc)
-AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_PROG_AWK

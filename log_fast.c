@@ -251,7 +251,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
    }
 
   log_quick(&res_hi, &res_lo, &rndcstindex, &y, E);
-   roundcst = delta[rndcstindex];
+   roundcst = epsilon[rndcstindex];
    
    /* Rounding test to + infinity */
    absyh.d=res_hi;
@@ -322,7 +322,7 @@ double log_ru(double x){
    }
 
    log_quick(&res_hi, &res_lo, &rndcstindex, &y, E);
-   roundcst = delta[rndcstindex];
+   roundcst = epsilon[rndcstindex];
 
 
    /* Rounding test to + infinity */

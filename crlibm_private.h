@@ -60,10 +60,25 @@ extern double scs_exp_rd(double);
 
 extern void scs_log(scs_ptr,db_number, int);
 
-double scs_atan_rn(double); 
-double scs_atan_rd(double); 
-double scs_atan_ru(double); 
+extern double scs_atan_rn(double); 
+extern double scs_atan_rd(double); 
+extern double scs_atan_ru(double); 
  
+extern double scs_sin_rn(double);
+extern double scs_sin_ru(double);
+extern double scs_sin_rd(double);
+extern double scs_sin_rz(double);
+extern double scs_cos_rn(double);
+extern double scs_cos_ru(double);
+extern double scs_cos_rd(double);
+extern double scs_cos_rz(double);
+extern double scs_tan_rn(double); 
+extern double scs_tan_rd(double);  
+extern double scs_tan_ru(double);  
+extern double scs_tan_rz(double);  
+
+extern int rem_pio2_scs(scs_ptr, scs_ptr);
+
 
 /*
  * i = d in rounding to nearest
@@ -98,7 +113,7 @@ double scs_atan_ru(double);
 /* All this probably works only with gcc. 
    See Markstein book for the case of HP's compiler */
 
-#ifdef CRLIBM_TYPECPU_POWERPC
+#if defined(CRLIBM_TYPECPU_POWERPC) && defined(__GCC__)
 #define PROCESSOR_HAS_FMA 1
 #define FMA(a,b,c)  /* r = a*b + c*/                   \
 ({                                                     \
@@ -123,7 +138,7 @@ double scs_atan_ru(double);
   _r;                                                 \
   })
 
-#endif /*CRLIBM_TYPECPU_POWERPC*/
+#endif /* defined(CRLIBM_TYPECPU_POWERPC) && defined(__GCC__) */
 
 
 
@@ -132,7 +147,9 @@ double scs_atan_ru(double);
    It probably breaks the scheduling algorithms somehow... 
 */ 
 
-#ifdef CRLIBM_TYPECPU_ITANIUM
+/* __ICC__ is set by Makefile.am, there must be a cleaner way to detect icc compiler.
+   Beware icc sets __GCC__*/
+#if defined(CRLIBM_TYPECPU_ITANIUM) && defined(__GCC__)  && !defined(__ICC__) 
 #define PROCESSOR_HAS_FMA 1
 #define FMA(a,b,c)  /* r = a*b + c*/                 \
 ({                                                   \
@@ -156,8 +173,43 @@ double scs_atan_ru(double);
 		       );                            \
   _r;                                                \
   })
+#endif /* defined(CRLIBM_TYPECPU_ITANIUM) && defined(__GCC__) && !defined(__ICC) */
 
-#endif /*CRLIBM_TYPECPU_ITANIUM*/
+
+/* __ICC__ is set by Makefile.am, there must be a cleaner way to detect icc compiler.*/
+#if defined(CRLIBM_TYPECPU_ITANIUM) && defined(__ICC__) 
+#define PROCESSOR_HAS_FMA 1
+/* Table 1-17: legal floating-point precision completers (.pc) */
+typedef enum {
+    _PC_S        = 1        /* single .s */
+   ,_PC_D        = 2        /* double .d */
+   ,_PC_NONE     = 3        /* dynamic   */
+} _Asm_pc;
+
+/* Table 1-22: legal getf/setf floating-point register access completers */
+typedef enum {
+    _FR_S        = 1        /* single form      .s   */
+   ,_FR_D        = 2        /* double form      .d   */
+   ,_FR_EXP      = 3        /* exponent form    .exp */
+   ,_FR_SIG      = 4        /* significand form .sig */
+} _Asm_fr_access;
+
+/* Table 1-24: legal floating-point FPSR status field completers (.sf) */
+typedef enum {
+    _SF0         = 0        /* FPSR status field 0 .s0 */
+   ,_SF1         = 1        /* FPSR status field 1 .s1 */
+   ,_SF2         = 2        /* FPSR status field 2 .s2 */
+   ,_SF3         = 3        /* FPSR status field 3 .s3 */
+} _Asm_sf;
+
+#define FMA(a,b,c)  /* r = a*b + c*/                 \
+   _Asm_fma( _PC_D, a, b, c, _SF0 );              
+
+
+#define FMS(a,b,c)  /* r = a*b - c*/                 \
+   _Asm_fms( _PC_D, a, b, c, _SF0 );              
+
+#endif /*defined(CRLIBM_TYPECPU_ITANIUM) && defined(__ICC)*/
 
 
 
@@ -312,9 +364,9 @@ _s = ((((xh)-_r) +(yh)) + (yl)) + (xl);  \
 #ifdef PROCESSOR_HAS_FMA
 /* One of the nice things with the fused multiply-and-add is that it
    greatly simplifies the double-double multiplications : */
-#define Mul12(rh,rl,u,v)                              \
-{                                                     \
-  *rh = u*v;                                          \
+#define Mul12(rh,rl,u,v)                             \
+{                                                    \
+  *rh = u*v;                                         \
   *rl = FMS(u,v, *rh);                               \
 }
 
@@ -322,11 +374,12 @@ _s = ((((xh)-_r) +(yh)) + (yl)) + (xl);  \
 {                                                     \
 double ph, pl;                                        \
   ph = xh*yh;                                         \
-  pl = FMS(xh, yh,  ph);                               \
-  pl = FMA(xh,yl, pl);                                  \
-  pl = FMA(xl,yh,pl);                                   \
+  pl = FMS(xh, yh,  ph);                              \
+  pl = FMA(xh,yl, pl);                                \
+  pl = FMA(xl,yh,pl);                                 \
   *pzh = ph+pl;					      \
-  *pzl = (ph - (*pzh)) + pl;                          \
+  *pzl = ph - (*pzh);                                 \
+  *pzl += pl;                                         \
 }
 
 
@@ -419,14 +472,18 @@ double mh, ml;                                        \
 
 
 
-
+/* In the following the one-line computation of _cl was split so that icc would compile it properly */
 #if DEKKER_AS_FUNCTIONS
 extern void Div22(double *z, double *zz, double x, double xx, double y, double yy);
 #else
 #define  Div22(pzh,pzl,xh,xl,yh,yl)  {           \
   double _ch,_cl,_uh,_ul;                        \
   _ch=(xh)/(yh);   Mul12(&_uh,&_ul,_ch,(yh));    \
-  _cl=(((((xh)-_uh)-_ul)+(xl))-_ch*(yl))/(yh);   \
+  _cl=((xh)-_uh);                                \
+  _cl -= _ul;                                    \
+  _cl += (xl);                                   \
+  _cl -= _ch*(yl);                               \
+  _cl /= (yh);                                   \
   *pzh=_ch+_cl;   *pzl=(_ch-(*pzh))+_cl;         \
 }
 #endif /* DEKKER_AS_FUNCTIONS */

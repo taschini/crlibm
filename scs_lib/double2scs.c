@@ -88,7 +88,7 @@ void scs_set_d(scs_ptr result, double x){
 
     /* and spread it over the structure
        Everything here is 64-bit arithmetic */
-    R_HW[0] = mantissa.l >> (53 - exponent_remainder);
+    R_HW[0] = (unsigned int) (mantissa.l >> (53 - exponent_remainder) );
 
     /* 11 = 64-53 */
     mantissa.l =  (mantissa.l << (exponent_remainder+11));

@@ -26,18 +26,24 @@ powerpc*)
 	AC_DEFINE_UNQUOTED(SCS_TYPECPU_POWERPC,1,[Processor type]);;
 i*86|k6|k7|pentium*|athlon*)
 	AC_DEFINE_UNQUOTED(SCS_TYPECPU_X86,1,[Processor type]);;
+x86_64|amd64)
+        AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_AMD64,1,[Processor type]);;
 ia64)
 	AC_DEFINE_UNQUOTED(SCS_TYPECPU_ITANIUM,1,[Processor type]);;
 esac;
 
 
-
 AC_CONFIG_SRCDIR([print_scs.c])
 AC_PROG_MAKE_SET
 
-dnl Checks for programs.
-AC_PROG_CC(gcc-3.3 gcc-3.2 gcc cc)
-AC_PROG_CXX
+dnl Check for compiler
+
+AC_PROG_CC(gcc icc cc)
+
+dnl send this information to automake
+AM_CONDITIONAL(COMPILER_ICC, test x$CC = xicc)
+
+dnl Checks for other programs.
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 
@@ -206,7 +212,7 @@ dnl adds -lm
 AC_CHECK_LIB([m], [log])
 
 
-dnl Checks for typedefs, structures, and compiler characteristics.g
+dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 

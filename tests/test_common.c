@@ -118,7 +118,7 @@ double rand_double_normal(){
 
 
 /* For exp we will test perf on numbers with a random sign, a random mantissa, and
-   a random exponent between -16 and 15. And we soaktest on all the doubles */
+   a random exponent between -9 and 9. And we soaktest on all the doubles */
 
 #define rand_for_exp_soaktest rand_generic
 
@@ -130,9 +130,9 @@ double rand_for_exp_perf(){
   result.i[LO_ENDIAN]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
   result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
-  /* Now set the exponent between -10 and 10, enough to cover the useful range  */
-  e =  (int) ( (rand_double_normal()-1) * 20 );
-  result.i[HI_ENDIAN] += (1023 + e -10)<<20;
+  /* Now set the exponent between -9 and 9, enough to cover the useful range  */
+  e =  (int) ( (rand_double_normal()-1) * 18 );
+  result.i[HI_ENDIAN] += (1023 + e -9)<<20;
   return result.d;
 }
 

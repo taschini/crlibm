@@ -1,6 +1,17 @@
+# The variables used here:
+# x input
+# y_hat perfect reduced argument
+# ydd = yh+yl
+# ts_hat perfect ts
+# tc_hat perfect tc
+# sin_hat exact result for sin(x)
+# sa, ca perfect sin(kPi/256) and cos(kPi/256)
 
-yh = <float64ce>(yy);
-yl = yy - yh;
+
+sin_hat = sa * siny_hat  +  ca * cosy_hat;
+
+yh = <float64ce>(ydd);
+yl = ydd - yh;
 sah = <float64ce>(sa);
 sal = <float64ce>(sa - sah);
 cah = <float64ce>(ca);
@@ -16,18 +27,24 @@ c4 = +6004799503154328b-57;
 c6 = -6405110857547344b-62;
 c8 = +7320136537186330b-68;
 
+
+# The real computation
 # yh2 = yh * yh;
 yh2 = <float64ce>(yh * yh);
+
+#is an approx to 
+y_hat_2 = y_hat*y_hat;
 
 # ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
 ts = <float64ce>(yh2 * <float64ce>(s3 + <float64ce>(yh2 * <float64ce>(s5 + <float64ce>(yh2 * s7)))));
 
-y2 = y*y;
-tshat = y2 * (s3 + y2*(s5 + y2*s7));
+ts_hat = y_hat_2 * (s3 + y_hat_2*(s5 + y_hat_2*s7));
+polys_hat = y_hat + y_hat*ts_hat;
 
 # tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d));
 tc = <float64ce>(yh2 * <float64ce>(c2 + <float64ce>(yh2 * <float64ce>(c4 + <float64ce>(yh2 * c6)))));
-tchat =y2 * (c2 +(y2 * (c4 + (y2 * c6))));
+tc_hat = y_hat_2 * (c2 +(y_hat_2 * (c4 + (y_hat_2 * c6))));
+polyc_hat = 1 + tc_hat;
 
 # Mul12(&cahyh_h,&cahyh_l, cah, yh);
 cahyh = cah * yh;
@@ -43,34 +60,72 @@ tlo1 = t - thi;
 tlo = <float64ce>(<float64ce>(tc * sah) + <float64ce>(<float64ce>(ts * cahyh_h)
  + <float64ce>(sal + <float64ce>(tlo1 + <float64ce>(cahyh_l
  + <float64ce>(<float64ce>(cal * yh) + <float64ce>(cah * yl)))))));
+
 tlo_r = tc*sah+(ts*cahyh_h+(sal+(tlo1+(cahyh_l+(cal*yh + cah*yl))))) ;
 
 # Add12(*reshi, *reslo, thi, tlo);
 res = thi + tlo;
-reshat = ((1 + tshat) * ca * y + (1 + tchat) * sa );
+
+
+res_hat = ((1 + ts_hat)  * y_hat * ca  +  (1 + tc_hat) * sa );
+
+
 # le meme sans erreur sur l'entrée
-exp_yy = ((1 + ts) * ca * yy + (1 + tc) * sa );
+exp_ydd = ((1 + ts) * ca * ydd + (1 + tc) * sa );
 
 {
-   yy in [0,0.0061362]    # ymaxCase3 computed by Maple
- /\ yy - y in [-0.35e-22, 0.25e-22]  # TODO Affiner le calcul dans Maple
- /\ reshat - sin in [-1b-78, 1b-78] # delta_approx_sinCase3
-# /\ ca in [0.707106, 0.707107] /\ sa in [0.707106, 0.707107] # should be refined
+   ydd in [-0.006434445, 0.006434445]        # ymaxCase3 computed by Maple
+ /\ ydd - y_hat in [-0.253e-22, 0.253e-22]      # delta_ArgRed in Maple
+ /\ polys_hat - siny_hat in [-0.24126e-23, 0.24126e-23]     # delta_approx_Sin_Case3
+ /\ polyc_hat - cosy_hat in [-0.7287717127e-22, 0.7287717127e-22]     # delta_approx_Cos_Case3
  /\ sa in [0.00122, 0.00123] /\ ca in [0.999,1] # should be refined
- ->  (res - sin)/sin in ?#[-1b-62,1b-62]
+ -> 
+# HELP je veux calculer :
+ (y_hat + y_hat*ts) - siny_hat in ?
+# Les deux questions suivantes sont bien repondues:
+# (y_hat + y_hat*ts_hat) - siny_hat) in ? # OK 
+#  y_hat*(ts-ts_hat)in ? # OK 
+# Comment je lui donne le hint que ts -> ts_hat - (ts_hat-ts) ?
+# Quelques essais infructueux ci-dessous, apres HELP
+
+# Celui-ci marche OK
+#1+tc - cosy_hat in ?
+
+#Un jour on calculera ceci:
+#(res - sin)/sin in ?#[-1b-62,1b-62]
 }
 
-# This is a hint to the reduction engine. It tells it what we intend
-# to compute by pointing out that res - exp 
-# is equal to tlo - tlo_r + the neglected terms
+# These are hints to the reduction engine. 
+
+y_hat -> 
+   ydd - (ydd - y_hat); 
+
+1 + tc - cosy_hat ->
+  (1+tc - polyc_hat) + (polyc_hat - cosy_hat);
+
+#HELP J'ai essaye les schemas ci-dessous:
+
+# (y_hat + y_hat * ts) - siny_hat ->  ((y_hat + y_hat * ts) - polys_hat) + (polys_hat - siny_hat);
+
+# ts -> ts_hat + (ts - ts_hat);
+
+# (y_hat + y_hat*ts) - siny_hat -> ((y_hat + y_hat*ts_hat) - siny_hat) + y_hat*(ts-ts_hat);
+
+#y_hat*ts -> y_hat*ts_hat + y_hat*(ts-ts_hat); 
+
+# Fin de HELP
 
 res - sin ->
-   (res - exp_yy) + (exp_yy  - reshat) + (reshat - sin);
+   (res - exp_ydd) + (exp_ydd  - res_hat) + (res_hat - sin);
 
-res-exp_yy ->
+
+# Point to the reduction engine t_hat w_hat we intend
+# to compute  res - exp which 
+# is equal to tlo - tlo_r + the neglected terms
+res-exp_ydd ->
    (tlo  - tlo_r) + (sal*tc + cal*yl + ts*(cahyh_l + cah*yl + cal*yh + cal*yl)) ;
 
-y -> yy - (yy - y); 
-sin -> reshat - (reshat - sin);
 
-(res - sin)/sin $ yy; #pour dire de faire varier y par dichotomie
+sin -> res_hat - (res_hat - sin);
+
+#(res - sin)/sin $ ydd; #pour dire de faire varier y par dichotomie

@@ -20,6 +20,11 @@ include_HEADERS = scs.h scs_config.h
 
 SUBDIRS = . tests 
 
-AM_CFLAGS =  -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
+# Add your compiler here. Default is assumed to be gcc.
+if COMPILER_ICC
+AM_CFLAGS = -std=c99 -Wall -mp -D__ICC__
+else
+AM_CFLAGS = -std=c99 -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
+endif
 
 EXTRA_DIST = VERSION  Doxyfile.user Doxyfile.dev 

@@ -94,7 +94,8 @@ static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x)
                    coef_poly[0]))) ;
 
       /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
-      atanlolo = Xredlo+ arctan_table[i][ATAN_BLO].d + Xredhi*q;
+      atanlolo = (Xredlo + arctan_table[i][ATAN_BLO].d);
+      atanlolo += Xredhi*q;
       Add12( tmphi2, tmplo2, arctan_table[i][ATAN_BHI].d, Xredhi);
       Add12( *atanhi, *atanlo, tmphi2, (tmplo2+atanlolo));
       
@@ -125,6 +126,7 @@ static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x)
       else
         *index_of_e = 3;
     }
+
 }
 
 /*************************************************************

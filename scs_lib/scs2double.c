@@ -175,7 +175,7 @@ truncated mantissa, or return this mantissa plus an ulp, rounded to
 the nearest. Plus handle the infinities and denormals.
 */
 
-void get_d_directed(double *result, scs_ptr x, int rndMantissaUp){ 
+static void get_d_directed(double *result, scs_ptr x, int rndMantissaUp){ 
   db_number nb, rndcorr;
   unsigned long long int lowpart, t1;
   int expo,expofinal,i, not_null;

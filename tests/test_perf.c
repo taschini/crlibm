@@ -188,7 +188,7 @@ mp_rnd_t mpfr_rnd_mode;
     dt = TBX_TICK_RAW_DIFF(t1, t2);
     if(dt<tbx_time) tbx_time = dt;
   }
-  printf("tbx_time=%d\n", tbx_time);
+  printf("tbx_time=%lu\n", tbx_time);
 
 #if TEST_CACHE
   /************  TESTS WITH CACHES  *********************/
@@ -301,7 +301,7 @@ mp_rnd_t mpfr_rnd_mode;
     /* take the min of N1 consecutive calls */
     for(j=0; j<N1; j++) {
       TBX_GET_TICK(t1);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
       for(k=0; k<50;k++)
 #endif
         result = testfun_libm(input);
@@ -322,7 +322,7 @@ mp_rnd_t mpfr_rnd_mode;
     for(j=0; j<N1; j++) {
       counter++;
       TBX_GET_TICK(t1);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY 
       counter+=49; for(k=0; k<50;k++)
 #endif
 	result = testfun_crlibm(input);
@@ -345,13 +345,13 @@ mp_rnd_t mpfr_rnd_mode;
     /* take the min of N1 consecutive calls */
     for(j=0; j<N1; j++) {
       TBX_GET_TICK(t1);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY
       for(k=0; k<50;k++) {
 #endif
       mpfr_set_d(mp_inpt, input, GMP_RNDN);
       testfun_mpfr(mp_res, mp_inpt, GMP_RNDN);
       result = mpfr_get_d(mp_res,mpfr_rnd_mode);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY
       }
 #endif
       TBX_GET_TICK(t2);
@@ -376,7 +376,7 @@ mp_rnd_t mpfr_rnd_mode;
       /* take the min of N1 consecutive calls */
       for(j=0; j<N1; j++) {
 	TBX_GET_TICK(t1);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY
 	for(k=0; k<50;k++)
 #endif
 	  result = testfun_libultim(input);
@@ -400,7 +400,7 @@ mp_rnd_t mpfr_rnd_mode;
       /* take the min of N1 consecutive calls */
       for(j=0; j<N1; j++) {
 	TBX_GET_TICK(t1);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY
 	for(k=0; k<50;k++)
 #endif
 	  result = testfun_libmcr(input);
@@ -433,7 +433,7 @@ mp_rnd_t mpfr_rnd_mode;
   dtmin=1<<30;
   for(j=0; j<N1; j++) {
     TBX_GET_TICK(t1);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY
       for(k=0; k<50;k++)
 #endif
     result = testfun_libm(input);
@@ -446,7 +446,7 @@ mp_rnd_t mpfr_rnd_mode;
   dtmin=1<<30;
   for(j=0; j<N1; j++) {
     TBX_GET_TICK(t1);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY
       for(k=0; k<50;k++)
 #endif
     result = testfun_crlibm(input);
@@ -461,13 +461,13 @@ mp_rnd_t mpfr_rnd_mode;
     dtmin=1<<30;
     for(j=0; j<N1; j++) {
       TBX_GET_TICK(t1);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY
       for(k=0; k<50;k++){
 #endif
       mpfr_set_d(mp_inpt, input, GMP_RNDN);
       testfun_mpfr(mp_res, mp_inpt, GMP_RNDN);
       result = mpfr_get_d1(mp_res);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY
       }
 #endif
       TBX_GET_TICK(t2);
@@ -484,7 +484,7 @@ mp_rnd_t mpfr_rnd_mode;
       dtmin=1<<30;
       for(j=0; j<N1; j++) {
 	TBX_GET_TICK(t1);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY
 	for(k=0; k<50;k++)
 #endif
 	  result = testfun_libultim(input);
@@ -504,7 +504,7 @@ mp_rnd_t mpfr_rnd_mode;
       dtmin=1<<30;
       for(j=0; j<N1; j++) {
 	TBX_GET_TICK(t1);
-#ifdef CRLIBM_TYPECPU_POWERPC
+#ifdef TIMING_USES_GETTIMEOFDAY
 	for(k=0; k<50;k++)
 #endif
 	  result = testfun_libmcr(input);

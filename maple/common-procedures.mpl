@@ -192,11 +192,12 @@ end proc:
 # Takes a real number, and prints the bits after the 53th of its nearest IEEE floating-point number
 
 showHowDifficultToRound:=proc(x)
-  local xh,xl,s,e,m:
-  xh:=nearest(x):
-  xl:=x-xh;
-  s,e,m := ieeedouble(xl):
-  convert(op(1,m),binary);
+local xb,xs,s,e,m:
+    Digits:=200:
+    s,e,m := ieeedouble(x):
+    xb:=convert(evalf(x*2^(-e)),binary):
+    xs:=convert(xb, string):
+    substring(xs,55..153)
 end proc:
 
 

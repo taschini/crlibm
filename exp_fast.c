@@ -98,7 +98,7 @@ static const int errd  = 73400320;                   /* 70 * 2^20 */
     /* r_hi+r_lo =  x - (ln2_hi + ln2_me + ln2_lo)*k */           \
     rp_hi =  x-ln2_hi*k;                                          \
     rp_lo =   -ln2_lo*k;                                          \
-    Add12Cond(r_hi, r_lo, rp_hi, rp_lo);                       \
+    Add12Cond(r_hi, r_lo, rp_hi, rp_lo);                          \
   }else {                                                         \
     r_hi = x;  r_lo = 0.;                                         \
   }                                                               \
@@ -138,24 +138,24 @@ static const int errd  = 73400320;                   /* 70 * 2^20 */
                                                                   \
   R2 =  P_r * crp_hi;                                             \
                                                                   \
-  Mul12(&R3_hi, &R3_lo, ex_hi, rp_hi);                           \
+  Mul12(&R3_hi, &R3_lo, ex_hi, rp_hi);                            \
   R4 = ex_hi * rp_lo;                                             \
                                                                   \
-  Mul12(&R5_hi, &R5_lo, ex_hi, R1.d);                            \
+  Mul12(&R5_hi, &R5_lo, ex_hi, R1.d);                             \
   R6 = R4 + (ex_lo * (R1.d + rp_hi));                             \
                                                                   \
   R7  = ex_hi * R2;                                               \
   R7 += (R6 + R5_lo) + (R3_lo + ex_lo);                           \
                                                                   \
-  Add12(R9, R8.d, R7, R5_hi);                                  \
+  Add12(R9, R8.d, R7, R5_hi);                                     \
                                                                   \
-  Add12(R10, tmp, R3_hi, R9);                                  \
+  Add12(R10, tmp, R3_hi, R9);                                     \
   R8.d += tmp;                                                    \
                                                                   \
-  Add12(R11.d, tmp, ex_hi, R10);                               \
+  Add12(R11.d, tmp, ex_hi, R10);                                  \
   R8.d += tmp;                                                    \
                                                                   \
-  Add12(R11.d, R8.d, R11.d, R8.d);                             \
+  Add12(R11.d, R8.d, R11.d, R8.d);                                \
                                                                   \
 } 
 

@@ -52,7 +52,7 @@ Copyright (C) 2002  David Defour and Florent de Dinechin
 This function copies a result into another. There is an unrolled
 version for the case SCS_NB_WORDS==8.
 */
-void inline scs_set(scs_ptr result, scs_ptr x){
+void scs_set(scs_ptr result, scs_ptr x){
  /* unsigned int i;*/
   
 #if (SCS_NB_WORDS==8)
@@ -81,7 +81,7 @@ first digit is non-zero)
  steps are fused within the code of the operations which require it.
  */
 
-void inline scs_renorm(scs_ptr result){
+void scs_renorm(scs_ptr result){
   unsigned int c;
   int i, j, k;
 
@@ -134,7 +134,7 @@ void inline scs_renorm(scs_ptr result){
  has been no cancellation, which allows simpler renormalisation.
 */
 
-void inline scs_renorm_no_cancel_check(scs_ptr result){ 
+void scs_renorm_no_cancel_check(scs_ptr result){ 
   unsigned int carry, c0;
  /* int i;*/
 
@@ -193,7 +193,7 @@ void inline scs_renorm_no_cancel_check(scs_ptr result){
    The result is not normalized.
  */
 
-void do_add_no_renorm(scs_ptr result, scs_ptr x, scs_ptr y){
+static void do_add_no_renorm(scs_ptr result, scs_ptr x, scs_ptr y){
   unsigned int RES[SCS_NB_WORDS];
   unsigned int i, j, Diff;
   
@@ -221,7 +221,7 @@ void do_add_no_renorm(scs_ptr result, scs_ptr x, scs_ptr y){
 /*
  * Addition without renormalization. Assumes that x.sign == y.sign.
  */
-void inline scs_add_no_renorm(scs_ptr result, scs_ptr x, scs_ptr y)
+void  scs_add_no_renorm(scs_ptr result, scs_ptr x, scs_ptr y)
 {
   if (X_IND >= Y_IND)
     do_add_no_renorm(result,x,y);
@@ -252,7 +252,7 @@ void inline scs_add_no_renorm(scs_ptr result, scs_ptr x, scs_ptr y)
    non-zero. 
  */
 
-void do_add(scs_ptr result, scs_ptr x, scs_ptr y)
+static void do_add(scs_ptr result, scs_ptr x, scs_ptr y)
 {
 #if (SCS_NB_WORDS==8)  /* in this case we unroll all the loops */
   int carry, Diff;
@@ -498,7 +498,7 @@ int inline scs_cmp_mant(scs_ptr x, scs_ptr y){
 */
 
 
-void do_sub(scs_ptr result, scs_ptr x, scs_ptr y){
+static void do_sub(scs_ptr result, scs_ptr x, scs_ptr y){
   int s, carry;
   int Diff, i, j, cp;
   int res[SCS_NB_WORDS];
@@ -587,7 +587,7 @@ void do_sub(scs_ptr result, scs_ptr x, scs_ptr y){
 /** SCS addition (result is a normalised SCS number).
 
  */
-void inline scs_add(scs_ptr result, scs_ptr x, scs_ptr y)
+void  scs_add(scs_ptr result, scs_ptr x, scs_ptr y)
 {
     
   if (x->exception.i[HI_ENDIAN]==0){scs_set(result, y); return; }
@@ -612,7 +612,7 @@ void inline scs_add(scs_ptr result, scs_ptr x, scs_ptr y)
  The arguments x, y and result may point to the same memory
  location. 
  */
-void inline scs_sub(scs_ptr result, scs_ptr x, scs_ptr y)
+void  scs_sub(scs_ptr result, scs_ptr x, scs_ptr y)
 {
   if (x->exception.i[HI_ENDIAN]==0)
     { scs_set(result, y); R_SGN = -R_SGN; return; }

@@ -34,7 +34,7 @@ Copyright (C) 2002  David Defour and Florent de Dinechin
 
 void scs_div_2(scs_t num) {
   /* small function to divide by 2 any SCS number */
-  unsigned int carry, new_value, mask, old_value;
+  unsigned int carry, mask, old_value;
   int i;
   carry = 0x00000000;
   mask = ((0x1) << SCS_NB_BITS)-1;/*we now have a mask for the used bits in a word*/
@@ -43,7 +43,6 @@ void scs_div_2(scs_t num) {
     /* first, a loop to rotate all numbers to the right*/
     for(i = 0; i < SCS_NB_WORDS; i++) {
       old_value = num->h_word[i];
-      new_value = (old_value & mask);/* to keep only used bits */
       num->h_word[i] = (old_value & !mask) | carry | ((old_value >> 1) & mask);
       carry = old_value & 0x00000001;/* it can be interesting to keep the last bit of each number =) */
       carry = carry << (SCS_NB_BITS-1);

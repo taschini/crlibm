@@ -25,18 +25,18 @@
  * used by the next function to write
  * bit of the integer in the right order ....
  */
-void print_order(unsigned int x, int nb, int b){
+static void print_order(unsigned int x, int nb, int b){
   if (nb<=0)
     return;
   print_order(x/b, nb-1, b);
-  printf("%d",x%b);
+  printf("%u",x%b);
   return;
 }
 /*
  * print nb digits of the chain x in base "b"
  * b must be between 1 and 10
  */ 
-void print_integer(unsigned int x, int b, int nb){
+static void print_integer(unsigned int x, int b, int nb){
    
   if ((b < 2)||(b>16)){
     fprintf(stderr," ERROR: You musn't print number with a base larger than 10 or less than 2 \n");
@@ -65,7 +65,7 @@ void scs_get_std( scs_ptr x){
   printf("Index= %d   \n Sign=  %d \n Double value= %.30e   \n Hex mantissa= %x %x\n", 
 	 X_IND, X_SGN, d.d, d.i[HI_ENDIAN], d.i[LO_ENDIAN]);
   for(i=0;i<SCS_NB_WORDS;i++){
-    printf("  D %d :  %8x %20d \n",i, X_HW[i], X_HW[i]);
+    printf("  D %d :  %8x %20u \n",i, X_HW[i], X_HW[i]);
   }
 }
 

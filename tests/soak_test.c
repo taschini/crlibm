@@ -258,13 +258,8 @@ int main (int argc, char *argv[])
 
   printf("Testing %s function with rounding mode : %s \n", function_name, rounding_mode);
 
-  //srand(seed);
+  srand(seed);
 
-#if 0
-  test_random_gen();
-#endif
-
-  //   test();
   test_all();
 
   return 0;
@@ -275,6 +270,6 @@ int main (int argc, char *argv[])
 #else
 int main (int argc, char *argv[]) 
 { 
-  printf("Sorry, I need to be compiled against MPFR\n");
+  printf("Sorry, I need to be compiled against MPFR (get it from www.mpfr.org)\n then configure --enable-mpfr\n");
 }
 #endif

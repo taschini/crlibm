@@ -1,5 +1,17 @@
 extern double zero;
 
+void test_init(/* pointers to returned value */
+	       double (**randfun_perf)(), 
+	       double (**randfun_soaktest)(), 
+	       double (**testfun_crlibm)(), 
+	       int    (**testfun_mpfr)  (),
+	       double (**testfun_libultim)   (),
+	       double (**testfun_libmcr)  (),
+	       double (**testfun_libm)  (),
+	       double* worst_case,
+	       /* arguments */
+	       char *func_name,
+	       char *rnd_mode);
 /*
 int rand_int(void);
 

@@ -1,3 +1,17 @@
+Summary of changes between version 0.8beta4 and version 0.8beta3
+==========================================================
+       
+<Florent de Dinechin>
+        Added crlibm_generate_test_vectors
+	Added test vectors to all functions, including some of Lefevre/Muller worst cases
+	Cleant up the accurate trig functions, now in trigo.c
+	Cleant up cosh and sinh
+	Added Gappa input file to assist the proof of the trig functions
+<Patrice Pelissier>
+	Added AMD64 architecture to autoconf stuff
+	Improved timings on x86
+
+
 Summary of changes between version 0.8beta3 and version 0.8beta2
 ==========================================================
        
@@ -15,9 +29,9 @@ Summary of changes between version 0.8beta2 and version 0.8beta
         Added crlibm_blindtest and automatic testsuite 
         Added crlibm_exit()
 	crlibm_init() now returns the old processor status flag
-	Proof for the trigonometric functions
+	Proof for the trigonometric functions in progress
 <Philippe Defert>
-	Added crlibm.spec file to build rpms
+	Added crlibm.spec file to build rpms  to the CVS
 	
 Summary of changes between version 0.8beta and version 0.2:
 ==========================================================

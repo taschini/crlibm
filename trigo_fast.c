@@ -3,21 +3,7 @@
 #include <crlibm.h>
 #include <crlibm_private.h>
 #include "trigo_fast.h"
-#include "coefpi2.h"
 
-
-extern double scs_sin_rn(double);
-extern double scs_sin_ru(double);
-extern double scs_sin_rd(double);
-extern double scs_sin_rz(double);
-extern double scs_cos_rn(double);
-extern double scs_cos_ru(double);
-extern double scs_cos_rd(double);
-extern double scs_cos_rz(double);
-extern double scs_tan_rn(double); 
-extern double scs_tan_rd(double);  
-extern double scs_tan_ru(double);  
-extern double scs_tan_rz(double);  
 
 
 
@@ -135,7 +121,7 @@ but different polynomials (which compute sin(2Pi*y) and cos(2Pi*y).
 */
 
 
-int rem_pio256_scs(scs_ptr result, const scs_ptr x){
+static int rem_pio256_scs(scs_ptr result, const scs_ptr x){
   unsigned long long int r[SCS_NB_WORDS+3], tmp;
   unsigned int N;
 
@@ -295,7 +281,6 @@ do {                                              \
   /* Now compute 1+tc */			  \
   Add12(*pch,*pcl, 1., tc);		          \
 } while(0)					  
-
 
 /* See the documentation for explanations on DoSinNotZero */
 #define DoSinNotZero(psh,psl)                                          \
@@ -537,7 +522,13 @@ double sin_rn(double x){
   rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;    
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }
    
   else if (rri.absxhi < XMAX_SIN_CASE2){
     /* CASE 1 : x small enough sin(x)=x */
@@ -560,6 +551,18 @@ double sin_rn(double x){
     rri.x=x;
     rri.function=SIN;
     ComputeTrigWithArgred2(&rri);
+
+#if 0
+    {
+      db_number t;
+      t.d = rri.rh ;
+      printf("\nrh = %08x %08x\n", t.i[HI_ENDIAN], t.i[LO_ENDIAN]);
+      t.d =  rri.rl;
+      printf("rl = %08x %08x\n", t.i[HI_ENDIAN], t.i[LO_ENDIAN]);
+    }
+#endif
+
+
     rncst= RN_CST_SIN_CASE3;
     if(rri.rh == (rri.rh + (rri.rl * rncst)))	
       if(rri.changesign) return -rri.rh; else return rri.rh;
@@ -589,7 +592,13 @@ double sin_ru(double x){
   rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;    
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }    
   
   if (rri.absxhi < XMAX_SIN_CASE2){
 
@@ -655,7 +664,13 @@ double sin_rd(double x){
   rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;    
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }    
   
   if (rri.absxhi < XMAX_SIN_CASE2){
 
@@ -723,7 +738,13 @@ double sin_rz(double x){
   rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;    
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }    
   
   if (rri.absxhi < XMAX_SIN_CASE2){
 
@@ -794,7 +815,13 @@ double cos_rn(double x){
   rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }
 
   if (rri.absxhi < XMAX_COS_CASE2){
     /* CASE 1 : x small enough cos(x)=1. */
@@ -839,7 +866,14 @@ double cos_ru(double x){
   rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }
+   
   if (rri.absxhi < XMAX_COS_CASE2){
     /* CASE 1 : x small enough cos(x)=1. */
     if (rri.absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
@@ -895,7 +929,13 @@ double cos_rd(double x){
   rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }   
 
   if (rri.absxhi < XMAX_COS_CASE2){
     if (x==0) return 1;
@@ -953,7 +993,13 @@ double cos_rz(double x){
   rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }   
 
   if (rri.absxhi < XMAX_COS_CASE2){
     if (x==0) return 1;
@@ -1021,7 +1067,13 @@ double tan_rn(double x){
 
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }   
 
   if (rri.absxhi < XMAX_TAN_CASE2){ /* |x|<2^-3 TODO this tradeoff has not been studied */
     if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) 
@@ -1081,7 +1133,13 @@ double tan_ru(double x){
   rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }   
   
   if (rri.absxhi < XMAX_TAN_CASE2){
     if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {
@@ -1166,7 +1224,13 @@ double tan_rd(double x){
   rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000){
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }   
   
   if (rri.absxhi < XMAX_TAN_CASE2){
     if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {
@@ -1250,7 +1314,13 @@ double tan_rz(double x){
   rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (rri.absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) {
+    /* was : return x-x; 
+       but it's optimized out by Intel compiler (bug reported).
+       Who cares to be slow in this case anyway... */
+    x_split.l=0xfff8000000000000LL;
+    return x_split.d;
+  }   
   
   if (rri.absxhi < XMAX_TAN_CASE2){
     if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {

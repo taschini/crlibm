@@ -3,6 +3,9 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
+#if defined(SCS_TYPECPU_ITANIUM) && defined(__ICC__)
+#include<ia64intrin.h>
+#endif
 
 /*
  * For the user interested in High resolution timer, to my knowledge 
@@ -23,53 +26,59 @@ typedef union u_tbx_tick
   struct timeval timev;
 } tbx_tick_t, *p_tbx_tick_t;
 
-#if defined(SCS_TYPECPU_ITANIUM)
+
+#if defined(SCS_TYPECPU_ITANIUM) && defined(__GNUC__) && !defined(__ICC__)
+ 
 #define TBX_GET_TICK(t) \
    __asm__ __volatile__("mov %0=ar.itc" : "=r"((t).tick) :: "memory")
-#define TBX_TICK_RAW_DIFF(t1, t2) \
-   ((t2).tick - (t1).tick)
+#define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick)
+
+
+#elif defined(SCS_TYPECPU_ITANIUM) && defined(__HPCC__)
+/* Never tested, currently nobody defines __HPCC__.
+  It should work on HPUX machines using HP compiler */
+#include<machine/sys/inline.h>/* to move up of course */
+#define TBX_GET_TICK(t) \
+   t.tick=_Asm_mov_from_ar(_AREG_ITC)
+#define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick )
+
+
+#elif defined(SCS_TYPECPU_ITANIUM) && defined(__ICC__)
+#define TBX_GET_TICK(t)    t.tick=__getReg(_IA64_REG_AR_ITC)   
+#define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick)
+
 
 /* Hum hum... Here we suppose that X86ARCH => Pentium! */
-#elif defined(SCS_TYPECPU_X86)
+#elif defined(SCS_TYPECPU_X86) && defined(__GNUC__)  && !defined(__ICC__)
 #define TBX_GET_TICK(t) \
-   __asm__ volatile("cpuid; rdtsc" : "=a" ((t).sub.low), "=d" ((t).sub.high))
-#define TBX_TICK_RAW_DIFF(t1, t2) \
-   ((t2).tick - (t1).tick)
+   __asm__ volatile("xorl %%eax, %%eax ; cpuid; rdtsc" : "=a" ((t).sub.low), "=d" ((t).sub.high))
+#define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick)
 
-#elif defined(SCS_TYPECPU_ALPHA)
+
+#elif defined(SCS_TYPECPU_AMD64)  && defined(__GNUC__)
+#define TBX_GET_TICK(t) \
+  __asm__ volatile("xorq %%rax, %%rax ; cpuid; rdtsc" : "=a" ((t).sub.low), "=d"  ((t).sub.high))
+#define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick) 
+
+
+#elif defined(SCS_TYPECPU_ALPHA)  && defined(__GNUC__)
 #define TBX_GET_TICK(t) \
    __asm__ volatile("rpcc %0\n\t" : "=r"((t).tick))
 #define TBX_TICK_RAW_DIFF(t1, t2) \
    (((t2).tick & 0xFFFFFFFF) - ((t1).tick & 0xFFFFFFFF))
 
-#elif defined(SCS_TYPECPU_SPARC)
+
+#elif defined(SCS_TYPECPU_SPARC)  && defined(__GNUC__)
 #define TBX_GET_TICK(t) \
     (t).tick = gethrtime()
 #define TBX_TICK_RAW_DIFF(t1, t2) \
    ((t2).tick  - (t1).tick)
-/*
-The following instructions are done only for ppc 601 (which is an old processor!)
-#elif defined(SCS_TYPECPU_POWERPC)
-#define TBX_GET_TICK(t) \
-   __asm__ volatile("li %0,64;mtspr UMMCR0,%0;mfspr %0,UPMC1": "=r"((t).sub.low))
-#define TBX_TICK_RAW_DIFF(t1, t2) \
-   ((t2).tick  - (t1).tick)
 
 
-The following one is extracted from Motorola reference manual for 32 bits PPCs.
-But apparently it give randomly numbers, may be the clock generator is a random generator !
-Silly processor !!!!
 
-#elif defined(SCS_TYPECPU_POWERPC)
-#define TBX_GET_TICK(t) \
- {unsigned long chk; \
-   __asm__ volatile("0: mftbu %0; mftb %1; mftbu %2; cmpw %2, %0; bne 0b" \
-		    : "=r" ((t).sub.low), "=r" ((t).sub.high), "=r" (chk) );}
-*/ 
-#define TBX_TICK_RAW_DIFF(t1, t2) \
-   ((t2).tick  - (t1).tick)
+#else  /* generic case */
 
-#else
+#define TIMING_USES_GETTIMEOFDAY 1  /* inform the test functions that timings are inaccurate */
 #define TBX_GET_TICK(t) \
    gettimeofday(&(t).timev, 0)
 #define TBX_TICK_RAW_DIFF(t1, t2) \

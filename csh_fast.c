@@ -208,7 +208,7 @@ double cosh_rn(double x){
   do_cosh(x, &rh, &rl);
 
   
-  if (rh == (rh + (rl * round_cst_cosh.d))) return rh;
+  if (rh == (rh + (rl * round_cst_csh))) return rh;
   else{
     do_cosh_accurate(x, res_scs);
     scs_get_d(&rh, res_scs); 
@@ -226,7 +226,6 @@ double cosh_ru(double x){
   db_number y;
   int absxhi;
   double rh, rl;
-  double delta_cst_cosh;
   db_number absyh, absyl, u53, u;
   scs_t res_scs;
 
@@ -257,11 +256,9 @@ double cosh_ru(double x){
   absyl.d = rl;
   absyh.i[HI_ENDIAN] = absyh.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
   absyl.i[HI_ENDIAN] = absyl.i[HI_ENDIAN] & 0x7fffffff;/* to get the absolute value */
-  /*      absyl.l = absyl.l & 0x7fffffffffffffffLL;*/
   u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l = u53.l - 0x0350000000000000LL;
-  delta_cst_cosh = 1e-19;
-  if(absyl.d > delta_cst_cosh * u53.d){ 
+  if(absyl.d > maxepsilon_csh * u53.d){ 
     if(rl > 0.)  rh += u.d;
     return rh;
   }
@@ -278,7 +275,6 @@ double cosh_rd(double x){
   db_number y;
   int absxhi;
   double rh, rl;
-  double delta_cst_cosh;
   db_number absyh, absyl, u53, u;
   scs_t res_scs;
 
@@ -306,8 +302,7 @@ double cosh_rd(double x){
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l = u53.l - 0x0350000000000000LL;
-  delta_cst_cosh = 1e-19;
-  if(absyl.d >  delta_cst_cosh * u53.d){ 
+  if(absyl.d >  maxepsilon_csh * u53.d){ 
     if(rl < 0.)  rh -= u.d;
     return rh;
   }
@@ -333,7 +328,7 @@ double cosh_rz(double x){
 
 
 
-void do_sinh(double x, double* prh, double* prl){ 
+static void do_sinh(double x, double* prh, double* prl){ 
 
   int k;
   db_number y;
@@ -517,7 +512,7 @@ double sinh_rn(double x){
 
   do_sinh(x, &rh, &rl);
 
-  if (rh == (rh + (rl * round_cst_sinh.d))) return rh;
+  if (rh == (rh + (rl * round_cst_csh))) return rh;
   else{
     do_sinh_accurate(x, res_scs);
     scs_get_d(&rh, res_scs); 
@@ -569,13 +564,13 @@ double sinh_ru(double x){
   u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l = u53.l - 0x0350000000000000LL;
   delta_cst_sinh = 1e-19;
-  if(absyl.d > delta_cst_sinh * u53.d){ 
+  if(absyl.d > maxepsilon_csh * u53.d){ 
     if(rl > 0.)  rh += u.d;
     return rh;
   }
   else{
     do_sinh_accurate(x, res_scs);
-    scs_get_d(&rh, res_scs); 
+    scs_get_d_pinf(&rh, res_scs); 
     return rh;
   }  
 }
@@ -622,7 +617,7 @@ double sinh_rd(double x){
   u53.l = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l = u53.l - 0x0350000000000000LL;
   delta_cst_sinh = 1e-19;
-  if(absyl.d >  delta_cst_sinh * u53.d){ 
+  if(absyl.d >  maxepsilon_csh * u53.d){ 
     if(rl < 0.)  rh -= u.d;
     return rh;
   }

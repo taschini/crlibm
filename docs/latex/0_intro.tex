@@ -128,25 +128,28 @@ of its correctly rounding behavior.
 The computation of a tight bound on the approximation error of the
 first step ($\maxeps_1$) is crucial for the efficiency of the onion
 peeling strategy: overestimating $\maxeps_1$ means going more often
-than needed through the second step. As we want the proof to be
-portable as well as the code, our first steps are written in strict
-IEEE-754 arithmetic. On some systems, this means preventing the
+than needed through the second step, as will be detailed below in
+\ref{sec:error-accuracy-perf}. As we want the proof to be portable as
+well as the code, our first steps are written in strict IEEE-754
+arithmetic. On some systems, this means preventing the
 compiler/processor combination to use advanced floating-point features
 such as fused multiply-and-add or extended double precision. It also
 means that the performance of our portable library will be lower than
-optimized libraries using these features.
+optimized libraries using these features (see \cite{DinGast2005} for
+recent research on processor-specific correct-rounding).
 
 To ease these proofs, our first steps make wide use of classical, well
-proven results like Sterbenz' lemma. When a result is needed in a
-precision higher than double precision (as is the case of $y_1$,
-the result of the first step), it is represented as as the sum of two
-floating-point numbers, also called a \emph{double-double} number.
-There are well-known algorithms for computing on double-doubles, and
-they are presented in the next chapter. An advantage of properly
-encapsulating double-double arithmetic is that we can actually exploit
-fused multiply-and-add operators in a transparent manner (this
-experimental feature is currently available for the Itanium and
-PowerPC platforms, when using the \texttt{gcc} compiler).
+proven results like Sterbenz' lemma or other floating-point theorems.
+When a result is needed in a precision higher than double precision
+(as is the case of $y_1$, the result of the first step), it is
+represented as as the sum of two floating-point numbers, also called a
+\emph{double-double} number.  There are well-known algorithms for
+computing on double-doubles, and they are presented in the next
+chapter. An advantage of properly encapsulating double-double
+arithmetic is that we can actually exploit fused multiply-and-add
+operators in a transparent manner (this experimental feature is
+currently available for the Itanium and PowerPC platforms, when using
+the \texttt{gcc} compiler).
 
 At the end of the \quick\ phase, a sequence of simple tests on
 $y_1$ knowing $\maxeps_1$ allows to decide whether to go for
@@ -166,21 +169,169 @@ we may rely at the proof level. This library is included in \crlibm,
 but also distributed separately \cite{SCSweb}.
 
 
+
+
+\subsection{Proving the correct rounding property}
+
+Throughout this document, what we call ``proving'' a function mostly
+means proving a tight bound on the total relative error of our
+evaluation scheme. The actual proof of the correct rounding property
+is then dependent on the availability of an actual worst-case accuracy
+for correctly rounding this function, as computed by Lef\`evre and
+Muller. Three cases may happen:
+\begin{itemize}
+\item The worst case have been computed over the whole domain of the
+  function. In this case the correct rounding property for this
+  function is fully proven. As of \texttt{crlibm0.8}, this is the case
+  of the exponential and natural logarithm functions, and for the
+  hyperbolic sine and cosine.
+
+\item The worst cases have been computed only over a subdomain of the
+  function. Then the correct rounding property is proven on this
+  subdomain. Outside of this domain \texttt{crlibm} offers
+  ``astronomical confidence'' that the function is correctly rounded:
+  to the best of current knowledge \cite{Gal86, DinGast2005}, the
+  probability of the existence of a misrounded value in the function's
+  domain is lower than $2^{-40}$. As of \texttt{crlibm0.8}, this is
+  the case of the trigonometric functions and the arctangent. The
+  actual domain on which the proof is complete is mentionned in the
+  respective chapter of this document, and summed up below in \ref{sec:current-state}.
+\item The search for worst cases hasn't begun yet.
+\end{itemize}
+
+We acknowledge that the notion of astronomical confidence breaks the
+objective of guaranteed correct rounding, and we sidestep this problem
+by publishing along with the library (in this document) the domain of
+full confidence, which will only expand as time goes.  Such behaviour
+has been proposed as a standard in \cite{DefHanLefMulRevZim2004}.  The
+main advantage of this approach is that it ensures bounded and
+consistent worst-case execution time (within a factor 100 of that of
+the best available faithful \texttt{libm}s), which we believe is
+crucial to the generalization of correctly rounded functions.
+
+The alternative to our approach would be to implement a
+multi-layer onion-peeling strategy, as do GNU MPFR and Sun's
+\texttt{libmcr}. There are however many drawbacks to this approach, too:
+
+\begin{itemize}
+
+\item One may argue that, due to the finite nature of computers, it
+  only pushes the bounds of astronomy a little bit further.
+
+\item The multilayer approach is only proven to terminate on
+  elementary functions: the termination proof needs a theorem stating
+  for example that the image of a rational by the function (with some
+  well-known exceptions) will not be a rational. For other library
+  functions like  special functions, we have no such theorem.
+  For these functions, we prefer take the risk of a misrounded
+  value than the risk of an infinite loop.
+
+\item Similarly, the multilayer approach has potentially unbounded
+  execution time and memory consumption which make it unsuitable for
+  real-time or safety-critical applications, whereas crlibm will only
+  be unsuitable if the safety depends on correct rounding, which is
+  much less likely.
+
+\item Multilayer code is probably much more complex and error prone.
+  One important problem is that it contains code that, according all
+  probabilities, will never be run. Therefore, testing this code can
+  not be done on the final production executable, but on a different
+  executable in which previous layers have been disabled. This
+  introduces the possibility of undetected bugs in the final
+  production executable.
+
+\end{itemize}
+
+In the future, we will add, to those \texttt{crlibm} functions for
+which the required worst-case accuracy is unknown, a misround
+detection test at the end of the second step. This test will either
+print out on standard error a lengthy warning inviting to report this
+case, or launch MPFR computation, depending on a compilation switch.
+% TODO
+
+
+
 \subsection{Error analysis and the accuracy/performance tradeoff
   \label{sec:error-accuracy-perf}}
 
-The error analysis for a function evaluation aims at providing an
-overall relative error of the whole evaluation process, which can then
-be used to test rounding thanks to theorems given in
-\ref{section:testrounding}. Care must be taken that only
-\emph{absolute} error terms (noted $\delta$) can be added, although
-some error terms are best expressed as \emph{relative} (noted
-$\epsilon$), like the the rounding error of an IEEE operation, or the
-minimax approximation error. Remark also that the error needed for the
-theorems in \ref{section:testrounding} is a \emph{relative} error.
-Managing the relative and absolute error terms is very dependent on
-the function, and usually involves keeping upper and lower bounds on
-the values manipulated along with the error terms. 
+As there are two step on the evaluation, the proof also usually
+consists of two parts. The code of the second, accurate step is
+usually very simple and straightforward:
+\begin{itemize}
+\item Performance is not that much of an issue, since this step is rarely taken.
+\item All the special cases have already been filtered by the first step.
+\item The \texttt{scslib} library provides an overkill of precision.
+\end{itemize}
+
+Therefore, the error analysis of the second step, which ultimately
+proves the correct rounding property, is not very difficult.
+
+For the first step, however, things are more complicated:
+\begin{itemize}
+\item We have to handle special cases (infinities, NaNs, signed
+  zeroes, over- and underflows).
+\item Performance is a primary concern, sometimes leading to ``dirty
+  tricks'' obfuscating the code.
+\item We have to compute a \emph{tight} error bound, as explained below.
+\end{itemize}
+
+Why do we need a tight error bound? Because the decision to launch the
+second step is taken by a \emph{rounding test}  depending on
+\begin{itemize}
+\item the approximation $y_h+y_l$ computed in the first step, and
+\item this error bound $\maxeps_1$, which is computed statically.
+\end{itemize}
+
+The various rounding tests are detailed and proven in
+\ref{section:testrounding}.  The important notion here is that
+\emph{the probability of launching the second, slower step will be
+  proportional to the error bound $\maxeps_1$ computed for the first step}.
+
+This defines the main performance tradeoff one has to manage when
+designing a correctly-rounded function: The average evaluation time
+will be
+\begin{equation}
+  T_{\mbox{\small avg}} = T_1 + p_2T_2 \label{eq:Tavg}
+\end{equation}
+where $T_1$ and $T_2$ are the execution time of the first and second
+phase respectively (with $T_2\approx 100T_1$ in \crlibm), and $p_2$ is
+the probability of launching the second phase (typically we aim at
+$p_2=1/1000$ so that the average cost of the second step is less than
+$10\%$ of the total.  
+
+As $p_2$ is almost proportional to $\maxeps_1$, to minimise the average
+time, we have to
+\begin{itemize}
+\item balance $T_1$ and $p_2$: this is a performance/precision
+  tradeoff (the faster the first step, the less accurate)
+\item and compute a tight bound on the overall error  $\maxeps_1$.
+\end{itemize}
+
+Computing this tight bound is the most time-consuming part in the
+design of a correctly-rounded elementary function. The proof of the
+correct rounding property only needs a proven bound, but a loose bound
+will mean a larger $p_2$ than strictly required, which directly
+impacts average performance. Compare $p_2=1/1000$ and $p_2=1/500$ for
+$T_2=100T_1$, for instance. As a consequence, when there are multiple
+computation paths in the algorithm, it makes sense to precompute
+different values of $\maxeps_1$ on these different paths (see for
+instance the arctangent and the logarithm).
+
+
+
+
+
+
+Apart from these considerations, computing the errors is mostly
+textbook science. Care must be taken that only \emph{absolute} error terms
+(noted $\delta$) can be added, although some error terms are best
+expressed as \emph{relative} (noted $\epsilon$), like the the rounding
+error of an IEEE operation, or the minimax approximation error. Remark
+also that the error needed for the theorems in
+\ref{section:testrounding} is a \emph{relative} error.  Managing the
+relative and absolute error terms is very dependent on the function,
+and usually involves keeping upper and lower bounds on the values
+manipulated along with the error terms.
 
 Error terms to consider are the following:
 \begin{itemize}
@@ -196,27 +347,48 @@ Error terms to consider are the following:
 
 
 
+\subsection{Current state of \emph{crlibm} 
+\label{sec:current-state} }
 
-\subsection{Proving the correct rounding property}
-
-
-
-\subsection{Current state of \emph{crlibm}}
-
-The library \texttt{crlibm} \emph{(correctly rounded mathematical
-  library)} currently offers accurate parts for the exponential,
+The \texttt{crlibm} library currently offers accurate parts for the exponential,
 logarithm in radix $2$, $10$ and $e$, sine, cosine, tangent,
 arctangent, plus trigonometric argument reduction. The quick part and
 its proof have been written for the exponential, natural logarithm,
 sine, cosine tangent, arctangent, and the hyperbolic sine and cosine
 thus far.
 
-The difficulty is to prove both the algorithm and the C program.
-The proofs rely heavily on several shared lemmas, assuming the good
-behavior of the system composed of the compiler and the processor.
-Another difficulty is that performance is important.
+The correct rounding property is fully proven (the worst-case required
+accuracy has been determined) on the following intervals ($\mathbb{F}$
+denotes the set of IEEE-754 doubles, and indicate a fully proven
+function):
 
+\begin{center}
+  \begin{tabular}{|c|c|}
+    \hline
+    Function & interval\\
+    \hline
+    \hline
+    $\exp$ & $\mathbb{F}$  \\
+    \hline
+    $\log$ & $\mathbb{F}$  \\
+    \hline
+    $\cosh$ & $\mathbb{F}$  \\
+    \hline
+    $\sinh$ & $\mathbb{F}$  \\
+    \hline
+    $\sin$  & $[-\pi/2, \pi/2]$  \\
+    % \hline
+    % $\arcsin$  & $[-\sin(2), \sin(2)]$  \\
+    \hline
+    $\cos$  & $[-2, 2]$  \\
+    \hline
+    $\tan$  & $[-2^{-3}, 2^{-3}]$  \\
+    \hline
+    $\arctan$  & $[-\tan(2^{-3}), \tan(2^{-3})]$ \\
+    \hline
+  \end{tabular}
 
+\end{center}
 
 \section{An overview of other  available mathematical libraries\label{section:lib-overview}}
 
@@ -235,7 +407,7 @@ Most mathematical libraries do not offer correct rounding. They can be classifie
 Operating systems often include several mathematical libraries, some of which are derivatives of one
 of the previous.
 
-Two libraries offer correct correct rounding:
+Three libraries offer correct correct rounding:
 \begin{itemize}
 \item The \emph{libultim} library, also called MathLib, is developed at
   IBM by Ziv and others \cite{IBMlibultimweb}. It provides correct rounding,
@@ -269,11 +441,20 @@ Two libraries offer correct correct rounding:
   much wider than that of IEEE-754, the subtleties of denormal numbers
   are difficult to handle properly using such a multiprecision
   package.
+
+\item The \texttt{libmcr} library, by K.C. Ng, Neil Toda and others at
+  Sun Microsystems, had its first beta version published in december
+  2004. Its purpose is to be a reference implementation for correctly
+  rounded functions in double precision. It has very clean code,
+  offers arbitrary multiple precision unlike \texttt{libultim}, at the
+  expense of slow performance (due to, for example dynamic allocation
+  of memory). It offers the directed rounding modes, and rounds in the
+  mode read from the processor status flag.
 \end{itemize}
 
 
 
-\section{Organization of the source code of the library}
+\section{Organization of the source code}
 
 For each function, the file containing the source code for the
 accurate phase is named after the function itself (for instance

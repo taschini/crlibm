@@ -12,10 +12,7 @@ libcrlibm_a_SOURCES =  \
 	log10.h	log10.c\
 	log2.h  log2.c \
 	coefpi2.h rem_pio2.c\
-	sine.h sine.c \
-	cosine.h cosine.c\
-	tan.h tan.c cotan.c\
-	trigo_fast.c trigo_fast.h\
+	trigo.c trigo.h trigo_fast.c trigo_fast.h\
 	atan.h atan.c atan_fast.c atan_fast.h\
 	csh_fast.h csh_fast.c
 
@@ -29,13 +26,19 @@ include_HEADERS = crlibm.h
 
 SUBDIRS = scs_lib . tests
 
-AM_CFLAGS =  -fPIC -std=c99 -Wall -W -Wshadow -Wpointer-arith  -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
+# Add your compiler here. Default is assumed to be gcc.
+if COMPILER_ICC
+AM_CFLAGS = -std=c99 -Wall -D__ICC__ -mp
+else
+AM_CFLAGS = -std=c99 -fPIC -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
+endif
 
 EXTRA_DIST = VERSION\
 	maple/common-procedures.mpl \
 	maple/log.mpl maple/trigo.mpl maple/atan.mpl maple/csh.mpl \
-	docs/crlibm.pdf \
-	docs/latex/crlibm.tex docs/latex/0_intro.tex\
+	maple/SinCase3.gappa
+	docs/latex/crlibm.tex\
+	docs/latex/0_intro.tex docs/latex/0_getting-started.tex\
 	docs/latex/1_common.tex docs/latex/2_exp.tex docs/latex/3_log.tex\
 	docs/latex/4_atan.tex docs/latex/5_csh.tex \
 	docs/latex/fig_scs docs/latex/fig_exp\

@@ -66,7 +66,7 @@ midI:=[23/32,25/32,27/32,29/32,1,18/16,20/16,22/16]:
 
 poly_log_2 := proc(i,deg)
  local p, pe, e, pt, delta_approx, epsilon_approx, delta_rounding, minptr, err,
-       maxptr, maxpt, delta, miny, deltaZero, deltaEgtMed, ptFastPath,deltaFastPath,
+       maxptr, maxpt, epsilon, miny, epsilonZero, epsilonEgtMed, ptFastPath,epsilonFastPath,
        minptrFastPath, maxptrFastPath, errlist, epsilon_lastmult, maxEln2_lo,
 	s1, p1, maxres, c0h, c0l, maxP_hi, maxP_lo,delta_rounding_s1,maxp1,delta_rounding_p1;
 
@@ -88,32 +88,32 @@ poly_log_2 := proc(i,deg)
   errlist := errlist_quickphase_horner(deg, 2, 2, 0,0); # two dd adds, two dd mul, no error on x
   epsilon_lastmult, delta_rounding, minptr, maxptr := compute_horner_rounding_error(pt, x, Xmax[i], errlist, true):
   if i=5 then
-    deltaZero := (1+epsilon_approx)  * (1 + epsilon_lastmult) - 1 :
+    epsilonZero := (1+epsilon_approx)  * (1 + epsilon_lastmult) - 1 :
   else
-    deltaZero := (delta_approx + delta_rounding)/minptr:
+    epsilonZero := (delta_approx + delta_rounding)/minptr:
   fi:
 
-  printf(" deltaZero =  %3.2f ", -log2(deltaZero));
+  printf(" epsilonZero =  %3.2f ", -log2(epsilonZero));
 
 
   # For 0<E<= EminFastPath, the Horner evaluation ends in double-double
   errlist := errlist_quickphase_horner(deg, 2, 1, 0,0); # two dd adds, one dd mul, no error on x
   epsilon_lastmult, delta_rounding, minptr, maxptr := compute_horner_rounding_error(pt, x, Xmax[i], errlist, true):
 
-  # delta for 0<E<= EminMedPath
+  # epsilon for 0<E<= EminMedPath
 
   miny:=nearest(log(2.)) - maxptr;       #  worst-case miny
   # and add to the absolute error that of computing Elog2 : 2**(-90)
-  delta:=evalf(  (delta_approx + delta_rounding + 2**(-90) )/miny  )  ;
-  printf(" delta =  %3.2f ", -log2(delta));
+  epsilon:=evalf(  (delta_approx + delta_rounding + 2**(-90) )/miny  )  ;
+  printf(" epsilon =  %3.2f ", -log2(epsilon));
 
   #delta for EminMedPath < E <= EminFastPath
 
   miny := (EminMedPath+1)*log(2.) - maxptr;
-  deltaEgtMed := (delta_approx + delta_rounding + 2**(-90) ) /miny:
-  printf(" deltaEgtMed =  %3.2f ", -log2(deltaEgtMed));
+  epsilonEgtMed := (delta_approx + delta_rounding + 2**(-90) ) /miny:
+  printf(" epsilonEgtMed =  %3.2f ", -log2(epsilonEgtMed));
 
-  #delta for the fast path : in this case the polynomial is rounded to double, and evaluated only in double
+  #epsilon for the fast path : in this case the polynomial is rounded to double, and evaluated only in double
   ptFastPath := poly_exact2(pt,1); # only coeff of degree 0 in double-double
   delta_approx :=  numapprox[infnorm](ptFastPath-log(x+midI[i]), x=-Xmax[i]..Xmax[i]);
   s1 := expand((ptFastPath - coeff(ptFastPath,x,0)) / x); # the polynomial computed in double
@@ -132,9 +132,9 @@ poly_log_2 := proc(i,deg)
                       +  0.5*ulp(c0l + maxEln2_lo + maxP_lo)     # these two last terms are zero in the case i=5
                       +  0.5*ulp(maxEln2_lo + maxP_lo);          #  but it doesn't change much
   miny := (EminFastPath+1)*log(2.) - maxp1 ;
-  deltaFastPath := (delta_approx + delta_rounding + 2**(-90) ) / miny ;
-  printf(" deltaFastPath = %3.2f\n", -log2(deltaFastPath) );
-  [pt, epsilon_approx, max(maxpt,maxptr), deltaZero, delta, deltaEgtMed, deltaFastPath]
+  epsilonFastPath := (delta_approx + delta_rounding + 2**(-90) ) / miny ;
+  printf(" epsilonFastPath = %3.2f\n", -log2(epsilonFastPath) );
+  [pt, epsilon_approx, max(maxpt,maxptr), epsilonZero, epsilon, epsilonEgtMed, epsilonFastPath]
 end proc:
 
 
@@ -162,27 +162,27 @@ save PolyList, "TEMPLOG/PolyList.m";
 
 
 # Computation of constants for RN test
-# We have in PolyList delta the total error for polynomial approximation, build tabrndcst[] the table of "e" needed for round to nearest
+# We have in PolyList epsilon the total error for polynomial approximation, build tabrndcst[] the table of "e" needed for round to nearest
 
-maxdeltaEZero:=0:
-maxdelta:=0:
-maxdeltaEgtMed:=0:
-maxdeltaFastPath:=0:
+maxepsilonEZero:=0:
+maxepsilon:=0:
+maxepsilonEgtMed:=0:
+maxepsilonFastPath:=0:
 
 for i from 1 to 8 do
-  deltaEZero:=PolyList[i][4]:
-  delta:=PolyList[i][5];
-  deltaEgtMed:=PolyList[i][6]:
-  deltaFastPath:=PolyList[i][7]:
-  if deltaEZero > maxdeltaEZero then maxdeltaEZero := deltaEZero : fi :
-  if delta > maxdelta then maxdelta := delta : fi :
-  if deltaEgtMed > maxdeltaEgtMed then maxdeltaEgtMed := deltaEgtMed : fi :
-  if deltaFastPath > maxdeltaFastPath then maxdeltaFastPath := deltaFastPath : fi :
+  epsilonEZero:=PolyList[i][4]:
+  epsilon:=PolyList[i][5];
+  epsilonEgtMed:=PolyList[i][6]:
+  epsilonFastPath:=PolyList[i][7]:
+  if epsilonEZero > maxepsilonEZero then maxepsilonEZero := epsilonEZero : fi :
+  if epsilon > maxepsilon then maxepsilon := epsilon : fi :
+  if epsilonEgtMed > maxepsilonEgtMed then maxepsilonEgtMed := epsilonEgtMed : fi :
+  if epsilonFastPath > maxepsilonFastPath then maxepsilonFastPath := epsilonFastPath : fi :
 od:
-rncstEZero := evalf(compute_rn_constant(maxdeltaEZero));
-rncst := evalf(compute_rn_constant(maxdelta));
-rncstEgtMed := evalf(compute_rn_constant(maxdeltaEgtMed));
-rncstFastPath := evalf(compute_rn_constant(maxdeltaFastPath));
+rncstEZero := evalf(compute_rn_constant(maxepsilonEZero));
+rncst := evalf(compute_rn_constant(maxepsilon));
+rncstEgtMed := evalf(compute_rn_constant(maxepsilonEgtMed));
+rncstFastPath := evalf(compute_rn_constant(maxepsilonFastPath));
 
 
 
@@ -210,15 +210,15 @@ fprintf(fd,"#define EMIN_FASTPATH %4.3f \n",EminFastPath ):
 
 fprintf(fd,"/* Constants for rounding  */\n"):
 
-fprintf(fd,"static const double delta[4] =\n{\n"):
+fprintf(fd,"static const double epsilon[4] =\n{\n"):
 fprintf(fd,"  /* Case E=0  */\n"):
-fprintf(fd,"  %1.50e, \n",maxdeltaEZero):
+fprintf(fd,"  %1.50e, \n",maxepsilonEZero):
 fprintf(fd,"  /* Middle case   */\n"):
-fprintf(fd,"  %1.50e, \n",maxdelta):
+fprintf(fd,"  %1.50e, \n",maxepsilon):
 fprintf(fd,"  /* Case E>EminMedPath  */\n"):
-fprintf(fd,"  %1.50e, \n",maxdeltaEgtMed):
+fprintf(fd,"  %1.50e, \n",maxepsilonEgtMed):
 fprintf(fd,"  /* And for the fast path  */\n"):
-fprintf(fd,"  %1.50e \n",maxdeltaFastPath):
+fprintf(fd,"  %1.50e \n",maxepsilonFastPath):
 fprintf(fd,"\n};\n\n"):
 
 fprintf(fd,"static const double rncst[4] =\n{\n"):
@@ -320,7 +320,7 @@ printf("Polynomial & Relative Approximation Error \\\\\n"):
     od:
 
 
-   printf("Polynomial & Maxp  & Delta0 & Delta & DeltaMed & DeltaFast \\\\\n"):
+   printf("Polynomial & Maxp  & Epsilon0 & Epsilon & EpsilonMed & EpsilonFast \\\\\n"):
    for k from 1 to 8 do
      P:=PolyList[k]:
      printf("P[%d] & %2.3f & %2.2f & %2.2f& %2.2f  & %2.2f\\\\ \n",k, P[3]+0.0005, -log2(P[4]), -log2(P[5]), -log2(P[6]), -log2(P[7])):
@@ -342,7 +342,7 @@ printf("Polynomial & Relative Approximation Error \\\\\n"):
 #  log(x) = e.log(2) + log(1+f)
 
 #   log(1+f) = log(w) + log(1+(1+f-w)/w)
-
+if(1+1=3) then
 W := 2^5:
 Poly_P := series((ln(1+x)/ln(2.))/x, x=0, 45):
 Poly_Q := convert(Poly_P,polynom):
@@ -366,20 +366,10 @@ for i from 0 to nb_turn do
    start_nb := start_nb + 2.^(N):
 od:
 
+fi;
+
 # Tests and scratch
 
-
-discard:=
-"
-1 & 1.423 & 61.44 & 60.43& 66.10  63.73\\
-2 & 1.307 & 60.81 & 60.83& 66.16  63.80\\
-3 & 1.208 & 60.02 & 61.11& 66.19  63.59\\
-4 & 1.123 & 58.96 & 61.39& 66.27  63.87\\
-5 & 1.033 & 57.63 & 60.04& 64.76  62.95\\
-6 & 0.915 & 57.94 & 60.15& 65.13  63.42\\
-7 & 0.821 & 59.89 & 60.23& 65.51  63.47\\
-8 & 0.745 & 60.58 & 60.02& 65.65  63.71\\
-";
 
 
 

@@ -35,6 +35,10 @@ static const scs Pio2=
 
 #define Pio2_ptr  (scs_ptr)(& Pio2)
 
+
+
+#if 0
+
 /*
  * This scs number store 211 bits of pi/4 
  */
@@ -45,3 +49,5 @@ static const scs Pio4=
 DB_ONE,  -1,   1 };
 
 #define Pio4_ptr  ((scs_ptr)(& Pio4))
+
+#endif
