@@ -249,37 +249,37 @@ end proc:</Text-field></Input></Group></Section><Section><Title><Text-field layo
 The function f(x) must have as input interval xmin..xmax
 returns [ truncated polynomial, relative approx error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_classic:=proc(f,deg,xmin,xmax,n) 
   local pe, repe, pt, ppe, rept, maxpt;
-  pe:=minimax( f,  x=-xmax..xmax,  [deg,0],  1,  'err'):
+  pe:=minimax( f,  x=xmin..xmax,  [deg,0],  1,  'err'):
   pt := poly_exact2(pe,n):
-  rept := infnorm( 1-pt/f, x=-xmax..xmax) :
-  maxpt := infnorm( pt, x=-xmax..xmax) :
+  rept := infnorm( 1-pt/f, x=xmin..xmax) :
+  maxpt := infnorm( pt, x=xmin..xmax) :
   pt,rept, maxpt:
 end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes a truncated polynomial of degree deg with the two first coefficients stored as double-doubles. 
 The function f(x) must have as input interval xmin..xmax</Text-field><Text-field layout="Normal" style="Text">returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_f2d_2:=proc(f,deg,xmin,xmax) 
   local pe, repe, pt, c0, c1, c2, ppe, rept, maxpt, err;
-  pe:=minimax(  f,  x=-xmax..xmax,  [deg,0],  1,  'err'):
+  pe:=minimax(  f,  x=xmin..xmax,  [deg,0],  1,  'err'):
   pt := poly_exact2(pe,2):
   c0:=coeff(pt,x,0):
   c1:=coeff(pt,x,1):
   c2:=coeff(pt,x,2):
-  ppe:=minimax(  (f - c0 - c1 * x - c2*x*x) ,  x=-xmax..xmax,  [deg,0],  1,  'err'):
+  ppe:=minimax(  (f - c0 - c1 * x - c2*x*x) ,  x=xmin..xmax,  [deg,0],  1,  'err'):
   ppe:=ppe - coeff(ppe,x,0) - coeff(ppe,x,1)*x- coeff(ppe,x,1)*x*x:
   pt := poly_exact2(ppe,2) + c0 + c1*x + c2*x*x:
-  rept := infnorm( 1-pt/f, x=-xmax..xmax) :
-  maxpt := infnorm( pt, x=-xmax..xmax) :
+  rept := infnorm( 1-pt/f, x=xmin..xmax) :
+  maxpt := infnorm( pt, x=xmin..xmax) :
   pt,rept,maxpt:
 end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Computes a truncated polynomial of degree deg with the first coefficient stored as double-double.</Text-field><Text-field layout="Normal" style="Text"> The function f(x) must have as input interval xmin..xmax
 returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_trunc_f2d_1:=proc(f,deg,xmin,xmax) 
   local pe, repe, pt, c0, c1, ppe, rept, maxpt, err;
-  pe:=minimax(  f ,  x=-xmax..xmax,  [deg,0],  1,  'err'):
+  pe:=minimax(  f ,  x=xmin..xmax,  [deg,0],  1,  'err'):
   pt := poly_exact2(pe,1):
   c0:=coeff(pt,x,0):
   c1:=coeff(pt,x,1):
-  ppe:=minimax(  (f - c0 - c1 * x) ,  x=-xmax..xmax,  [deg,0],  1,  'err'):
+  ppe:=minimax(  (f - c0 - c1 * x) ,  x=xmin..xmax,  [deg,0],  1,  'err'):
   ppe:=ppe - coeff(ppe,x,0) - coeff(ppe,x,1)*x:
   pt := poly_exact2(ppe,1) + c0 + c1*x:
-  rept := infnorm( 1-pt/f, x=-xmax..xmax) :
-  maxpt := infnorm( pt, x=-xmax..xmax) :
+  rept := infnorm( 1-pt/f, x=xmin..xmax) :
+  maxpt := infnorm( pt, x=xmin..xmax) :
   pt,rept,maxpt:
 end proc:</Text-field></Input></Group></Section></Section></Section><Group><Input><Text-field layout="_pstyle5" prompt="&gt; " style="Maple Input">save log2, pulp, nearest,ieeedouble, hi_lo, ieeehexa, printendian, hexa2ieee, ieeehexa2, poly_exact, poly_exact2,  compute_rel_rounding_error,  compute_abs_rounding_error, compute_rel_rounding_error_firstmult,  compute_abs_rounding_error_firstmult, compute_rn_constant, poly_trunc_f2d_1, poly_trunc_f2d_2, poly_trunc_classic, "Common_maple_procedures.m"; </Text-field></Input></Group><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Stuff for SCS</Text-field></Title><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">Global parameters</Font></Text-field></Title><Text-field layout="_pstyle7" style="_cstyle57"><Font encoding="ISO8859-1">Don\264t forget to set all the parameters here</Font></Text-field><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">NB_WORDS := 2:
 NB_BITS  := 30:</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false">GetSCS_real</Font></Text-field></Title><Text-field layout="_pstyle13" style="_cstyle63">This procedure convert a decimal number into it SCS representation.</Text-field><Text-field layout="_pstyle13" style="_cstyle63">       x : input number to convert into it SCS representation</Text-field><Group><Input><Text-field layout="_pstyle1" prompt="&gt; " style="_cstyle55">GetSCS_real := proc(x)
