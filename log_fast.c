@@ -101,7 +101,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       res += (Poly_h[i][k]).d;
     }
 
-    if(E <= 185/* EMIN_FASTPATH*/) {
+    if(E <=  EMIN_FASTPATH) {
       /* Slow path */
       if(E==0) {
 	*prndcstindex = 0 ;
@@ -113,7 +113,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       } 
       else
 	{
-	  if(E > 24/* EMIN_MEDIUMPATH*/)
+	  if(E >  EMIN_MEDIUMPATH)
 	    *prndcstindex = 2; 
 	  else 
 	    *prndcstindex =1;
@@ -130,10 +130,16 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       
       *prndcstindex = 3 ;
       res =   z*((Poly_h[i][1]).d + z*res);
-      Add12(*pres_hi, *pres_lo, ln2_times_E_HI,  (Poly_h[i][0]).d + (res + ((Poly_l[i][0]).d + ln2_times_E_LO)));
+#if 1
+      Add12(P_hi,P_lo,  ln2_times_E_HI, (Poly_h[i][0]).d );
+      Add12(*pres_hi, *pres_lo, P_hi, (res + ((Poly_l[i][0]).d + (ln2_times_E_LO + P_lo))));
+#else
+      Add12(*pres_hi, *pres_lo, 
+	    ln2_times_E_HI,  
+	    (Poly_h[i][0]).d + (res + ((Poly_l[i][0]).d + ln2_times_E_LO)));
+#endif
     }
 }
-
 
 
 
