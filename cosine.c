@@ -65,6 +65,9 @@ double scs_cos_rn(double x){
   scs_t sc1, sc2;
   double resd;
   int N;
+#if EVAL_PERF
+	crlibm_second_step_taken++;
+#endif
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1);
@@ -103,6 +106,9 @@ double scs_cos_rd(double x){
   scs_t sc1, sc2;
   double resd;
   int N;
+#if EVAL_PERF
+	crlibm_second_step_taken++;
+#endif
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1);
@@ -141,6 +147,9 @@ double scs_cos_ru(double x){
   scs_t sc1, sc2;
   double resd;
   int N;
+#if EVAL_PERF
+	crlibm_second_step_taken++;
+#endif
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1);
@@ -180,6 +189,9 @@ double scs_cos_rz(double x){
   scs_t sc1, sc2;
   double resd;
   int N;
+#if EVAL_PERF
+	crlibm_second_step_taken++;
+#endif
 
   scs_set_d(sc1, x);
   N = rem_pio2_scs(sc2, sc1);
