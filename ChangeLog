@@ -1,7 +1,19 @@
 Changes between version 0.8 and version 0.2:
-	added functions : sin cos tan atan sinh cosh
-	changed Maple files from .mw to .mpl
-	added FMA support in crlibm_private.h
-	added polish to some of the proofs
+
+	Added functions : sin cos tan atan sinh cosh
+
+	Changed Maple files from .mw and .mws to .mpl
+
+	Added FMA support in crlibm_private.h
+
+	Added polish to some of the proofs
+
+	Improved performance tests for tighter timing, 
+
+	Fairer speed comparison to mpfr: We now compare to mpfr with
+	 53-bit mantissa, although this doesnot provide correct rounding
+	 if the result is a denormal (double rounding). Previously we
+	 compared to 150-bit mpfr.
+
 Version 0.2 : exp and log
 
