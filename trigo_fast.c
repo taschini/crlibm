@@ -382,7 +382,7 @@ static void compute_trig_with_argred(double* prh, double* prl,  double x, int ab
     quadrant = (k>>7)&3;      
     index=(k&127)<<2;
     if((index == 0)) { 
-      /* Here we risk a large cancellation on yh+yl: use double-double RR */
+      /* Here a large cancellation on yh+yl would be a problem, so use double-double RR */
       /* all this is exact */
       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
@@ -411,28 +411,28 @@ static void compute_trig_with_argred(double* prh, double* prl,  double x, int ab
     kd=(double)kl;
     quadrant = (kl>>7)&3;
     index=(kl&127)<<2;
-    if(index == 0) { /* In this case cancellation may occur, so we
-			  do the accurate range reduction */
-      scs_range_reduction(); 
+    if(index == 0) { 
+      /* Here again a large cancellation on yh+yl would be a problem, 
+	 so we do the accurate range reduction */
+      scs_range_reduction();   /*recomputes k, index, quadrant, and yh and yl*/
       /* Now it may happen that the new k differs by 1 of kl, so check that */
-      if(index==0) {  /* no surprise */
-	goto trigzero;      }
-      else { /*recompute index and quadrant */
-	if (index==4) kl++;   else kl--; /* no more than one bit difference */
-	kd=(double)kl;
-	quadrant = (kl>>7)&3;
-      }
+      if(index==0)   /* no surprise */
+	goto trigzero; 
+      else 
+	goto trignotzero;
     }
-    /* arrive here if index<>0 */
-    /* double-double argument reduction*/
-    /* all this is exact */
-    Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
-    Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
-    Add12 (th,tl,  kch_l, kcm_h) ;
-    /* only rounding error in the last multiplication and addition */ 
-    Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-    goto trignotzero;
-  }
+    else {   /*  index<>0 */
+      /* double-double argument reduction*/
+      /* all this is exact */
+      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+      Add12 (th,tl,  kch_l, kcm_h) ;
+      /* only rounding error in the last multiplication and addition */ 
+      Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+      goto trignotzero;
+    }
+  } /* closes if ( absxhi < XMAX_DDRR ) */ 
+
   else {
     /* Worst case : x very large, sin(x) probably meaningless, we return
        correct rounding but do't mind taking time for it */
