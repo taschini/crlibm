@@ -8,7 +8,7 @@
 #include "crlibm_private.h"
 
 
-static const int two_to_mpi[]=
+static const int two_over_pi[]=
   {0x28be60db, 0x24e44152, 0x27f09d5f, 0x11f534dd,
    0x3036d8a5, 0x1993c439, 0x0107f945, 0x23abdebb,
    0x31586dc9, 0x06e3a424, 0x374b8019, 0x092eea09,
