@@ -5,15 +5,18 @@
      Heavily inspired by code from Alexey V.Ershov and Christoph Lauter 
 
    To test within crlibm: 
-icc -mcpu=itanium  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c exp_itanium.c;  mv exp_itanium.o exp_fast.o; make
+icc -mcpu=itanium  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c exp-itanium.c;\
+mv exp-itanium.o exp_fast.o; make
 
 
 */
 
 //============================================================================================
 
+#define ITANIUMICC 1
+
 #include "crlibm_private.h"
-#include "double_ext.h"
+#include "double-extended.h"
 
 //============================================================================================
 

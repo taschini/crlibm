@@ -54,6 +54,21 @@ typedef enum {
 
 
 
+#define ULL(bits) 0x##bits##uLL
+
+#if (!defined(EM64T) && defined(__linux__) && defined(IA32))
+# define LDOUBLE_ALIGN 12   /* IA32 Linux: 12-byte alignment */
+#else
+# define LDOUBLE_ALIGN 16   /* EM64T, IA32 Win or IPF Win/Linux: 16-byte alignment */
+#endif
+
+#if (LDOUBLE_ALIGN == 16)
+#define _XPD_ ,0x0000,0x0000,0x0000
+#else /*12*/
+#define _XPD_ ,0x0000
+#endif
+
+#define LDOUBLE_HEX(w4,w3,w2,w1,w0) 0x##w0,0x##w1,0x##w2,0x##w3,0x##w4 _XPD_ /*LITTLE_ENDIAN*/
 
 
 /* Load XC constant data and convert to X format */
