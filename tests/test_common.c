@@ -1,6 +1,18 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 #include "crlibm.h"
 #include "crlibm_private.h"
 #include "test_common.h"
+
+#ifdef HAVE_MPFR_H
+#include <gmp.h>
+#include <mpfr.h>
+#endif
+
+#ifdef HAVE_MATHLIB_H
+#include <MathLib.h>
+#endif
 
 /* A variable equal to zero, stored here so that the compiler doesn't
    know its value in the other functions, which allows to prevent some
@@ -126,4 +138,84 @@ void test_rand()  {
   }
 }
 
+
+
+
+
+/* general init function */
+
+
+void test_init(/* pointers to returned value */
+	       double (**randfun)(), 
+	       double (**testfun_crlibm)(), 
+	       int    (**testfun_mpfr)  (),
+	       double (**testfun_libm)  (),
+	       double (**testfun_ibm)   (),
+	       /* arguments */
+	       char *func_name,
+	       char *rnd_mode)  {
+
+  int crlibm_rnd_mode;
+  
+  if      (strcmp(rnd_mode,"RU")==0) crlibm_rnd_mode = 2;
+  else if (strcmp(rnd_mode,"RD")==0) crlibm_rnd_mode = 3;
+  else if (strcmp(rnd_mode,"RZ")==0) crlibm_rnd_mode = 4;
+  else crlibm_rnd_mode = 1;
+
+
+  *randfun        = rand_generic; /* the default random function */
+  *testfun_mpfr   = NULL;
+  *testfun_libm   = NULL;
+
+  if (strcmp (func_name, "exp") == 0)
+    {
+      *randfun        = rand_for_exp;
+      *testfun_libm   = exp;
+      switch(crlibm_rnd_mode){
+      case 2:
+	*testfun_crlibm = exp_ru;	break;
+      case 3:
+	*testfun_crlibm = exp_rd;	break;
+      case 4:
+	*testfun_crlibm = exp_rz;	break;
+      default:
+	*testfun_crlibm = exp_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = uexp;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_exp;
+#endif
+    }
+
+
+  else  if (strcmp (func_name, "log") == 0)
+    {
+      *randfun        = rand_for_log;
+      *testfun_libm   = log;
+      switch(crlibm_rnd_mode){
+      case 2:
+	*testfun_crlibm = log_ru;	break;
+      case 3:
+	*testfun_crlibm = log_rd;	break;
+      case 4:
+	*testfun_crlibm = log_rz;	break;
+      default:
+	*testfun_crlibm = log_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = ulog;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_log;
+#endif
+    }
+
+  else
+    {
+      fprintf (stderr, "Unknown function: %s\n", func_name);
+      exit (1);
+    }
+}
 
