@@ -125,7 +125,149 @@ but different polynomials (which compute sin(2Pi*y) and cos(2Pi*y).
 */
 
 
+int rem_pio256_scs(scs_ptr result, const scs_ptr x){
+  unsigned long long int r[SCS_NB_WORDS+3], tmp;
+  unsigned int N;
+  /* result r[0],...,r[10] could store till 300 bits of precision */
 
+  /* that is really enough for computing the reduced argument */
+  int sign, i, j, ind;
+  int *digits_256_over_pi_pt;
+
+  if ((X_EXP != 1)||(X_IND < -2)){
+    scs_set(result, x);
+    return 0;
+  }
+  
+  /* Compute the product |x| * 256/Pi */
+  if ((X_IND == -2)){
+    r[0] =  0;    r[1] =  0;
+    r[2] =  (unsigned long long int)(digits_256_over_pi[0]) * X_HW[0];
+    r[3] = ((unsigned long long int)(digits_256_over_pi[0]) * X_HW[1]
+	   +(unsigned long long int)(digits_256_over_pi[1]) * X_HW[0]);
+    if(X_HW[2] == 0){
+      for(i=4; i<(SCS_NB_WORDS+3); i++){   
+	r[i] = ((unsigned long long int)(digits_256_over_pi[i-3]) * X_HW[1]
+	       +(unsigned long long int)(digits_256_over_pi[i-2]) * X_HW[0]);
+      }}else {
+	for(i=4; i<(SCS_NB_WORDS+3); i++){   
+	  r[i] = ((unsigned long long int)(digits_256_over_pi[i-4]) * X_HW[2]
+		 +(unsigned long long int)(digits_256_over_pi[i-3]) * X_HW[1]
+		 +(unsigned long long int)(digits_256_over_pi[i-2]) * X_HW[0]);
+	}
+      }
+  }else {
+    if (X_IND == -1){
+      r[0] =  0;
+      r[1] =  (unsigned long long int)(digits_256_over_pi[0]) * X_HW[0];
+      r[2] = ((unsigned long long int)(digits_256_over_pi[0]) * X_HW[1]
+	     +(unsigned long long int)(digits_256_over_pi[1]) * X_HW[0]);
+      if(X_HW[2] == 0){
+	for(i=3; i<(SCS_NB_WORDS+3); i++){   
+	  r[i] = ((unsigned long long int)(digits_256_over_pi[i-2]) * X_HW[1]
+		 +(unsigned long long int)(digits_256_over_pi[i-1]) * X_HW[0]);
+	}}else {
+	  for(i=3; i<(SCS_NB_WORDS+3); i++){   
+	    r[i] = ((unsigned long long int)(digits_256_over_pi[i-3]) * X_HW[2]
+		   +(unsigned long long int)(digits_256_over_pi[i-2]) * X_HW[1]
+		   +(unsigned long long int)(digits_256_over_pi[i-1]) * X_HW[0]);
+	  }}
+    }else {
+      if (X_IND == 0){
+	r[0] =  (unsigned long long int)(digits_256_over_pi[0]) * X_HW[0];
+	r[1] = ((unsigned long long int)(digits_256_over_pi[0]) * X_HW[1]
+	       +(unsigned long long int)(digits_256_over_pi[1]) * X_HW[0]);
+	if(X_HW[2] == 0){
+	  for(i=2; i<(SCS_NB_WORDS+3); i++){   
+	    r[i] = ((unsigned long long int)(digits_256_over_pi[i-1]) * X_HW[1]
+		   +(unsigned long long int)(digits_256_over_pi[ i ]) * X_HW[0]);
+	  }}else {
+	    for(i=2; i<(SCS_NB_WORDS+3); i++){   
+	      r[i] = ((unsigned long long int)(digits_256_over_pi[i-2]) * X_HW[2]
+		     +(unsigned long long int)(digits_256_over_pi[i-1]) * X_HW[1]
+		     +(unsigned long long int)(digits_256_over_pi[ i ]) * X_HW[0]);
+	    }}
+      }else {
+	if (X_IND == 1){
+  	  r[0] = ((unsigned long long int)(digits_256_over_pi[0]) * X_HW[1]
+		 +(unsigned long long int)(digits_256_over_pi[1]) * X_HW[0]);
+	  if(X_HW[2] == 0){
+	    for(i=1; i<(SCS_NB_WORDS+3); i++){   
+	      r[i] = ((unsigned long long int)(digits_256_over_pi[ i ]) * X_HW[1]
+		     +(unsigned long long int)(digits_256_over_pi[i+1]) * X_HW[0]);
+	    }}else {
+	      for(i=1; i<(SCS_NB_WORDS+3); i++){   
+		r[i] = ((unsigned long long int)(digits_256_over_pi[i-1]) * X_HW[2]
+		       +(unsigned long long int)(digits_256_over_pi[ i ]) * X_HW[1]
+		       +(unsigned long long int)(digits_256_over_pi[i+1]) * X_HW[0]);
+	      }}
+	}else {
+	  ind = (X_IND - 2);
+	  digits_256_over_pi_pt = (int*)&(digits_256_over_pi[ind]);
+	  if(X_HW[2] == 0){
+	    for(i=0; i<(SCS_NB_WORDS+3); i++){   
+	      r[i] = ((unsigned long long int)(digits_256_over_pi_pt[i+1]) * X_HW[1]
+		     +(unsigned long long int)(digits_256_over_pi_pt[i+2]) * X_HW[0]);
+	    }}else {
+	      for(i=0; i<(SCS_NB_WORDS+3); i++){   
+		r[i] = ((unsigned long long int)(digits_256_over_pi_pt[ i ]) * X_HW[2]
+		       +(unsigned long long int)(digits_256_over_pi_pt[i+1]) * X_HW[1]
+		       +(unsigned long long int)(digits_256_over_pi_pt[i+2]) * X_HW[0]);
+	      }
+	    }
+	}
+      }
+    }
+  }
+      
+  /* Carry propagate */
+  r[SCS_NB_WORDS+1] += r[SCS_NB_WORDS+2]>>30;
+  for(i=(SCS_NB_WORDS+1); i>0; i--) {tmp=r[i]>>30;   r[i-1] += tmp;  r[i] -= (tmp<<30);}  
+      
+  /* The integer part is in r[0] */
+  N = r[0];
+#if 0
+  printf("r[0] = %d\n", N);
+#endif
+
+
+
+  if (r[1] > (SCS_RADIX)/2){	/* test if the reduced part is bigger than Pi/4 */
+    N += 1;
+    sign = -1;
+    for(i=1; i<(SCS_NB_WORDS+3); i++) { r[i]=((~(unsigned int)(r[i])) & 0x3fffffff);}
+  } 
+  else
+    sign = 1; 
+
+
+  /* Now we get the reduce argument and check for possible
+   * cancellation By Kahan algorithm we will have at most 2 digits
+   * of cancellations r[1] and r[2] in the worst case.
+   */    
+  if (r[1] == 0)
+    if (r[2] == 0) i = 3;
+    else           i = 2;
+  else             i = 1;
+
+  for(j=0; j<SCS_NB_WORDS; j++) { R_HW[j] = r[i+j];}
+
+
+  R_EXP   = 1;
+  R_IND   = -i;
+  R_SGN   = sign*X_SGN; 
+  
+  /* Last step :
+   *   Multiplication by pi/2
+   */
+  scs_mul(result, Pio256_ptr, result);
+  return N*X_SGN;
+}
+ 
+
+
+
+#if 0
 #define scs_range_reduction()                                   \
 do { 								\
   scs_t X, Y,Yh,Yl;						\
@@ -142,6 +284,22 @@ do { 								\
       yl = yl * (1./128.) ;					\
 }while(0)
 
+#else
+
+#define scs_range_reduction()                                   \
+do { 								\
+  scs_t X, Y,Yh,Yl;						\
+      scs_set_d(X, x); 					\
+      k= rem_pio256_scs(Y, X);					\
+      index=(k&127)<<2;                                         \
+      quadrant = (k>>7)&3;                                      \
+      /* TODO an optimized procedure for the following */	\
+      scs_get_d(&yh, Y);					\
+      scs_set_d(Yh, yh);					\
+      scs_sub(Yl, Y,Yh);					\
+      scs_get_d(&yl, Yl);					\
+}while(0)
+#endif
 
 #define LOAD_TABLE_SINCOS()                                 \
 do  {                                                       \
@@ -302,22 +460,9 @@ static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  
   
   /* Worst case : x very large, sin(x) probably meaningless, we return
      correct rounding but do't mind taking time for it */
-#if 0  
-  if (absxhi > 0x7F700000) /*2^(1023-7)*/
-    return scs_sin_rn(x);
-  else {      
-    scs_range_reduction(); 
-  } 
-#else
-    /* THIS IS A BUG Remove the above test as soon as rem_pio2_scs has
-       been superseded by rem_pio256_scs.
-
- UNTIL THEN THE MULTIPLICATION BY 128 OVERFLOWS IN THESE CASES
- */
   scs_range_reduction(); 
   quadrant = (k>>7)&3;                                    	\
   *pquadrant=quadrant;
-#endif
   if(index == 0) { 
     if (quadrant&1)
       do_cos_k_zero(psh, psl, yh,yl);
@@ -619,19 +764,130 @@ double sin_rz(double x){
 
 
 
+/***************************************COSINE************************/
+
+static void compute_cos_with_argred(double* pch, double* pcl, int* pquadrant,  double x, int absxhi){ 
+  double sah,sal,cah,cal, yh, yl, ts,tc, kd; 
+  double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
+  int k, quadrant, index;
+  long long int kl;
+
+
+  /* Case 3 : x sufficiently small for Cody and Waite argument reduction */
+  if  (absxhi < XMAX_CODY_WAITE_3) {
+    DOUBLE2INT(k, x * INV_PIO256);
+    kd = (double) k;
+    quadrant = (k>>7)&3;      
+    index=(k&127)<<2;
+    *pquadrant=quadrant;
+    if((index == 0)) { 
+      /* Here we risk a large cancellation on yh+yl; 
+	 on the other hand we will have sa=0 and ca=1*/
+      /* all this is exact */
+      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+      Add12 (th,tl,  kch_l, kcm_h) ;
+      /* only rounding error in the last multiplication and addition */ 
+      Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+      if (quadrant&1)
+	do_sin_k_zero(pch, pcl, yh,yl);
+      else 
+	do_cos_k_zero(pch, pcl, yh,yl);
+      return;
+    } 
+    else {      
+      LOAD_TABLE_SINCOS();
+      /* Argument reduction  by Cody & Waite algorithm */ 
+      /* Here we do not care about cancellations on yh+yl */
+      if (absxhi < XMAX_CODY_WAITE_2) { 
+	/* all this is exact but the rightmost multiplication */
+	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
+      }
+      else 
+	/* all this is exact but the rightmost multiplication */
+	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
+    }
+    if (quadrant&1) 
+      do_sin_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
+    else 
+      do_cos_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
+    return;
+  }
+
+  /* Case 4 : x sufficiently small for a Cody and Waite in double-double */
+  if ( absxhi < XMAX_DDRR ) {
+    DOUBLE2LONGINT(kl, x*INV_PIO256);
+    kd=(double)kl;
+    quadrant = (kl>>7)&3;
+    index=(kl&127)<<2;
+    if(index == 0) { /* In this case cancellation may occur, so we
+			  do the accurate range reduction */
+      scs_range_reduction(); 
+      /* Now it may happen that the new k differs by 1 of kl, so check that */
+      if(index==0) {  /* no surprise */
+	*pquadrant=quadrant;
+	if (quadrant&1)
+	  do_sin_k_zero(pch, pcl, yh,yl);
+	else 
+	  do_cos_k_zero(pch, pcl, yh,yl);
+      	return;
+      }
+      else { /*recompute index and quadrant */
+	if (index==4) kl++;   else kl--; /* no more than one bit difference */
+	kd=(double)kl;
+	quadrant = (kl>>7)&3;
+      }
+    }
+    /* arrive here if index<>0 */
+    *pquadrant=quadrant;
+    LOAD_TABLE_SINCOS(); /* in advance */
+    /* all this is exact */
+    Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+    Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+    Add12 (th,tl,  kch_l, kcm_h) ;
+    /* only rounding error in the last multiplication and addition */ 
+    Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+    if (quadrant&1)
+      do_sin_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
+    else 
+      do_cos_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
+    return;
+  }
+
+  
+  /* Worst case : x very large, sin(x) probably meaningless, we return
+     correct rounding but do't mind taking time for it */
+  scs_range_reduction(); 
+  quadrant = (k>>7)&3;                                    	\
+  *pquadrant=quadrant;
+  if(index == 0) { 
+    if (quadrant&1)
+      do_sin_k_zero(pch, pcl, yh,yl);
+    else
+      do_cos_k_zero(pch, pcl, yh,yl);
+  }
+  else {
+    LOAD_TABLE_SINCOS();
+    if (quadrant&1)   
+      do_sin_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
+    else 
+      do_cos_k_notzero(pch, pcl, yh,yl,sah,sal,cah,cal);
+    return;
+  }
+}
+
+
+
+
 /*************************************************************
  *************************************************************
  *              COS ROUNDED  TO NEAREST			     *
  *************************************************************
  *************************************************************/
 double cos_rn(double x){ 
-  double ch, cl, yh, yl, xx;
-  double rxh,rxl, ts; 
-  int quadrant;
-  int k;
-  int absxhi;
+  double ch, cl, xx, tc, rncst;
+  int quadrant, absxhi;
   db_number x_split;
-
 
   x_split.d=x;
   absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
@@ -647,48 +903,157 @@ double cos_rn(double x){
     /* CASE 2 : x < 2^-7
        Fast polynomial evaluation */
     xx = x*x;
-    ts = xx * (c2.d + xx*(c4.d + xx*c6.d ));
-    Add12(ch,cl, 1, ts);
+    tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
+    Add12(ch,cl, 1, tc);
     if(ch == (ch + (cl * RN_CST_COS_CASE2))){	
       return ch;
     }else{ 
       return scs_cos_rn(x); 
     } 
   }
-
-  /* Otherwise : Range reduction then standard evaluation */
-  return scs_cos_rn(x); 
-#if 0
-  k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
-    
-  /* Now y_h is in -Pi/512, Pi/512 and k holds the 32 lower bits of an
-     int such that x = yh+yl + kPi/256 */
-  
-  LOAD_TABLE_SINCOS();
-
-  if (quadrant&1)   /* compute the cos  */
-    do_sin(&ch, &cl,  yh, yl);
-  else              /* compute the sine */
-    do_cos(&ch, &cl,  yh, yl);
-    
-  if(ch == (ch + (cl * 1.0004))){	
-    return ((quadrant==1)||(quadrant==2))? -ch: ch; 
-  }else{
+  /* CASE 3 : Need argument reduction */ 
+  else {
+    rncst= RN_CST_COS_CASE3;
+    compute_cos_with_argred(&ch,&cl,&quadrant,x,absxhi);
+  }
+  if(ch == (ch + (cl * rncst)))	
+    return ((quadrant==1)||(quadrant==2))? -ch : ch;
+  else
     return scs_cos_rn(x); 
-  } 
-#endif
 }
 
 
-/* TODO */
-double cos_rd(double x){
-return scs_cos_rd(x);
-}
 
-/* TODO */
+/*************************************************************
+ *************************************************************
+ *              COS ROUNDED  TO +INFINITY      		     *
+ *************************************************************
+ *************************************************************/
 double cos_ru(double x){ 
-return scs_cos_ru(x);
+  double xx, tc,ch,cl, epsilon; 
+  int  absxhi, quadrant;
+  db_number x_split,  absyh, absyl, u, u53;
+
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;   
+
+  if (absxhi < XMAX_COS_CASE2){
+    /* CASE 1 : x small enough cos(x)=1. */
+    if (absxhi <XMAX_RETURN_1_FOR_COS)
+      return 1.;
+    
+    /* CASE 2 : x < 2^-7
+       Fast polynomial evaluation */
+    xx = x*x;
+    tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
+    Add12(ch,cl, 1, tc);
+    /* Rounding test to + infinity */
+    absyh.d=ch;
+    absyl.d=cl;
+    absyh.l = absyh.l & 0x7fffffffffffffffLL;
+    absyl.l = absyl.l & 0x7fffffffffffffffLL;
+    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+    u.l   = u53.l - 0x0350000000000000LL;
+    epsilon=EPS_COS_CASE2; 
+    if(absyl.d > epsilon * u53.d){ 
+      if(cl>0) return ch+u.d;
+      else     return ch;
+    }
+    else return scs_cos_ru(x);  
+  }
+  /* CASE 3 : Need argument reduction */ 
+  else {
+    epsilon=EPS_COS_CASE3;
+    compute_cos_with_argred(&ch,&cl,&quadrant,x,absxhi);
+    /* Rounding test to + infinity */
+    absyh.d=ch;
+    absyl.d=cl;
+    absyh.l = absyh.l & 0x7fffffffffffffffLL;
+    absyl.l = absyl.l & 0x7fffffffffffffffLL;
+    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+    u.l   = u53.l - 0x0350000000000000LL;
+   
+    if(absyl.d > epsilon * u53.d){ 
+      if ((quadrant==1)||(quadrant==2)) {
+	cl=-cl; ch=-ch;
+      }
+      if(cl>0)  return ch+u.d;
+      else      return ch;
+  }
+  else return scs_cos_ru(x);
+  }
 }
+
+
+/*************************************************************
+ *************************************************************
+ *              COS ROUNDED  TO -INFINITY      		     *
+ *************************************************************
+ *************************************************************/
+double cos_rd(double x){ 
+  double xx, tc,ch,cl, epsilon; 
+  int  absxhi, quadrant;
+  db_number x_split,  absyh, absyl, u, u53;
+
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+
+  /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;   
+
+  if (absxhi < XMAX_COS_CASE2){
+    if (x==0) return 1;
+    /* CASE 1 : x small enough cos(x)=1. */
+    if (absxhi <XMAX_RETURN_1_FOR_COS)
+      return ONE_ROUNDED_DOWN; 
+    
+    /* CASE 2 : x < 2^-7
+       Fast polynomial evaluation */
+    xx = x*x;
+    tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
+    Add12(ch,cl, 1, tc);
+    /* Rounding test to + infinity */
+    absyh.d=ch; 
+    absyl.d=cl;
+    /* absyh.l = absyh.l & 0x7fffffffffffffffLL; should be positive already */
+    absyl.l =  absyl.l & 0x7fffffffffffffffLL;
+    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+    u.l   = u53.l - 0x0350000000000000LL;
+    epsilon=EPS_COS_CASE2; 
+    if(absyl.d > epsilon * u53.d){ 
+      if(cl>=0) return ch;
+      else      return ch-u.d;
+    }
+    else return scs_cos_rd(x);  
+  }
+  /* CASE 3 : Need argument reduction */ 
+  else {
+    epsilon=EPS_COS_CASE3;
+    compute_cos_with_argred(&ch,&cl,&quadrant,x,absxhi);
+    /* Rounding test to - infinity */
+    absyh.d=ch;
+    absyl.d=cl;
+    absyh.l = absyh.l & 0x7fffffffffffffffLL;
+    absyl.l = absyl.l & 0x7fffffffffffffffLL;
+    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+    u.l   = u53.l - 0x0350000000000000LL;
+   
+    if(absyl.d > epsilon * u53.d){ 
+      if ((quadrant==1)||(quadrant==2)) {
+	cl=-cl; ch=-ch;
+      }
+      if(cl>=0)  return ch;
+      else       return ch-u.d;
+  }
+  else return scs_cos_rd(x);
+  }
+}
+
+
+
 
 /* TODO */
 double cos_rz(double x){ 

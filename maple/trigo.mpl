@@ -11,7 +11,7 @@ mkdir("TEMPTRIG"):
 #Comments and todos :
 
 #don't forget the error on k in Cody and Waite
-
+# recheck the max_return_* : we shave off the lower bits, etc
 
 # - Evaluation scheme :
 # case 1 : return x
@@ -26,7 +26,7 @@ mkdir("TEMPTRIG"):
 ########################################################
 
 xmax_return_x_for_sin := 2^(-26):
-xmax_return_1_for_cos := 2^(-27):
+xmax_return_1_for_cos := 2^(-26):
 xmax_return_x_for_tan := 2^(-26):
 
 
@@ -101,7 +101,6 @@ rnconstantSinCase2 := evalf(compute_rn_constant(maxepstotalSinCase2));
 # These are the parameters to vary
 xmaxCosCase2   := Pi/256;
 degreeCosCase2 := 7;
-
 
 # Compute the Taylor series
 polyCosCase2  := poly_exact2 (convert( series(cos(x), x=0, degreeCosCase2), polynom),2);
@@ -399,13 +398,41 @@ rnconstant_sincos := compute_rn_constant(delta_sincos);
 
 
 
+##############################################
+## Compute constants for SCS arg red
+Digits:=1000;
+# for 2/Pi:
+n:=round(2^(30*48)*evalf(2/Pi));
+digitlist:=[]:
+for i from 1 to 48 do
+  r:=n mod (2^30):
+  n:=floor(n/(2^30)):
+  hexstring:= convert(convert(r,hex),string):
+  digitlist:=[hexstring, op(digitlist)]:
+end:
+digitlist;
+
+# for 256/Pi:
+n:=round(2^(30*47)*evalf(256/Pi));
+digitlist:=[]:
+for i from 1 to 48 do
+  r:=n mod (2^30):
+  n:=floor(n/(2^30)):
+  hexstring:= convert(convert(r,hex),string):
+  digitlist:=[hexstring, op(digitlist)]:
+end:
+digitlist;
+
+
+
+
 # an auxiliary output function:
 # Outputs the high part of a double, and the double in comment
 outputHighPart:=proc(cvarname, var)
   Digits:=8:
   ("#define " || cvarname || " 0x" || (ieeehexa(var)[1])
     ||  "        /* " || (convert(evalf(var),string)) ||  " */" )
-end proc;
+end proc:
 
 
 
@@ -433,21 +460,23 @@ fprintf(fd,  "%s\n",  outputHighPart("XMAX_TAN_CASE2        ", xmaxTanCase2) ):
 
 fprintf(fd, "\n"):
 
-fprintf(fd, "#define EPS_SIN_CASE2    %e \n", maxepstotalSinCase2);
-fprintf(fd, "#define RN_CST_SIN_CASE2 %f \n", rnconstantSinCase2);
-fprintf(fd, "#define EPS_SIN_CASE3    %e \n", maxepstotalSinCase3);
-fprintf(fd, "#define RN_CST_SIN_CASE3 %f \n", rnconstantSinCase3);
+fprintf(fd, "#define EPS_SIN_CASE2     %1.25e \n", maxepstotalSinCase2):
+fprintf(fd, "#define RN_CST_SIN_CASE2  %1.25f \n", rnconstantSinCase2):
+fprintf(fd, "#define EPS_SIN_CASE3     %1.25e \n", maxepstotalSinCase3):
+fprintf(fd, "#define RN_CST_SIN_CASE3  %1.25f \n", rnconstantSinCase3):
 
-fprintf(fd, "#define EPS_COS_CASE2    %e \n", maxepstotalCosCase2);
-fprintf(fd, "#define RN_CST_COS_CASE2 %f \n", rnconstantCosCase2);
-fprintf(fd, "#define EPS_COS_CASE3 %e \n",    maxepstotalCosCase3);
-fprintf(fd, "#define RN_CST_COS_CASE3 %f \n", rnconstantCosCase3);
+fprintf(fd, "#define EPS_COS_CASE2     %1.25e \n", maxepstotalCosCase2):
+fprintf(fd, "#define RN_CST_COS_CASE2  %1.25f \n", rnconstantCosCase2):
+fprintf(fd, "#define EPS_COS_CASE3     %1.25e \n", maxepstotalCosCase3):
+fprintf(fd, "#define RN_CST_COS_CASE3  %1.25f \n", rnconstantCosCase3):
+fprintf(fd, "#define ONE_ROUNDED_DOWN  %1.25e \n", evalf(1-ulp(1/2)) ):
 
-fprintf(fd, "#define RN_CST_TAN_CASE21 %e \n", rnconstantTanCase21);
-fprintf(fd, "#define RN_CST_TAN_CASE22 %e \n", rnconstantTanCase22);
+fprintf(fd, "#define RN_CST_TAN_CASE21 %1.25e \n", rnconstantTanCase21):
+fprintf(fd, "#define RN_CST_TAN_CASE22 %1.25e \n", rnconstantTanCase22):
+
 fprintf(fd, "\n"):
 
-fprintf(fd, "#define INV_PIO256       %1.50f \n", 1/C);
+fprintf(fd, "#define INV_PIO256        %1.25f \n", 1/C):
 fprintf(fd, "\n"):
 
 fprintf(fd,  "%s\n",  outputHighPart("XMAX_CODY_WAITE_2", XMAX_CODY_WAITE_2) ):
@@ -456,30 +485,45 @@ fprintf(fd,  "%s\n",  outputHighPart("XMAX_DDRR        ", XMAX_DDRR) ):
 #fprintf(fd,  "%s\n",  outputHighPart("", ) ):
 fprintf(fd, "\n"):
 
-fprintf(fd, "#define RR_CW2_CH  %1.50e\n", RR_CW2_CH):
-fprintf(fd, "#define RR_CW2_MCL %1.50e\n", RR_CW2_MCL):
+fprintf(fd, "#define RR_CW2_CH  %1.25e\n", RR_CW2_CH):
+fprintf(fd, "#define RR_CW2_MCL %1.25e\n", RR_CW2_MCL):
 fprintf(fd, "\n"):
 
-fprintf(fd, "#define RR_CW3_CH  %1.50e\n", RR_CW3_CH):
-fprintf(fd, "#define RR_CW3_CM  %1.50e\n", RR_CW3_CM):
-fprintf(fd, "#define RR_CW3_MCL %1.50e\n", RR_CW3_MCL):
+fprintf(fd, "#define RR_CW3_CH  %1.25e\n", RR_CW3_CH):
+fprintf(fd, "#define RR_CW3_CM  %1.25e\n", RR_CW3_CM):
+fprintf(fd, "#define RR_CW3_MCL %1.25e\n", RR_CW3_MCL):
 fprintf(fd, "\n"):
 
-fprintf(fd, "#define RR_DD_MCH  %1.50e\n", RR_DD_MCH):
-fprintf(fd, "#define RR_DD_MCM  %1.50e\n", RR_DD_MCM):
-fprintf(fd, "#define RR_DD_CL   %1.50e\n", RR_DD_CL):
+fprintf(fd, "#define RR_DD_MCH  %1.25e\n", RR_DD_MCH):
+fprintf(fd, "#define RR_DD_MCM  %1.25e\n", RR_DD_MCM):
+fprintf(fd, "#define RR_DD_CL   %1.25e\n", RR_DD_CL):
 fprintf(fd, "\n"):
 
 fprintf(fd, "\n"):
 
+  fprintf(fd, "\n\n"):
 
+  # The 256/Pi SCS array
+  fprintf(fd, "static const int digits_256_over_pi[] = \n{"):
+  for i from 0 to 11 do
+    for j from 1 to 4 do
+      fprintf(fd, " 0x%s,  \t",digitlist[4*i+j]):
+    end:
+    fprintf(fd, "\n "):
+  end:
+  fprintf(fd, "};\n\n"):
+
+  # The Pi/256 SCS constant
+  fprintf(fd, "static const scs Pio256=\n"):
+  WriteSCS(fd, evalf(C)):
+  fprintf(fd, ";\n#define Pio256_ptr  (scs_ptr)(& Pio256)\n\n"):
 
 fprintf(fd,"#ifdef WORDS_BIGENDIAN\n"):
 for isbig from 1 to 0 by -1 do
 
   if(isbig=0) then
     fprintf(fd,"#else\n"):
-  fi;
+  fi:
 
   # The sine polynomial
 
@@ -536,23 +580,21 @@ for isbig from 1 to 0 by -1 do
   fprintf(fd, ";\n\n"):
 
 
-  fprintf(fd, "\n\n"):
-
-  #The sincos table
+  # The sincos table
 
   fprintf(fd, "\n/*  sine and cos of kPi/256 in double-double */\n"):
-  SinCosSize:= 128;
+  SinCosSize:= 128:
   fprintf(fd, "static db_number const sincosTable[%d] =\n{\n",  4*(SinCosSize/2+1)):
   for i from 0 to SinCosSize/2 do
-      s:=hi_lo(sin(i*Pi/(2*SinCosSize)));
-      c:=hi_lo(cos(i*Pi/(2*SinCosSize)));
-      printendian(fd,s[1],isbig);
+      s:=hi_lo(sin(i*Pi/(2*SinCosSize))):
+      c:=hi_lo(cos(i*Pi/(2*SinCosSize))):
+      printendian(fd,s[1],isbig):
       fprintf(fd," ,\n"):
-      printendian(fd,s[2],isbig);
+      printendian(fd,s[2],isbig):
       fprintf(fd," ,\n"):
-      printendian(fd,c[1],isbig);
+      printendian(fd,c[1],isbig):
       fprintf(fd," ,\n"):
-      printendian(fd,c[2],isbig);
+      printendian(fd,c[2],isbig):
 
     if i<SinCosSize-1 then fprintf(fd," ,\n"): fi:
   od:
@@ -595,6 +637,8 @@ end:
 
 fi:
 
+
+print("************DONE************");
 
 
 #####################################################################
