@@ -85,7 +85,7 @@ expC:=ieeedouble(C)[2]:
 
 # Case2est reduction using two-part Cody and Waite (up to |k|=2^22)
 
-bitsCh_0:=32:  # ensures at least 53+11 bits
+bitsCh_0:=34:  # ensures at least ??? bits
 
 # 1/2 <= C/2^(expC+1) <1
 Ch:= round(evalf(  C * 2^(bitsCh_0-expC-1))) / (2^(bitsCh_0-expC-1)):
@@ -102,9 +102,9 @@ RR_CW2_MCL := -Cl:
 XMAX_CODY_WAITE_2 := nearest(kmax_cw2*C):
 
 # The error in this case (we need absolute error)
-delta_repr_C_cw2   := abs(C-Ch-Cl);
-delta_round_cw2    := kmax_cw2* 1/2 * ulp(Cl) ;
-delta_cody_waite_2 := kmax_cw2 * delta_repr_C_cw2 + delta_round_cw2;
+delta_repr_C_cw2   := abs(C-Ch-Cl):
+delta_round_cw2    := kmax_cw2* 1/2 * ulp(Cl) :
+delta_cody_waite_2 := kmax_cw2 * delta_repr_C_cw2 + delta_round_cw2:
 # This is the delta on y, the reduced argument
 
 log2(%);
@@ -114,18 +114,18 @@ log2(%);
 
 # Slower reduction using three-part Cody and Waite, up to |k|=2^31
 
-bitsCh_0:=21:
+bitsCh_0:=23: # 22 or 23
 Ch:= round(evalf(  C * 2^(bitsCh_0-expC-1))) / (2^(bitsCh_0-expC-1)):
 # recompute bitsCh in case we are lucky
-bitsCh:=1+log2(op(2,ieeedouble(Ch)[3])) :  # this means the log of the denominator
+bitsCh:=1+log2(op(2,ieeedouble(Ch)[3])) ;  # this means the log of the denominator
 
 r := C-Ch:
 Cmed := round(evalf(  r * 2^(2*bitsCh-expC-1))) / (2^(2*bitsCh-expC-1)):
-bitsCmed:=1+log2(op(2,ieeedouble(Cmed)[3])) :
+bitsCmed:=1+log2(op(2,ieeedouble(Cmed)[3])) ;
 
 Cl:=nearest(C - Ch - Cmed):
 
-kmax_cw3 := 2^31:# Otherwise we have integer overflow
+kmax_cw3 := 2^min(53-bitsCh, 53-bitsCmed, 31):# Otherwise we have integer overflow
 
 
 
@@ -291,6 +291,10 @@ end if:
 eps_approx_Sin_Case2 := numapprox[infnorm]((x*polyTs+x -sin(x))/sin(x), x=0..xmaxSinCase2):
 log2(%);
 eps_approx_Sin_Case3 := numapprox[infnorm]((x*polyTs +x -sin(x))/sin(x), x=0..ymaxCase3):
+log2(%);
+delta_approx_Sin_Case2 := numapprox[infnorm]((x*polyTs+x -sin(x)), x=0..xmaxSinCase2):
+log2(%);
+delta_approx_Sin_Case3 := numapprox[infnorm]((x*polyTs +x -sin(x)), x=0..ymaxCase3):
 log2(%);
 
 delta_approx_Tc_Case2:= numapprox[infnorm](polyCos -  cos(x), x=0..xmaxCosCase2):
