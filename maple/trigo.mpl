@@ -247,11 +247,14 @@ log2(eps_ArgRed);
 # Polynomials for do_sine and do_cos, and for the case 2
 degreeSin := 8:
 degreeCos := 7:
-ymaxCase3  := Pi/512:
+ymaxCase3  := Pi/512*(1+2^(-15)):
 y2maxCase3 := ymaxCase3^2:
-# These are the parameters to vary  (they should always be larger than Pi/512
-xmaxCosCase2   := Pi/512:
+# These are the parameters that can be varied to fine-tune performance
+#   (they should always be larger than Pi/512
+xmaxCosCase2   := Pi/256:
 xmaxSinCase2   := Pi/256:
+
+
 x2maxSinCase2:= xmaxSinCase2^2:
 x2maxCosCase2:= xmaxCosCase2^2:
 
@@ -273,7 +276,7 @@ polySin := expand(x*(1+ subs(y=x^2, polyTs2))):
 end if:
 
 # For the cos: compute a minimax
-if(1+1=3) then
+if(1+1=2) then
 # simple approach using Taylor
 polyCos  := poly_exact (convert( series(cos(x), x=0, degreeCos+1), polynom)):
 polyTc2 := subs(x=sqrt(y), polyCos - 1):

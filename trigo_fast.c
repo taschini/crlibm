@@ -129,6 +129,9 @@ but different polynomials (which compute sin(2Pi*y) and cos(2Pi*y).
  - The second step should get the reduced argument from the first step
    (and use the same argument reduction). This should lead to 5x
    improvement of the worst case.
+
+ - in the tangent there are three steps. This could be studied for the
+   other functions
 */
 
 
@@ -274,22 +277,7 @@ int rem_pio256_scs(scs_ptr result, const scs_ptr x){
  
 
 
-
-#define scs_range_reduction()                                   \
-do { 								\
-  scs_t X, Y,Yh,Yl;						\
-      scs_set_d(X, x); 			  		        \
-      k= rem_pio256_scs(Y, X);					\
-      index=(k&127)<<2;                                         \
-      quadrant = (k>>7)&3;                                      \
-      /* TODO an optimized procedure for the following */	\
-      scs_get_d(&yh, Y);					\
-      scs_set_d(Yh, yh);					\
-      scs_sub(Yl, Y,Yh);					\
-      scs_get_d(&yl, Yl);					\
-}while(0)
-
-#define LOAD_TABLE_SINCOS()                                 \
+#define LoadTableSinCos()                                 \
 do  {                                                       \
     if(index<=(64<<2)) {                                    \
       sah=sincosTable[index+0].d; /* sin(a), high part */   \
@@ -306,20 +294,19 @@ do  {                                                       \
   } while(0)
 
 
-#define do_sin_k_zero(psh,psl, yh,  yl)            \
+#define DoSinZero(psh,psl)                     \
 do{                                                \
-  double yh2 ;	              			   \
-  yh2 = yh*yh;					   \
+  yh2 = yh*yh ;                                    \
   ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));	   \
   /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */  \
   /* Now compute (1+ts)*(yh+yl) */                 \
   Add12(*psh,*psl,   yh, yl+ts*yh);	           \
 } while(0)						   
 
-#define do_sin_k_notzero(psh,psl, yh,  yl, sah, sal, cah, cal)         \
+#define DoSinNotZero(psh,psl)                                      \
 do {                                                                   \
-  double thi, tlo, cahyh_h, cahyh_l, yh2  ;      		       \
-  yh2 = yh*yh;							       \
+  double thi, tlo, cahyh_h, cahyh_l  ;          		       \
+  yh2 = yh*yh ;                                                        \
   Mul12(&cahyh_h,&cahyh_l, cah, yh);				       \
   Add12(thi, tlo, sah,cahyh_h);					       \
   ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));			       \
@@ -329,21 +316,20 @@ do {                                                                   \
   tlo = tc*sah+(ts*cahyh_h+(sal+(tlo+(cahyh_l+(cal*yh + cah*yl))))) ;  \
   Add12(*psh,*psl,  thi, tlo);	   			               \
 } while(0)
-
-#define do_cos_k_zero(pch,pcl, yh,  yl)           \
+ 
+#define DoCosZero(pch,pcl)                        \
 do {                                              \
-  double yh2;                                     \
-  yh2 = yh*yh ;					  \
+  yh2 = yh*yh ;                                   \
   tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));	  \
   /* 1+ tc is an approx to cos(yh+yl) */	  \
   /* Now compute 1+tc */			  \
   Add12(*pch,*pcl, 1., tc);		          \
 } while(0)					  
 
-#define do_cos_k_notzero(pch,pcl, yh,  yl, sah, sal, cah, cal)      \
+#define DoCosNotZero(pch,pcl)                                       \
 do {                                                                \
-  double yh2, thi, tlo, sahyh_h,sahyh_l;      			    \
-  yh2 = yh*yh ;						            \
+  double thi, tlo, sahyh_h,sahyh_l;      			    \
+  yh2 = yh*yh ;                                                     \
   Mul12(&sahyh_h,&sahyh_l, sah, yh);			            \
   ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));		            \
   /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */	            \
@@ -365,19 +351,54 @@ do {                                                                \
 /************************************************************************/
 
 
-#define SIN 1
-#define COS 2
-#define TAN 3
+#define SIN 0
+#define COS 1
+#define TAN 2
 
-static void compute_trig_with_argred(double* prh, double* prl,  double x, int absxhi, int function){ 
-  double sah,sal,cah,cal, yh, yl, ts,tc, kd; 
-  double kch_h,kch_l, kcm_h,kcm_l,  th, tl,sh,sl,ch,cl;
+
+#define RangeReductionSCS()                                   \
+do { 								\
+  scs_t X, Y,Yh,Yl;						\
+      scs_set_d(X, rri->x); 			  		        \
+      k= rem_pio256_scs(Y, X);					\
+      index=(k&127)<<2;                                         \
+      quadrant = (k>>7)&3;                                      \
+      /* TODO an optimized procedure for the following */	\
+      scs_get_d(&yh, Y);					\
+      scs_set_d(Yh, yh);					\
+      scs_sub(Yl, Y,Yh);					\
+      scs_get_d(&yl, Yl);					\
+}while(0)
+
+
+
+/* A structure that holds all the information to be exchanged between
+   ComputeTrigWithArgred2 and the 12 functions sin_rn etc
+
+   It is purely for performance (almost 100 cycles out of 300 on a P4
+   when compared to passing a list of arguments). Instead of saving a
+   few memory accesses, it it allows other small optimizations like
+   deferring the possible change of sign of the result to the the last
+   moment using rri->changesign.
+
+   All this is not very elegant, but it is safe.
+*/
+
+struct rrinfo_s {double rh; double rl; double x; int absxhi; int function;} ;
+typedef struct rrinfo_s rrinfo;
+#define changesign function
+
+
+
+static void ComputeTrigWithArgred2(rrinfo *rri){ 
+  double sah,sal,cah,cal, yh, yl, yh2, ts,tc, kd; 
+  double kch_h,kch_l, kcm_h,kcm_l, th, tl,sh,sl,ch,cl;
   int k, quadrant, index;
   long long int kl;
 
-  if  (absxhi < XMAX_CODY_WAITE_3) {
+  if  (rri->absxhi < XMAX_CODY_WAITE_3) {
     /* Compute k, deduce the table index and the quadrant */
-    DOUBLE2INT(k, x * INV_PIO256);
+    DOUBLE2INT(k, rri->x * INV_PIO256);
     kd = (double) k;
     quadrant = (k>>7)&3;      
     index=(k&127)<<2;
@@ -388,38 +409,38 @@ static void compute_trig_with_argred(double* prh, double* prl,  double x, int ab
       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
       Add12 (th,tl,  kch_l, kcm_h) ;
       /* only rounding error in the last multiplication and addition */ 
-      Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-      goto trigzero;
+      Add22 (&yh, &yl,    (rri->x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+      goto computeZero;
     } 
     else {      
       /* index <> 0, don't worry about cancellations on yh+yl */
-      if (absxhi < XMAX_CODY_WAITE_2) {
+      if (rri->absxhi < XMAX_CODY_WAITE_2) {
 	/* CW 2: all this is exact but the rightmost multiplication */
-	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ; 
+	Add12 (yh,yl,  (rri->x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ; 
       }
       else { 
 	/* CW 3: all this is exact but the rightmost multiplication */
-	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
+	Add12Cond(yh,yl,  (rri->x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
       }
     }
-    goto trignotzero;
+    goto computeNotZero;
   }
 
-  else if ( absxhi < XMAX_DDRR ) {
+  else if ( rri->absxhi < XMAX_DDRR ) {
     /* x sufficiently small for a Cody and Waite in double-double */
-    DOUBLE2LONGINT(kl, x*INV_PIO256);
+    DOUBLE2LONGINT(kl, rri->x*INV_PIO256);
     kd=(double)kl;
     quadrant = (kl>>7)&3;
     index=(kl&127)<<2;
     if(index == 0) { 
       /* Here again a large cancellation on yh+yl would be a problem, 
 	 so we do the accurate range reduction */
-      scs_range_reduction();   /*recomputes k, index, quadrant, and yh and yl*/
+      RangeReductionSCS();   /*recomputes k, index, quadrant, and yh and yl*/
       /* Now it may happen that the new k differs by 1 of kl, so check that */
       if(index==0)   /* no surprise */
-	goto trigzero; 
+	goto computeZero; 
       else 
-	goto trignotzero;
+	goto computeNotZero;
     }
     else {   /*  index<>0 */
       /* double-double argument reduction*/
@@ -428,92 +449,87 @@ static void compute_trig_with_argred(double* prh, double* prl,  double x, int ab
       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
       Add12 (th,tl,  kch_l, kcm_h) ;
       /* only rounding error in the last multiplication and addition */ 
-      Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-      goto trignotzero;
+      Add22 (&yh, &yl,    (rri->x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+      goto computeNotZero;
     }
   } /* closes if ( absxhi < XMAX_DDRR ) */ 
 
   else {
     /* Worst case : x very large, sin(x) probably meaningless, we return
        correct rounding but do't mind taking time for it */
-    scs_range_reduction(); 
+    RangeReductionSCS(); 
     quadrant = (k>>7)&3;                                       
     if(index == 0)
-      goto trigzero;
+      goto computeZero;
     else 
-      goto trignotzero;
+      goto computeNotZero;
   }
 
- trigzero:
-  switch(function) {
+ computeZero:
+  switch(rri->function) {
  
   case SIN: 
     if (quadrant&1)
-      do_cos_k_zero(prh, prl, yh,yl);
+      DoCosZero(&rri->rh, &rri->rl);
     else 
-      do_sin_k_zero(prh, prl, yh,yl);
-    if ((quadrant==2)||(quadrant==3)) {
-      *prl=-*prl; *prh=-*prh;
-    }
+      DoSinZero(&rri->rh, &rri->rl);
+    rri->changesign=(quadrant==2)||(quadrant==3);
     return;
     
   case COS: 
     if (quadrant&1)
-      do_sin_k_zero(prh, prl, yh,yl);
+      DoSinZero(&rri->rh, &rri->rl);
     else 
-      do_cos_k_zero(prh, prl, yh,yl);
-    if ((quadrant==1)||(quadrant==2)) {
-      *prl=-*prl; *prh=-*prh;
-    }
+      DoCosZero(&rri->rh, &rri->rl);
+    rri->changesign= (quadrant==1)||(quadrant==2);
     return;
 
   case TAN: 
     if (quadrant&1) {
-      do_sin_k_zero(&ch, &cl, yh,yl);
-      do_cos_k_zero(&sh, &sl, yh,yl);
+      DoSinZero(&ch, &cl);
+      DoCosZero(&sh, &sl);
       sh=-sh; sl=-sl;
     } else {
-      do_sin_k_zero(&sh, &sl, yh,yl);
-      do_cos_k_zero(&ch, &cl, yh,yl);
+      DoSinZero(&sh, &sl);
+      DoCosZero(&ch, &cl);
     }
-    Div22(prh, prl, sh, sl, ch, cl);
+    Div22(&rri->rh, &rri->rl, sh, sl, ch, cl);
     return;
   }
   
- trignotzero:
-  LOAD_TABLE_SINCOS();
-  switch(function) {
+ computeNotZero:
+  LoadTableSinCos();
+  switch(rri->function) {
 
   case SIN: 
     if (quadrant&1)   
-      do_cos_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
+      DoCosNotZero(&rri->rh, &rri->rl);
     else 
-      do_sin_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
-    if ((quadrant==2)||(quadrant==3)) {
-      *prl=-*prl; *prh=-*prh;
-    }
+      DoSinNotZero(&rri->rh, &rri->rl);
+    rri->changesign=(quadrant==2)||(quadrant==3);
     return;
 
   case COS: 
     if (quadrant&1)   
-      do_sin_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
+      DoSinNotZero(&rri->rh, &rri->rl);
     else 
-      do_cos_k_notzero(prh, prl, yh,yl,sah,sal,cah,cal);
-    if ((quadrant==1)||(quadrant==2)) {
-      *prl=-*prl; *prh=-*prh;
-    }
+      DoCosNotZero(&rri->rh, &rri->rl);
+    rri->changesign=(quadrant==1)||(quadrant==2);
     return;
 
   case TAN: 
+      /* Remark: the computation of ts and tc is done twice but the
+	 compiler seems to remove the redundant one (as long as DoSin and
+	 DoCos are #defines anyway) */
     if (quadrant&1) {
-      do_sin_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
-      do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
+      DoSinNotZero(&ch, &cl);
+      DoCosNotZero(&sh, &sl);
       sh=-sh; sl=-sl;
     } else {
-      do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      do_cos_k_notzero(&ch, &cl, yh,yl,sah,sal,cah,cal);
+      DoSinNotZero(&sh, &sl);
+      DoCosNotZero(&ch, &cl);
     }
-    Div22(prh, prl, sh, sl, ch, cl);
+    Div22(&rri->rh, &rri->rl, sh, sl, ch, cl);
     return;
   }
 }
@@ -526,39 +542,43 @@ static void compute_trig_with_argred(double* prh, double* prl,  double x, int ab
  *************************************************************/ 
 
 double sin_rn(double x){ 
-  double ts,sh,sl,rncst; 
-  int  absxhi;
+  double ts,x2,rncst; 
+  rrinfo rri;
   db_number x_split;
   
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;    
+  if (rri.absxhi>=0x7ff00000) return x-x;    
    
-  else if (absxhi < XMAX_SIN_CASE2){
+  else if (rri.absxhi < XMAX_SIN_CASE2){
     /* CASE 1 : x small enough sin(x)=x */
-    if (absxhi <XMAX_RETURN_X_FOR_SIN)
+    if (rri.absxhi <XMAX_RETURN_X_FOR_SIN)
       return x;
     
     /* CASE 2 :XMAX_RETURN_X_FOR_SIN x < XMAX_SIN_CASE2
-       Fast polynomial evaluation */
-    do_sin_k_zero(&sh, &sl, x,0);
-    if(sh == (sh + (sl * RN_CST_SIN_CASE2)))	
-      return sh;
+       Fast polynomial evaluation as in DoSinZero */
+    x2 = x*x ;
+    ts = x2 * (s3.d + x2*(s5.d + x2*s7.d));
+    Add12(rri.rh,rri.rl,   x, ts*x);
+    if(rri.rh == (rri.rh + (rri.rl * RN_CST_SIN_CASE2)))	
+      return rri.rh;
     else
       return scs_sin_rn(x); 
   }
   
   /* CASE 3 : Need argument reduction */ 
   else {
+    rri.x=x;
+    rri.function=SIN;
+    ComputeTrigWithArgred2(&rri);
     rncst= RN_CST_SIN_CASE3;
-    compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
+    if(rri.rh == (rri.rh + (rri.rl * rncst)))	
+      if(rri.changesign) return -rri.rh; else return rri.rh;
+    else
+      return scs_sin_rn(x); 
   }
-  if(sh == (sh + (sl * rncst)))	
-    return sh;
-  else
-    return scs_sin_rn(x); 
 }
 
 
@@ -574,20 +594,20 @@ double sin_rn(double x){
 
 
 double sin_ru(double x){
-  double xx, ts,sh,sl, epsilon; 
-  int  absxhi;
+  double xx, ts, epsilon; 
+  rrinfo rri;
   db_number x_split,  absyh, absyl, u, u53;
   
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;    
+  if (rri.absxhi>=0x7ff00000) return x-x;    
   
-  if (absxhi < XMAX_SIN_CASE2){
-    
+  if (rri.absxhi < XMAX_SIN_CASE2){
+
     /* CASE 1 : x small enough, return x suitably rounded */
-    if (absxhi <XMAX_RETURN_X_FOR_SIN) {
+    if (rri.absxhi <XMAX_RETURN_X_FOR_SIN) {
       if(x>=0.)
 	return x;
       else {
@@ -600,27 +620,32 @@ double sin_ru(double x){
 	 Fast polynomial evaluation */
       xx = x*x;
       ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
-      Add12(sh,sl, x, ts);
+      Add12(rri.rh,rri.rl, x, ts);
       epsilon=EPS_SIN_CASE2; 
     }
   }
   else {
     /* CASE 3 : Need argument reduction */ 
-    compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
+    rri.x=x;
+    rri.function=SIN;
+    ComputeTrigWithArgred2(&rri);
     epsilon=EPS_SIN_CASE3;
+    if(rri.changesign) {
+      rri.rh = -rri.rh;
+      rri.rl = -rri.rl;
+    } 
   }
-  
-    /* Rounding test to + infinity */
-  absyh.d=sh;
-  absyl.d=sl;
+  /* Rounding test to + infinity */
+  absyh.d=rri.rh;
+  absyl.d=rri.rl;
   absyh.l = absyh.l & 0x7fffffffffffffffLL;
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
    
-  if(absyl.d > epsilon * u53.d){ 
-    if(sl>0)  return sh+u.d;
-    else      return sh;
+  if(absyl.d > epsilon * u53.d){
+    if(rri.rl>0)  return rri.rh+u.d;
+    else      return rri.rh;
   }
   else return scs_sin_ru(x);
 }
@@ -635,20 +660,20 @@ double sin_ru(double x){
  *************************************************************
  *************************************************************/
 double sin_rd(double x){ 
-  double xx, ts,sh,sl, epsilon; 
-  int  absxhi;
+  double xx, ts, epsilon; 
   db_number x_split,  absyh, absyl, u, u53;
+  rrinfo rri;
   
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;    
+  if (rri.absxhi>=0x7ff00000) return x-x;    
   
-  if (absxhi < XMAX_SIN_CASE2){
+  if (rri.absxhi < XMAX_SIN_CASE2){
 
     /* CASE 1 : x small enough, return x suitably rounded */
-    if (absxhi <XMAX_RETURN_X_FOR_SIN) {
+    if (rri.absxhi <XMAX_RETURN_X_FOR_SIN) {
       if(x<=0.)
 	return x;
       else {
@@ -656,34 +681,41 @@ double sin_rd(double x){
 	return x_split.d;
       }
     }
-    else {
+
+    else{
       /* CASE 2 : x < Pi/512
 	 Fast polynomial evaluation */
       xx = x*x;
       ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
-      Add12(sh,sl, x, ts);
+      Add12(rri.rh,rri.rl, x, ts);
       epsilon=EPS_SIN_CASE2; 
     }
   }
   else {
     /* CASE 3 : Need argument reduction */ 
-    compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
+    rri.x=x;
+    rri.function=SIN;
+    ComputeTrigWithArgred2(&rri);
     epsilon=EPS_SIN_CASE3;
+    if(rri.changesign) {
+      rri.rh = -rri.rh;
+      rri.rl = -rri.rl;
+    } 
   }
 
-    /* Rounding test to + infinity */
-    absyh.d=sh;
-    absyl.d=sl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-    
-    if(absyl.d > epsilon * u53.d){ 
-      if(sl>0)  return sh;
-      else      return sh-u.d;
-    }
-    else return scs_sin_rd(x);
+  /* Rounding test to + infinity */
+  absyh.d=rri.rh;
+  absyl.d=rri.rl;
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l   = u53.l - 0x0350000000000000LL;
+   
+  if(absyl.d > epsilon * u53.d){ 
+    if(rri.rl>0)  return rri.rh;
+    else      return rri.rh-u.d;
+  }
+  else return scs_sin_rd(x);
 }
 
 
@@ -696,20 +728,20 @@ double sin_rd(double x){
  *************************************************************
  *************************************************************/
 double sin_rz(double x){ 
-  double xx, ts,sh,sl, epsilon; 
-  int  absxhi;
+  double xx, ts, epsilon; 
   db_number x_split,  absyh, absyl, u, u53;
-  
+  rrinfo rri;  
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;    
+  if (rri.absxhi>=0x7ff00000) return x-x;    
   
-  if (absxhi < XMAX_SIN_CASE2){
-    
+  if (rri.absxhi < XMAX_SIN_CASE2){
+
     /* CASE 1 : x small enough, return x suitably rounded */
-    if (absxhi <XMAX_RETURN_X_FOR_SIN) {
+    if (rri.absxhi <XMAX_RETURN_X_FOR_SIN) {
       x_split.l --;
       return x_split.d;
     }
@@ -718,32 +750,38 @@ double sin_rz(double x){
 	 Fast polynomial evaluation */
       xx = x*x;
       ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
-      Add12(sh,sl, x, ts);
+      Add12(rri.rh,rri.rl, x, ts);
       epsilon=EPS_SIN_CASE2; 
     }
   }
   else {
     /* CASE 3 : Need argument reduction */ 
-    compute_trig_with_argred(&sh,&sl,x,absxhi,SIN);
+    rri.x=x;
+    rri.function=SIN;
+    ComputeTrigWithArgred2(&rri);
     epsilon=EPS_SIN_CASE3;
+    if(rri.changesign) {
+      rri.rh = -rri.rh;
+      rri.rl = -rri.rl;
+    } 
   }
-  
+
   /* Rounding test to + infinity */
-  absyh.d=sh;
-  absyl.d=sl;
+  absyh.d=rri.rh;
+  absyl.d=rri.rl;
   absyh.l = absyh.l & 0x7fffffffffffffffLL;
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
    
   if(absyl.d > epsilon * u53.d){ 
-    if(sh>0) {
-      if (sl>0) return sh;
-      else      return sh-u.d;
+    if(rri.rh>0) {
+      if (rri.rl>0) return rri.rh;
+      else      return rri.rh-u.d;
     }
     else {
-      if (sl>0) return sh+u.d;
-      else      return sh;
+      if (rri.rl>0) return rri.rh+u.d;
+      else      return rri.rh;
     }	
   }
   else return scs_sin_rz(x);
@@ -758,40 +796,41 @@ double sin_rz(double x){
  *************************************************************
  *************************************************************/
 double cos_rn(double x){ 
-  double ch, cl, xx, tc, rncst;
-  int absxhi;
+  double tc, x2;
+  rrinfo rri;
   db_number x_split;
 
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) return x-x;   
 
-  if (absxhi < XMAX_COS_CASE2){
+  if (rri.absxhi < XMAX_COS_CASE2){
     /* CASE 1 : x small enough cos(x)=1. */
-    if (absxhi <XMAX_RETURN_1_FOR_COS_RN)
+    if (rri.absxhi <XMAX_RETURN_1_FOR_COS_RN)
       return 1.;
-    
-    /* CASE 2 : Fast polynomial evaluation */
-    xx = x*x;
-    tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
-    Add12(ch,cl, 1, tc);
-    if(ch == (ch + (cl * RN_CST_COS_CASE2))){	
-      return ch;
-    }else{ 
-      return scs_cos_rn(x); 
-    } 
+    else {
+      /* CASE 2 : Fast polynomial evaluation */
+      x2 = x*x;
+      tc = x2 * (c2.d + x2*(c4.d + x2*c6.d ));
+      Add12(rri.rh,rri.rl, 1.0, tc);
+      if(rri.rh == (rri.rh + (rri.rl * RN_CST_COS_CASE2)))	
+	return rri.rh;
+      else
+	return scs_cos_rn(x); 
+    }
   }
-  /* CASE 3 : Need argument reduction */ 
   else {
-    rncst= RN_CST_COS_CASE3;
-    compute_trig_with_argred(&ch,&cl,x,absxhi,COS);
+  /* CASE 3 : Need argument reduction */ 
+    rri.x=x;
+    rri.function=COS;
+    ComputeTrigWithArgred2(&rri);
+    if(rri.rh == (rri.rh + (rri.rl * RN_CST_COS_CASE3)))	
+      if(rri.changesign) return -rri.rh; else return rri.rh;
+    else
+      return scs_cos_rn(x); 
   }
-  if(ch == (ch + (cl * rncst)))	
-    return ch;
-  else
-    return scs_cos_rn(x); 
 }
 
 
@@ -802,49 +841,54 @@ double cos_rn(double x){
  *************************************************************
  *************************************************************/
 double cos_ru(double x){ 
-  double xx, tc,ch,cl, epsilon; 
-  int  absxhi;
+  double x2, tc, epsilon; 
+  rrinfo rri;
   db_number x_split,  absyh, absyl, u, u53;
 
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;   
-
-  if (absxhi < XMAX_COS_CASE2){
+  if (rri.absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi < XMAX_COS_CASE2){
     /* CASE 1 : x small enough cos(x)=1. */
-    if (absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
+    if (rri.absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
       return 1.;
-    else {
+    else{
       /* CASE 2 : Fast polynomial evaluation */
-      xx = x*x;
-      tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
-      Add12(ch,cl, 1, tc);
+      x2 = x*x;
+      tc = x2 * (c2.d + x2*(c4.d + x2*c6.d ));
+      Add12(rri.rh,rri.rl, 1, tc);
       epsilon=EPS_COS_CASE2; 
     }
   }
+
   else {
     /* CASE 3 : Need argument reduction */ 
-    compute_trig_with_argred(&ch,&cl,x,absxhi,COS);
+    rri.x=x;
+    rri.function=COS;
+    ComputeTrigWithArgred2(&rri);
     epsilon=EPS_COS_CASE3;
-  }
+    if(rri.changesign) {
+      rri.rh = -rri.rh;
+      rri.rl = -rri.rl;
+    }
+  }    
   
   /* Rounding test to + infinity */
-  absyh.d=ch;
-  absyl.d=cl;
+  absyh.d=rri.rh;
+  absyl.d=rri.rl;
   absyh.l = absyh.l & 0x7fffffffffffffffLL;
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
   
   if(absyl.d > epsilon * u53.d){ 
-    if(cl>0)  return ch+u.d;
-    else      return ch;
+    if(rri.rl>0)  return rri.rh+u.d;
+    else      return rri.rh;
   }
   else return scs_cos_ru(x);
 }
-
 
 
 /*************************************************************
@@ -853,45 +897,51 @@ double cos_ru(double x){
  *************************************************************
  *************************************************************/
 double cos_rd(double x){ 
-  double xx, tc,ch,cl, epsilon; 
-  int  absxhi;
+  double x2, tc, epsilon; 
+  rrinfo rri;
   db_number x_split,  absyh, absyl, u, u53;
 
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) return x-x;   
 
-  if (absxhi < XMAX_COS_CASE2){
+  if (rri.absxhi < XMAX_COS_CASE2){
     if (x==0) return 1;
     /* CASE 1 : x small enough cos(x)=1. */
-    if (absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
+    if (rri.absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
       return ONE_ROUNDED_DOWN; 
-    
-    /* CASE 2 :  Fast polynomial evaluation */
-    xx = x*x;
-    tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
-    Add12(ch,cl, 1, tc);
-    epsilon=EPS_COS_CASE2; 
+    else {   
+      /* CASE 2 :  Fast polynomial evaluation */
+      x2 = x*x;
+      tc = x2 * (c2.d + x2*(c4.d + x2*c6.d ));
+      Add12(rri.rh,rri.rl, 1, tc);
+      epsilon=EPS_COS_CASE2; 
+    }
   }
   else {
-    /* CASE 3 : Need argument reduction */ 
+  /* CASE 3 : Need argument reduction */ 
+    rri.x=x;
+    rri.function=COS;
+    ComputeTrigWithArgred2(&rri);
     epsilon=EPS_COS_CASE3;
-    compute_trig_with_argred(&ch,&cl,x,absxhi,COS);
+    if(rri.changesign) {
+      rri.rh = -rri.rh;
+      rri.rl = -rri.rl;
+    }     
   }
-  
   /* Rounding test to - infinity */
-  absyh.d=ch;
-  absyl.d=cl;
+  absyh.d=rri.rh;
+  absyl.d=rri.rl;
   absyh.l = absyh.l & 0x7fffffffffffffffLL;
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
   
   if(absyl.d > epsilon * u53.d){ 
-      if(cl>=0)  return ch;
-      else       return ch-u.d;
+    if(rri.rl>=0)  return rri.rh;
+    else       return rri.rh-u.d;
   }
   else return scs_cos_rd(x);
 }
@@ -905,50 +955,56 @@ double cos_rd(double x){
  *************************************************************
  *************************************************************/
 double cos_rz(double x){ 
-  double xx, tc,ch,cl, epsilon; 
-  int  absxhi;
+  double x2, tc, epsilon; 
+  rrinfo rri;
   db_number x_split,  absyh, absyl, u, u53;
 
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) return x-x;   
 
-  if (absxhi < XMAX_COS_CASE2){
+  if (rri.absxhi < XMAX_COS_CASE2){
     if (x==0) return 1;
     /* CASE 1 : x small enough cos(x)=1. */
-    if (absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
+    if (rri.absxhi <XMAX_RETURN_1_FOR_COS_RDIR)
       return ONE_ROUNDED_DOWN; 
-    
-    /* CASE 2 : Fast polynomial evaluation */
-    xx = x*x;
-    tc = xx * (c2.d + xx*(c4.d + xx*c6.d ));
-    Add12(ch,cl, 1, tc);
-    epsilon=EPS_COS_CASE2; 
+    else {
+      /* CASE 2 : Fast polynomial evaluation */
+      x2 = x*x;
+      tc = x2 * (c2.d + x2*(c4.d + x2*c6.d ));
+      Add12(rri.rh,rri.rl, 1, tc);
+      epsilon=EPS_COS_CASE2; 
+    }
   }
   else {
     /* CASE 3 : Need argument reduction */ 
-    compute_trig_with_argred(&ch,&cl,x,absxhi,COS);
+    rri.x=x;
+    rri.function=COS;
+    ComputeTrigWithArgred2(&rri);
     epsilon=EPS_COS_CASE3;
+    if(rri.changesign) {
+      rri.rh = -rri.rh;
+      rri.rl = -rri.rl;
+    } 
   }
-
   /* Rounding test to zero */
-  absyh.d=ch;
-  absyl.d=cl;
+  absyh.d=rri.rh;
+  absyl.d=rri.rl;
   absyh.l = absyh.l & 0x7fffffffffffffffLL;
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
   
   if(absyl.d > epsilon * u53.d){ 
-    if(ch>0) {
-      if (cl>0) return ch;
-      else      return ch-u.d;
+    if(rri.rh>0) {
+      if (rri.rl>0) return rri.rh;
+      else      return rri.rh-u.d;
     }
     else {
-      if (cl>0) return ch+u.d;
-      else      return ch;
+      if (rri.rl>0) return rri.rh+u.d;
+      else      return rri.rh;
     }	
   }
   else return scs_cos_rz(x);
@@ -965,54 +1021,57 @@ double cos_rz(double x){
  *************************************************************/ 
 double tan_rn(double x){  
   double sh, sl, ch, cl;
-  double p7, t, th, tl, xx;
-  int absxhi;
+  double p7, t, x2;
+  rrinfo rri;
   db_number x_split;
 
 
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
 
 
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) return x-x;   
 
-  if (absxhi < XMAX_TAN_CASE2){ /* |x|<2^-3 TODO this tradeoff has not been studied */
-    if (absxhi < XMAX_RETURN_X_FOR_TAN) 
+  if (rri.absxhi < XMAX_TAN_CASE2){ /* |x|<2^-3 TODO this tradeoff has not been studied */
+    if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) 
       return x;
 
     /* Fast Taylor series */
-    xx = x*x;
-    p7 = t7.d + xx*(t9.d + xx*(t11.d + xx*(t13.d + xx*t15.d)));
-    t  = xx*(t3l.d +xx*(t5.d + xx*p7));
+    x2 = x*x;
+    p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
+    t  = x2*(t3l.d +x2*(t5.d + x2*p7));
 
-    sh = x*(xx*t3h.d + t);
-    Add12(th, tl, x, sh);   
+    sh = x*(x2*t3h.d + t);
+    Add12(rri.rh, rri.rl, x, sh);   
     /* Test if round to nearest achieved */ 
-    if (th == (th + (tl * RN_CST_TAN_CASE22)))
-      return th;
+    if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE22)))
+      return rri.rh;
     else {
       /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, xx, t3h.d);
+      Mul12(&sh, &sl, x2, t3h.d);
       Add12(ch, cl, sh, (t+sl));
       Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&th, &tl, x, 0, sh, sl);
+      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
       /* Test if round to nearest achieved */ 
-      if (th == (th + (tl * RN_CST_TAN_CASE21)))
-	return th;
+      if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE21)))
+	return rri.rh;
       else
-	scs_tan_rn(x);
+	return scs_tan_rn(x); 
     }
   }
-  /* Otherwise : Range reduction then standard evaluation */
-  compute_trig_with_argred(&th,&tl,x,absxhi,TAN);
- 
-  /* Test if round to nearest achieved */ 
-  if(th == (th + (tl * RN_CST_TAN_CASE3))){
-    return th;
-  }else{ 
-    return scs_tan_rn(x); 
-  } 
+  else {
+    /* Otherwise : Range reduction then standard evaluation */
+    rri.x=x;
+    rri.function=TAN;
+    ComputeTrigWithArgred2(&rri);
+
+    /* Test if round to nearest achieved */ 
+    if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE3)))
+      return rri.rh;
+    else
+      return scs_tan_rn(x); 
+  }    
 }
 
 
@@ -1024,18 +1083,18 @@ double tan_rn(double x){
  *************************************************************/
 double tan_ru(double x){  
   double sh, sl, ch, cl, epsilon;
-  double p7, t, th, tl, xx;
-  int absxhi;
+  double p7, t, x2;
   db_number x_split,  absyh, absyl, u, u53;
+  rrinfo rri;
 
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) return x-x;   
   
-  if (absxhi < XMAX_TAN_CASE2){
-    if (absxhi < XMAX_RETURN_X_FOR_TAN) {
+  if (rri.absxhi < XMAX_TAN_CASE2){
+    if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {
       if(x<=0.)
 	return x;
       else {
@@ -1043,51 +1102,55 @@ double tan_ru(double x){
 	return x_split.d;
       }
     }
-    /* Fast Taylor series */
-    xx = x*x;
-    p7 = t7.d + xx*(t9.d + xx*(t11.d + xx*(t13.d + xx*t15.d)));
-    t  = xx*(t3l.d +xx*(t5.d + xx*p7));
-    
-    sh = x*(xx*t3h.d + t);
-    Add12(th, tl, x, sh);   
-    
-    /* Rounding test to + infinity */
-    absyh.d=th;
-    absyl.d=tl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_TAN_CASE22; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(tl>0) return th+u.d;
-      else     return th;
-    }
     else {
-      /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, xx, t3h.d);
-      Add12(ch, cl, sh, (t+sl));
-      Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&th, &tl, x, 0, sh, sl);
-      epsilon=EPS_TAN_CASE21; 
+      /* Fast Taylor series */
+      x2 = x*x;
+      p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
+      t  = x2*(t3l.d +x2*(t5.d + x2*p7));
+    
+      sh = x*(x2*t3h.d + t);
+      Add12(rri.rh, rri.rl, x, sh);   
+      
+      /* Rounding test to + infinity */
+      absyh.d = rri.rh;
+      absyl.d = rri.rl;
+      absyh.l = absyh.l & 0x7fffffffffffffffLL;
+      absyl.l = absyl.l & 0x7fffffffffffffffLL;
+      u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+      u.l   = u53.l - 0x0350000000000000LL;
+      epsilon=EPS_TAN_CASE22; 
+      if(absyl.d > epsilon * u53.d){ 
+	if(rri.rl>0) return rri.rh+u.d;
+	else     return rri.rh;
+      }
+      else {
+	/* Still relatively fast, but more accurate */
+	Mul12(&sh, &sl, x2, t3h.d);
+	Add12(ch, cl, sh, (t+sl));
+	Mul22(&sh, &sl, x, 0, ch, cl);
+	Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
+	epsilon=EPS_TAN_CASE21; 
+      }
     }
   }
-  else { /* Normal case:
-	    Range reduction then standard evaluation */
-    compute_trig_with_argred(&th,&tl,x,absxhi,TAN);
+  else { 
+    /* Normal case: Range reduction then standard evaluation */
+    rri.x=x;
+    rri.function=TAN;
+    ComputeTrigWithArgred2(&rri);
     epsilon=EPS_TAN_CASE3; 
    }
-
+  
   /* Rounding test to + infinity */
-  absyh.d=th;
-  absyl.d=tl;
+  absyh.d = rri.rh;
+  absyl.d = rri.rl;
   absyh.l = absyh.l & 0x7fffffffffffffffLL;
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
   if(absyl.d > epsilon * u53.d){ 
-    if(tl>0) return th+u.d;
-    else     return th;
+    if(rri.rl>0) return rri.rh+u.d;
+    else     return rri.rh;
   }
   else return scs_tan_ru(x); 
 }
@@ -1100,19 +1163,19 @@ double tan_ru(double x){
  *************************************************************/
 double tan_rd(double x){  
   double sh, sl, ch, cl, epsilon;
-  double p7, t, th, tl, xx;
-  int absxhi;
+  double p7, t, x2;
+  rrinfo rri;
   db_number x_split,  absyh, absyl, u, u53;
 
   
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) return x-x;   
   
-  if (absxhi < XMAX_TAN_CASE2){
-    if (absxhi < XMAX_RETURN_X_FOR_TAN) {
+  if (rri.absxhi < XMAX_TAN_CASE2){
+    if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {
       if(x>=0.)
 	return x;
       else {
@@ -1122,51 +1185,53 @@ double tan_rd(double x){
     }
     
     /* Fast Taylor series */
-    xx = x*x;
-    p7 = t7.d + xx*(t9.d + xx*(t11.d + xx*(t13.d + xx*t15.d)));
-    t  = xx*(t3l.d +xx*(t5.d + xx*p7));
+    x2 = x*x;
+    p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
+    t  = x2*(t3l.d +x2*(t5.d + x2*p7));
     
-    sh = x*(xx*t3h.d + t);
-    Add12(th, tl, x, sh);   
+    sh = x*(x2*t3h.d + t);
+    Add12(rri.rh, rri.rl, x, sh);   
 
     /* Rounding test to - infinity */
-    absyh.d=th;
-    absyl.d=tl;
+    absyh.d=rri.rh;
+    absyl.d=rri.rl;
     absyh.l = absyh.l & 0x7fffffffffffffffLL;
     absyl.l = absyl.l & 0x7fffffffffffffffLL;
     u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
     u.l   = u53.l - 0x0350000000000000LL;
     epsilon=EPS_TAN_CASE22; 
     if(absyl.d > epsilon * u53.d){ 
-      if(tl>0) return th;
-      else     return th-u.d;
+      if(rri.rl>0) return rri.rh;
+      else     return rri.rh-u.d;
     }
     else { 
       /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, xx, t3h.d);
+      Mul12(&sh, &sl, x2, t3h.d);
       Add12(ch, cl, sh, (t+sl));
       Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&th, &tl, x, 0, sh, sl);
+      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
       epsilon=EPS_TAN_CASE21; 
     }
   }
   
-  else { /* normal case:
-	    Range reduction then standard evaluation */
-    compute_trig_with_argred(&th,&tl,x,absxhi,TAN);
+  else { 
+    /* normal case: Range reduction then standard evaluation */
+    rri.x=x;
+    rri.function=TAN;
+    ComputeTrigWithArgred2(&rri);
     epsilon=EPS_TAN_CASE3; 
   }
-
+  
   /* Rounding test to - infinity */
-  absyh.d=th;
-  absyl.d=tl;
+  absyh.d=rri.rh;
+  absyl.d=rri.rl;
   absyh.l = absyh.l & 0x7fffffffffffffffLL;
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
   if(absyl.d > epsilon * u53.d){ 
-    if(tl>0) return th;
-    else     return th-u.d;
+    if(rri.rl>0) return rri.rh;
+    else     return rri.rh-u.d;
   }
   else return scs_tan_rd(x);
 }
@@ -1179,73 +1244,75 @@ double tan_rd(double x){
  *************************************************************/
 double tan_rz(double x){  
   double sh, sl, ch, cl, epsilon;
-  double p7, t, th, tl, xx;
-  int absxhi;
+  double p7, t, x2;
+  rrinfo rri;
   db_number x_split,  absyh, absyl, u, u53;
 
   x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  rri.absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
   
   /* SPECIAL CASES: x=(Nan, Inf) cos(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;   
+  if (rri.absxhi>=0x7ff00000) return x-x;   
   
-  if (absxhi < XMAX_TAN_CASE2){
-    if (absxhi < XMAX_RETURN_X_FOR_TAN) {
+  if (rri.absxhi < XMAX_TAN_CASE2){
+    if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {
       return x;
     }
     
     /* Fast Taylor series */
-    xx = x*x;
-    p7 = t7.d + xx*(t9.d + xx*(t11.d + xx*(t13.d + xx*t15.d)));
-    t  = xx*(t3l.d +xx*(t5.d + xx*p7));
+    x2 = x*x;
+    p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
+    t  = x2*(t3l.d +x2*(t5.d + x2*p7));
     
-    sh = x*(xx*t3h.d + t);
-    Add12(th, tl, x, sh);   
+    sh = x*(x2*t3h.d + t);
+    Add12(rri.rh, rri.rl, x, sh);   
 
     /* Rounding test to zero */
-    absyh.d=th;
-    absyl.d=tl;
+    absyh.d=rri.rh;
+    absyl.d=rri.rl;
     absyh.l = absyh.l & 0x7fffffffffffffffLL;
     absyl.l = absyl.l & 0x7fffffffffffffffLL;
     u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
     u.l   = u53.l - 0x0350000000000000LL;
     epsilon=EPS_TAN_CASE22; 
     if(absyl.d > epsilon * u53.d){ 
-      if(th>0) 
-	if(tl>0) return th;
-	else     return th-u.d;
+      if(rri.rh>0) 
+	if(rri.rl>0) return rri.rh;
+	else     return rri.rh-u.d;
       else 
-	if(tl>0) return th+u.d;
-	else    return th;
+	if(rri.rl>0) return rri.rh+u.d;
+	else    return rri.rh;
     }
     else {
       /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, xx, t3h.d);
+      Mul12(&sh, &sl, x2, t3h.d);
       Add12(ch, cl, sh, (t+sl));
       Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&th, &tl, x, 0, sh, sl);
+      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
       epsilon=EPS_TAN_CASE21; 
     }
   }
-  else{  /* Normal case:
-	    Range reduction then standard evaluation */
-    compute_trig_with_argred(&th,&tl,x,absxhi,TAN);
+  else { 
+    /* Normal case: Range reduction then standard evaluation */
+    rri.x=x;
+    rri.function=TAN;
+    ComputeTrigWithArgred2(&rri);
     epsilon=EPS_TAN_CASE3; 
-  }
+   }
   /* Rounding test to zero */
-  absyh.d=th;
-  absyl.d=tl;
+  absyh.d=rri.rh;
+  absyl.d=rri.rl;
   absyh.l = absyh.l & 0x7fffffffffffffffLL;
   absyl.l = absyl.l & 0x7fffffffffffffffLL;
   u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
   u.l   = u53.l - 0x0350000000000000LL;
   if(absyl.d > epsilon * u53.d){ 
-    if(th>0) 
-      if(tl>0) return th;
-      else     return th-u.d;
+    if(rri.rh>0) 
+      if(rri.rl>0) return rri.rh;
+      else     return rri.rh-u.d;
     else 
-      if(tl>0) return th+u.d;
-      else    return th;
+      if(rri.rl>0) return rri.rh+u.d;
+      else    return rri.rh;
   }
   else return scs_tan_rz(x); 
 }

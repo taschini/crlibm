@@ -7,7 +7,7 @@
 #define XMAX_SIN_CASE2         0x3F8921F9        /* .12271835e-1 */
 #define XMAX_RETURN_1_FOR_COS_RN 0x3E46A09C        /* .10536702e-7 */
 #define XMAX_RETURN_1_FOR_COS_RDIR 0x3E4FFFFE        /* .14901147e-7 */
-#define XMAX_COS_CASE2         0x3F7921F9        /* .61359173e-2 */
+#define XMAX_COS_CASE2         0x3F8921F9        /* .12271835e-1 */
 #define XMAX_RETURN_X_FOR_TAN 0x3E3FFFFD        /* .74505735e-8 */
 #define XMAX_TAN_CASE2         0x3FBFFFFD        /* .12499988 */
 
@@ -18,8 +18,8 @@
 #define EPS_SIN_CASE3     5.4210108624275221700372640e-20 
 #define RN_CST_SIN_CASE3  1.0009770395701027556611962 
 
-#define EPS_COS_CASE2     6.2825328754094388800831387e-21 
-#define RN_CST_COS_CASE2  1.0001131829590064192814225 
+#define EPS_COS_CASE2     3.7840527971432048221275834e-20 
+#define RN_CST_COS_CASE2  1.0006820073620941169423304 
 #define EPS_COS_CASE3     5.4210108624275221700372640e-20 
 #define RN_CST_COS_CASE3  1.0009770395701027556611962 
 
@@ -78,8 +78,8 @@ static db_number const s5 = {{0x3F811111,0x11111111}} /* +8.3333333333e-03 */;
 static db_number const s7 = {{0xBF2A01A0,0x1A01A01A}} /* -1.9841269841e-04 */;
 
 static db_number const c2 = {{0xBFE00000,0x00000000}} /* -5.0000000000e-01 */;
-static db_number const c4 = {{0x3FA55555,0x55553C98}} /* +4.1666666667e-02 */;
-static db_number const c6 = {{0xBF56C16A,0x15693E50}} /* -1.3888870214e-03 */;
+static db_number const c4 = {{0x3FA55555,0x55555555}} /* +4.1666666667e-02 */;
+static db_number const c6 = {{0xBF56C16C,0x16C16C17}} /* -1.3888888889e-03 */;
 
 static db_number const t3h = {{0x3FD55555,0x55555555}} /* +3.3333333333e-01 */;
 static db_number const t3l = {{0x3C755A48,0x8575AF65}} /* +1.8520488171e-17 */;
@@ -363,8 +363,8 @@ static db_number const s5 = {{0x11111111,0x3F811111}} /* +8.3333333333e-03 */;
 static db_number const s7 = {{0x1A01A01A,0xBF2A01A0}} /* -1.9841269841e-04 */;
 
 static db_number const c2 = {{0x00000000,0xBFE00000}} /* -5.0000000000e-01 */;
-static db_number const c4 = {{0x55553C98,0x3FA55555}} /* +4.1666666667e-02 */;
-static db_number const c6 = {{0x15693E50,0xBF56C16A}} /* -1.3888870214e-03 */;
+static db_number const c4 = {{0x55555555,0x3FA55555}} /* +4.1666666667e-02 */;
+static db_number const c6 = {{0x16C16C17,0xBF56C16C}} /* -1.3888888889e-03 */;
 
 static db_number const t3h = {{0x55555555,0x3FD55555}} /* +3.3333333333e-01 */;
 static db_number const t3l = {{0x8575AF65,0x3C755A48}} /* +1.8520488171e-17 */;
