@@ -148,7 +148,7 @@ static const struct scs
 
 
 
-#define ABS(x) ((x)>0) ? (x) : (-(x))
+#define ABS(x) (((x)>0) ? (x) : (-(x)))
 
 
 
@@ -201,7 +201,7 @@ static const struct scs
 {\
 double r,s;\
 r = xh+yh;\
-s = (ABS(xh) > ABS(yh))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);\
+s = ((ABS(xh)) > (ABS(yh)))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);\
 *zh = r+s;\
 *zl = r - (*zh) + s;\
 }

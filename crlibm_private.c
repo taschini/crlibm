@@ -97,13 +97,10 @@ void Add22Cond(double *zh, double *zl,
                double xh, double xl, double yh, double yl)
 {
   double r,s;
-  printf("toutou\n");
   r = xh+yh;
   if ((ABS(xh)) > (ABS(yh))) 
-    {s=   ((((xh-r)+yh)+yl)+xl); 
-    printf("x>y\n");}
-  else {s=((((yh-r)+xh)+xl)+yl);
-  printf("y>x\n");}
+    {s=   ((((xh-r)+yh)+yl)+xl); }
+  else {s=((((yh-r)+xh)+xl)+yl);}
   *zh = r+s;
   *zl = r - (*zh) + s;
 }
