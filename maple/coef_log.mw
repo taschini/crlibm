@@ -1,76 +1,100 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout alignment="left" bullet="none" name="Warning"/><Layout alignment="left" bullet="none" name="Heading 2" spaceabove="8.0" spacebelow="2.0"/><Layout alignment="centred" bullet="none" linespacing="0.5" name="Maple Output"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="_pstyle47" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle42" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle41" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle82" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle81" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle80" rightmargin="0.0"/><Layout alignment="left" bullet="none" name="Error"/><Layout leftmargin="0.0" name="Normal" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle39" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle36" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle35" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle33" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle32" rightmargin="0.0"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle16" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle14" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle13" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle10" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[0,0,255]" name="Warning" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="ParagraphStyle8" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[0,0,255]" name="Line Printed Output" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 2" opaque="false" size="16"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_pstyle42" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle80" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[255,0,255]" name="Error" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" family="Lucida Bright" foreground="[0,0,255]" name="2D Output" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle39" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="Page Number" readonly="false" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_cstyle494" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle492" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_pstyle33" readonly="false"/></Styles><Page-Numbers enabled="false" first-number="1" first-numbered-page="1" horizontal-location="right" style="Page Number" vertical-location="bottom"/><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">restart:
+<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout alignment="left" bullet="none" name="Heading 2" spaceabove="8.0" spacebelow="2.0"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="_pstyle47" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle42" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle41" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle82" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle81" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle80" rightmargin="0.0"/><Layout leftmargin="0.0" name="Normal" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle36" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle35" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle33" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle32" rightmargin="0.0"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle16" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle14" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle13" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle10" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="ParagraphStyle8" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 2" opaque="false" size="16"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_pstyle42" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle80" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="Page Number" readonly="false" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_cstyle494" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle492" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_pstyle33" readonly="false"/></Styles><Page-Numbers enabled="false" first-number="1" first-numbered-page="1" horizontal-location="right" style="Page Number" vertical-location="bottom"/><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">restart:
 Digits := 100:</Text-field></Input><Input><Text-field layout="_pstyle33" prompt="&gt; " style="_pstyle33">with (numapprox):<Font italic="false" size="12" underline="false">with(orthopoly):</Font></Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "Common_maple_procedures.m";
 mkdir("TEMPLOG");
-deg:=12;</Text-field></Input><Output><Text-field layout="Error" style="Error">Error, (in mkdir) directory exists and is not empty
-</Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSRkZWdHNiIiIzc=</Equation></Text-field></Output></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">First, quick phase</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" style="Text">Approach for the first function:</Text-field><Text-field layout="Normal" style="Text">log(x) = E*log(2) + P(R)
+deg:=12;</Text-field></Input></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">First, quick phase</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" style="Text">Approach for the first function:</Text-field><Text-field layout="Normal" style="Text">log(x) = E*log(2) + P(R)
 where P(R) is defined over such an interval [11/16; 12/16] ... [21/16; 23/16]
 At all, there is 8 intervals, corresponding to 8 polynomials.</Text-field></Input><Input><Text-field layout="Normal" style="Text"/></Input></Group><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Interval parameters</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">Xmax:=[2**(-5), 2**(-5), 2**(-5), 2**(-5), 2**(-4), 2**(-4), 2**(-4), 2**(-4)]:
 Ilist:=[[11/16,12/16],[12/16,13/16],[13/16,14/16],[14/16,15/16],[15/16,17/16],[17/16,19/16],[19/16,21/16],[21/16,23/16]]:
 midI:=[23/32,25/32,27/32,29/32,1,18/16,20/16,22/16]:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save Xmax, Ilist, midI, "TEMPLOG/parameterlog.m";</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Computation of the polynomials</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">This is the function we use on all the intervals except i=5 (the one around 1)</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_log_2 := proc(i,deg) 
- local p, e, pt, rel_approx_error, abs_rounding_error, minptr, maxptr, maxpt, delta, miny, deltaZero;
+ local p, e, pt, rel_approx_error, abs_rounding_error, minptr, maxptr, maxpt, delta, miny, deltaZero, <Font opaque="false">deltaEgt24 </Font>;
+
   pt, rel_approx_error,  maxpt := poly_trunc_f2d_2( log(x+midI[i]) ,  deg, Xmax[i]):
-  abs_rounding_error, minptr, maxptr :=compute_abs_rounding_error(pt, Xmax[i], 2):
+
+  abs_rounding_error, minptr, maxptr := compute_abs_rounding_error(pt, Xmax[i], 2):
+
+  printf("Interval %d  : minp,maxp=(%3.2f,%3.2f)  rel. approx err. = %3.2f bits, abs_round. err. = %3.2f",
+    i, minptr, maxptr,  <Font opaque="false">-log2(rel_approx_error), -log2(abs_rounding_error) ):</Font>
+
   # delta for E&lt;&gt;0
   miny:=nearest(log(2)) - maxptr;
-  delta := (rel_approx_error*maxptr + abs_rounding_error)/miny * (1+2^(-100)):
-  #delta for E=0
+  delta := (rel_approx_error*maxptr + abs_rounding_error)/miny * (1+2^(-100)):<Font opaque="false">
+
+  #delta for E&gt;=24
+  miny:=nearest(24*log(2)) - maxptr;
+  deltaEgt24 := (1 + (rel_approx_error*maxptr + abs_rounding_error)/miny) * (1+2^(-100)) - 1:</Font>
+
+  #delta for E=0<Font opaque="false">
+  abs_rounding_error, minptr, maxptr := compute_abs_rounding_error_firstmult(pt, Xmax[i], 2):</Font>
   deltaZero := (rel_approx_error*maxptr + abs_rounding_error)/minptr: 
-  printf("Interval %d  : maxp=(%3.2f,%3.2f),  rel. approx err. = %3.2f bits, abs_round. err. = %3.2f    delta=%3.2f, deltaZero=%3.2f<Font opaque="false">\n</Font>",
-	i, maxpt, maxptr,  -log2(rel_approx_error), -log2(abs_rounding_error), -log2(delta), -log2(deltaZero));
-  [pt, max(maxpt,maxptr), delta, deltaZero]
-end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Special case around one</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=5:
+
+  printf("  delta = %3.2f<Font opaque="false">,   deltaZero = %3.2f,   deltaEgt24 = %3.2f</Font>\n",
+        -log2(delta),<Font opaque="false"> -log2(deltaZero), -log2(deltaEgt24) </Font>);
+
+  [pt, max(maxpt,maxptr), delta, deltaZero<Font opaque="false">, deltaEgt24</Font>]
+end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">evalf(24*log(2));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Special case around one</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=5:
 xmax5:=Xmax[i]:
 pe5:=minimax(  (log(1+x)/x),  x=-xmax5..xmax5,  [deg-1,0], 1 ,  'err'):
 pe5:=pe5*x:
 pt5 := poly_exact2( pe5, 2):
 rept5 := infnorm( 1-pt5/log(1+x), x=-xmax5..xmax5):
 maxpt5:= infnorm( pt5, x=-xmax5..xmax5):
-log2(rept5);
+
 # the relative error in the case when E&lt;&gt;0
 abs_rounding_error5, minptr5, maxptr5 :=compute_abs_rounding_error(pt5, xmax5, 2):
 min_y5 := nearest(log(2)) - maxptr5:
-delta5 := (rept5*maxptr5 + abs_rounding_error5)/min_y5 * (1+2^(-100)):
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"># the relative error in the case when E=0
-deltaZero5 := (1+rept5)  * (1 + compute_rel_rounding_error(pt5,xmax5, 2)) - 1 ;
-printf("Interval %d  : maxp=(%3.2f,%3.2f),  rel. approx err. = %3.2f bits, abs_round. err. = %3.2f    delta=%3.2f, deltaZero=%3.2f\n",
-	i, maxpt5, maxptr5,  -log2(rept5), -log2(abs_rounding_error5), -log2(delta5), -log2(deltaZero5));
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"><Font opaque="false">evalf(compute_rn_constant(deltaZero5));</Font></Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">The warning above is OK, because the Add22 in question adds zero, which is an exact operation even with the unconditional version.</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">PolyList:=[ 
+delta5 := (rept5*maxptr5 + abs_rounding_error5)/min_y5 * (1+2^(-100)): 
+
+printf("Interval %d  : minp,maxp=(%3.2f,%3.2f)  rel. approx err. = %3.2f bits, abs_round. err. = %3.2f",
+    i, minptr5, maxptr5,  -log2(rept5), -log2(abs_rounding_error5) ):
+</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">  #delta for E&gt;=24
+  miny5:=nearest(24*log(2)) - maxptr5;
+  deltaEgt245 := (1 + (rept5*maxptr5 + abs_rounding_error5)/miny5) * (1+2^(-100)) - 1;<Font opaque="false">
+
+# the relative error in the case when E=0
+deltaZero5 := (1+rept5)  * (1 + compute_rel_rounding_error_firstmult(pt5,xmax5, 2)) - 1 ;
+printf("  delta = %3.2f,   deltaZero = %3.2f,   deltaEgt24 = %3.2f\n",
+        -log2(delta5), -log2(deltaZero5), -log2(deltaEgt245) );</Font>
+</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">evalf(compute_rn_constant(deltaZero5));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">The warning above is OK, because the Add22 in question adds zero, which is an exact operation even with the unconditional version.</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">PolyList:=[ 
   poly_log_2(1,deg),
   poly_log_2(2,deg),
   poly_log_2(3,deg),
   poly_log_2(4,deg),
-  [pt5,max(maxptr5,maxpt5),delta5,deltaZero5],
+  [pt5,maxptr5,delta5,deltaZero5,deltaEgt245],
   poly_log_2(6,deg),
   poly_log_2(7,deg),
   poly_log_2(8,deg)
-]:  </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save PolyList, "TEMPLOG/PolyList.m";</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2">Computation of constants for RN test</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">We have in PolyList delta the total error for polynomial approximation, build tabrndcst[] the table of "e" needed for round to nearest</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/PolyList.m"; read "TEMPLOG/parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"><Font opaque="false">tabrndcst:=[]:
-tabrndcstEZero:=[]:
-tabdelta:=[]:
-tabdeltaEZero:=[]:</Font>
+]:  </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save PolyList, "TEMPLOG/PolyList.m";</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2">Computation of constants for RN test</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">We have in PolyList delta the total error for polynomial approximation, build tabrndcst[] the table of "e" needed for round to nearest</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/PolyList.m"; read "TEMPLOG/parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"><Font opaque="false">maxdelta:=0:
+maxdeltaEZero:=0:
+maxdeltaEgt24:=0:
+
 for i from 1 to 8 do
   delta:=PolyList[i][3];
-  delta<Font opaque="false">EZero</Font>:=PolyList[i][4]:
- <Font opaque="false"> tabdelta:=[op(tabdelta), delta];
-  tabdeltaEZero:=[op(tabdeltaEZero), deltaEZero];
-  tabrndcst:=[op(tabrndcst), evalf(compute_rn_constant(delta))]:
-  tabrndcstEZero:=[op(tabrndcstEZero), evalf(compute_rn_constant(deltaEZero))]:</Font>
+  deltaEZero:=PolyList[i][4]:
+  deltaEgt24:=PolyList[i][5]:
+  if delta &gt; maxdelta then maxdelta := delta : fi :
+  if deltaEZero &gt; maxdeltaEZero then maxdeltaEZero := deltaEZero : fi :
+  if deltaEgt24 &gt; maxdeltaEgt24 then maxdeltaEgt24 := deltaEgt24 : fi :
 od:
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Fast path</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"><Font opaque="false">max_abs_err:=0:</Font>
+rncst := evalf(compute_rn_constant(maxdelta));
+rncstEZero := evalf(compute_rn_constant(maxdeltaEZero));
+rncstEgt24 := evalf(compute_rn_constant(maxdeltaEgt24));
+</Font>
+</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Compute the total rel error in Fast path</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">max_abs_err:=0:
 for i from 1 to 8 do
-  xmax:=<Font opaque="false">Xmax[i];</Font>
-  p:=poly_exact(PolyList[i][1]):
-  pmax:=PolyList[i][2]:<Font opaque="false">
-  rel_appr_err:=infnorm(1-p/log(x+midI[i]),x=-xmax..xmax):
- </Font> rel_rnd_err := compute_rel_rounding_error(p,xmax, 0);
-  rel_err := (1+rel_appr_err) * (1+rel_rnd_err) * (1 + 2^(-100) ) - 1:
-  abs_err := rel_err*pmax;
+  xmax:=Xmax[i];
+  p:=poly_exact2(PolyList[i][1],1):
+  pmax:=PolyList[i][2]:
+  abs_appr_err:=infnorm(p-log(x+midI[i]),x=-xmax..xmax):
+  abs_rnd_err,miny,maxy := compute_abs_rounding_error(p,xmax, 1);
+  abs_err := abs_appr_err + abs_rnd_err + 2^(-90);
   if abs_err &gt; max_abs_err then max_abs_err := abs_err: fi:
-  printf("%3.4f (appr %3.4f, rnd %3.4f)<Font opaque="false">, abs %3.4f\ n</Font>", log2(rel_err), log2(rel_appr_err), log2(rel_rnd_err) , log2(abs_err));
-od:</Text-field></Input><Output><Text-field layout="Normal" style="Line Printed Output">-51.9951 (appr -54.4050, rnd -52.2959), abs -53.4113n</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">-51.7215 (appr -53.6777, rnd -52.1514), abs -53.5189n</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">-51.7851 (appr -55.5727, rnd -51.8935), abs -54.0529n</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">-51.0312 (appr -53.5586, rnd -51.3060), abs -53.9360n</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">-51.8571 (appr -61.4039, rnd -51.8590), abs -55.8108n</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">-50.5612 (appr -53.6287, rnd -50.7444), abs -53.1019n</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">-51.6286 (appr -54.3498, rnd -51.8658), abs -53.5072n</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">-51.6073 (appr -53.0879, rnd -52.2475), abs -53.0697n</Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">const_fastpath:=proc(k)<Font opaque="false">
-   evalf(compute_rn_constant(2**(-53)/(k-0.4)));</Font>
-end proc:
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Also tested with one iteration less, but it is too much worse</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">
+  printf(" (appr %3.4f, rnd %3.4f), total %3.4f", log2(abs_appr_err), log2(abs_rnd_err),  log2(abs_err));
+od:<Font opaque="false">
+log2(max_abs_err);</Font></Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Try doubling and halving minfastpath. This value is optimal for the Pentium IV</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">minfastpath:=128+0.5;<Font opaque="false">
+deltafastpath:=max_abs_err/(minfastpath-0.4);
+log2(deltafastpath);</Font>
+rncstfastpath := evalf(compute_rn_constant(deltafastpath));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Also tested with one iteration less, but it is too much worse</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">
 for i from 1 to 8 do
   xmax:=Xmax[i];
   p:=poly_exact(PolyList[i][1]):
@@ -79,27 +103,52 @@ for i from 1 to 8 do
   rel_rnd_err := compute_rel_rounding_error(p,xmax, 0);
   rel_err := (1+rel_appr_err) * (1+rel_rnd_err) * (1 + 2^(-100) ) - 1:
   printf("%3.4f (appr %3.4f, rnd %3.4f)\n", log2(rel_err), log2(rel_appr_err), log2(rel_rnd_err) );
-od:</Text-field></Input><Output><Text-field layout="Warning" style="Warning">Warning,  computation interrupted</Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log2(<Font opaque="false">max_abs_err);</Font>
-evalf(1+ 2/((2**9)));
-const_fastpath(512.5);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIV9xIypSJzREYklKPGhWPyQpZUhqX3Mrb1orOEMkRyJSSk9aXms8WztMQCMpKWZiVCZvJz1jI3lscEkmISMpKg==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIl9xKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrXWkhUisiISMqKg==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIl9xKysrKysrKysrKysrKysrKysrKysrKysrK11pOmdULHgpNDI5SUwnMyRmd0BrVCs4OFIrIiEjKio=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=1;  p:=poly_exact(PolyList[i][1]);
-  p:=p - (coeff(p,x,12)*x^12) - <Font opaque="false">(coeff(p,x,11)*x^11) </Font>;</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSJpRzYiIiIi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSJwRzYiLDwjITBuaScqbyJRT3UiMVtfbzgpKnpeQSIiIkkieEdGJSMiMUhyZ04lcGtjIiIxQ0UlbyEqKiplNyIqJEYrIiIjIyExLHYpZiVIdTwoKSIxIyo0dWEjKj4yISoqJEYrIiIkIyIxeF1sVUMtJzMpRjMqJEYrIiIlIyExMlMiZWopZVAlKUYzKiRGKyIiJiMiMTZSbCw6cSZwJSIxJ1xxdGkqZi5YKiRGKyIiJyMhMGBkdkMjby1NIjBjMXJ3XFoiRyokRisiIigjIjFCXEotOWQjXCdGQCokRisiIikjITFoJXlULStTIXpGQCokRisiIiojIjEkKXkkRz1bdSlbRikqJEYrIiM1IyExJlE+QnlhKmZJRi4qJEYrIiM2IyIxangnKSopNDMieShGKSokRisiIzcjITFeb0hbWjUkWyMiMDc4VWAqXEhj</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSJwRzYiLDgjITBuaScqbyJRT3UiMVtfbzgpKnpeQSIiIkkieEdGJSMiMUhyZ04lcGtjIiIxQ0UlbyEqKiplNyIqJEYrIiIjIyExLHYpZiVIdTwoKSIxIyo0dWEjKj4yISoqJEYrIiIkIyIxeF1sVUMtJzMpRjMqJEYrIiIlIyExMlMiZWopZVAlKUYzKiRGKyIiJiMiMTZSbCw6cSZwJSIxJ1xxdGkqZi5YKiRGKyIiJyMhMGBkdkMjby1NIjBjMXJ3XFoiRyokRisiIigjIjFCXEotOWQjXCdGQCokRisiIikjITFoJXlULStTIXpGQCokRisiIiojIjEkKXkkRz1bdSlbRikqJEYrIiM1IyExJlE+QnlhKmZJRi4=</Equation></Text-field></Output></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Output</Text-field></Title><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16"/></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">filename:="TEMPLOG/log_fast.h":
+od:</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Output</Text-field></Title><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16"/></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">filename:="TEMPLOG/log_fast.h":
 fd:=fopen(filename, WRITE, TEXT):
 
-fprintf(fd, "#include \"crlibm.h\"\n#include \"crlibm_private.h\"\n");
+fprintf(fd, "#include \"crlibm.h\"\n#include \"crlibm_private.h\"\n"):
 
-fprintf(fd, "\n/*File generated by maple/coef_log.mw*/\n");
+fprintf(fd, "\n/*File generated by maple/coef_log.mw*/\n"):
 
-fprintf(fd, "\n\#define SQRT_2 1.4142135623730950489e0 \n\n");
-fprintf(fd, "\n#ifdef WORDS_BIGENDIAN\n");
-fprintf(fd, "\db_number const ln2hi = {{0x3FE62E42, 0xFEFA39EF}};\n");
+fprintf(fd, "\n\#define SQRT_2 1.4142135623730950489e0 \n\n"):
+fprintf(fd, "\n#ifdef WORDS_BIGENDIAN\n"):
+fprintf(fd, "\db_number const ln2hi = {{0x3FE62E42, 0xFEFA39EF}};\n"):
 fprintf(fd, "db_number const ln2lo = {{0x3C7ABC9E, 0x3B39803F}};\n"):
 fprintf(fd, "db_number const two52 = {{0x43300000, 0x00000000}};\n"):
-fprintf(fd, "#else\ndb_number const ln2hi = {{0xFEFA39EF, 0x3FE62E42}};\n");
+fprintf(fd, "#else\ndb_number const ln2hi = {{0xFEFA39EF, 0x3FE62E42}};\n"):
 fprintf(fd, "db_number const ln2lo = {{0x3B39803F, 0x3C7ABC9E}};\n"):
 fprintf(fd, "db_number const two52 = {{0x00000000, 0x43300000}};\n"):
 fprintf(fd, "#endif\n\n"):
 
 fprintf(fd, "#define DEGREE %d\n\n", deg):
+
+fprintf(fd,"#define MIN_FASTPATH %4.3f \n",minfastpath ):
+<Font opaque="false">
+fprintf(fd,"/* Constants for rounding  */\n"):
+
+fprintf(fd,"double const delta[4] =\n{\n"):
+fprintf(fd,"  /* Case E=0  */\n"):
+fprintf(fd,"  %1.50e, \n",maxdeltaEZero):
+fprintf(fd,"  /* Middle case   */\n"):
+fprintf(fd,"  %1.50e, \n",maxdelta):
+fprintf(fd,"  /* Case E&gt;24  */\n"):
+fprintf(fd,"  %1.50e, \n",maxdeltaEgt24):
+fprintf(fd,"  /* And for the fast path  */\n"):
+fprintf(fd,"  %1.50e \n",deltafastpath):
+fprintf(fd,"\n};\n\n"):
+
+fprintf(fd,"double const rncst[4] =\n{\n"):
+fprintf(fd,"  /* Case E=0  */\n"):
+fprintf(fd,"  %1.50e, \n",rncstEZero):
+fprintf(fd,"  /* Middle case   */\n"):
+fprintf(fd,"  %1.50e, \n",rncst):
+fprintf(fd,"  /* Case E&gt;24  */\n"):
+fprintf(fd,"  %1.50e, \n",rncstEgt24):
+fprintf(fd,"  /* And for the fast path  */\n"):
+fprintf(fd,"  %1.50e \n",rncstfastpath):
+fprintf(fd,"};\n\n"):</Font>
+
+
 # THE POLYNOMIALS
 
 npol:=8: 
@@ -114,7 +163,7 @@ for isbig from 1 to 0 by -1 do
 
   # Write middle table
 
-  fprintf(fd, "db_number const middle[%d] =\n{\n",npol);
+  fprintf(fd, "db_number const middle[%d] =\n{\n",npol):
   for i from 1 to 7 do
     printendian(fd,midI[i],isbig);
     fprintf(fd," ,\n"):
@@ -126,7 +175,7 @@ for isbig from 1 to 0 by -1 do
 
   fprintf(fd,"db_number const poly_log_fast_h[%d][%d] =\n{\n", npol, deg+1):
   for k from 1 to 8 do<Font italic="false" size="12" underline="false">
-    fprintf(fd," /* polynomial %d */\n",k);</Font>
+    fprintf(fd," /* polynomial %d */\n",k):</Font>
     fprintf(fd,"{\n");
     P:=PolyList[k][1]:
     for j from 0 to deg do<Font italic="false" size="12" underline="false">
@@ -144,7 +193,7 @@ for isbig from 1 to 0 by -1 do
 
   fprintf(fd,"db_number const poly_log_fast_l[%d][%d] =\n{\n",8,n):
   for k from 1 to 8 do
-    fprintf(fd," /* polynomial %d */\n",k);
+    fprintf(fd," /* polynomial %d */\n",k):
     fprintf(fd,"{\n");
     P:=PolyList[k][1]:
     for j from 0 to n-1 do
@@ -161,41 +210,9 @@ od:
 fprintf(fd,"#endif\n\n\n"):
 
 
- 
-fprintf(fd,"/* Constants for rounding  */\n"):
-<Font opaque="false">
-fprintf(fd,"double const delta[17] =\n{\n"):
-fprintf(fd,"/* First the constants for the case E&lt;&gt;0  */\n"):
-for k from 1 to 8 do
-   fprintf(fd,"%1.50e, \n",tabdelta[k]):
-od:
-
-fprintf(fd,"/* Then the constants for the case E=0  */\n"):
-for k from 1 to 8 do
-   fprintf(fd,"%1.50e, \n",tabdeltaEZero[k]):
-od:
-fprintf(fd,"/* Then the constants for the fast path  */\n"):
-fprintf(fd,"DRCST_FASTPATH\n};\n\n"):</Font>
-
-
-fprintf(fd,"/* Constants for rounding to the nearest */\n"):
-fprintf(fd,"double const rncst[17] =\n{\n"):
-fprintf(fd,"/* First the constants for the case E&lt;&gt;0  */\n"):
-for k from 1 to 8 do
-  fprintf(fd,"%1.50f, \n",tabrndcst[k]):
-od:
-
-fprintf(fd,"/* Then the constants for the case E=0  */\n"):
-for k from 1 to 8 do
-  fprintf(fd,"%1.50f, \n",tabrndcst<Font opaque="false">EZero</Font>[k]):
-od:
-fprintf(fd,"/* Then the constants for the fast path  */\n"):
-fprintf(fd,"RNCST_FASTPATH\n};\n\n"):
-
-
 
 fclose(fd):
-</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI1s=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI1Q=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI1U=</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI0M=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI18=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI2U=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2"><Font encoding="ISO8859-1" executable="false" foreground="[0,0,0]" italic="false" underline="false">DEBUG, CALCUL du polyn\364me, coeff apres coeff</Font></Text-field></Title><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">read "parameterlog.m";
+</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false" foreground="[0,0,0]" italic="false" underline="false">Debugging help</Font></Text-field></Title><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">read "parameterlog.m";
 </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "procedures.m";
 read "Polylog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text">Valeurs du debuggueur</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">debug1:=hexa2ieee(["3ff1078f","1da3ee1b"]):
 debug2:=hexa2ieee(["3ff11adb","35a43279"]):
@@ -282,70 +299,4 @@ for i from 0 to nb_turn do
    table_ti := table_ti * x + log(start_nb):
    table_inv_wi := table_inv_wi *x + 1./ start_nb:
    start_nb := start_nb + 2.^(N):
-od:</Text-field></Input></Group></Section><Text-field/><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 1" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 1">Tests and scratch</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">size(PolyList);
-read "TEMPLOG/errroundinglog0.m"; errrounding0:=errrounding;read "TEMPLOG/errroundinglog0.m";errrounding;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">P:=P1:
-c0:= coeff(P,x,0):
-c0hi:=evalf(IEEEdouble(c0)[2]*2**(IEEEdouble(c0)[1]));
-c0hie:=IEEEdouble(c0hi):
-c0lo:=evalf(IEEEdouble(c0-c0hi)[2]*2**(IEEEdouble(c0-c0hi)[1]));
-c0lie:=IEEEdouble(c0lo):
-
-
-c1:= coeff(P,x,1):
-c1hi:=evalf(IEEEdouble(c1)[2]*2**(IEEEdouble(c1)[1]));
-c1hie:=IEEEdouble(c0hi);
-c1lo:=evalf(IEEEdouble(c1-c1hi)[2]*2**(IEEEdouble(c1-c1hi)[1]));
-c1lie:=IEEEdouble(c1lo);
-
-c:= coeff(P,x,2);
-c2:=IEEEdouble(c);
-
-c:= coeff(P,x,3);
-c3:=IEEEdouble(c);
-
-c:= coeff(P,x,4);
-c4:=IEEEdouble(c);
-
-c:= coeff(P,x,5);
-c5:=IEEEdouble(c);
-
-c:= coeff(P,x,6);
-c6:=IEEEdouble(c);
-
-c:= coeff(P,x,7);
-c7:=IEEEdouble(c);
-
-c:= coeff(P,x,8);
-c8:=IEEEdouble(c);
-
-c:= coeff(P,x,9);
-c9:=IEEEdouble(c);
-
-c:= coeff(P,x,10);
-c10:=IEEEdouble(c);
-
-c:= coeff(P,x,11);
-c11:=IEEEdouble(c);
-
-c:= coeff(P,x,12);
-c12:=IEEEdouble(c);
-
-c:= coeff(P,x,13);
-c13:=IEEEdouble(c);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">evalf(2**(-4));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">for i from 1 to 8 do
- P:=op(i, Plist):
- print(evalf(coeff(P,x,0))):
- print(evalf(coeff(P,x,1)));
-od: </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="_pstyle39" style="_pstyle39"/><Text-field layout="_pstyle35" style="Text">Ecrit dans un fichier en "latex" le resultat de la procedure IEEEdouble</Text-field><Text-field layout="_pstyle39" style="_pstyle39"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">affiche:=proc(cieee,ffd)
-local a,bup,bdown,c:
- 
-  a:=convert(cieee[1],string);
-  bup:=convert(op(1,cieee[2]),string):
-  if (op(1,cieee[2]) = cieee[2]) then
-    c:=convert(cieee[3], string):
-    fprintf(ffd,"$ %s, %s, %s$ ys \n",a,bup,c);
-  else
-    bdown:=convert(op(2,cieee[2]),string);
-    c:=convert(cieee[3], string):
-    fprintf(ffd,"$ %s, \\frac{%s}{%s}, %s$ ys \n",a,bup,bdown,c);
-  fi;
-end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
+od:</Text-field></Input></Group></Section><Text-field/><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 1" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 1">Tests and scratch</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>
