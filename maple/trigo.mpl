@@ -57,6 +57,9 @@ rnconstantSinCase3 := evalf(compute_rn_constant(maxepstotalSinCase3)):
 maxepstotalCosCase3:=2**(-64);
 rnconstantCosCase3 := evalf(compute_rn_constant(maxepstotalCosCase3)):
 
+maxepstotalTanCase3:=2**(-64);
+rnconstantTanCase3 := evalf(compute_rn_constant(maxepstotalTanCase3));
+
 
 #The following is not finished
 
@@ -333,8 +336,7 @@ rnconstantCosCase2 := evalf(compute_rn_constant(maxepstotalCosCase2));
 #
 xmaxTanCase2   := 2**(-3);
 degreeTanCase2 := 16;
-rnconstantTanCase21 := evalf(compute_rn_constant(2**(-62)));
-rnconstantTanCase22 := evalf(compute_rn_constant(2**(-59)));
+
 
 # Compute the Taylor series
 with(orthopoly):
@@ -347,6 +349,15 @@ polyTanCase2 :=  poly_exact2(expand(x + x^3 * subs(x=x^2, Poly_cheb)), 4);
 approx_errorTanCase2:=numapprox[infnorm](1 - polyTanCase2 / tan(x), x=0..xmaxTanCase2):
 log2(approx_errorTanCase2);
 
+
+#TODO
+###TO REMOVE ONCE THE PREVIOUS IS FINISHED
+maxepstotalTanCase21:=2**(-61);
+maxepstotalTanCase22:=2**(-59);
+
+
+rnconstantTanCase21 := evalf(compute_rn_constant(maxepstotalTanCase21));
+rnconstantTanCase22 := evalf(compute_rn_constant(maxepstotalTanCase22));
 
 
 
@@ -371,6 +382,12 @@ errlist:=errlist_quickphase_horner(degree(polyTs2),0,0, epsy2 , 0):
 errlist:=errlist_quickphase_horner(degree(polyTc2),0,0, epsy2 , 0):
 (eps_rounding_Tc, delta_rounding_Tc, minTc, maxTc):=
               compute_horner_rounding_error(polyTc2,y,y2maxCase3, errlist, true):
+
+# Computed by Guillaume Melquiond's Gappa:
+# Majorant de l'erreur absolue entre [(1 + tc) * ca - (1 + ts) * sa * yy]
+# et la valeur calculée :
+
+delta_dosin := 4.4432e-21;
 
 
 
@@ -482,20 +499,25 @@ fprintf(fd,  "%s\n",  outputHighPart("XMAX_RETURN_X_FOR_TAN", xmax_return_x_for_
 fprintf(fd,  "%s\n",  outputHighPart("XMAX_TAN_CASE2        ", xmaxTanCase2) ):
 
 fprintf(fd, "\n"):
+fprintf(fd, "#define ONE_ROUNDED_DOWN  %1.25e \n", one_rounded_down):
+fprintf(fd, "\n"):
 
 fprintf(fd, "#define EPS_SIN_CASE2     %1.25e \n", maxepstotalSinCase2):
 fprintf(fd, "#define RN_CST_SIN_CASE2  %1.25f \n", rnconstantSinCase2):
 fprintf(fd, "#define EPS_SIN_CASE3     %1.25e \n", maxepstotalSinCase3):
 fprintf(fd, "#define RN_CST_SIN_CASE3  %1.25f \n", rnconstantSinCase3):
-
+fprintf(fd, "\n"):
 fprintf(fd, "#define EPS_COS_CASE2     %1.25e \n", maxepstotalCosCase2):
 fprintf(fd, "#define RN_CST_COS_CASE2  %1.25f \n", rnconstantCosCase2):
 fprintf(fd, "#define EPS_COS_CASE3     %1.25e \n", maxepstotalCosCase3):
 fprintf(fd, "#define RN_CST_COS_CASE3  %1.25f \n", rnconstantCosCase3):
-fprintf(fd, "#define ONE_ROUNDED_DOWN  %1.25e \n", one_rounded_down):
-
+fprintf(fd, "\n"):
+fprintf(fd, "#define EPS_TAN_CASE21    %1.25e \n", maxepstotalTanCase21):
 fprintf(fd, "#define RN_CST_TAN_CASE21 %1.25e \n", rnconstantTanCase21):
+fprintf(fd, "#define EPS_TAN_CASE22    %1.25e \n", maxepstotalTanCase22):
 fprintf(fd, "#define RN_CST_TAN_CASE22 %1.25e \n", rnconstantTanCase22):
+fprintf(fd, "#define EPS_TAN_CASE3     %1.25e \n", maxepstotalTanCase3):
+fprintf(fd, "#define RN_CST_TAN_CASE3  %1.25f \n", rnconstantTanCase3):
 
 fprintf(fd, "\n"):
 

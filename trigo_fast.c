@@ -272,29 +272,10 @@ int rem_pio256_scs(scs_ptr result, const scs_ptr x){
 
 
 
-#if 0
 #define scs_range_reduction()                                   \
 do { 								\
   scs_t X, Y,Yh,Yl;						\
-      scs_set_d(X, x*128.0); 					\
-      k= rem_pio2_scs(Y, X);					\
-      index=(k&127)<<2;                                         \
-      quadrant = (k>>7)&3;                                      \
-      /* TODO an optimized procedure for the following */	\
-      scs_get_d(&yh, Y);					\
-      scs_set_d(Yh, yh);					\
-      scs_sub(Yl, Y,Yh);					\
-      scs_get_d(&yl, Yl);					\
-      yh = yh * (1./128.) ;					\
-      yl = yl * (1./128.) ;					\
-}while(0)
-
-#else
-
-#define scs_range_reduction()                                   \
-do { 								\
-  scs_t X, Y,Yh,Yl;						\
-      scs_set_d(X, x); 					\
+      scs_set_d(X, x); 			  		        \
       k= rem_pio256_scs(Y, X);					\
       index=(k&127)<<2;                                         \
       quadrant = (k>>7)&3;                                      \
@@ -304,7 +285,6 @@ do { 								\
       scs_sub(Yl, Y,Yh);					\
       scs_get_d(&yl, Yl);					\
 }while(0)
-#endif
 
 #define LOAD_TABLE_SINCOS()                                 \
 do  {                                                       \
@@ -502,7 +482,7 @@ static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  
  *************************************************************/ 
 
 double sin_rn(double x){ 
-  double xx, ts,sh,sl,rncst; 
+  double ts,sh,sl,rncst; 
   int  absxhi, quadrant;
   db_number x_split;
   
@@ -517,11 +497,9 @@ double sin_rn(double x){
     if (absxhi <XMAX_RETURN_X_FOR_SIN)
       return x;
     
-    /* CASE 2 : x < ???
+    /* CASE 2 :XMAX_RETURN_X_FOR_SIN x < XMAX_SIN_CASE2
        Fast polynomial evaluation */
-    xx = x*x;
-    ts = xx * (s3.d + xx*(s5.d + xx*s7.d ));
-    Add12(sh,sl, x, x*ts);
+    do_sin_k_zero(&sh, &sl, x,0);
     if(sh == (sh + (sl * RN_CST_SIN_CASE2)))	
       return sh;
     else
@@ -1289,9 +1267,8 @@ static void compute_tan_with_argred(double* pth, double* ptl,  double x, int abs
  *************************************************************
  *************************************************************/ 
 double tan_rn(double x){  
-  double reshi, reslo, sh, sl, ch, cl, kd, yh, yl;
-  double P7, t, th, tl, xx;
-  int k, quadrant;
+  double sh, sl, ch, cl;
+  double p7, t, th, tl, xx;
   int absxhi;
   db_number x_split;
 
@@ -1307,16 +1284,17 @@ double tan_rn(double x){
     if (absxhi < XMAX_RETURN_X_FOR_TAN) 
       return x;
 
+    //    printf(".");    
     /* Fast Taylor series */
     xx = x*x;
-    P7 = t7.d + xx*(t9.d + xx*(t11.d + xx*(t13.d + xx*t15.d)));
-    t  = xx*(t3l.d +xx*(t5.d + xx*P7));
+    p7 = t7.d + xx*(t9.d + xx*(t11.d + xx*(t13.d + xx*t15.d)));
+    t  = xx*(t3l.d +xx*(t5.d + xx*p7));
 
     sh = x*(xx*t3h.d + t);
     Add12(th, tl, x, sh);   
     if (th == (th + (tl * RN_CST_TAN_CASE22)))
       return th;
-
+    //printf("X");
     /* Still relatively fast, but more accurate */
     Mul12(&sh, &sl, xx, t3h.d);
     Add12(ch, cl, sh, (t+sl));
@@ -1333,108 +1311,11 @@ double tan_rn(double x){
   compute_tan_with_argred(&th,&tl,x,absxhi);
   /* ROUNDING TO NEAREST */
  
-  if(th == (th + (tl * 1.0004))){
+  if(th == (th + (tl * RN_CST_TAN_CASE3))){
     return th;
   }else{ 
     return scs_tan_rn(x); 
   } 
-
-
-#if 0
-  /* Otherwise : Range reduction then standard evaluation */
-  k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
-
-  quadrant = (k>>7)&3;	/* Pi is divided in 4 quarters */	
-  kd = (double) k;
-  k=(k&127)<<2;
-
-  switch (quadrant){
-   case(0):
-    #if DEBUG
-      printf("Case 0\n");
-    #endif
-   if(k<=(64<<2)) {  /* sah <= cah */
-    sah=sincosTable[k].d; /* sin(a), high part */
-    sal=sincosTable[k+1].d; /* sin(a), low part */
-    cah=sincosTable[k+2].d; /* cos(a), high part */
-    cal=sincosTable[k+3].d; /* cos(a), low part */
-  } else { /* cah <= sah */
-    int k1=(128<<2) - k;
-    cah=sincosTable[k1].d; 
-    cal=sincosTable[k1+1].d;
-    sah=sincosTable[k1+2].d;
-    sal=sincosTable[k1+3].d;
-  }     
-     break;
-   case(1):
-    #if DEBUG
-      printf("Case 1\n");
-    #endif
-     if(k<=(64<<2)) {  /* sah <= cah */
-    cah=-sincosTable[k].d; /* sin(a), high part */
-    cal=-sincosTable[k+1].d; /* sin(a), low part */
-    sah=sincosTable[k+2].d; /* cos(a), high part */
-    sal=sincosTable[k+3].d; /* cos(a), low part */
-  } else { /* cah <= sah */
-    int k1=(128<<2) - k;
-    sah=sincosTable[k1].d; 
-    sal=sincosTable[k1+1].d;
-    cah=-sincosTable[k1+2].d;
-    cal=-sincosTable[k1+3].d;
-  }    
-     break;
-   case(2):
-      if(k<=(64<<2)) {  /* sah <= cah */
-    sah=-sincosTable[k].d; /* sin(a), high part */
-    sal=-sincosTable[k+1].d; /* sin(a), low part */
-    cah=-sincosTable[k+2].d; /* cos(a), high part */
-    cal=-sincosTable[k+3].d; /* cos(a), low part */
-  } else { /* cah <= sah */
-    int k1=(128<<2) - k;
-    cah=-sincosTable[k1].d; 
-    cal=-sincosTable[k1+1].d;
-    sah=-sincosTable[k1+2].d;
-    sal=-sincosTable[k1+3].d;
-  }    
-   break;
-      case(3):
-     if(k<=(64<<2)) {  /* sah <= cah */
-    cah=sincosTable[k].d ; /* sin(a), high part */
-    cal=sincosTable[k+1].d; /* sin(a), low part */
-    sah=-sincosTable[k+2].d; /* cos(a), high part */
-    sal=-sincosTable[k+3].d; /* cos(a), low part */
-  } else { /* cah <= sah */
-    int k1=(128<<2) - k;
-    sah=-sincosTable[k1].d ; 
-    sal=-sincosTable[k1+1].d;
-    cah=sincosTable[k1+2].d;
-    cal=sincosTable[k1+3].d;
-  }    
-     break;   
-   default:
-     fprintf(stderr,"ERREUR: %d is not a valid value in sn_tan \n", quadrant);
-     return 0.0;
-  }
-
-  //#if INLINE_SINCOS
-  //DO_SIN(sh,sl);
-  //DO_COS(ch,cl);
-  //#else  
-  do_sin(&sh, &sl, yh, yl);
-  do_cos(&ch, &cl, yh, yl);
-  //#endif
-
-   Div22(&reshi, &reslo, sh, sl, ch, cl);
-
-  /* ROUNDING TO NEAREST */
- 
-  if(reshi == (reshi + (reslo * 1.0004))){
-    return reshi;
-  }else{ 
-    return scs_tan_rn(x); 
-  } 
-
-#endif
 }
 
 
@@ -1445,7 +1326,7 @@ double tan_rn(double x){
  *************************************************************/
 /* TODO */
 double tan_rd(double x){  
-return scs_tan_rd(x);
+  return scs_tan_rd(x);
  }
 
 /*************************************************************
