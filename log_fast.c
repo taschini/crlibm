@@ -1,7 +1,8 @@
 /*
  * Function to compute the logarithm with fully exact rounding
  *
- * Author : Daramy Catherine  (Catherine.Daramy@ens-lyon.fr)
+ * Author : Daramy Catherine, Florent de Dinechin
+ * (Catherine.Daramy,Florent.de.Dinechin@ens-lyon.fr)
  *
  * Date of creation : 26/08/2003   
  * Last Modified    : 16/02/2002
@@ -55,19 +56,124 @@ extern double scs_log_rn(db_number, int);
 extern double scs_log_ru(db_number, int);
 extern double scs_log_rd(db_number, int);
 
+/* The following constant selects which path to take.  Currently, 9
+is optimal, but if we improve the speed of the second step in the
+future, we may want to try 8 or 7, which will trade off speed for the
+first step and % of taking second step
+*/
+#define CONST_FASTPATH 9
+#define ROUNDCST_FASTPATH (1.0000000000000009 +(4. / (((double)(4<<CONST_FASTPATH)) -1.) ))
+
+/* static  void log_quick(double *res_hi, double *res_lo, double * roundcst, db_number * y, int * pE) { */
+/*    db_number z; */
+/*    double ln2_times_E_HI, ln2_times_E_LO; */
+/*    double res, P_hi, P_lo; */
+/*    int k, i, E; */
+
+/*    E=*pE; */
+
+/*   /\* find y.d such that sqrt(2)/2 < y.d < sqrt(2) *\/ */
+/*   E += ((*y).i[HI_ENDIAN]>>20)-1023;				/\* extract the exponent *\/ */
+/*   (*y).i[HI_ENDIAN] =  ((*y).i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/\* do exponent = 0 *\/ */
+/*   if ((*y).d > SQRT_2){ */
+/*     (*y).d *= 0.5; */
+/*     E++; */
+/*   } */
+
+/*   /\* E belongs to {-52-1023 .. 2046-1023} *\/ */
+     
+/*   /\* find the interval including y.d *\/ */
+/*   i = ((((*y).i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;  /\* to know which polynom to evaluate *\/ */
+/*   if (i < 10) { */
+/*     i = i>>1; */
+/*   } */
+/*   else{ */
+/*     i = ((i-1)>>1); */
+/*   } */
+
+/*   z.d = (*y).d - (middle[i]).d; 	/\* evaluate the value of x in the */
+/* 				   ii-th interval (exact thanks to */
+/* 				   Sterbenz Lemma) *\/ */
+
+/*   *pE=E; */
+
+/*   /\* sc_ln2_times_E = E*log(2)  *\/ */
+/*   Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, E*1., 0.); */
+
+ 
+/*   /\* */
+/*    * Polynomial evaluation of log(1 + R) with an error less than 2^(-60) */
+/*    *\/ */
+
+/*   res = (poly_log_fast_b[i][13]).d; */
+/*   for(k=12; k>1; k--){ */
+/*     res *= z.d; */
+/*     res += (poly_log_fast_b[i][k]).d; */
+/*   } */
+   
+
+
+/*   if(ABS(ln2_times_E_HI) < ((double)(1<<CONST_FASTPATH))+0.5) { */
+/*     /\* Slow path *\/ */
+/*     /\*   */
+/* 	if(ABS(ln2_times_E_HI)>32.) */
+/* 	roundcst=1.+ (1./64.)*(delta[i]-1.); */
+/* 	else  */
+/*     *\/ */
+/*     *roundcst = delta[i]; */
+
+
+/*     /\* Multiply S2 by x = P2 *\/ */
+/*     Mul12(&P_hi, &P_lo, res, z.d); */
+    
+/*     /\* add S1 = a1_hi + a1_lo to P2 *\/  */
+/*     /\* *\/ */
+/*     Add22Cond(res_hi, res_lo, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo); */
+    
+/*     /\* multiply S1 by x = P1 *\/  */
+/*     Mul22(&P_hi, &P_lo, *res_hi, *res_lo, z.d, 0.);  */
+    
+/*     /\* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo *\/ */
+/*     Add22Cond(res_hi, res_lo, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo); */
+    
+/*       /\* REBUILDING *\/ */
+/*     /\*    if (!(E==0))  commented out, because slows many down to speedup a few *\/  */
+/*     Add22Cond(res_hi, res_lo, ln2_times_E_HI, ln2_times_E_LO, *res_hi, *res_lo); */
+    
+
+/*   } */
+/*   else { /\* Fast path *\/ */
+/*     *roundcst=ROUNDCST_FASTPATH; */
+/*     res =  (poly_log_fast_b[i][0]).d + z.d*((poly_log_fast_b[i][1]).d + z.d*res); */
+
+/*     /\* REBUILDING *\/ */
+/*     /\* As |ln2_times_E_HI| > CONST_FASTPATH and |res| < 0.5 we may use Add22 *\/ */
+/*     Add22(res_hi, res_lo, ln2_times_E_HI, ln2_times_E_LO, res, 0.0); */
+/*   } */
+/* #if 0 */
+/*   printf("\ni=%d    roundcst=%1.20e\n", i , roundcst); */
+/*   printf("\ res=%1.20e\n E=%d\n Eln2HI=%1.20e\n Eln2LO=%1.20e\n Eln2LO*cst=%1.20e\n",res,E,ln2_times_E_HI,ln2_times_E_LO); */
+/*   printf("\n   reshi=%1.20e\n   reslo=%1.20e\n",reshi,reslo); */
+/*   printf("\n    reslo*cst=%1.20e\n",reslo*roundcst); */
+/*   printf("\n roundcst=%1.20e\n",roundcst); */
+/* #endif */
+/* } */
+
+
 /*************************************************************
  *************************************************************
  *               ROUNDED  TO NEAREST			     *
  *************************************************************
  *************************************************************/
  double log_rn(double x){ 
- double ln2_times_E_HI, ln2_times_E_LO;
- double res, reshi, reslo, P_hi, P_lo, roundcst;
- db_number y, z;
- int k, i = 0, E = 0;
-  
-  y.d = x;
-  /* Filter cases */
+   db_number y;
+   double res_hi,res_lo,roundcst;
+   int E;
+
+   E=0;
+   
+   y.d = x;
+ /* Filter cases */
   if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
     if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
       return 1.0/0.0;     
@@ -84,6 +190,16 @@ extern double scs_log_rd(db_number, int);
     return  x+x;				    /* Inf or Nan       */
   }
 
+#if 0
+  log_quick(&res_hi, &res_lo, &roundcst, &y, &E);
+#else
+
+{
+   db_number z;
+   double ln2_times_E_HI, ln2_times_E_LO;
+   double res, P_hi, P_lo;
+   int k, i;
+
   /* find y.d such that sqrt(2)/2 < y.d < sqrt(2) */
   E += (y.i[HI_ENDIAN]>>20)-1023;				/* extract the exponent */
   y.i[HI_ENDIAN] =  (y.i[HI_ENDIAN] & 0x000fffff) | 0x3ff00000;	/* do exponent = 0 */
@@ -91,10 +207,11 @@ extern double scs_log_rd(db_number, int);
     y.d *= 0.5;
     E++;
   }
- 
+
+  /* E belongs to {-52-1023 .. 2046-1023} */
      
   /* find the interval including y.d */
-  i = (((y.i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;  /* 11<= i <= 21, then we know which polynom to evaluate */
+  i = (((y.i[HI_ENDIAN] & 0x001F0000)>>16)-6) ;  /* to know which polynom to evaluate */
   if (i < 10) {
     i = i>>1;
   }
@@ -112,7 +229,7 @@ extern double scs_log_rd(db_number, int);
 
  
   /*
-   * Polynomial evaluation of log(1 + R) with an error less than 2^(-60)
+   * Polynomial evaluation of log(1 + R) 
    */
 
   res = (poly_log_fast_b[i][13]).d;
@@ -121,47 +238,57 @@ extern double scs_log_rd(db_number, int);
     res += (poly_log_fast_b[i][k]).d;
   }
    
+  if(ABS(ln2_times_E_HI) < ((double)(1<<CONST_FASTPATH))+0.5) {
+    /* Slow path */
+
+    roundcst = delta[i];
 
 
-  if(ABS(ln2_times_E_HI)<512) {
     /* Multiply S2 by x = P2 */
     Mul12(&P_hi, &P_lo, res, z.d);
     
     /* add S1 = a1_hi + a1_lo to P2 */ 
     /* */
-    Add22Cond(&reshi, &reslo, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
+    Add22(&res_hi, &res_lo, (poly_log_fast_b[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
     
     /* multiply S1 by x = P1 */ 
-    Mul22(&P_hi, &P_lo, reshi, reslo, z.d, 0.); 
+    Mul22(&P_hi, &P_lo, res_hi, res_lo, z.d, 0.); 
     
     /* add S0 = a0_hi + a0_lo to P1=P1_hi+P1_lo */
-    Add22Cond(&reshi, &reslo, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
+    Add22(&res_hi, &res_lo, (poly_log_fast_b[i][0]).d, (poly_log_fast_l[i][0]).d, P_hi, P_lo);
     
       /* REBUILDING */
-    /*    if (!(E==0))  commented out, because slows many down to speedup a few */
-    Add22Cond(&reshi, &reslo, ln2_times_E_HI, ln2_times_E_LO, reshi, reslo);
-    
-    /*  
-	if(ABS(ln2_times_E_HI)>32.)
-	roundcst=1.+ (1./64.)*(delta[i]-1.);
-	else 
-    */
-      roundcst=delta[i];
+    if (!(E==0)) /* This test saves two tests in Add22Cond */
+      Add22(&res_hi, &res_lo, ln2_times_E_HI, ln2_times_E_LO, res_hi, res_lo);
 
   }
-  else {
-    res=  (poly_log_fast_b[i][0]).d + z.d*((poly_log_fast_b[i][1]).d + z.d*res);
+  else { /* Fast path */
+    roundcst=ROUNDCST_FASTPATH;
+    res =  (poly_log_fast_b[i][0]).d + z.d*((poly_log_fast_b[i][1]).d + z.d*res);
+
     /* REBUILDING */
-    /* As ln2_times_E_HI > 512 and res < 0.5 we may use Add22 */
-    Add22(&reshi, &reslo, ln2_times_E_HI, ln2_times_E_LO, res, 0.0);
-    roundcst=(1+1./1024.);
+    /* As |ln2_times_E_HI| > CONST_FASTPATH and |res| < 0.5 we may use Add22 */
+    Add22(&res_hi, &res_lo, ln2_times_E_HI, ln2_times_E_LO, res, 0.0);
+#if 0
+  printf("\ni=%d    roundcst=%1.20e\n", i , roundcst);
+  printf("\ res=%1.20e\n E=%d\n Eln2HI=%1.20e\n Eln2LO=%1.20e\n \n",res,E,ln2_times_E_HI,ln2_times_E_LO);
+  printf("\n   reshi=%1.20e\n   reslo=%1.20e\n",res_hi,res_lo);
+  printf("\n    reslo*cst=%1.20e\n",res_lo*roundcst);
+  printf("\n roundcst=%1.20e\n",roundcst);
+#endif
   }
+}
+
+#endif
   /* ROUNDING TO NEAREST */
-  if(reshi == (reshi + (reslo * roundcst)))
-    return reshi;
-  else
+  if(res_hi == (res_hi + (res_lo * roundcst)))
+    return res_hi;
+  else { 
+#if 0
+    printf("Going for Accurate Phase");
+#endif
     return scs_log_rn(y, E);    
-  
+  }
  }
 /*************************************************************
  *************************************************************

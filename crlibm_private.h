@@ -159,23 +159,21 @@ static const struct scs
 /*
  * computes s and r such that s + r = a + b,  with s = a @+ b exactly 
  */
-#define Add12Cond(s, r, a, b)   \
-        {double z;                 \
-         db_number _a, _b;     \
-          _a.d = a; _b.d = b;      \
-         s = _a.d + _b.d;          \
-         if ((_a.i[HI_ENDIAN]&0x7fffffff) > (_b.i[HI_ENDIAN]&0x7fffffff)){  \
-           z = s - _a.d;           \
-           r = _b.d - z;           \
-         }else {                   \
-           z = s - _b.d;           \
-           r = _a.d - z;}}                          
+#define Add12Cond(s, r, a, b)     \
+        {double z, _a=a, _b=b;    \
+         s = _a + _b;             \
+         if (ABS(a) > ABS(b)){    \
+           z = s - _a;            \
+           r = _b - z;            \
+         }else {                  \
+           z = s - _b;            \
+           r = _a - z;}}                          
 
 /*
  *  computes s and r such that s + r = a + b,  with s = a @+ b exactly 
  * under the condition  a >= b
  */
-#define Add12(s, r, a, b)      \
+#define Add12(s, r, a, b)         \
         {double z, _a=a, _b=b;    \
          s = _a + _b;             \
          z = s - _a;              \

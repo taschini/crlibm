@@ -387,7 +387,7 @@ int main (int argc, char *argv[])
 
   printf("Testing %s function with rounding mode : %d \n", argv[1], rnd);
 
-  srand(33);
+  srand(333);
 
   init(argv[1]);
 #if 0

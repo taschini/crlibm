@@ -123,6 +123,7 @@ s = xh-r+yh+yl+xl;
 
 /*
  * computes double-double multiplication: zh+zl = (xh+xl) *  (yh+yl)
+ * under the conditions : xh < 2^970 et xl < 2^970 
  * relative error is smaller than 2^-102
  */
   
