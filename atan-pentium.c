@@ -22,7 +22,7 @@
 #include "double-extended.h"
 
 #define DEBUG 0
-#define NICOLASTEST 1
+#define NICOLASTEST 0
 
 #include "atan-pentium.h"
 #include <fpu_control.h>
@@ -133,6 +133,8 @@ extern double atan_rn(double x) {
       atanlo = atan-atanhi;
 
     }
+	__setfpucw(0x027f);
+	return sign*atanhi;
 #if NICOLASTEST
 #define epsilon 2.04221581890623872536809598138553304900554884091659e-19
       if(atanlo<0) atanlo = -atanlo;
