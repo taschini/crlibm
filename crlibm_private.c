@@ -93,16 +93,20 @@ void Mul12Cond(double *rh, double *rl, double a, double b){
  * relative error is smaller than 2^-103 
  */
   
-void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, double yl)
+void Add22Cond(double *zh, double *zl,
+               double xh, double xl, double yh, double yl)
 {
-double r,s;
-
-r = xh+yh;
-s = (ABS(xh) > ABS(yh))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);
-*zh = r+s;
-*zl = r - (*zh) + s;
+  double r,s;
+  printf("toutou\n");
+  r = xh+yh;
+  if ((ABS(xh)) > (ABS(yh))) 
+    {s=   ((((xh-r)+yh)+yl)+xl); 
+    printf("x>y\n");}
+  else {s=((((yh-r)+xh)+xl)+yl);
+  printf("y>x\n");}
+  *zh = r+s;
+  *zl = r - (*zh) + s;
 }
-
 
 /*
  * computes double-double addition: zh+zl = xh+xl + yh+yl
