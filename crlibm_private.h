@@ -250,24 +250,24 @@ static const struct scs
  * computes s and r such that s + r = a + b,  with s = a @+ b exactly 
  */
 #define Add12Cond(s, r, a, b)     \
-        {double z, _a=a, _b=b;    \
+        {double _z, _a=a, _b=b;    \
          s = _a + _b;             \
          if (ABS(a) > ABS(b)){    \
-           z = s - _a;            \
-           r = _b - z;            \
+           _z = s - _a;            \
+           r = _b - _z;            \
          }else {                  \
-           z = s - _b;            \
-           r = _a - z;}}                          
+           _z = s - _b;            \
+           r = _a - _z;}}                          
 
 /*
  *  computes s and r such that s + r = a + b,  with s = a @+ b exactly 
  * under the condition  a >= b
  */
 #define Add12(s, r, a, b)         \
-        {double z, _a=a, _b=b;    \
+        {double _z, _a=a, _b=b;    \
          s = _a + _b;             \
-         z = s - _a;              \
-         r = _b - z; }            
+         _z = s - _a;              \
+         r = _b - _z; }            
 
 
 /*
