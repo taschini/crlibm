@@ -1083,11 +1083,14 @@ doesn't: unrolling does bring a speed-up.
 \subsection{Conversions}
 
 
-Procedure \texttt{IEEEdouble} returns the sign, the exponent and the
+
+
+
+Procedure \texttt{ieeedouble} returns the sign, the exponent and the
 mantissa of the IEEE-754 double-precision number closest to input
 value \texttt{x}.
 
-\begin{lstlisting}[caption={nearest},firstnumber=1]
+\begin{lstlisting}[caption={ieeedouble},firstnumber=1]
 ieeedouble:=proc(xx) 
 local x, sign, logabsx, exponent, mantissa, infmantissa; 
 x:=evalf(xx):
@@ -1116,7 +1119,14 @@ sign,exponent,mantissa;
 end:
 \end{lstlisting}
 
-Procedure \texttt{nearest} returns the nearest IEEE-754 double-precision number.
+
+
+
+
+
+Procedure \texttt{nearest} returns the nearest IEEE-754
+double-precision number.
+
 \begin{lstlisting}[caption={nearest},firstnumber=1]
 nearest := proc(x)
   local sign, exponent, mantissa;
@@ -1128,7 +1138,8 @@ end:
 
 
 
-Procedure \texttt{hi\_lo} returns two IEEE-double numbers $x\_hi$ and $x\_lo$ so that $x = x\_hi + x\_lo + \epsilon_{-103}$.
+Procedure \texttt{hi\_lo} returns two IEEE-double numbers $x\_hi$ and
+$x\_lo$ so that $x = x\_hi + x\_lo + \epsilon_{-103}$.
 
 \begin{lstlisting}[caption={hi\_lo},firstnumber=1]
 hi_lo:= proc(x)
@@ -1151,10 +1162,10 @@ end:
 \subsection{Procedures for polynomial approximation}
 
 
-Procedure \texttt{Poly\_exact2} takes in arguments a polynomial \texttt{P} and a
-integer \texttt{n}. It returns a truncated polynomial, of wich coefficients
-are exactly IEEE-double numbers. The \texttt{n} first coefficients are written
-over 2 IEEE-double numbers.
+Procedure \texttt{Poly\_exact2} takes in arguments a polynomial
+\texttt{P} and a integer \texttt{n}. It returns a truncated
+polynomial, of wich coefficients are exactly IEEE-double numbers. The
+\texttt{n} first coefficients are written over 2 IEEE-double numbers.
 
 \begin{lstlisting}[caption={poly\_exact2},firstnumber=1]
 poly_exact2:=proc(P,n)
@@ -1190,7 +1201,8 @@ not describe them here, the interested reader is referred to file
 
 
 
-\subsection{Accumulated rounding error in Horner evaluation \label{sec:Horner-maple}}
+\subsection{Accumulated rounding error in Horner evaluation
+ \label{sec:Horner-maple}}
 
 
 

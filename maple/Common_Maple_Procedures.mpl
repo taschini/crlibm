@@ -194,7 +194,10 @@ end proc:
 # Truncate a polynomial
 
 #---------------------------------------------------------------------
-# poly_exact takes a polynomial in x with arbitrary precision coefficients, and returns a truncated polynomial where coefficients are IEEE doubles.
+#poly_exact takes a polynomial in x with arbitrary precision
+# coefficients, and returns a truncated polynomial where coefficients
+# are IEEE doubles.
+
 poly_exact:=proc(P)
 local deg,i, coef, coef_t, Q:
 Q:= 0:
@@ -210,8 +213,9 @@ end:
 
 
 #---------------------------------------------------------------------
-# Like poly_exact, but the n first coefficients are exactly representable as the sum of two doubles.
-# (to actually get the two doubles, use procedure hi_lo)
+#Like poly_exact, but the n first coefficients are exactly
+# representable as the sum of two doubles.  (to actually get the two
+# doubles, use procedure hi_lo)
 
 poly_exact2:=proc(P,n)
 local deg,i, coef, coef_hi, coef_lo, Q:
