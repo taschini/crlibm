@@ -233,6 +233,21 @@ s = xh-r+yh+yl+xl;\
 #define Mul12 Mul12Cond  /* TODO check this ! */
 #endif /*CRLIBM_TYPECPU_ITANIUM*/
 
+#ifdef CRLIBM_TYPECPU_POWERPC
+/* One of the nice things with the fused multiply-and-add is that it
+   greatly simplifies the Dekker : */
+#define Mul12Cond(rh,rl,u,v)                          \
+{                                                     \
+  *rh = u*v;                                          \
+  /* The following means: *rl = FMS(u*v-*rh) */       \
+  __asm__ __volatile__("fmsub %0, %1, %2, %3\n ;;\n"   \
+		       : "=f"(*rl)                    \
+		       : "f"(u), "f"(v), "f"(*rh)     \
+		       );                             \
+}
+#define Mul12 Mul12Cond  /* TODO check this ! */
+#endif /* CRLIBM_TYPECPU_POWERPC */
+
 
 #if ADD22_AS_FUNCTIONS
 extern void Add22(double *zh, double *zl, double xh, double xl, double yh, double yl);
@@ -242,9 +257,13 @@ extern void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, d
 
 #if DEKKER_AS_FUNCTIONS
 #ifndef CRLIBM_TYPECPU_ITANIUM  /* otherwise they have been defined just above */
+#ifndef CRLIBM_TYPECPU_POWERPC  /* otherwise they have been defined just above */
 extern void Mul12(double *rh, double *rl, double u, double v);
 extern void Mul12Cond(double *rh, double *rl, double a, double b);
 #endif /* ifndef CRLIBM_TYPECPU_ITANIUM */ 
+#endif /* ifndef CRLIBM_TYPECPU_POWERPC */ 
+
+
 extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl);
 
 

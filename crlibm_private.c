@@ -48,6 +48,7 @@ void crlibm_init() {
  * under the conditions : a < 2^970 et b < 2^970 
  */
 #ifndef CRLIBM_TYPECPU_ITANIUM
+#ifndef CRLIBM_TYPECPU_POWERPC
 /* otherwise Mul12 and Mul12cond are #defined using FMS in crlibm_private.h  */
 void  Mul12(double *rh, double *rl, double u, double v){
   const double c = 134217729.;   /*  1+2^27 */ 
@@ -81,6 +82,7 @@ void Mul12Cond(double *rh, double *rl, double a, double b){
   if (b>two_970) {*rh *= two_e53; *rl *= two_e53;} 
 }
 #endif /*CRLIBM_TYPECPU_ITANIUM*/
+#endif /*CRLIBM_TYPECPU_POWERPC*/
 
 
 
