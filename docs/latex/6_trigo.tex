@@ -1,170 +1,207 @@
-This chapter is contributed by C. Daramy-Loirat
+This chapter is contributed by C. Daramy-Loirat, D. Defour
 and F. de~Dinechin.  
 
 \section*{Introduction}
 This chapter describes the implementations of sine, cosine and
-tangent, as they share much of their code.
+tangent, as they share much of their code. The proof sketch below is
+supported by the Maple script \texttt{maple/trigo.mpl} of the \crlibm\
+distribution, which implements the computations of error bounds and
+validity bounds for the various algorithmic paths described here.
+
+\section{Overview of the algorithms}
+
+\subsection{Exceptional cases}
+
+The three trigonometric functions return NaN for infinite and NaN
+arguments, and are defined otherwise. $\tan$ may not return
+infinities: an argument based on continued fractions to find the worst
+cases for range reduction may also be used to show that the sine of a
+floating-point number is always larger than $2^{-150}$, and therefore
+never flushes to zero (see \ref{Muller97} p. 151 and following).
+
+For very small arguments,
+\begin{itemize}
+\item $\sin(x) = x-x^3/6 + O(x^5) = x(1-x^2/6) + O(x^5)$ where
+  $O(x^5)$ has the sign of $x$. Therefore $\sin(x)$ is rounded to $x$
+  for all the rounding  modes if $|x|<2^{-26}$.
+\item $\cos(x) = 1-x^2/2 + O(x^4)$ where $O(x^4)$ is positive.
+  Therefore $\cos(x)$ is rounded to $1$ in RN and RU mode if
+  $x<\sqrt{2^{-53}}$. In RD and RZ modes, we have $\cos(0)=1$ and
+  $\cos(x)=1-2^{-53}$ for $|x|<2^{-26}$.
+\item $\tan(x) = x+x^3/3 + O(x^5) = x(1+x^2/3) + O(x^5)$ where
+  $O(x^5)$ has the sign of $x$. Therefore $\tan(x)$ is rounded to $x$
+  for all the rounding  modes if $|x|<2^{-26}$.
+\end{itemize}
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Argument reduction}
 
-\section{Argument reduction}
-We only need to compute sine and cosine over the interval
-$[0;\frac{\Pi}{2}]$ thanks to their periodicity and symmetry properties.
+Most implementations of the trigonometric functions have two steps of argument reduction: 
+\begin{itemize}
+\item first the input number $x$ is reduced to $y\in
+  [0;\frac{\pi}{2}]$, with reconstruction using periodicity and
+  symmetry properties,
+\item then the reduced argument is further broken down as $y=a+z$,
+  with reconstruction using the formula for $\sin(a+z)$ and
+  $\cos(a+z)$, using tabulated values of $\sin(a)$ and
+  $\cos(a)$
+\end{itemize}
 
-The argument reduction is obtained by an additive Cody \& Waite
-algorithm, according to the following scheme:
+We chose to implement argument reduction in one step only, which
+computes an integer $k$ and a reduced argument y such that
 
-$x = y + k*\frac{\Pi}{256}$, such that $ |y| \leq \frac{\Pi}{512}$ and
-$k$ is an integer in $[0,255]$.
+\begin{equation}
+  x = k\frac{\pi}{256} + y\label{eq:trigoargred}
+\end{equation}
+where $k$ is an integer and  $ |y| \leq \frac{\pi}{512}$.
+This step computes $y$ as a double-double: $y\approx y_h+y_l$. 
+
+In the following we note $a=kpi/256$. 
+
+Then we read off a table 
+
+$$sa_h+sa_l \approx sin(a)$$
+$$ca_h+ca_l \approx cos(a)$$
+
+Only 64 quadruples $(sa_h,sa_l,ca_h,ca_l)$ are tabulated (amounting to
+$64\times 8 \times 4 = 2048$ bytes), the rest is obtained by
+periodicity and symmetry, implemented as masks and integer operations
+on the integer $k$. For instance,  $a \mod 2\pi$ is implemented by $k \mod 512$,
+$\pi/2-a$ is implemented as $128-k$, etc.
 
 
-For every $k$ from 0 to 63, $\sin (k*\frac{\Pi}{256})$ and $\cos
-(k*\frac{\Pi}{256})$ are tabulated in double-double precision. This is
-enough to have all possible values of sine and cosine for every $k$ in
-$[0;255]$, by using the following properties:
-        
-\begin{equation}        \sin(x) = \cos(x - \frac{\Pi}{2})\end{equation}
 
-\begin{equation}        \sin(x) = -\sin(-x)\end{equation}
-
-\begin{equation}        \cos(x) = \cos(-x)\end{equation}
-
-Finally, we compute a table method by the way:
+Then we use the reconstruction steps:
 
 \begin{equation}        
-  \sin(x) = \sin(k*\frac{\Pi}{256} + y) =  \cos(k*\frac{\Pi}{256})* \sin(y) +  \sin(k*\frac{\Pi}{256}) *\cos(y) 
+  \sin(x) = \sin(a + y) =  \cos(a) \sin(y) +  \sin(a) \cos(y) 
+  \label{eq:sinapy}
 \end{equation}
 
 \begin{equation}
-        \cos(x) = \cos(k*\frac{\Pi}{256} + y) = \cos(k*\frac{\Pi}{256})* \cos(y) -  \sin(k*\frac{\Pi}{256}) *\sin(y) \end{equation}\\\begin{equation} tan(x) = \frac{\sin(x)}{\cos(x)} = \frac{\cos(k*\frac{\Pi}{256})* \sin(y) +  \sin(k*\frac{\Pi}{256}) *\cos(y)}{\cos(k*\frac{\Pi}{256})* \cos(y) -  \sin(k*\frac{\Pi}{256}) *\sin(y)}
+  \cos(x) = \cos(a + y) = \cos(a) \cos(y) -  \sin(a) \sin(y) 
+  \label{eq:cosapy}
 \end{equation}
-$y$ is small enough so we compute $\sin(y)$ and $\cos(y)$ through a
-polynomial evaluation. (See file trigo\_fast.c, code $do\_cos$ and
-$do\_sin$).
 
-\section{polynomial evaluation}
-Assume $\epsilon \leq 1$ and $y < \frac{\Pi}{512}$ \\
-$\cos(y)$ and $\sin(y)$ are computed in double precision.
+\begin{equation} 
+  tan(x) = \frac{\sin(x)}{\cos(x)} = \frac{\cos(a) \sin(y) +  \sin(a) \cos(y)}{\cos(a) \cos(y) -  \sin(a) \sin(y)}
+  \label{eq:tanapy}
+\end{equation}
 
-\subsection{Sine}
-If $y \leq 2^{-26}$, then $\sin(y)\sim y + \epsilon*2^{-54.5}$ 
-        
-If $y > 2^{-26}$, then $\sin(y) \sim y *(1+ ts) + \epsilon *
-2^{-63.8}$, where $ts = y^2*(s3 + y^2*(s5 + y^2*s7)))$ with $s3$, $s5$ and
+
+\subsection{Polynomial evaluation}
+
+
+To implement the previous equations, $\cos(y)$ and $\sin(y)$ are
+computed as unevaluated $1+t_c$ and $(y_h+y_l)(1+t_s)$ respectively,
+where $t_c$ and $t_s$ are doubles computed using a polynomial
+approximation of small degree:
+
+\begin{itemize}
+\item $t_s = y^2*(s_3 + y^2*(s_5 + y^2*s_7)))$ with $s3$, $s5$ and
 $s7$ the Taylor coefficients.
-
-\subsection{Cosine}
-
-If $y \leq 2^{-27}$, then $\cos(y)\sim y + \epsilon*2^{-55.0}$
-
-If $y > 2^{-27}$, then $\cos(y)\sim 1+ tc + \epsilon * 2^{-71.8}$,
-where $tc = y^2*(c2 + y^2*(c4 + y^2*c6))$ with $c2$, $c4$ and $c6$ the
-Taylor coefficients.
-        
+\item $t_c = y^2*(c_2 + y^2*(c_4 + y^2*c_6))$ with $c2$, $c4$ and $c6$ the
+Taylor coefficients (or a more accurate minimax approximation).
+\end{itemize}
 
 
-\section{Reconstruction}
-Assume $a = k*\frac{\Pi}{256}$, $sa = \sin(a)$, $ca = \cos(a)$ and
-$"_h"$ and $"_l" $ denote "hi" and 'low" parts of a double-double
-floating point number.
 
-\subsection{Sine}
-According to equation (4), we have to compute: 
+\subsection{Reconstruction}
+
+\subsubsection{Sine}
+According to equation (\ref{eq:sinapy}), we have to compute: 
  \begin{eqnarray*}
   \sin(a+y) &=& \sin(a) \cos(y)  + \cos(a)\sin(y)  \\
   & \approx& (sa_h+sa_l)(1+t_c) + (ca_h+ca_l)(y_h+y_l)(1+t_s)
 \end{eqnarray*}
 
 
-As shown on the following graph, we don't need to take into account the smallest argument $ca_l * y_l * (1+ts)$\\
-And we compute a $2^{-64}$ double-double precision result with only
-one Mul12 and two Add12.
-\begin{center}
- \small
- \setlength{\unitlength}{3ex}
+Figure~\ref{fig:sine-reconstruction} shows the worst-case respective
+orders of magnitude of the terms of this sum. The terms wholly to the
+right of the $\epsilon$ bar will be neglected, and a bound on the
+error thus entailed is computed in the following. Note that the term
+$ca_hy_h$ has to be computed exactly by a Mul12.
+
+Finally the reconstruction consists of adding together the lower-order
+terms in increasing order of magnitude, and computing the
+double-double result by an Add12.
+
+\begin{figure}[htbp]    
+  \begin{center}
+    \small
+    \setlength{\unitlength}{3ex}
       \framebox{
         \begin{picture}(22,9)(-3,-4.2)
-        \put(10,4){\line(0,-1){8}}  \put(9.5,4){$\epsilon$}
-  
+          \put(9.5,4){\line(0,-1){8}}  \put(9,4){$\epsilon$}
+          
           \put(4,3.2){$sa_h$} \put(0.05,3){\framebox(7.9,0.7){}}
           \put(12,3.2){$sa_l$}  \put(8.05,3){\framebox(7.9,0.7){}}
-
+          
           \put(6,2.2){$sa_ht_c$} \put(2.05,2){\framebox(7.9,0.7){}}
           \put(14,2.2){$sa_lt_c$}  \put(10.05,2){\framebox(7.9,0.7){}}
 
-          \put(5,1.2){$ca_hy_h$} \put(1.05,1){\framebox(7.9,0.7){}}
-          \put(13,1.2){$ca_hy_h$}  \put(9.05,1){\framebox(7.9,0.7){}}
+          \put(4.5,1.2){$ca_hy_h$} \put(0.55,1){\framebox(7.9,0.7){}}
+          \put(12.5,1.2){$ca_hy_h$}  \put(8.55,1){\framebox(7.9,0.7){}}
 
-          \put(12,0.2){$ca_hy_l $}  \put(8.05,0){\framebox(7.9,0.7){}}
-          \put(12,-0.8){$ca_ly_h $}  \put(8.05,-1){\framebox(7.9,0.7){}}
+          \put(11.5,0.2){$ca_hy_l $}  \put(7.55,0){\framebox(7.9,0.7){}}
+          \put(11.5,-0.8){$ca_ly_h $}  \put(7.55,-1){\framebox(7.9,0.7){}}
 
-         \put(7,-1.8){$ca_hy_ht_s$} \put(3.05,-2){\framebox(7.9,0.7){}}
-         \put(14,-2.8){$ca_hy_lt_s $}  \put(10.05,-3){\framebox(7.9,0.7){}}
-         \put(14,-3.8){$ca_ly_ht_s $}  \put(10.05,-4){\framebox(7.9,0.7){}}
+         \put(6.5,-1.8){$ca_hy_ht_s$} \put(2.55,-2){\framebox(7.9,0.7){}}
+         \put(13.5,-2.8){$ca_hy_lt_s $}  \put(9.55,-3){\framebox(7.9,0.7){}}
+         \put(13.5,-3.8){$ca_ly_ht_s $}  \put(9.55,-4){\framebox(7.9,0.7){}}
+        
+       \end{picture}
+     }
+   \end{center}
+   \caption{The sine reconstruction}
+   \label{fig:sine-reconstruction}
+ \end{figure}
  
-        \end{picture}
-      }
-  \end{center}
-
-\paragraph{Cancellation}
-
-
-There may be cancellation when $k = 0$, that is to say when $\sin(a) =
-0$, then the computation is simplified automatically. (See in
-trigo\_fast.c, code do\_cos and do\_sin).  We just need to compute
-$\cos(a) * \sin(y)$, wich is reached with the polynomial precision. 
-
  
 
-\subsection{Cosine}
-According to equation (5), we have to compute in double-double precision:
+\subsubsection{Cosine}
+According to equation (\ref{eq:cosapy}), we have to compute in double-double precision:
  \begin{eqnarray*}
   \cos(a+y) &=& \cos(a) \cos(y)  - \sin(a)\sin(y)  \\
   & \approx& (ca_h+ca_l)(1+t_c) - (sa_h+sa_l)(y_h+y_l)(1+t_s)
 \end{eqnarray*}
 
-As shown on the following graph, we don't need to take into account
-the smallest argument $sa_l*y_l*t_s$.  We compute a $2^{-63}$
-precision result with only one Mul12 and two Add12.
-\begin{center}
- \small
- \setlength{\unitlength}{3ex}
-      \framebox{
-        \begin{picture}(22,9)(-3,-4.2)
-        \put(10,4){\line(0,-1){8}}  \put(9.5,4){$\epsilon$}
+This is similar to the case of the sine, and the respective orders of
+magnitude are given by Figure~\ref{fig:sine-reconstruction}.
+
+\begin{figure}[htbp]
+  \begin{center}
+    \small \setlength{\unitlength}{3ex} \framebox{
+      \begin{picture}(22,9)(-3,-4.2)
+        \put(9.5,4){\line(0,-1){8}}
+        \put(9,4){$\epsilon$}
   
-          \put(4,3.2){$ca_h$} \put(0.05,3){\framebox(7.9,0.7){}}
-          \put(12,3.2){$ca_l$}  \put(8.05,3){\framebox(7.9,0.7){}}
+        \put(4,3.2){$ca_h$} \put(0.05,3){\framebox(7.9,0.7){}}
+        \put(12,3.2){$ca_l$}  \put(8.05,3){\framebox(7.9,0.7){}}
 
-          \put(6,2.2){$ca_ht_c$} \put(2.05,2){\framebox(7.9,0.7){}}
-          \put(14,2.2){$ca_lt_c$}  \put(10.05,2){\framebox(7.9,0.7){}}
+        \put(6,2.2){$ca_ht_c$} \put(2.05,2){\framebox(7.9,0.7){}}
+        \put(14,2.2){$ca_lt_c$}  \put(10.05,2){\framebox(7.9,0.7){}}
 
-          \put(5,1.2){$-sa_hy_h$} \put(1.05,1){\framebox(7.9,0.7){}}
-          \put(13,1.2){$-sa_hy_h$}  \put(9.05,1){\framebox(7.9,0.7){}}
+        \put(4.5,1.2){$-sa_hy_h$} \put(0.55,1){\framebox(7.9,0.7){}}
+        \put(12.5,1.2){$-sa_hy_h$}  \put(8.55,1){\framebox(7.9,0.7){}}
 
-          \put(12,0.2){$-sa_hy_l $}  \put(8.05,0){\framebox(7.9,0.7){}}
-          \put(12,-0.8){$-sa_ly_h $}  \put(8.05,-1){\framebox(7.9,0.7){}}
+        \put(11.5,0.2){$-sa_hy_l $}  \put(7.55,0){\framebox(7.9,0.7){}}
+        \put(11.5,-0.8){$-sa_ly_h $}  \put(7.55,-1){\framebox(7.9,0.7){}}
 
-         \put(7,-1.8){$-sa_hy_ht_s$} \put(3.05,-2){\framebox(7.9,0.7){}}
-         \put(14,-2.8){$-sa_hy_lt_s $}  \put(10.05,-3){\framebox(7.9,0.7){}}
-         \put(14,-3.8){$-sa_ly_ht_s $}  \put(10.05,-4){\framebox(7.9,0.7){}}
+        \put(6.5,-1.8){$-sa_hy_ht_s$} \put(2.55,-2){\framebox(7.9,0.7){}}
+        \put(13.5,-2.8){$-sa_hy_lt_s $}  \put(9.55,-3){\framebox(7.9,0.7){}}
+        \put(13.5,-3.8){$-sa_ly_ht_s $}  \put(9.55,-4){\framebox(7.9,0.7){}}
  
         \end{picture}
       }
-  \end{center}
-
-\paragraph{Cancellation}
-
-There may be cancellation when $k = 0$, that is to say when $\sin(a) =
-0$, then the computation is simplified automatically. (See in
-trigo\_fast.c, code do\_cos and do\_sin)
-
-We just need to compute $\cos(a) * \cos(y)$, wich is reached with the
-polynomial precision.
+    \end{center}\centering
+    
+    \caption{The cosine reconstruction}
+    \label{fig:cosine-reconstruction}
+  \end{figure}
 
 
-\subsection{Tangent}
+\subsubsection{Tangent}
 
 The tangent is obtained by the division of the sine by the cosine.
 The procedure "Div22" guarantees a $2^{-104}$ precision result, wich is surely enough to have a precise final result.
@@ -176,3 +213,46 @@ In other cases, we will compute a $2^{-63}$ precision sine and a $2^{-71}$ preci
 So we have a final relative error smaller than $2^{-9}$. This is the
 reason why our rounding constant is equal to $1+2^{-9}$.
 
+\subsection{Precision of this scheme}
+
+As we have $|y|<pi/512<2^{-7}$, this scheme computes these functions accurately to roughly $53+12$
+bits, so these first steps are  very accurate.
+ 
+
+
+
+\section{Details of argument reduction}
+
+
+We have 4 possible range reductions, depending on the magnitude of the input number:
+
+\begin{itemize}
+\item Cody and Waite with 2 constants (the fastest),
+\item Cody and Waite with 3 constants (almost as fast),
+\item Cody and Waite with 3 constants in double-double and $k$ a
+  64-bit int,
+\item Payne and Hanek, implemented in SCS (the slowest).
+\end{itemize}
+Each of these range reductions except Payne and Hanek is valid for $x$
+smaller than some bound. The computation of these bounds is detailed
+below.
+
+Such a range reduction may cancel up to 62 bits according to a program
+by Kahan/Douglas available in Muller's book \cite{Muller97} and
+implemented as function \texttt{WorstCaseForAdditiveRangeReduction} in
+\texttt{maple/common-procedures.mpl}.  However this is not a concern
+unless x is close to a multiple of $\pi/2$ (that is, $k \mod 128=0$): in
+the general case the reconstruction will add some tabulated non-zero
+value, so the error to consider in the range reduction is the absolute
+error.  Only in the cases when $k \mod 128=0$ do we need to have 62
+extra bits to compute with. This is ensured by using a slower, more
+accurate range reduction. As a compensation, in this case when $k \mod
+128=0$, there is no table to read and no reconstruction to perform : a
+simple polynomial approximation to the function suffices.
+
+
+
+
+\section{Proof of the computer program}
+
+TODO
