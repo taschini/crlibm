@@ -1,8 +1,3 @@
-# Evaluate this worksheet to produce Common_maple_procedures.m, which is used by the other worksheets in this directory
-restart:
-Digits:=150:
-with(numapprox):
-with(orthopoly):
 
 #####################################################################
 # Useful procedures for IEEE doubles
@@ -52,7 +47,7 @@ end:
 pulp:=proc(x)
 local flt, ulpy;
 flt:=ieeedouble(x);
-ulpy:=-53+flt[2];
+ulpy:=-52+flt[2];
 end proc:
 
 
@@ -62,6 +57,11 @@ end proc:
 ulp:=proc(x)
 2**(pulp(x));
 end proc:
+
+
+
+
+#---------------------------------------------------------------------
 # Returns nearest IEEE double:
 nearest := proc(x)
   local sign, exponent, mantissa;
@@ -270,7 +270,7 @@ for i from (deg-1) to 0 by -1 do
     fi:
   fi:
   S:=convert(P+coeff(poly,x,i), polynom):
-  Snorm:=evalf(infnorm(S, x=-xmax..xmax)):
+  Snorm:=evalf(numapprox[infnorm](S, x=-xmax..xmax)):
   if i=n-1 then prec:=100: fi:  # from the addition of the n-1-th iteration
   deltap:= evalf(delta + 2**(-prec)*(delta + Snorm)): 
   Smax := Snorm + deltap:  
@@ -343,7 +343,7 @@ for i from (deg-1) to 0 by -1 do
     fi:
   fi:
   S:=convert(P+coeff(poly,x,i), polynom):
-  Snorm:=evalf(infnorm(S, x=-xmax..xmax)):
+  Snorm:=evalf(numapprox[infnorm](S, x=-xmax..xmax)):
   deltap:= evalf(delta + 2**(-prec)*(delta + Snorm)): 
   Smax := Snorm + deltap:  
 od:
@@ -354,6 +354,7 @@ end proc:
 
 
 #---------------------------------------------------------------------
+#  OBSOLETE use compute_horner_rounding_error below
 # Computes the total relative rounding error
 compute_rel_rounding_error_firstmult:=proc(poly,xmax, n)
 local deg, p, rho, deltap, Smin, Smax:
@@ -370,34 +371,42 @@ else
 fi:
 rho;
 end proc:
+
+
+
+
 # Compute a good truncated polynomial approximation for a function
 # Computes an approximation to a function of x f, as a truncated polynomial of deegree deg with the n first coefficients exactly representable as double-double.
 # The function f(x) must have as input interval xmin..xmax
 # returns [ truncated polynomial, relative approx error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]
 poly_trunc_classic:=proc(f,deg,xmin,xmax,n) 
   local pe, repe, pt, ppe, rept, maxpt;
-  pe:=minimax( f,  x=xmin..xmax,  [deg,0],  1,  'err'):
+  pe:=numapprox[minimax]( f,  x=xmin..xmax,  [deg,0],  1,  'err'):
   pt := poly_exact2(pe,n):
-  rept := infnorm( 1-pt/f, x=xmin..xmax) :
-  maxpt := infnorm( pt, x=xmin..xmax) :
+  rept := numapprox[infnorm]( 1-pt/f, x=xmin..xmax) :
+  maxpt := numapprox[infnorm]( pt, x=xmin..xmax) :
   pt,rept, maxpt:
 end proc:
+
+
+
+#---------------------------------------------------------------------
 # Computes a truncated polynomial of degree deg with the two first coefficients stored as double-doubles. 
 # The function f(x) must have as input interval xmin..xmax
 # returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]
 poly_trunc_f2d_2:=proc(f,deg,xmin,xmax) 
   local pe, repe, pt, c0, c1, c2, ppe, abserr, relerr, maxpt, err;
-  pe:=minimax(  f,  x=xmin..xmax,  [deg,0],  1,  'err'):
+  pe:=numapprox[minimax](  f,  x=xmin..xmax,  [deg,0],  1,  'err'):
   pt := poly_exact2(pe,2):
   c0:=coeff(pt,x,0):
   c1:=coeff(pt,x,1):
   c2:=coeff(pt,x,2):
-  ppe:=minimax(  (f - c0 - c1 * x - c2*x*x) ,  x=xmin..xmax,  [deg,0],  1,  'err'):
-  ppe:=ppe - coeff(ppe,x,0) - coeff(ppe,x,1)*x- coeff(ppe,x,1)*x*x:
+  ppe:=numapprox[minimax](  (f - c0 - c1 * x - c2*x*x) ,  x=xmin..xmax,  [deg,0],  1,  'err'):
+  ppe:=expand(ppe) - coeff(ppe,x,0) - coeff(ppe,x,1)*x- coeff(ppe,x,2)*x*x:
   pt := poly_exact2(ppe,2) + c0 + c1*x + c2*x*x:
-  abserr := infnorm( pt-f, x=xmin..xmax) :
-  relerr := infnorm( 1-pt/f, x=xmin..xmax) :
-  maxpt := infnorm( pt, x=xmin..xmax) :
+  abserr := numapprox[infnorm]( pt-f, x=xmin..xmax) :
+  relerr := numapprox[infnorm]( 1-pt/f, x=xmin..xmax) :
+  maxpt := numapprox[infnorm]( pt, x=xmin..xmax) :
   pt,abserr,relerr,maxpt:
 end proc:
 
@@ -410,25 +419,25 @@ end proc:
 # returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]
 poly_trunc_f2d_1:=proc(f,deg,xmin,xmax) 
   local pe, repe, pt, c0, c1, ppe, relerr, abserr, maxpt, err;
-  pe:=minimax(  f ,  x=xmin..xmax,  [deg,0],  1,  'err'):
+  pe:=numapprox[minimax](  f ,  x=xmin..xmax,  [deg,0],  1,  'err'):
   pt := poly_exact2(pe,1):
   c0:=coeff(pt,x,0):
   c1:=coeff(pt,x,1):
-  ppe:=minimax(  (f - c0 - c1 * x) ,  x=xmin..xmax,  [deg,0],  1,  'err'):
+  ppe:=numapprox[minimax](  (f - c0 - c1 * x) ,  x=xmin..xmax,  [deg,0],  1,  'err'):
   ppe:=ppe - coeff(ppe,x,0) - coeff(ppe,x,1)*x:
   pt := poly_exact2(ppe,1) + c0 + c1*x:
-  abserr := infnorm( pt-f, x=xmin..xmax) :
-  relerr := infnorm( 1-pt/f, x=xmin..xmax) :
-  maxpt := infnorm( pt, x=xmin..xmax) :
+  abserr := numapprox[infnorm]( pt-f, x=xmin..xmax) :
+  relerr := numapprox[infnorm]( 1-pt/f, x=xmin..xmax) :
+  maxpt := numapprox[infnorm]( pt, x=xmin..xmax) :
   pt,abserr,relerr,maxpt:
 end proc:
 
 
 
 #---------------------------------------------------------------------
-# Compute a bound on the accumulated rounding error caused by the Horner evaluation of a truncated polynomial 
+#  compute_horner_rounding_error
 
-# Compute a bound on the accumulated rounding error caused by the Horner evaluation of a truncated polynomial 
+# Computes a bound on the accumulated rounding error caused by the Horner evaluation of a truncated polynomial 
 # Computes the accumulated rounding error during the polynomial evaluation.
 # It is designed to allow evaluating the error for various schemes:
 #   - with or without an error on x
@@ -438,10 +447,10 @@ end proc:
 #   P is the polynomial.
 #   xmax is  the max value of |x|.
 #   errors is a list of size n where n is the degree of the polynomial. 
-#      Each element of this list is a triple (xerr,mulerr,adderr) where 
-#        xerr is the relative error on x at each step, 
-#        adderr is the max relative error on the addition 
-#        mulerr is the max relative error on the multiplication. 
+#      Each element of this list is a triple (epsx,epsmul,epsadd) where 
+#        epsx is the relative error on x at each step, 
+#        epsadd is the max relative error on the addition 
+#        epsmul is the max relative error on the multiplication. 
 #      This allows to handle SCS Horner, as well as evaluation starting in double and ending in double-double.
 #   check_dd is a flag, if set to 1 the procedure also checks on the fly that the fast (test-free) versions 
 #       of the double-double addition can be used, i.e. that for all x, at each Horner step i computing ci+x*Si,
@@ -453,7 +462,7 @@ end proc:
 #   maxP  max of the evaluated polynomial. 
 
 compute_horner_rounding_error:=proc(poly, x, xmax, errors, check_dd)
-local deg, Sk, maxSk, minSk, epsk, epsprimek, deltak, k, ck, xerr, mulerr, adderr, Pk, maxPk;
+local deg, Sk, maxSk, minSk, epsk, epsprimek, deltak, k, ck, epsx, epsmul, epsadd, deltaadd, Pk, maxPk;
  
   if assigned(x) then 
     printf("Error in compute_horner_rounding_error, polynomial variable is assigned\n");
@@ -473,41 +482,43 @@ local deg, Sk, maxSk, minSk, epsk, epsprimek, deltak, k, ck, xerr, mulerr, adder
   for k from (deg) to 1 by -1 do
 
     # the errors to consider for this step
-    xerr := errors[k][1];
-    mulerr:=errors[k][2];
-    adderr:=errors[k][3];
+    epsx := errors[k][1];
+    epsadd := errors[k][2];
+    epsmul := errors[k][3];
 
     # multiplication operation
     Pk:= convert(Sk*x, polynom):
-    epsprimek:=evalf( (1+xerr)*(1+epsk)*(1+mulerr)-1  );
+    maxPk:=numapprox[infnorm](Pk, x=-xmax..xmax):
+    epsprimek:=evalf( (1+epsx)*(1+epsk)*(1+epsmul)-1  + 10^(-Digits+2)   );
 
     #addition
     ck:=coeff(poly,x,k-1);
-    Sk:=convert(Pk+ck , polynom);
-    maxPk:=evalf(maximize(abs(Pk), x=-xmax..xmax)):
-    maxSk:=evalf(maximize(abs(Sk), x=-xmax..xmax)):
-    minSk:=evalf(minimize(abs(Sk), x=-xmax..xmax));
-    if(ck=0) 
-    then
-      deltak:= evalf(  epsprimek*maxPk); 
+    if(ck=0)  then
+      Sk:=Pk;
+      maxSk := maxPk; 
+      minSk:=0;
+      deltak:= evalf(epsprimek*maxPk); 
       epsk:=epsprimek;
     else
-      if(adderr=2^(-53)) then
-        deltak := evalf(  epsprimek*maxPk + 0.5*ulp(maxSk+epsprimek*maxSk)   ):
-      else
-        deltak := evalf(  epsprimek*maxPk + adderr * (maxSk+epsprimek*maxSk)):
+      Sk:=convert(Pk+ck , polynom);
+      maxSk:=numapprox[infnorm](Sk, x=-xmax..xmax):
+      minSk:=minimize(abs(Sk), x=-xmax..xmax);
+      if(epsadd=2^(-53)) then   # compute deltadd exactly as the max half ulp of the result
+	deltaadd := 0.5*ulp(maxSk+epsprimek*maxSk);
+      else    # compute deltaadd out of the relative error
+        deltaadd := epsadd * (maxSk+epsprimek*maxSk) :
       fi:
-      epsk := deltak/minSk;
+      deltak := evalf(  epsprimek*maxPk + deltaadd  + 10^(-Digits+2)  ):
+      epsk := deltak/minSk + 10^(-Digits+2) ;
     fi:
-    printf("step %d   epsprimek=%1.4e  deltak=%1.4e   minSk=%1.4e   maxSk=%1.4e\n", 
-          k, epsprimek, deltak, minSk, maxSk);
+    printf("step %d   epsprimek=%1.4e  deltak=%1.4e   minSk=%1.4e   maxSk=%1.4e\n", k, epsprimek, deltak, minSk, maxSk);
 
     # warnings
     if(minSk=0) then 
       printf("Warning! in compute_abs_rounding_error, minSk=0 at iteration %d, consider decreasing xmax\n",k);
     fi:
 
-#  if (adderr=2**(-103)) then 
+#  if (epsadd=2**(-103)) then 
 #    # fast Add22 ?    
 #    if abs(coeff(poly,x,k)) < xmax*maxSk  # may be improved to xmax*Smax/2
 #    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , k  );   
@@ -526,31 +537,31 @@ end proc:
 # Arguments: 
 #   n is the degree of the polynomial,
 #   ddadd, ddmul number of (final) double-double operations
-#   dxerr  error on x in the double steps
-#   ddxerr error on x in the double-double steps (when x is represented by a double-double)
+#   depsx  error on x in the double steps
+#   ddepsx error on x in the double-double steps (when x is represented by a double-double)
 
-errlist_quickphase_horner := proc(n,ddadd, ddmul,dxerr, ddxerr)
- local nddadd, adderr, nddmul, mulerr, xerr; 
+errlist_quickphase_horner := proc(n,ddadd, ddmul,depsx, ddepsx)
+ local nddadd, epsadd, nddmul, epsmul, epsx; 
  if n=0
   then []
   else
     if ddadd>0 then 
       nddadd:=ddadd-1:
-      adderr:=2**(-103):
+      epsadd:=2**(-103):
     else
       nddadd:=ddadd:
-      adderr:=2**(-53):
+      epsadd:=2**(-53):
     fi:
     if ddmul>0 then 
       nddmul:=ddmul-1:
-      mulerr:=2**(-102):
-      xerr:=ddxerr;
+      epsmul:=2**(-102):
+      epsx:=ddepsx;
     else
       nddmul:=ddmul:
-      mulerr:=2**(-53):
-      xerr:=dxerr:
+      epsmul:=2**(-53):
+      epsx:=depsx:
     fi:
-    [  [xerr,mulerr,adderr] ,   op(errlist_quickphase_horner(n-1, nddadd, nddmul, dxerr,ddxerr))]
+    [  [epsx,epsadd,epsmul] ,   op(errlist_quickphase_horner(n-1, nddadd, nddmul, depsx,ddepsx))]
   fi:
 end proc:
 
@@ -560,10 +571,10 @@ end proc:
 # Finding the worst cases for additive range reduction
 # cut and paste from the web page of Muller's book
 # Much faster if called with Digits very large and an evalf() on C
+# but then check 
 
 WorstCaseForAdditiveRangeReduction:=proc(B,n,emin,emax,C)
   local epsilonmin,powerofBoverC,e,a,Plast,r,Qlast, Q,P,NewQ,NewP,epsilon, numbermin,expmin,l;
-
   epsilonmin := 12345.0 ;
   powerofBoverC := B^(emin-n)/C;
   for e from emin-n+1 to emax-n+1 do
@@ -585,8 +596,7 @@ WorstCaseForAdditiveRangeReduction:=proc(B,n,emin,emax,C)
       Q := NewQ;
       P := NewP
       od;
-   epsilon :=
-   evalf(C*abs(Plast-Qlast*powerofBoverC));
+   epsilon := evalf(C*abs(Plast-Qlast*powerofBoverC));
    print(e+n-1);
    if epsilon < epsilonmin then
      epsilonmin := epsilon; numbermin := Qlast;
