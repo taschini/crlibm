@@ -101,7 +101,7 @@ same as hi_lo, but returns hexadecimal strings</Text-field></Input></Group><Grou
 local reshi, reslo, hexhi, hexlo;
 reshi:=nearest(x);
 hexhi:=ieee2hexa(reshi);
-reslo:= nearest(res-reshi);
+reslo:= nearest(x-reshi);
 hexlo:=ieee2hexa(reslo);
 reshi, reslo;
 end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/><Text-field layout="Normal" style="Text">Computes the constant for the round-to-nearest test. 
