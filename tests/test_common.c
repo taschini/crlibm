@@ -214,6 +214,29 @@ void test_init(/* pointers to returned value */
 #endif
     }
 
+  if (strcmp (func_name, "atan") == 0)
+    {
+      *randfun        = rand_generic;
+      *worst_case= .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
+      *testfun_libm   = atan;
+      switch(crlibm_rnd_mode){
+      case 2:
+	*testfun_crlibm = atan_rn;	break;
+      case 3:
+	*testfun_crlibm = atan_rn;	break;
+      case 4:
+	*testfun_crlibm = atan_rn;	break;
+      default:
+        *testfun_crlibm = atan_rn ;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = uatan;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_atan;
+#endif
+    }
+
   else if (strcmp (func_name, "cosh") == 0)
     {
       *randfun        = rand_for_cosh;
