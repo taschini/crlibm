@@ -112,13 +112,22 @@ esac],
 [enable_gmp=no])
 
 
-dnl  ... for MathLib
-AC_ARG_ENABLE(ultim,        [  --enable-ultim        enable IBM's Ultimate Math Library [[default=no]]],
+dnl  ... for IBM Accurate Portable Library
+AC_ARG_ENABLE(ultim,        [  --enable-ultim        enable libultim, IBM's Accurate Portable Math Library [[default=no]]],
 [case $enableval in
 yes|no) ;;
 *) AC_MSG_ERROR([bad value $enableval for --enable-ultim, need yes or no]) ;;
 esac],
 [enable_ultim=no])
+
+
+dnl  ... for Sun's libmcr
+AC_ARG_ENABLE(mcr,        [  --enable-mcr        enable Sun's LIBMCR  [[default=no]]],
+[case $enableval in
+yes|no) ;;
+*) AC_MSG_ERROR([bad value $enableval for --enable-mcr, need yes or no]) ;;
+esac],
+[enable_mcr=no])
 
 
 dnl Now consider the result of the previous to set directories:
@@ -207,6 +216,32 @@ AC_ADD_PATH_LIBS($with_ultim_lib, ultim)
 AC_CHECK_HEADERS([MathLib.h])
 
 AC_CHECK_LIB([ultim], [main])
+
+dnl end of test for IBM libultim
+fi
+
+
+
+dnl ... for SUN
+if test "$enable_mcr" = "yes"; then
+
+AC_ARG_WITH(mcr_include, [ --with-mcr-include=DIR   LIBMCR include directory ],
+ with_mcr_include=$withval)
+AC_ARG_WITH(mcr_lib,     [ --with-mcr-lib=DIR   LIBMCR lib directory ],
+ with_mcr_lib=$withval)
+AC_ARG_WITH(mcr,         [ --with-mcr=DIR       LIBMCR directory ],
+ with_mcr_include=$withval/include with_mcr_lib=$withval/lib)
+
+if test -d "$with_mcr_include"; then
+  CPPFLAGS="$CPPFLAGS -I$with_mcr_include"
+else
+  with_mcr_include=
+fi
+AC_ADD_PATH_LIBS($with_mcr_lib, mcr)
+
+AC_CHECK_HEADERS([libmcr.h])
+
+AC_CHECK_LIB([mcr], [main])
 
 dnl end of test for IBM libultim
 fi

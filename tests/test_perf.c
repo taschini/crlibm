@@ -20,6 +20,10 @@ Beware to compile without optimizations
 #include <MathLib.h>
 #endif
 
+#ifdef HAVE_LIBMCR_H
+#include <libmcr.h>
+#endif
+
 #ifdef HAVE_MPFR_H
 #include <gmp.h>
 #include <mpfr.h>
@@ -61,7 +65,9 @@ int    (*testfun_mpfr)  () = NULL;
 /* The function to show off against for accuracy  */
 double (*testfun_libm)  () = NULL;
 /* The function to show off against for performance */
-double (*testfun_ibm)   () = NULL;
+double (*testfun_libultim)   () = NULL;
+/* The last competitor  */
+double (*testfun_libmcr)   () = NULL;
 
 
 /* TESTSIZE doubles should be enough to flush the cache */
@@ -111,7 +117,8 @@ int main (int argc, char *argv[])
     libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc,
     crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc,
     mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc,
-    ibm_dtmin, ibm_dtmax, ibm_dtsum, ibm_dtwc, 
+    libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, 
+    libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, 
     tbx_time,
     dtsum, min_dtsum;
   unsigned long seed = 42;
@@ -139,8 +146,9 @@ mp_rnd_t mpfr_rnd_mode;
 	       &randfun, 
 	       &testfun_crlibm, 
 	       &testfun_mpfr,
+	       &testfun_libultim,
+	       &testfun_libmcr,
 	       &testfun_libm,
-	       &testfun_ibm,
 	       &worstcase,
 	       /* arguments */
 	       function_name,
@@ -163,8 +171,9 @@ mp_rnd_t mpfr_rnd_mode;
 
   crlibm_dtmin=1<<30; crlibm_dtmax=0; crlibm_dtsum=0;
   libm_dtmin=1<<30;   libm_dtmax=0;   libm_dtsum=0;
+  libultim_dtmin=1<<30;    libultim_dtmax=0;    libultim_dtsum=0;
+  libmcr_dtmin=1<<30;    libmcr_dtmax=0;    libmcr_dtsum=0;
   mpfr_dtmin=1<<30;   mpfr_dtmax=0;   mpfr_dtsum=0;
-  ibm_dtmin=1<<30;    ibm_dtmax=0;    ibm_dtsum=0;
 
 
   
@@ -223,7 +232,7 @@ mp_rnd_t mpfr_rnd_mode;
     }
 
 #ifdef HAVE_MATHLIB_H
-    if(testfun_ibm!=NULL) { /* some functions are missing in libultim (cosh, ...  */
+    if(testfun_libultim!=NULL) { /* some functions are missing in libultim (cosh, ...  */
       printf("\nIBM\n");
       for(i=1; i<=10000; i*=10) { /* i=1,10,100...*/
 	min_dtsum=1<<30; 
@@ -233,7 +242,29 @@ mp_rnd_t mpfr_rnd_mode;
 	  for (j=0; j<i; j++) {
 	    input=inputs[i];
 	    TBX_GET_TICK(t1);
-	    result = testfun_ibm(input);
+	    result = testfun_libultim(input);
+	    TBX_GET_TICK(t2);
+	    dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
+	    dtsum += dt;
+	  }
+	  if (dtsum < min_dtsum) min_dtsum=dtsum; 
+	}
+	printf("  %d loops: \t avg time = %f ticks\n",i, ((double)min_dtsum)/i);
+      }
+    }
+#endif
+#ifdef HAVE_LIBMCR_H
+    if(testfun_libmcr!=NULL) {
+      printf("\nSun\n");
+      for(i=1; i<=10000; i*=10) { /* i=1,10,100...*/
+	min_dtsum=1<<30; 
+	for(k=0;k<10;k++) { /* do the whole test 10 times and take the min */
+	  fill_and_flush(n);
+	  dtsum=0;
+	  for (j=0; j<i; j++) {
+	    input=inputs[i];
+	    TBX_GET_TICK(t1);
+	    result = testfun_libmcr(input);
 	    TBX_GET_TICK(t2);
 	    dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
 	    dtsum += dt;
@@ -333,7 +364,7 @@ mp_rnd_t mpfr_rnd_mode;
 #endif /* HAVE_MPFR */
 
 #ifdef HAVE_MATHLIB_H
-    if(testfun_ibm!=NULL) { /* some functions are missing in libultim (cosh, ...  */
+    if(testfun_libultim!=NULL) { /* some functions are missing in libultim (cosh, ...  */
       Original_Mode = Init_Lib(); 
       dtmin=1<<30;
       /* take the min of N1 consecutive calls */
@@ -342,20 +373,45 @@ mp_rnd_t mpfr_rnd_mode;
 #ifdef CRLIBM_TYPECPU_POWERPC
 	for(k=0; k<50;k++)
 #endif
-	  result = testfun_ibm(input);
+	  result = testfun_libultim(input);
 	TBX_GET_TICK(t2);
 	dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
 	if (dt<dtmin)  dtmin=dt;
       }
       Exit_Lib(Original_Mode);
-      ibm_dtsum+=dtmin;
-      if (dtmin<ibm_dtmin)  ibm_dtmin=dtmin;
-      if (dtmin>ibm_dtmax)  ibm_dtmax=dtmin;
+      libultim_dtsum+=dtmin;
+      if (dtmin<libultim_dtmin)  libultim_dtmin=dtmin;
+      if (dtmin>libultim_dtmax)  libultim_dtmax=dtmin;
 #if DETAILED_REPORT
-      printf("\tTibm=%lld",dtmin);
+      printf("\tTultim=%lld",dtmin);
 #endif /*DETAILED_REPORT*/
     }
 #endif /*HAVE_MATHLIB_H*/
+
+#ifdef HAVE_LIBMCR_H
+    if(testfun_libmcr!=NULL) { /* */
+      Original_Mode = Init_Lib(); /* TODO this belongs to Ziv's lib, check how it should be done */
+      dtmin=1<<30;
+      /* take the min of N1 consecutive calls */
+      for(j=0; j<N1; j++) {
+	TBX_GET_TICK(t1);
+#ifdef CRLIBM_TYPECPU_POWERPC
+	for(k=0; k<50;k++)
+#endif
+	  result = testfun_libmcr(input);
+	TBX_GET_TICK(t2);
+	dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
+	if (dt<dtmin)  dtmin=dt;
+      }
+      Exit_Lib(Original_Mode);
+      libmcr_dtsum+=dtmin;
+      if (dtmin<libmcr_dtmin)  libmcr_dtmin=dtmin;
+      if (dtmin>libmcr_dtmax)  libmcr_dtmax=dtmin;
+#if DETAILED_REPORT
+      printf("\tTlibmcr=%lld",dtmin);
+#endif /*DETAILED_REPORT*/
+    }
+#endif /*HAVE_LIBMCR_H*/
   } 
 
 
@@ -418,7 +474,7 @@ mp_rnd_t mpfr_rnd_mode;
 #endif /*HAVE_MPFR_H*/
 
 #ifdef HAVE_MATHLIB_H
-    if(testfun_ibm!=NULL) { /* some functions are missing in libultim (cosh, ...  */
+    if(testfun_libultim!=NULL) { /* some functions are missing in libultim (cosh, ...  */
       
       Original_Mode = Init_Lib(); 
       dtmin=1<<30;
@@ -427,15 +483,36 @@ mp_rnd_t mpfr_rnd_mode;
 #ifdef CRLIBM_TYPECPU_POWERPC
 	for(k=0; k<50;k++)
 #endif
-	  result = testfun_ibm(input);
+	  result = testfun_libultim(input);
 	TBX_GET_TICK(t2);
 	dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
 	if (dt<dtmin)  dtmin=dt;
       }
       Exit_Lib(Original_Mode);
-      ibm_dtwc = dtmin;
+      libultim_dtwc = dtmin;
     }
 #endif /*HAVE_MATHLIB_H*/
+
+
+#ifdef HAVE_LIBMCR_H
+    if(testfun_libmcr!=NULL) { /* some functions are missing in libultim (cosh, ...  */
+      
+      Original_Mode = Init_Lib(); 
+      dtmin=1<<30;
+      for(j=0; j<N1; j++) {
+	TBX_GET_TICK(t1);
+#ifdef CRLIBM_TYPECPU_POWERPC
+	for(k=0; k<50;k++)
+#endif
+	  result = testfun_libmcr(input);
+	TBX_GET_TICK(t2);
+	dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time; 
+	if (dt<dtmin)  dtmin=dt;
+      }
+      Exit_Lib(Original_Mode);
+      libmcr_dtwc = dtmin;
+    }
+#endif /*HAVE_LIBMCR_H*/
 
     /*************Normal output*************************/
 
@@ -454,19 +531,32 @@ mp_rnd_t mpfr_rnd_mode;
 	 );
 #endif /*HAVE_MPFR_H*/
     
+
 #ifdef HAVE_MATHLIB_H
-    if(testfun_ibm!=NULL) { /* some functions are missing in libultim (cosh, ...  */
+    if(testfun_libultim!=NULL) { /* some functions are missing in libultim (cosh, ...  */
       printf("\nIBM\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
-	     ibm_dtmin, ibm_dtmax,
-	     ((double)ibm_dtsum) / ((double) n),
-	     ibm_dtwc
+	     libultim_dtmin, libultim_dtmax,
+	     ((double)libultim_dtsum) / ((double) n),
+	     libultim_dtwc
 	     );
     }
 #endif /*HAVE_MATHLIB_H*/
+
+
+#ifdef HAVE_LIBMCR_H
+    if(testfun_libmcr!=NULL) { /*   */
+      printf("\nSun\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
+	     libmcr_dtmin, libmcr_dtmax,
+	     ((double)libmcr_dtsum) / ((double) n),
+	     libmcr_dtwc
+	     );
+    }
+#endif /*HAVE_LIBMCR_H*/
     
     printf("\nCRLIBM\n");
     printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n ",  
-	   crlibm_dtmin, crlibm_dtmax,
+	   crlibm_dtmin, 
+	   crlibm_dtmax,
 	   ((double)crlibm_dtsum) / ((double) n),
 	   crlibm_dtwc
 	   );
@@ -474,33 +564,46 @@ mp_rnd_t mpfr_rnd_mode;
 
     /******************* Latex output ****************/
     printf("\\multicolumn{4}{|c|}{Processor / system / compiler}   \\\\ \n \\hline");
-    printf("\n                   \t & min time \t & max time \t & avg time \\\\ \n \\hline\n");
-    printf(" \\texttt{libm}     \t & %lld    \t& %lld     \t& %10.0f \\\\ \n \\hline\n ",  
-	   libm_dtmin,  libm_dtmax,
-	   (((double)libm_dtsum) / ((double) n))
+    printf("\n                   \t& min time \t & avg time \t& max time \t  \\\\ \n \\hline\n");
+    printf(" \\texttt{libm}     \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n ",  
+	   libm_dtmin,
+	   (((double)libm_dtsum) / ((double) n)),  
+	   libm_dtmax
 	   );
 #ifdef HAVE_MPFR_H
     if (mpfr_dtwc > mpfr_dtmax) mpfr_dtmax=mpfr_dtwc;
-    printf(" \\texttt{mpfr}     \t & %lld    \t& %lld     \t& %10.0f \\\\ \n \\hline\n ",  
-	 mpfr_dtmin, mpfr_dtmax,
-	 ((double)mpfr_dtsum) / ((double) n)
+    printf(" \\texttt{mpfr}     \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
+	   mpfr_dtmin,
+	   ((double)mpfr_dtsum) / ((double) n),
+	   mpfr_dtmax
 	 );
 #endif /*HAVE_MPFR_H*/
 
 #ifdef HAVE_MATHLIB_H
-    if(testfun_ibm!=NULL) { /* some functions are missing in libultim (cosh, ...  */
-      if (ibm_dtwc > ibm_dtmax) ibm_dtmax=ibm_dtwc;
-      printf(" \\texttt{libultim}  \t & %lld    \t& %lld     \t& %10.0f \\\\ \n \\hline\n ",  
-	     ibm_dtmin, ibm_dtmax,
-	     ((double)ibm_dtsum) / ((double) n)
-	     );
+    if(testfun_libultim!=NULL) { /* some functions are missing in libultim (cosh, ...  */
+      if (libultim_dtwc > libultim_dtmax) libultim_dtmax=libultim_dtwc;
+      printf(" \\texttt{libultim}  \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
+	     libultim_dtmin,
+	     ((double)libultim_dtsum) / ((double) n), 
+	     libultim_dtmax);
+    }
+#endif /*HAVE_MATHLIB_H*/
+
+#ifdef HAVE_MATHLIB_H
+    if(testfun_libmcr!=NULL) { 
+      if (libmcr_dtwc > libmcr_dtmax) libmcr_dtmax=libmcr_dtwc;
+      printf(" \\texttt{libmcr}  \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
+	     libmcr_dtmin,
+	     ((double)libmcr_dtsum) / ((double) n), 
+	     libmcr_dtmax);
     }
 #endif /*HAVE_MATHLIB_H*/
 
     if (crlibm_dtwc > crlibm_dtmax) crlibm_dtmax=crlibm_dtwc;
-    printf("\\texttt{crlibm}     \t & %lld    \t& %lld     \t& %10.0f \\\\ \n \\hline\n ",  
-	 crlibm_dtmin, crlibm_dtmax,
-	 ((double)crlibm_dtsum) / ((double) n)
+    printf("\\texttt{crlibm}     \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
+	   crlibm_dtmin,
+	   ((double)crlibm_dtsum) / ((double) n), 
+	   crlibm_dtmax
 	   );
 
 

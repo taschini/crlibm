@@ -33,7 +33,7 @@
    tested exhaustively by the other programs of this directory. */ 
 
 /* Basic-like programming with global variables: */
-db_number input, res_crlibm, res_mpfr, res_ibm, res_libm;
+db_number input, res_crlibm, res_mpfr, res_ibm, res_libmcr, res_libm;
 mpfr_t mp_res, mp_inpt; 
 
 /* The random number generator*/
@@ -46,6 +46,8 @@ int    (*testfun_mpfr)  () = NULL;
 double (*testfun_libm)  () = NULL;
 /* The function to show off against for performance */
 double (*testfun_ibm)   () = NULL;
+/*  */
+double (*testfun_libmcr)   () = NULL;
 
 
 /*
@@ -66,8 +68,9 @@ mp_rnd_t mpfr_rnd_mode;
 void test_all() {
   int counter=0;
   long long int failures_crlibm=0,
-                failures_libm=0,
-                failures_ibm=0;
+    failures_libm=0,
+    failures_ibm=0,
+    failures_libmcr=0;
   long long int i;
 
   i=0; 
@@ -79,6 +82,10 @@ void test_all() {
 #ifdef HAVE_MATHLIB_H
     if(mpfr_rnd_mode==GMP_RNDN && testfun_ibm != NULL) /* not all the functions are in libultim */
       res_ibm.d = testfun_ibm(input.d);
+#endif
+#ifdef HAVE_LIBMCR_H
+    if(mpfr_rnd_mode==GMP_RNDN && testfun_libmcr != NULL) /* not all the functions are in libultim */
+      res_libmcr.d = testfun_libmcr(input.d);
 #endif
     mpfr_set_d(mp_inpt, input.d, GMP_RNDN);
     testfun_mpfr(mp_res, mp_inpt, mpfr_rnd_mode);
@@ -135,15 +142,41 @@ void test_all() {
 	      failures_ibm++;
 	  }
 #endif
+#ifdef HAVE_LIBMCR_H
+	if(mpfr_rnd_mode==0  && testfun_libmcr != NULL 
+	   && ((res_libmcr.i[LO_ENDIAN] != res_mpfr.i[LO_ENDIAN]) 
+	       || (res_libmcr.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) )) 
+	  {
+#if DETAILED_REPORT
+	      printf("LIBMCR ERROR  x=%.50e \n            (%8x %8x) \n", 
+		     input.d, 
+		     input.i[HI_ENDIAN], 
+		     input.i[LO_ENDIAN]);
+	      printf("libmcr gives    %.50e \n         (%8x %8x) \n", 
+		     res_libmcr.d, 
+		     res_libmcr.i[HI_ENDIAN], 
+		     res_libmcr.i[LO_ENDIAN]);
+	      printf("MPFR gives %.50e \n         (%8x %8x) \n\n", 
+		     res_mpfr.d, 
+	       res_mpfr.i[HI_ENDIAN], 
+		     res_mpfr.i[LO_ENDIAN]);
+#endif
+	      failures_libmcr++;
+	  }
+#endif
       }
       i++;
       if((i % 1000000)==0) {
-	printf(" CRLIBM : %lld failures out of %lld (ratio %e) \n",failures_crlibm, i,
+	printf(" CRLIBM       : %lld failures out of %lld (ratio %e) \n",failures_crlibm, i,
 	       ((double)failures_crlibm)/(double)i);
-	printf(" LIBM   : %lld failures out of %lld (ratio %e) \n",failures_libm, i,
+	printf(" LIBM         : %lld failures out of %lld (ratio %e) \n",failures_libm, i,
 	       ((double)failures_libm)/(double)i);
 #ifdef HAVE_MATHLIB_H
-	printf(" IBM    : %lld failures out of %lld (ratio %e) \n \n",failures_ibm, i,
+	printf(" IBM LIBULTIM : %lld failures out of %lld (ratio %e) \n \n",failures_ibm, i,
+	       ((double)failures_ibm)/(double)i);
+#endif
+#ifdef HAVE_LIBMCR_H
+	printf(" SUN LIBMCR   : %lld failures out of %lld (ratio %e) \n \n",failures_libmcr, i,
 	       ((double)failures_ibm)/(double)i);
 #endif
       }
@@ -202,8 +235,9 @@ int main (int argc, char *argv[])
 	       &randfun, 
 	       &testfun_crlibm, 
 	       &testfun_mpfr,
-	       &testfun_libm,
 	       &testfun_ibm,
+	       &testfun_libmcr,
+	       &testfun_libm,
 	       &worstcase,
 	       /* arguments */
 	       function_name,

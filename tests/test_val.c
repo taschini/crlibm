@@ -62,6 +62,8 @@ int    (*testfun_mpfr)  () = NULL;
 double (*testfun_libm)  () = NULL;
 /* The function to show off against for performance */
 double (*testfun_ibm)   () = NULL;
+/*  */
+double (*testfun_libmcr)   () = NULL;
 
 
   if ((argc != 4)) usage(argv[0]);
@@ -79,8 +81,9 @@ double (*testfun_ibm)   () = NULL;
 	       &randfun, 
 	       &testfun_crlibm, 
 	       &testfun_mpfr,
-	       &testfun_libm,
 	       &testfun_ibm,
+	       &testfun_libmcr,
+	       &testfun_libm,
 	       &worstcase,
 	       /* arguments */
 	       function_name,

@@ -14,6 +14,10 @@
 #include <MathLib.h>
 #endif
 
+#ifdef HAVE_LIBMCR_H
+#include <libmcr.h>
+#endif
+
 
 /* A variable equal to zero, stored here so that the compiler doesn't
    know its value in the other functions, which allows to prevent some
@@ -200,8 +204,9 @@ void test_init(/* pointers to returned value */
 	       double (**randfun)(), 
 	       double (**testfun_crlibm)(), 
 	       int    (**testfun_mpfr)  (),
+	       double (**testfun_ultim)   (),
+	       double (**testfun_libmcr)  (),
 	       double (**testfun_libm)  (),
-	       double (**testfun_ibm)   (),
 	       double* worst_case,
 	       /* arguments */
 	       char *func_name,
@@ -235,7 +240,10 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = exp_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = uexp;
+      *testfun_ultim    = uexp;
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = __libmcr_exp;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_exp;
@@ -259,7 +267,10 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = log_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = ulog;
+      *testfun_ultim    = ulog;
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = __libmcr_log;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_log;
@@ -283,7 +294,10 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = sin_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = usin;
+      *testfun_ultim    = usin;
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = __libmcr_sin;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_sin;
@@ -306,7 +320,10 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = cos_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = ucos;
+      *testfun_ultim    = ucos;
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = __libmcr_cos;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_cos;
@@ -329,7 +346,10 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = tan_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = utan;
+      *testfun_ultim    = utan;
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = __libmcr_tan;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_tan;
@@ -353,7 +373,7 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = cotan_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = ucotan;
+      *testfun_ultim    = ucotan;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_cotan;
@@ -377,7 +397,10 @@ void test_init(/* pointers to returned value */
         *testfun_crlibm = atan_rn ;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_ibm    = uatan;
+      *testfun_ultim    = uatan;
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = __libmcr_atan;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_atan;
@@ -403,7 +426,7 @@ void test_init(/* pointers to returned value */
       }
 #ifdef HAVE_MATHLIB_H
       /* No hyperbolic function in Ziv library */ 
-      *testfun_ibm    = NULL;
+      *testfun_ultim    = NULL;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_cosh;
@@ -427,7 +450,7 @@ void test_init(/* pointers to returned value */
       }
 #ifdef HAVE_MATHLIB_H
       /* No hyperbolic function in Ziv library */ 
-      *testfun_ibm    = NULL;
+      *testfun_ultim    = NULL;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_sinh;

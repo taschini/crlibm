@@ -52,8 +52,11 @@ This gives 14 extra bits of accuracy, so this first step is very accurate.
 
 Why not use accurate tables as defined by Gal ?
 
+In short, because Gal's fast approach only gives as many additiona bits 
+as you've got to address the table (so we are limited to 7 if we limit 
+the table size to 4KB), and we need more to have a good average performance. 
 From a performance point of view we probably lose a few cycles: There
-is 4 values to read in this scheme compared to 3 in Gal's method. The
+is 4 values to read in our scheme compared to 3 in Gal's method. The
 reconstruction costs a few floating-point operations more (not that
 many, if you look in details and want to ensure more than 7 extra
 bits).
@@ -64,6 +67,7 @@ Now for the advantages:
 3/ We will be able to reuse the same table values to speed up the
 second step (just tabulating a third double such that the three-double
 approx of sin/cos(kPi/256) will be summed exactly into an SCS number)
+
 
 
 Now a word on range reduction:
@@ -90,6 +94,15 @@ slower, more accurate range reduction. This test for k&127==0 actually
 speeds up even these cases, because in these cases there is no table
 to read and no reconstruction to do : a simple approximation to the
 function suffices.
+
+
+Why not use Payne and Hanek only as in Markstein's book ?  Because
+our scheme, in the absence of FMA, is much faster for small values
+which are the most used.
+
+Markstein takes as reduced argument the fractional part of x*256/Pi, 
+(or maybe it's 512 in his case), so he's got the same tables as we have, 
+but different polynomials (which compute sin(2Pi*y) and cos(2Pi*y).
 
  */
 
