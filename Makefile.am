@@ -29,13 +29,15 @@ include_HEADERS = crlibm.h
 
 SUBDIRS = scs_lib . tests
 
-AM_CFLAGS =  -fPIC -Wall -Wshadow -Wpointer-arith  -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
+AM_CFLAGS =  -fPIC -std=c99 -Wall -Wshadow -Wpointer-arith  -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
 
 EXTRA_DIST = VERSION\
-	maple/Common_maple_procedures.mw maple/coef_log.mw \
+	maple/Common_Maple_Procedures.mpl \
+	maple/log.mpl maple/trigo.mpl maple/atan.mpl maple/csh_fast.mpl \
 	docs/crlibm.pdf \
 	docs/latex/crlibm.tex docs/latex/0_intro.tex\
 	docs/latex/1_common.tex docs/latex/2_exp.tex docs/latex/3_log.tex\
+	docs/latex/4_atan.tex docs/latex/5_csh.tex \
 	docs/latex/fig_scs docs/latex/fig_exp\
 	docs/latex/elem-fun.bib
 
