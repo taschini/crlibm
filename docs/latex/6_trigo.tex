@@ -330,7 +330,7 @@ integer to which \texttt{x} will be compared (procedure
       return x_split.d;
     }
 \end{lstlisting}
-\subsection{Fast approximation for small arguments}
+\subsection{Fast approximation of sine for small arguments \label{sec:trigo:fastsine}}
 
 \begin{lstlisting}[caption={Sine, case 2},firstnumber=1]
     xx = x*x;
@@ -355,11 +355,11 @@ P_{\mathtt{ts}}(x) = \mathtt{s3}.x^2 + \mathtt{s5}.x^4 + \mathtt{s7}.x^6
 $$
 
 We compute this error in Maple as 
-$$\epsilon_{\mathrm{approxts}} = \left\Vert \frac{xP_{\mathtt{ts}}(x)}{\sin(x)-x} -1 \right\Vert_{\infty}$$
+$$\epsilon_{\mathrm{approxts}} = \left\Vert \frac{xP_{\mathtt{ts}}(x)}{\sin(x)-x} -1 \right\Vert_{\infty}[-x_{\mathrm{max}}...x_{\mathrm{max}}]$$
 
 We also compute $\epsilon_{\mathrm{hornerts}}$, the relative error due
 to rounding in the Horner evaluation thanks to the
-\texttt{compute\_horner\_rounding\_error} procedure. For thos we need
+\texttt{compute\_horner\_rounding\_error} procedure. For this we need
 the relative error carried by \texttt{xx}, which is only due to the
 rounding error in the multiplication since \texttt{x} is exact:
 $$\mathtt{xx}=\mathtt{x}^2(1+\epsilon_{-53})$$
@@ -389,11 +389,21 @@ Finally
 
 \section{Detailed examination of auxilliary functions}
 
-Upon entering \texttt{do\_sin\_k\_zero}, we have in $y_h+y_l$ an
+\subsection{\texttt{do\_sin\_k\_zero}}
+
+Upon entering \texttt{do\_sin\_k\_zero}, we assume that we have in $y_h+y_l$ an
 approximation to the ideal reduced value $\hat{y}=x-k\pi/256$ with a
 relative accuracy $\epsilon_{argred}$:
 
 $$y_h+y_l = (x-k\pi/256)(1+\epsilon_{argred}) = \hat{y}(1+\epsilon_{argred}) $$
+
+whith, depending on the quadrant, $\sin(\hat{y} = \pm\sin(x)$ or
+$\sin(\hat{y} = \pm\cos(x)$: the important idea is that there is no
+error in this ideal argument reduction. In the following we will
+assume we are in the case $\sin(\hat{y} = \sin(x)$, therfore the relative error that we need to compute is
+\begin{equation}
+  \epsilon_{\mathrm{sinkzero}} = \frac{(\mathtt{*psh} + \mathtt{*psl})}{\sin(\mathtt{x})} -1 = \frac{(\mathtt{*psh} + \mathtt{*psl})}{\sin(\hat{y})} -1
+\end{equation}
 
 
 \begin{lstlisting}[caption={do\_sin\_k\_zero},firstnumber=1]
@@ -408,20 +418,71 @@ do{                                                \
 } while(0)						   
 \end{lstlisting}
 
-\begin{tabular}{|ll|}
-\hline
-Line 4   & The error of neglecting $y_l$ and the rounding error in the multiplication\\
-         & each amount to half an ulp: \\
-         & $\mathtt{yh2}=\mathtt{yh}^2(1+\epsilon_{-53})$\\
-         & with $\mathtt{yh} = (\mathtt{yh}+\mathtt{yl})(1+\epsilon_{-53}) = \hat{y}(1+\epsilon_{argred})(1+\epsilon_{-53})$\\
-         & hence $\mathtt{yh2}=\hat{y}^2(1+\epsilon_{\mathtt{yh2}})$ \\
-         & with $\epsilon_{\mathtt{yh2}} = (1+\epsilon_{argred})^2(1+\epsilon_{-53})^3$\\
-\hline
-Line 5   & This is a standard Horner evaluation. \\
-\hline
-\end{tabular}
+One can see that we almost have the same code as in
+\ref{sec:trigo:fastsine}. The difference is that we have as input
+a double-double $\mathtt{yh}+\mathtt{yl}$, which is itself an inexact term. 
+
+At Line 4, the error of neglecting $y_l$ and the rounding error in the
+multiplication each amount to half an ulp:
+  $\mathtt{yh2}=\mathtt{yh}^2(1+\epsilon_{-53})$, 
+ with $\mathtt{yh} = (\mathtt{yh}+\mathtt{yl})(1+\epsilon_{-53}) = \hat{y}(1+\epsilon_{argred})(1+\epsilon_{-53})$
+
+Therefore
+\begin{equation}
+  \mathtt{yh2}=\hat{y}^2(1+\epsilon_{\mathtt{yh2}})
+\end{equation}
+
+with
+\begin{equation}
+  \epsilon_{\mathtt{yh2}} = (1+\epsilon_{argred})^2(1+\epsilon_{-53})^3 - 1
+\end{equation}
+
+Line 5 is a standard Horner evaluation. Its approximation error is defined by: 
+$$
+P_{\mathtt{ts}}(\hat{y}) = \frac{\sin(\hat{y})-\hat{y}}{\hat{y}}(1+\epsilon_{\mathrm{approxts}})
+$$
+
+This error is computed in Maple as in \ref{sec:trigo:fastsine}, only the interval changes:
+$$\epsilon_{\mathrm{approxts}} = \left\Vert \frac{xP_{\mathtt{ts}}(x)}{\sin(x)-x} -1 \right\Vert_{\infty}$$
+
+We also compute $\epsilon_{\mathrm{hornerts}}$, the relative error due
+to rounding in the Horner evaluation thanks to the
+\texttt{compute\_horner\_rounding\_error} procedure. This time, this procedure 
+takes into account the relative error carried by \texttt{yh2}, which is
+$\epsilon_{\mathtt{yh2}}$ computed above.
+We thus get the total relative error on \texttt{ts}:
+
+$$\mathtt{ts} = P_{\mathtt{ts}}(\hat{y})(1+\epsilon_{\mathrm{hornerts}}) = \frac{\sin(\hat{y})-\hat{y}}{\hat{y}}(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})$$
 
 
+The final \texttt{Add12} is exact. Therefore the overall relative error is:
+
+\begin{equation}
+  \epsilon_{\mathrm{sinkzero}} = \frac{((\mathtt{yh}\otimes \mathtt{ts}) \oplus \mathtt{yl}) + \mathtt{yh}}{\sin(\hat{y})} -1 = \frac{\mathtt{x}\times\mathtt{ts}(1+\epsilon_{-53}) + \mathtt{x}}{\sin(\hat{y})} -1
+\label{eq:sinkzero}
+\end{equation}
+
+
+Reporting this in (\ref{eq:SinCase2Total}), we get 
+\begin{equation*}
+  \epsilon_{\mathrm{sinCase2}} = \frac{(\sin(\hat{y})-\hat{y})(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})(1+\epsilon_{-53}) + \hat{y}}{\sin(\hat{y})} -1
+\end{equation*}
+or,
+\begin{equation*}
+  \epsilon_{\mathrm{sinCase2}} =  \frac{\sin(\hat{y})-\hat{y}}{\sin(\hat{y})}(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})(1+\epsilon_{-53})
+\end{equation*}
+
+Finally
+\begin{equation}
+  \epsilon_{\mathrm{sinCase2}} =  \left\Vert\frac{\sin(\hat{y})-\hat{y}}{\sin(\hat{y}
+)}\right\Vert_{\infty}(1+\epsilon_{\mathrm{approxts}})(1+\epsilon_{\mathrm{hornerts}})(1+\epsilon_{-53})
+  \label{eq:sinkzero2}
+\end{equation}
+ 
+
+
+
+\subsection{\texttt{do\_sin\_k\_notzero}}
 
 Upon entering one of \texttt{do\_sin\_k\_notzero},
 \texttt{do\_cos\_k\_zero}, \texttt{do\_cos\_k\_notzero}, we have in
