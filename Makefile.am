@@ -29,4 +29,4 @@ SUBDIRS = scs_lib . tests
 
 AM_CFLAGS =  -fPIC -Wall -Wshadow -Wpointer-arith  -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
 
-EXTRA_DIST = VERSION docs
+EXTRA_DIST = VERSION docs maple
