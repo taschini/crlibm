@@ -331,6 +331,53 @@ void test_init(/* pointers to returned value */
 #endif
     }
 
+  else  if (strcmp (func_name, "tan") == 0)
+    {
+      *randfun        = rand_for_sin; 
+      /* *worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
+      */ 
+      *testfun_libm   = tan; 
+      switch(crlibm_rnd_mode){
+      case 2:
+	*testfun_crlibm = tan_rn;	break;
+      case 3:
+	*testfun_crlibm = tan_rn;	break;
+      case 4:
+	*testfun_crlibm = tan_rn;	break;
+      default:
+	*testfun_crlibm = tan_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = utan;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_tan;
+#endif
+    }
+  else  if (strcmp (func_name, "scs_tan") == 0)
+    {
+      *randfun        = rand_for_sin; 
+      /* *worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
+      */ 
+      *testfun_libm   = tan; 
+      switch(crlibm_rnd_mode){
+      case 2:
+	*testfun_crlibm = scs_tan_rn;	break;
+      case 3:
+	*testfun_crlibm = scs_tan_rn;	break;
+      case 4:
+	*testfun_crlibm = scs_tan_rn;	break;
+      default:
+	*testfun_crlibm = scs_tan_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = utan;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_tan;
+#endif
+    }
+
   else
     {
       fprintf (stderr, "Unknown function: %s\n", func_name);
