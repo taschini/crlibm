@@ -56,11 +56,24 @@ int crlibm_second_step_taken;
 
 /*
  * i = d in rounding to nearest
+  The constant added is 2^52 + 2^51 
  */
-#define DOUBLE2INT(ii, dd)       \
-  {db_number t;              \
-   t.d=(dd+6755399441055744.0);  \
-   ii=t.i[LO_ENDIAN];}
+#define DOUBLE2INT(_i, _d)       \
+  {db_number _t;              \
+   _t.d = (_d+6755399441055744.0);  \
+   _i = _t.i[LO_ENDIAN];}
+
+
+/* Same idea but beware: works only for |ii| < 2^51 -1 */
+#define DOUBLE2LONGINT(_i, _d)       \
+  {\
+    db_number _t;              \
+    _t.d = (_d+6755399441055744.0); \
+    if (_d >= 0) /* sign extend */\
+      _i = _t.l & 0x0007FFFFFFFFFFFFLL;\
+    else\
+      _i = (_t.l & 0x0007FFFFFFFFFFFFLL) |  (0xFFF8000000000000LL);\
+  }
 
 
 
