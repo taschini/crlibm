@@ -154,9 +154,15 @@ double rand_for_atan(){
   result.i[LO_ENDIAN]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
   result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
+#if 1 /* predictive test perf, not soaktest*/
+  /* Now set the exponent between -20 and 50, enough to cover the useful range  */
+  e =  (int) ( (rand_double_normal()-1) * 70 );
+  result.i[HI_ENDIAN] += (1023 + e -20)<<20;
+#else
   /* Now set the exponent between -30 and 60, enough to cover the useful range  */
   e =  (int) ( (rand_double_normal()-1) * 90 ); 
   result.i[HI_ENDIAN] += (1023 + e -30)<<20;
+#endif
   return result.d;
 
 }
