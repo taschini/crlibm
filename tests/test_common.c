@@ -122,9 +122,8 @@ double rand_for_log(){
 }
 
 
-/* For exp we will soaktest with a random sign, a random mantissa, and
-   a random exponent between -5 and 15 */
-double rand_for_sin(){
+/* For sin it is difficult to tell what the test function should be */ 
+double rand_for_trig(){
   db_number result;
   int e;
 
@@ -132,14 +131,26 @@ double rand_for_sin(){
   result.i[LO_ENDIAN]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
   result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
-  /* Now set the exponent between -10 and 15, enough to cover the useful range  */
-#if 0  
-  e =  (int) ( (rand_double_normal()-1) * 25 );
-  result.i[HI_ENDIAN] += (1023 + e -10)<<20;
-#else
-  e =  (int) ( (rand_double_normal()-1) * 20 ); /* never Payne Hanek : 34 */
-  result.i[HI_ENDIAN] += (1023 + e +35)<<20;
-#endif
+  /* Now set the exponent  between -20 and 20 */
+  e =  (int) ( (rand_double_normal()-1) * 40 ); 
+  result.i[HI_ENDIAN] += (1023 + e - 20)<<20;
+  return result.d;
+
+}
+
+
+
+double rand_for_atan(){
+  db_number result;
+  int e;
+
+  /*first the low bits of the mantissa*/
+  result.i[LO_ENDIAN]=rand_int();
+  /* then the high bits of the mantissa, and the sign bit */
+  result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
+  /* Now set the exponent between -30 and 60, enough to cover the useful range  */
+  e =  (int) ( (rand_double_normal()-1) * 90 ); /* never Payne Hanek : 34 */
+  result.i[HI_ENDIAN] += (1023 + e -30)<<20;
   return result.d;
 
 }
@@ -221,7 +232,7 @@ void test_init(/* pointers to returned value */
     }
   else if (strcmp (func_name, "atan") == 0)
     {
-      *randfun        = rand_generic;
+      *randfun        = rand_for_atan;
       *worst_case= .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
       *testfun_libm   = atan;
       switch(crlibm_rnd_mode){
@@ -315,7 +326,7 @@ void test_init(/* pointers to returned value */
 
   else  if (strcmp (func_name, "sin") == 0)
     {
-      *randfun        = rand_for_sin;
+      *randfun        = rand_for_trig;
       /* This worst case works fast for Ziv. Damn. */
       *worst_case=0.498498785880875427967140467444551177322864532470703125000000 ;
       *testfun_libm   = sin;
@@ -339,7 +350,7 @@ void test_init(/* pointers to returned value */
 
   else  if (strcmp (func_name, "tan") == 0)
     {
-      *randfun        = rand_for_sin; 
+      *randfun        = rand_for_trig; 
       /* *worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
       */ 
       *testfun_libm   = tan; 
@@ -362,7 +373,7 @@ void test_init(/* pointers to returned value */
     }
   else  if (strcmp (func_name, "scs_tan") == 0)
     {
-      *randfun        = rand_for_sin; 
+      *randfun        = rand_for_trig; 
       /* *worst_case=0.4009793462309855760053830468258630076242931610568335144339734234840014178511334897967240437927437320e-115;
       */ 
       *testfun_libm   = tan; 
