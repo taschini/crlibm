@@ -459,3 +459,17 @@ end:
 
 
 fi:
+
+
+
+#####################################################################
+#Old stuff for SCS, cut from various old maple worksheets, not checked
+
+if(1+2=4) then
+Poly_P := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, 40):
+Poly_Q := convert(Poly_P,polynom):
+Poly_cheb := chebpade(Poly_Q, x=0..evalf(Pi/4), [17,0]);
+Poly_Res := x + x^3 * subs(x=x^2, Poly_cheb);
+log(infnorm( 1 - (Poly_Res)/sin(x),x=0..evalf(Pi/4), err))/log(2.);
+
+fi:
