@@ -53,7 +53,7 @@ library which is fast enough to replace the existing libraries, at acceptable
 
 \subsection{The Table Maker's Dilemma}
 
-With a few exceptions, the image $y$ of a floating-point number $x$ by
+With a few exceptions, the image $\hat{y}$ of a floating-point number $x$ by
 a transcendental function $f$ is a transcendental number, and can
 therefore not be represented exactly in standard numeration systems.
 The only hope is to compute the floating-point number that is closest
@@ -61,26 +61,26 @@ to (resp.  immediately above or immediately below) the mathematical
 value, which we call the result \emph{correctly rounded} to the
 nearest (resp.  towards $+\infty$ or towards $-\infty$).
 
-It is only possible to compute an approximation $\hat{y}$ to the real
-number $y$ with precision $\epsilon$. This ensures that the real value
-$y$ belongs to the interval $[\hat{y}-\epsilon , \hat{y}+\epsilon]$.
+It is only possible to compute an approximation ${y}$ to the real
+number $\hat{y}$ with precision $\maxeps{}$. This ensures that the real value
+$\hat{y}$ belongs to the interval $[{y}(1-\maxeps{}) , {y}(1+\maxeps{})]$.
 Sometimes however, this information is not enough to decide correct
-rounding. For example, if $[\hat{y}-\epsilon , \hat{y}+\epsilon]$
+rounding. For example, if $[{y}(1-\maxeps{}) , {y}(1+\maxeps{})]$
 contains the middle of two consecutive floating-point numbers, it is
 impossible to decide which of these two numbers is the correctly
-rounded to the nearest of $y$. This is known as the Table Maker's
+rounded to the nearest of $\hat{y}$. This is known as the Table Maker's
 Dilemma (TMD).
 
 \subsection{The onion peeling strategy}
 
 A method described by Ziv \cite{Ziv91} is to increase the precision
-$\epsilon$ of the approximation until the correctly rounded value can
+$\maxeps$ of the approximation until the correctly rounded value can
 be decided.  Given a function $f$ and an argument $x$, the value of
 $f(x)$ is first evaluated using a quick approximation of precision
-$\epsilon_1$.  Knowing $\epsilon_1$, it is possible to decide if
+$\maxeps_1$.  Knowing $\maxeps_1$, it is possible to decide if
 rounding is possible, or if more precision is required, in which case
 the computation is restarted using a slower approximation of precision
-$\epsilon_2$ greater than $\epsilon_1$, and so on. This approach makes
+$\maxeps_2$ greater than $\maxeps_1$, and so on. This approach makes
 sense even in terms of average performance, as the slower steps are
 rarely taken.
 
@@ -98,7 +98,7 @@ application.
 
 We have designed our own library called \emph{crlibm} (correctly
 rounded mathematical library). It is based on the work of
-Lef\`evre\cite{LMT98,Lef2000} who computed the worst-case $\epsilon$
+Lef\`evre\cite{LMT98,Lef2000} who computed the worst-case $\maxeps$
 required for correctly rounding several functions in double-precision
 over selected intervals in the four IEEE-754 rounding modes. For
 example, he proved that 157 bits are enough to ensure correct rounding
@@ -124,8 +124,8 @@ of its correctly rounding behavior.
 
 \subsection{Portable IEEE-754 FP for fast first step}
 The computation of a tight bound on the approximation error of the
-first step ($\epsilon_1$) is crucial for the efficiency of the onion
-peeling strategy: overestimating $\epsilon_1$ means going more often
+first step ($\maxeps_1$) is crucial for the efficiency of the onion
+peeling strategy: overestimating $\maxeps_1$ means going more often
 than needed through the second step. As we want the proof to be
 portable as well as the code, our first steps are written in strict
 IEEE-754 arithmetic. On some systems, this means preventing the
@@ -135,16 +135,22 @@ means that the performance of our portable library will be lower than
 optimized libraries using these features.
 
 To ease these proofs, our first steps make wide use of classical, well
-proven techniques. In particular, when a result is needed in a
-precision higher than double precision (as is the case of $\hat{y_1}$,
+proven results like Sterbenz' lemma. When a result is needed in a
+precision higher than double precision (as is the case of $y_1$,
 the result of the first step), it is represented as as the sum of two
-floating-point numbers. There are well-known algorithms for computing
-on such sums (for instance Sterbenz' lemma, the Fast2Sum algorithm,
-the Dekker algorithm\cite{Knu73}) with mechanically checked proofs.
+floating-point numbers, also called a \emph{double-double} number.
+There are well-known algorithms for computing on double-doubles, and
+they are presented in the next chapter. An advantage of properly
+encapsulating double-double arithmetic is that we can actually exploit
+fused multiply-and-add operators in a transparent manner (this
+experimental feature is currently available for the Itanium and
+PowerPC platforms, when using the \texttt{gcc} compiler).
 
-A sequence of simple tests on $\hat{y_1}$ allows to decide whether to
-go for the second step. The sequence corresponding to each rounding
-mode is shared by most functions and has also been carefully proven.
+At the end of the \quick\ phase, a sequence of simple tests on
+$y_1$ knowing $\maxeps_1$ allows to decide whether to go for
+the second step. The sequence corresponding to each rounding mode is
+shared by most functions and is also carefully proven in the next
+chapter.
 
 
 \subsection{Software Carry-Save for an accurate second step}
@@ -154,8 +160,8 @@ and faster than other available libraries for this specific
 application \cite{DefDin2002,DinDef2003}. This choice is motivated by
 considerations of code size and performance, but also by the need to
 be independent of other libraries: Again, we need a library on which
-we may rely at the proof level. This library is independent from the
-mathematical library and distributed separately \cite{SCSweb}.
+we may rely at the proof level. This library is included in \crlibm,
+but also distributed separately \cite{SCSweb}.
 
 
 \subsection{Current state of \emph{crlibm}}
@@ -163,9 +169,9 @@ mathematical library and distributed separately \cite{SCSweb}.
 The library \texttt{crlibm} \emph{(correctly rounded mathematical
   library)} currently offers accurate parts for the exponential,
 logarithm in radix $2$, $10$ and $e$, sine, cosine, tangent,
-arctangent, plus trigonometric argument reduction. The  quick
-part and its proof have only been written for the exponential and the logarithm thus
-far. 
+arctangent, plus trigonometric argument reduction. The quick part and
+its proof have only been written for the exponential and the logarithm
+thus far.
 
 The difficulty is to prove both the algorithm and the C program.
 The proofs rely heavily on several shared lemmas, assuming the good
