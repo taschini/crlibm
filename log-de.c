@@ -30,7 +30,7 @@ on pentium,
 double log_rn(double x) {
   double wi;
   db_number y;
-  long double logwih, logwil, invwih, invwil, z, z0, t;
+  long double logwih, logwil, invwih, invwil, z, z0, t, p1,p2,p3,z2,z4;
   long double zh, zl, th, tl, eh,el;
   int E, i, index;
 
@@ -83,6 +83,7 @@ double log_rn(double x) {
    z  = z0*invwih;
 
    /* Polynomial evaluation, unrolled to go through Gappa */
+#if 0
    t = c8;
    t = c7 + z*t;
    t = c6 + z*t;
@@ -91,9 +92,14 @@ double log_rn(double x) {
    t = c3 + z*t;
    t = c2 + z*t;
    t = c1 + z*t;
-
-   /* reconstruction */
    t = logwih + z*t;
+#else
+   z2 = z*z;             p1 = c2+c3*z;    p2 = c4+c5*z;     p3 = c6+c7*z;
+   t = logwih + c1*z;    z4 = z2*z2;      p1 = p1+p2*z2;    p3 = p3+c8*z2;
+   p1 = p1 + z4*p3;
+   t = t + z2 *p1;   
+#endif
+   /* reconstruction */
    t = t + E*ln2h;
 
 #if 0 /* to time the first step only */
