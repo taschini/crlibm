@@ -13,10 +13,6 @@
 #include <crlibm_private.h>
 #include <atan_fast.h>
 
-/* the second step :   A VOIR PLUS TARD */ 
-double scs_atan_rn(double); 
-double scs_atan_rd(double); 
-double scs_atan_ru(double); 
 
 static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x) {
 

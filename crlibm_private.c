@@ -33,8 +33,6 @@ void crlibm_init() {
 
 
 
-
-
 #if ADD22_AS_FUNCTIONS
 /*
  * computes double-double addition: zh+zl = xh+xl + yh+yl
@@ -153,3 +151,57 @@ void Div22(double* pzh, double* pzl, double xh, double xl, double yh, double yl)
 
 
   
+#if EVAL_PERF==1
+/* counter of calls to the second step (accurate step) */
+int crlibm_second_step_taken;
+#endif
+
+
+
+
+
+
+
+#ifdef SCS_TYPECPU_SPARC
+ const scs
+/* 0   */
+   scs_zer ={{0x00000000, 0x00000000, 0x00000000, 0x00000000},
+             {{0, 0}},  0,   1 },
+/* 1/2 */
+   scs_half={{0x02000000, 0x00000000, 0x00000000, 0x00000000},
+             DB_ONE, -1,   1 },
+/*  1  */  
+   scs_one ={{0x00000001, 0x00000000, 0x00000000, 0x00000000},
+             DB_ONE,  0,   1 },
+/*  2  */
+   scs_two ={{0x00000002, 0x00000000, 0x00000000, 0x00000000},
+             DB_ONE,  0,   1 },	
+
+/* ~1.666667e-01 */ 
+   scs_sixinv ={{0x0aaaaaaa, 0x2aaaaaaa, 0x2aaaaaaa, 0x2aaaaaaa},
+	     DB_ONE,  -1,   1 };
+
+#else
+ const struct scs
+/* 0   */
+   scs_zer ={{0x00000000, 0x00000000, 0x00000000, 0x00000000,
+             0x00000000, 0x00000000, 0x00000000, 0x00000000},
+             {{0, 0}},  0,   1 },
+/* 1/2 */
+   scs_half={{0x20000000, 0x00000000, 0x00000000, 0x00000000,
+             0x00000000, 0x00000000, 0x00000000, 0x00000000},
+             DB_ONE, -1,   1 },
+/*  1  */  
+   scs_one ={{0x00000001, 0x00000000, 0x00000000, 0x00000000,
+             0x00000000, 0x00000000, 0x00000000, 0x00000000},
+             DB_ONE,  0,   1 },
+/*  2  */
+   scs_two ={{0x00000002, 0x00000000, 0x00000000, 0x00000000,
+             0x00000000, 0x00000000, 0x00000000, 0x00000000},
+             DB_ONE,  0,   1 },
+/* 0.166666*/
+   scs_sixinv ={{0x0aaaaaaa, 0x2aaaaaaa, 0x2aaaaaaa, 0x2aaaaaaa, 
+	     0x2aaaaaaa, 0x2aaaaaaa, 0x2aaaaaaa, 0x2aaaaaaa},
+	     DB_ONE,  -1,   1 };
+
+#endif

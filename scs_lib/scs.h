@@ -279,6 +279,10 @@ precision is needed.
 */
 void scs_div(scs_ptr result, scs_ptr x, scs_ptr y);
 
+
+/** SCS division by 2. Computes x/2. Result is normalised */ 
+void scs_div_2(scs_t x);
+
 /**@}*/ /* end doxygen group for division functions*/
 
 

@@ -32,6 +32,39 @@ Copyright (C) 2002  David Defour and Florent de Dinechin
 #include "scs_private.h"
 
 
+void scs_div_2(scs_t num) {
+  /* small function to divide by 2 any SCS number */
+  unsigned int carry, new_value, mask, old_value;
+  int i;
+  carry = 0x00000000;
+  mask = ((0x1) << SCS_NB_BITS)-1;/*we now have a mask for the used bits in a word*/
+  /* if it's a normal number, i.e. not zero nor NaN */
+  if( (num->exception).d == (double) 1) {
+    /* first, a loop to rotate all numbers to the right*/
+    for(i = 0; i < SCS_NB_WORDS; i++) {
+      old_value = num->h_word[i];
+      new_value = (old_value & mask);/* to keep only used bits */
+      num->h_word[i] = (old_value & !mask) | carry | ((old_value >> 1) & mask);
+      carry = old_value & 0x00000001;/* it can be interesting to keep the last bit of each number =) */
+      carry = carry << (SCS_NB_BITS-1);
+    }
+    /* In the SCS format, the first number can't be zero, so we must handle this particular case */
+    if (num->h_word[0] == 0){
+      num->index = num->index - 1;
+      for(i = 1; i < SCS_NB_WORDS; i++) {
+	num->h_word[i-1] = num->h_word[i];
+      }
+      num->h_word[SCS_NB_WORDS-1] = 0;
+    }
+  }
+  else {
+    (num->exception).d = (num->exception).d / 2;/* zero, NaN, ... */
+  }
+}
+
+
+
+
 /*
  * Compute 1/x with a Newton scheme
  */

@@ -14,22 +14,14 @@
 
 #define BIAS 89
 
-/* The prototypes of the second step */
-extern double scs_exp_rn(double);
-extern double scs_exp_ru(double);
-extern double scs_exp_rd(double);
-
 
 
 /* useful constants */
 static const double 
- two1000  = 1.07150860718626732095e301, /* 0x7E700000, 0x00000000 */
- twom1000 = 9.33263618503218878990e-302,/* 0x01700000, 0x00000000 */
- twom53   = 1.11022302462515654042e-16, /* 0x3CA00000, 0x00000000 */
+ two1000  = 0x1p1000, /* 0x7E700000, 0x00000000, 1.07150860718626732095e301 */
+ twom1000 = 0x1p-1000,/* 0x01700000, 0x00000000, 9.33263618503218878990e-302 */
  ln2_hi   = 6.93147180559890330187e-01, /* 0x3FE62E42, 0xFEFA3800 */ 
  ln2_lo   = 5.49792301870837115524e-14, /* 0x3D2EF357, 0x93C76730 */
- half[2]  = {0.5,
-            -0.5},
  inv_ln2  = 1.44269504088896338700e+00;
 
 static const db_number 

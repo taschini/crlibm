@@ -12,10 +12,6 @@
 #include <crlibm_private.h>
 #include "log_fast.h"
 
-/* The prototypes of the second step */
-extern void scs_log(scs_ptr,db_number, int);
-
-
 
 /* switches on various printfs. Default 0 */
 #define DEBUG 0

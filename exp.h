@@ -7,16 +7,10 @@
 
 #ifdef WORDS_BIGENDIAN
 static const db_number 
-  iln2_o512 = {{0x40871547, 0x652B82FE}}, /* 512/ln(2)        */
-  tiny_int  = {{0x3c8fffff, 0xffffffff}}, /* 2^(-54)-2^(-107) */
-  smll_int  = {{0xc0874910, 0xd52d3051}}, /* -745,13...       */
-  larg_int  = {{0x40862e42, 0xfefa39ef}}; /* 709,78...        */
+  iln2_o512 = {{0x40871547, 0x652B82FE}}; /* 512/ln(2)        */
 #else
 static const db_number 
-  iln2_o512 = {{0x652B82FE, 0x40871547}}, /* 512/ln(2)        */
-  tiny_int  = {{0xffffffff, 0x3c8fffff}}, /* 2^(-54)-2^(-107) */
-  smll_int  = {{0xd52d3051, 0xc0874910}}, /* -745,13...       */
-  larg_int  = {{0xfefa39ef, 0x40862e42}}; /* 709,78...        */ 
+  iln2_o512 = {{0x652B82FE, 0x40871547}}; /* 512/ln(2)        */
 #endif
 
 static const struct scs 

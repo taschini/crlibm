@@ -8,13 +8,10 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <crlibm_private.h>
 #include <atan.h>
 #include <atan_fast.h>
 
-void scs_atan(scs_ptr, scs_ptr);
-double scs_atan_rd(double);
-double scs_atan_ru(double);
-double scs_atan_rn(double);
 
 /*
  *  WHAT WE CAN DO :

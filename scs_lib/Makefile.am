@@ -7,7 +7,7 @@ lib_LIBRARIES = libscs.a
 # shared libraries need libtool. We'll do it later.
 #lib_LTLIBRARIES = libscs.la
 
-libscs_a_SOURCES = scs.h scs_private.h \
+libscs_a_SOURCES = scs.h scs_private.h scs_private.c \
 	double2scs.c print_scs.c \
 	addition_scs.c multiplication_scs.c division_scs.c\
 	rand_scs.c poly_fct.c\

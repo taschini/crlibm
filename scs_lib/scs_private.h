@@ -57,26 +57,16 @@ Copyright (C) 2002  David Defour and Florent de Dinechin
    and radix_blah means radix^blah.
    (1023 + e)<<20 is the way to cast e into the exponent field of an IEEE-754 double
  */
+
  
-#ifdef WORDS_BIGENDIAN
- static const db_number radix_one_double  = {{((1023+SCS_NB_BITS)<<20) ,               0x00000000 }}; 
- static const db_number radix_two_double  = {{((1023+2*SCS_NB_BITS)<<20) ,             0x00000000 }}; 
- static const db_number radix_mone_double = {{((1023-SCS_NB_BITS)<<20) ,               0x00000000 }}; 
- static const db_number radix_mtwo_double = {{((1023-2*SCS_NB_BITS)<<20) ,             0x00000000 }}; 
- static const db_number radix_rng_double  = {{((1023+SCS_NB_BITS*SCS_MAX_RANGE)<<20) , 0x00000000 }}; 
- static const db_number radix_mrng_double = {{((1023-SCS_NB_BITS*SCS_MAX_RANGE)<<20) , 0x00000000 }};
- static const db_number max_double        = {{0x7FEFFFFF ,                             0xFFFFFFFF }}; 
- static const db_number min_double        = {{0x00000000 ,                             0x00000001 }}; 
-#else
- static const db_number radix_one_double  = {{0x00000000 , ((1023+SCS_NB_BITS)<<20)               }}; 
- static const db_number radix_two_double  = {{0x00000000 , ((1023+2*SCS_NB_BITS)<<20)             }}; 
- static const db_number radix_mone_double = {{0x00000000 , ((1023-SCS_NB_BITS)<<20)               }}; 
- static const db_number radix_mtwo_double = {{0x00000000 , ((1023-2*SCS_NB_BITS)<<20)             }}; 
- static const db_number radix_rng_double  = {{0x00000000 , ((1023+SCS_NB_BITS*SCS_MAX_RANGE)<<20) }}; 
- static const db_number radix_mrng_double = {{0x00000000 , ((1023-SCS_NB_BITS*SCS_MAX_RANGE)<<20) }}; 
- static const db_number max_double        = {{0xFFFFFFFF ,                             0x7FEFFFFF }}; 
- static const db_number min_double        = {{0x00000001 ,                             0x00000000 }}; 
- #endif
+ extern const db_number radix_one_double ; 
+ extern const db_number radix_two_double ; 
+ extern const db_number radix_mone_double; 
+ extern const db_number radix_mtwo_double; 
+ extern const db_number radix_rng_double ; 
+ extern const db_number radix_mrng_double;
+ extern const db_number max_double       ; 
+ extern const db_number min_double       ; 
 
 
 #define SCS_RADIX_ONE_DOUBLE     radix_one_double.d   /* 2^(SCS_NB_BITS)           */ 

@@ -20,7 +20,7 @@ libcrlibm_a_SOURCES =  \
 	csh_fast.h csh_fast.c
 
 # add all the scs_lib useful functions
-libcrlibm_a_LIBADD = scs_lib/addition_scs.o \
+libcrlibm_a_LIBADD = scs_lib/scs_private.o scs_lib/addition_scs.o  \
 	scs_lib/division_scs.o scs_lib/print_scs.o\
 	scs_lib/double2scs.o scs_lib/zero_scs.o\
 	scs_lib/multiplication_scs.o scs_lib/scs2double.o
