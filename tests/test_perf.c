@@ -252,6 +252,7 @@ int main (int argc, char *argv[])
     ibm_dtmin, ibm_dtmax, ibm_dtsum, ibm_dtwc,
     dtsum, min_dtsum;
   unsigned long seed = 42;
+  int output_latex=0;
 #ifdef HAVE_MPFR_H  
   mpfr_t mp_res, mp_inpt; 
 #endif
@@ -259,8 +260,8 @@ int main (int argc, char *argv[])
 
   /************  INITIALISATIONS  *********************/
 
-  if (argc != 3) {
-    printf("Usage: %s function iterations \n", argv[0]);
+  if ((argc != 3)) {
+    printf("Usage: %s function iterations\n", argv[0]);
     exit(1);
   }
  
@@ -498,36 +499,69 @@ int main (int argc, char *argv[])
 #endif /*HAVE_MATHLIB_H*/
 
 
-  printf("\nCRLIBM\n");
-  printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
-	 crlibm_dtmin, crlibm_dtmax,
-	 ((double)crlibm_dtsum) / ((double) n),
-	 crlibm_dtwc
-	 );
+    /*************Normal output*************************/
 
-  printf("\nLIBM\n");
-  printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n ",  
-	 libm_dtmin, libm_dtmax,
-	 (((double)libm_dtsum) / ((double) n)),
-	 libm_dtwc
-	 );
-
+    printf("\nLIBM\n");
+    printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n ",  
+	   libm_dtmin, libm_dtmax,
+	   (((double)libm_dtsum) / ((double) n)),
+	   libm_dtwc
+	   );
+    
 #ifdef HAVE_MPFR_H
-  printf("\nMPFR\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
+    printf("\nMPFR\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
+	   mpfr_dtmin, mpfr_dtmax,
+	   ((double)mpfr_dtsum) / ((double) n),
+	   mpfr_dtwc
+	 );
+#endif /*HAVE_MPFR_H*/
+    
+#ifdef HAVE_MATHLIB_H
+    printf("\nIBM\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
+	 ibm_dtmin, ibm_dtmax,
+	   ((double)ibm_dtsum) / ((double) n),
+	   ibm_dtwc
+	   );
+#endif /*HAVE_MATHLIB_H*/
+    
+    printf("\nCRLIBM\n");
+    printf("Tmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n ",  
+	   crlibm_dtmin, crlibm_dtmax,
+	   ((double)crlibm_dtsum) / ((double) n),
+	   crlibm_dtwc
+	   );
+
+
+    /******************* Latex output ****************/
+    printf("\\multicolumn{4}{|c|}{Processor / system / compiler}   \\\\ \n \\hline");
+    printf("\n                   \t & min time \t & max time \t & avg time \\\\ \n \\hline\n");
+    printf(" \\texttt{libm}     \t & %lld    \t& %lld     \t& %10.0f \\\\ \n \\hline\n ",  
+	   libm_dtmin,  libm_dtmax,
+	   (((double)libm_dtsum) / ((double) n))
+	   );
+#ifdef HAVE_MPFR_H
+    if (mpfr_dtwc > mpfr_dtmax) mpfr_dtmax=mpfr_dtwc;
+    printf(" \\texttt{mpfr}     \t & %lld    \t& %lld     \t& %10.0f \\\\ \n \\hline\n ",  
 	 mpfr_dtmin, mpfr_dtmax,
-	 ((double)mpfr_dtsum) / ((double) n),
-	 mpfr_dtwc
+	 ((double)mpfr_dtsum) / ((double) n)
 	 );
 #endif /*HAVE_MPFR_H*/
 
 #ifdef HAVE_MATHLIB_H
-  printf("\nIBM\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tworst case = %lld\n",
+    if (ibm_dtwc > ibm_dtmax) ibm_dtmax=ibm_dtwc;
+    printf(" \\texttt{libultim}  \t & %lld    \t& %lld     \t& %10.0f \\\\ \n \\hline\\hline\n ",  
 	 ibm_dtmin, ibm_dtmax,
-	 ((double)ibm_dtsum) / ((double) n),
-	 ibm_dtwc
+	 ((double)ibm_dtsum) / ((double) n)
 	 );
 #endif /*HAVE_MATHLIB_H*/
-  
+
+    if (crlibm_dtwc > crlibm_dtmax) crlibm_dtmax=crlibm_dtwc;
+    printf("\\texttt{crlibm}     \t & %lld    \t& %lld     \t& %10.0f \\\\ \n \\hline\n ",  
+	 crlibm_dtmin, crlibm_dtmax,
+	 ((double)crlibm_dtsum) / ((double) n)
+	   );
+
+
   /* release memory */
 #ifdef HAVE_MPFR_H
   mpfr_clear(mp_inpt);
