@@ -2,6 +2,7 @@
 Digits := 100:
 interface(quiet=true):
 read "common-procedures.mpl":
+with(orthopoly):
 
 
 mkdir("TEMPTRIG"):
@@ -163,7 +164,7 @@ delta_PayneHanek := 2^(-100):
 delta_ArgRed := max(delta_cody_waite_2, delta_cody_waite_3,
                     delta_RR_DD, delta_PayneHanek):
 
-print("delta_ArgRed to move to the .gappa file = ",  evalf(delta_ArgRed)):
+#print("delta_ArgRed to move to the .gappa file = ",  evalf(delta_ArgRed)):
 #log2(delta_ArgRed);
 
 
@@ -210,7 +211,7 @@ degreeCos := 7:
 maxepsk := (1+epsinvC)*(1+2^(-53))-1:
 
 ymaxCase3  := evalf(Pi/512 + XMAX_DDRR*maxepsk):
-print("ymaxCase3 to move to the .gappa file = ",  ymaxCase3):
+#print("ymaxCase3 to move to the .gappa file = ",  ymaxCase3):
 
 
 y2maxCase3 := ymaxCase3^2:
@@ -235,17 +236,17 @@ polyTs2 := subs(x=sqrt(y), polyTs):
 polyCos  := poly_exact (convert( series(cos(x), x=0, degreeCos+1), polynom)):
 polyTc2 := subs(x=sqrt(y), polyCos - 1):
 
-eps_approx_Sin_Case2 := numapprox[infnorm]((x*polyTs+x -sin(x))/sin(x), x=0..xmaxSinCase2):
-eps_approx_Sin_Case3 := numapprox[infnorm]((x*polyTs +x -sin(x))/sin(x), x=0..ymaxCase3):
+epsApproxSinCase2 := numapprox[infnorm]((x*polyTs+x -sin(x))/sin(x), x=0..xmaxSinCase2):
+epsApproxSinCase3 := numapprox[infnorm]((x*polyTs +x -sin(x))/sin(x), x=0..ymaxCase3):
 
-delta_approx_Sin_Case2 := numapprox[infnorm]((x*polyTs+x -sin(x)), x=0..xmaxSinCase2):
-delta_approx_Sin_Case3 := numapprox[infnorm]((x*polyTs +x -sin(x)), x=0..ymaxCase3):
+deltaApproxSinCase2 := numapprox[infnorm]((x*polyTs+x -sin(x)), x=0..xmaxSinCase2):
+deltaApproxSinCase3 := numapprox[infnorm]((x*polyTs +x -sin(x)), x=0..ymaxCase3):
 
-delta_approx_Cos_Case2:= numapprox[infnorm](polyCos -  cos(x), x=0..xmaxCosCase2):
-delta_approx_Cos_Case3:= numapprox[infnorm](polyCos -  cos(x), x=0..ymaxCase3):
+deltaApproxCosCase2:= numapprox[infnorm](polyCos -  cos(x), x=0..xmaxCosCase2):
+deltaApproxCosCase3:= numapprox[infnorm](polyCos -  cos(x), x=0..ymaxCase3):
 
-print("delta_approx_Sin_Case3 to move to the .gappa file = ",  delta_approx_Sin_Case3):
-print("delta_approx_Cos_Case3 to move to the .gappa file = ",  delta_approx_Cos_Case3):
+#print("deltaApproxSinCase3 to move to the .gappa file = ",  deltaApproxSinCase3):
+#print("deltaApproxCosCase3 to move to the .gappa file = ",  deltaApproxCosCase3):
 
 
 ########################## Case 2 for sine  ###########################
@@ -257,8 +258,8 @@ errlist:=errlist_quickphase_horner(degree(polyTs2),0,0,2^(-53), 0):
 (eps_rounding_Ts, delta_rounding_Ts, minTs, maxTs):=
 	compute_horner_rounding_error(polyTs2,y,x2maxSinCase2, errlist, true):
 
-eps_poly_Ts_Case2 := numapprox[infnorm]((x*polyTs)/(sin(x)-x) -1, x=0..xmaxSinCase2):
-maxeps2 := (1+eps_poly_Ts_Case2)*(1+eps_rounding_Ts)*(1+2^(-53))-1:
+eps_poly_TsCase2 := numapprox[infnorm]((x*polyTs)/(sin(x)-x) -1, x=0..xmaxSinCase2):
+maxeps2 := (1+eps_poly_TsCase2)*(1+eps_rounding_Ts)*(1+2^(-53))-1:
 
 maxepstotalSinCase2 := maxeps2 * numapprox[infnorm](1-x/sin(x), x=0..xmaxSinCase2):
 rnconstantSinCase2 := evalf(compute_rn_constant(maxepstotalSinCase2)):
@@ -276,7 +277,7 @@ errlist        := errlist_quickphase_horner(degree(polyTc2),0,0,2**(-53), 0):
 
 # Then we have an Add12 which is exact. The result is greater then cos(xmaxCosCase2):
 miny := cos(xmaxCosCase2):
-maxepstotalCosCase2 :=  (delta_rounding_Tc + delta_approx_Cos_Case2) / miny :
+maxepstotalCosCase2 :=  (delta_rounding_Tc + deltaApproxCosCase2) / miny :
 #log2(%);
 rnconstantCosCase2 := evalf(compute_rn_constant(maxepstotalCosCase2)):
 
@@ -286,7 +287,6 @@ rnconstantCosCase2 := evalf(compute_rn_constant(maxepstotalCosCase2)):
 ######################## Case2 Tangent #########################
 #
 # Compute the Taylor series
-with(orthopoly):
 degreeTanCase2 := 12:
 xmaxTanCase2   := 2**(-4):
 xminTanCase2   := 2**(-30):
@@ -295,8 +295,11 @@ Poly_P := convert(series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, degreeTanCase2*4),poly
 Poly_cheb := numapprox[chebpade](Poly_P, x=xminTanCase2..xmaxTanCase2^2, [degreeTanCase2/2-2,0]):
 polyTanCase2 :=  poly_exact2(expand(x + x^3 * subs(x=x^2, Poly_cheb)), 4):
 
+#polyTanCase2 :=  poly_exact2(convert(series(tan(x), x=0, degreeTanCase2), polynom), 4):
+
 maxepsApproxTanCase2:=numapprox[infnorm](1 - polyTanCase2 / tan(x), x=xminTanCase2..xmaxTanCase2):
 
+maxepsOverXTanCase2 :=numapprox[infnorm]((1 - polyTanCase2 / tan(x))/x, x=xminTanCase2..xmaxTanCase2):
 # Now we pass these values to Gappa
 
 filename:="TEMPTRIG/TanCase2.sed":
@@ -308,10 +311,12 @@ fd:=fopen(filename, WRITE, TEXT):
   fprintf(fd, " s/_t7/%1.40e/g\n",  coeff(polyTanCase2,x,7)):
   fprintf(fd, " s/_t9/%1.40e/g\n",  coeff(polyTanCase2,x,9)):
   fprintf(fd, " s/_t11/%1.40e/g\n", coeff(polyTanCase2,x,11)):
-  fprintf(fd, " s/_XMAX/%1.40e/g\n", xmaxTanCase2):
-  fprintf(fd, " s/_MAXEPSAPPROX/%1.40e/g\n", maxepsApproxTanCase2*1.00001):
-fclose(fd);
+  fprintf(fd, " s/_xmax/%1.40e/g\n", xmaxTanCase2):
+  fprintf(fd, " s/_maxEpsApproxOverX/%1.40e/g\n", maxepsOverXTanCase2*1.00001):
+  fprintf(fd, " s/_maxEpsApprox/%1.40e/g\n", maxepsApproxTanCase2*1.00001):
+fclose(fd):
 
+printf("\n\n************ DONE TEMPTRIG/TanCase2.sed ************\n");
 printf("Now you should use  \n    sed -f TEMPTRIG/TanCase2.sed trigoTanCase2.gappa | gappa  > /dev/null \n");
 
 
@@ -321,14 +326,97 @@ maxepstotalTanCase2:=4.59602e-19:  # Cut from Gappa output
 log2(maxepstotalTanCase2): # almost 61 bits
 
 
-#rnconstantTanCase22 := evalf(compute_rn_constant(maxepstotalTanCase22)):
-
 
 
 
 
 ###############################################################################
 #   Computing errors for Case3 : now we have an error due to arg red
+
+# First DoSinZero. The notations are those of the paper proof
+
+# Approximation error already computed above as epsApproxSinCase3;
+
+#  polynomial evaluation in double, with an error on  y*y of epsilonArgRed
+errlist:=errlist_quickphase_horner(degree(polyTs2),0,0,eps_ArgRed, 0):
+(epsRoundingTsSinZero, deltaRoundingTsSinZero, minTs, maxTs):=
+	compute_horner_rounding_error(polyTs2,y,y2maxCase3, errlist, true):
+
+# just as in the paper proof
+maxepsSinZero1 := (1+epsApproxSinCase3)*(1+epsRoundingTsSinZero)*(1+2^(-53))*(1+2^(-53))  - 1:
+
+# just as in the paper proof. For x>0 the absolute values are as given
+
+epstotalSinZero :=  ( (x-sin(x))*maxepsSinZero1 + x*eps_ArgRed + 2^(-53)*x^3/3 )  / sin(x):
+maxepstotalSinZero := numapprox[infnorm]( epstotalSinZero , x=2^(-30)..ymaxCase3):
+
+printf("\nMax rel error for DoSinZero is %1.5e, if it's smaller than 2^(-66) (%1.5e) then the proof is OK\n\n", maxepstotalSinZero, 2^(-66)):
+
+
+
+
+
+##############################SinCosCase3############################
+  SinCosSize:= 128: # size f the table
+
+
+# The Gappa files in TEMPTRIG
+for i from 1 to SinCosSize/2 do
+    filename:=cat("TEMPTRIG/SinACosA_",i,".sed"):
+    fd:=fopen(filename, WRITE, TEXT):
+
+    # The table values
+    s:=hi_lo(sin(i*Pi/(2*SinCosSize))):
+    c:=hi_lo(cos(i*Pi/(2*SinCosSize))):
+    fprintf(fd, " s/_cah/%1.40e/g\n", c[1]):
+    fprintf(fd, " s/_cal/%1.40e/g\n", c[2]):
+    fprintf(fd, " s/_sah/%1.40e/g\n", s[1]):
+    fprintf(fd, " s/_sal/%1.40e/g\n", s[2]):
+
+    # The polynomial coefficients
+    fprintf(fd, " s/_s3/%1.40e/g\n", coeff(polySin,x,3)):
+    fprintf(fd, " s/_s5/%1.40e/g\n", coeff(polySin,x,5)):
+    fprintf(fd, " s/_s7/%1.40e/g\n", coeff(polySin,x,7)):
+    fprintf(fd, " s/_s9/%1.40e/g\n", coeff(polySin,x,9)):
+    fprintf(fd, " s/_c2/%1.40e/g\n", coeff(polyCos,x,2)):
+    fprintf(fd, " s/_c4/%1.40e/g\n", coeff(polyCos,x,4)):
+    fprintf(fd, " s/_c6/%1.40e/g\n", coeff(polyCos,x,6)):
+    fprintf(fd, " s/_c8/%1.40e/g\n", coeff(polyCos,x,8)):
+
+    # The approximation errors
+    fprintf(fd, " s/_ymaxCase3/%1.40e/g\n", ymaxCase3*1.00001):
+    fprintf(fd, " s/_delta_ArgRed/%1.40e/g\n", delta_ArgRed*1.00001):
+    fprintf(fd, " s/_delta_approx_Sin_Case3/%1.40e/g\n", deltaApproxSinCase3*1.00001):
+    fprintf(fd, " s/_delta_approx_Cos_Case3/%1.40e/g\n", deltaApproxCosCase3*1.00001):
+
+    fclose(fd):
+od:
+
+
+printf("************ DONE TEMPTRIG/*.sed ************\n"):
+
+# A shell script to use them
+filename:="trigo_test.sh":
+fd:=fopen(filename, WRITE, TEXT):
+fprintf(fd, "#!/bin/sh\n"):
+fprintf(fd, "# You probably need to edit the path to the gappa executable\n"):
+fprintf(fd, "for file in TEMPTRIG/SinACosA*.sed  \n"):
+fprintf(fd, "do\n"):
+fprintf(fd, "  echo $file:\n"):
+fprintf(fd, "  sed -f  $file  trigoSinCosCase3.gappa | ~/gappa/src/gappa > /dev/null\n"):
+fprintf(fd, "  echo\n"):
+fprintf(fd, "done\n"):
+fclose(fd):
+
+printf("************ DONE trigo_test.sh ************\n"):
+printf("Now you should run\n"):
+printf(" sh trigo_test.sh 2>TEMPTRIG/Gappa.out\n"):
+printf("Then\n"):
+printf(" grep '{' TEMPTRIG/Gappa.out| sed  -e 's/}.*{/\\n/g'  -e 's/^.*{-//g' -e 's/}]//g'  | sort | head \n"):
+
+printf("If the first number is smaller than 2^(-66) then everything is OK and the rounding constants in TEMPTRIG/trigo_fast.h are proven upper bounds.\n\n"):
+
+
 
 
 #  This value has been computed by Gappa (using all the previous)
@@ -401,7 +489,7 @@ fd:=fopen(filename, WRITE, TEXT):
 
 fprintf(fd, "#include \"crlibm.h\"\n#include \"crlibm_private.h\"\n"):
 
-fprintf(fd, "\n/*File generated by maple/coef_sine.mw*/\n"):
+fprintf(fd, "\n/*File generated by maple/trigo.pl*/\n"):
 fprintf(fd, "\n"):
 
 
@@ -535,7 +623,6 @@ for isbig from 1 to 0 by -1 do
   # The sincos table
 
   fprintf(fd, "\n/*  sine and cos of kPi/256 in double-double */\n"):
-  SinCosSize:= 128:
   fprintf(fd, "static db_number const sincosTable[%d] =\n{\n",  4*(SinCosSize/2+1)):
   for i from 0 to SinCosSize/2 do
       s:=hi_lo(sin(i*Pi/(2*SinCosSize))):
@@ -560,129 +647,84 @@ fclose(fd):
 printf("\n\n************ DONE TEMPTRIG/trigo_fast.h ************\n Copy it to the crlibm source directory.\n\n");
 
 
-# The Gappa files in TEMPTRIG
-for i from 1 to SinCosSize/2 do
-    filename:=cat("TEMPTRIG/SinACosA_",i,".gappa"):
-    fd:=fopen(filename, WRITE, TEXT):
-    s:=hi_lo(sin(i*Pi/(2*SinCosSize))):
-    c:=hi_lo(cos(i*Pi/(2*SinCosSize))):
-    fprintf(fd, "cah=%1.50e ;\n", c[1]):
-    fprintf(fd, "cal=%1.50e ;\n", c[2]):
-    fprintf(fd, "sah=%1.50e ;\n", s[1]):
-    fprintf(fd, "sal=%1.50e ;\n", s[2]):
-    fclose(fd):
-od:
+#################################################
+# Stuff for the accurate phase,
+#
+# Should very bad cases be found in the future, only the degrees below
+# should  be increased, then this script rerun. Everything should
+# compile OK with the newly generated trigo.h
+
+printf("\n-------------------------------------------------------\n"):
+printf("--------------------Accurate phase---------------------\n"):
+printf("-------------------------------------------------------\n"):
+
+xminSCS   := 0:
+xmaxSCS   := Pi/4:
 
 
-printf("************ DONE TEMPTRIG/*.gappa ************\n");
+#-----------------Sine-----------------------
+degreeSinSCS := 26:
+Poly_P := convert(series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, degreeSinSCS*4),polynom):
+Poly_cheb := numapprox[chebpade](Poly_P, x=xminSCS..xmaxSCS^2, [degreeSinSCS/2-2,0]):
+polySinSCS :=  poly_exact_SCS(expand(x + x^3 * subs(x=x^2, Poly_cheb))):
 
-# A shell script to use them
-filename:="trigo_test.sh":
+DEGREE_SIN_SCS := degree(polySinSCS):
+maxepsApproxSinSCS:=numapprox[infnorm](1 - polySinSCS/sin(x), x=xminSCS..xmaxSCS):
+printf("The sine polynomial for the second phase (degree %d) is accurate to %f bits on O..Pi/4\n", DEGREE_SIN_SCS, -log2(maxepsApproxSinSCS)):
+# For the proof of the very bad cases, near zero
+maxepsApproxSinSCSNearZero:=numapprox[infnorm](1 - polySinSCS/sin(x), x=0..2^(-17)):
+printf("  ... and  accurate to %f bits on O..2^(-17)\n", -log2(maxepsApproxSinSCSNearZero)):
+
+
+#-----------------Cos-----------------------
+degreeCosSCS := 28:
+Poly_P := convert(series((cos(sqrt(x)) -1)/x, x=0, degreeCosSCS*4),polynom):
+Poly_cheb := numapprox[chebpade](Poly_P, x=xminSCS..xmaxSCS^2, [degreeCosSCS/2-2,0]):
+polyCosSCS :=  poly_exact_SCS(expand(1 + x^2 * subs(x=x^2, Poly_cheb))):
+DEGREE_COS_SCS := degree(polyCosSCS):
+
+maxepsApproxCosSCS:=numapprox[infnorm](1 - polyCosSCS/cos(x), x=xminSCS..xmaxSCS):
+printf("The cos polynomial for the second phase (degree %d) is accurate to %f bits on O..Pi/4\n", degree(polyCosSCS), -log2(maxepsApproxCosSCS)):
+# For the proof of the very bad cases, near zero
+maxepsApproxCosSCSNearZero:=numapprox[infnorm](1 - polyCosSCS/cos(x), x=0..2^(-18)):
+printf("  ... and  accurate to %f bits on O..2^(-18)\n", -log2(maxepsApproxCosSCSNearZero)):
+
+
+
+#-----------------Tan-----------------------
+degreeTanSCS := 70:
+Poly_P := convert(series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, degreeTanSCS*4),polynom):
+Poly_cheb := numapprox[chebpade](Poly_P, x=xminSCS..xmaxSCS^2, [degreeTanSCS/2-2,0]):
+polyTanSCS :=  poly_exact_SCS(expand(x + x^3 * subs(x=x^2, Poly_cheb))):
+
+DEGREE_TAN_SCS := degree(polyTanSCS):
+maxepsApproxTanSCS:=numapprox[infnorm](1 - polyTanSCS/tan(x), x=xminSCS..xmaxSCS):
+printf("The tan polynomial for the second phase (degree %d) is accurate to %f bits on O..Pi/4\n", DEGREE_TAN_SCS, -log2(maxepsApproxTanSCS)):
+# For the proof of the very bad cases, near zero
+maxepsApproxTanSCSNearZero:=numapprox[infnorm](1 - polyTanSCS/tan(x), x=0..2^(-17)):
+printf("  ... and  accurate to %f bits on O..2^(-17)\n", -log2(maxepsApproxTanSCSNearZero)):
+
+
+filename:="TEMPTRIG/trigo.h":
 fd:=fopen(filename, WRITE, TEXT):
-fprintf(fd, "#!/bin/sh\n"):
-fprintf(fd, "for file in TEMPTRIG/SinACosA*  \n"):
-fprintf(fd, "do\n"):
-fprintf(fd, "  echo $file:\n"):
-fprintf(fd, "  cat  $file  trigoSinCosCase3.gappa | ~/gappa/src/gappa > /dev/null\n"):
-fprintf(fd, "  echo\n"):
-fprintf(fd, "done\n"):
+fprintf(fd, "/*File generated by maple/trigo.mpl*/\n\n"):
+fprintf(fd, "#include \"crlibm.h\"\n#include \"crlibm_private.h\"\n\n"):
+fprintf(fd, "#define DEGREE_SIN_SCS  %d \n", DEGREE_SIN_SCS):
+fprintf(fd, "#define DEGREE_COS_SCS  %d \n", DEGREE_COS_SCS):
+fprintf(fd, "#define DEGREE_TAN_SCS  %d \n", DEGREE_TAN_SCS):
+fprintf(fd, "\n"):
+fprintf(fd, "#define  sin_scs_poly_ptr (scs_ptr)&sin_scs_poly \n"):
+fprintf(fd, "#define  cos_scs_poly_ptr (scs_ptr)&cos_scs_poly \n"):
+fprintf(fd, "#define  tan_scs_poly_ptr (scs_ptr)&tan_scs_poly \n"):
+fprintf(fd, "\n"):
+Write_SCS_poly(fd, sin_scs_poly, polySinSCS):
+fprintf(fd, "\n\n"):
+Write_SCS_poly(fd, cos_scs_poly, polyCosSCS):
+fprintf(fd, "\n\n"):
+Write_SCS_poly(fd, tan_scs_poly, polyTanSCS):
+fprintf(fd, "\n"):
 fclose(fd):
 
-printf("************ DONE trigo_test.sh ************"):
-printf("Now you should run"):
-printf(" sh trigo_test.sh 2>TEMPTRIG/Gappa.out"):
-printf("Then"):
-printf(" grep '{' TEMPTRIG/Gappa.out| sed  -e 's/}.*{/\n/g'  -e 's/^.*{-//g' -e 's/}]//g'  | sort | head "):
-
-printf("If the first number is smaller than 2^(-66) then everything is OK and the rounding constants in TEMPTRIG/trigo_fast.h are proven upper bounds."):
+printf("\n\n************ DONE TEMPTRIG/trigo.h ************\n Copy it to the crlibm source directory.\n\n");
 
 
-
-#################################################
-# Stuff for the proof of the accurate phase,
-#
-if(1+1=3) then
- polysin:=convert(series(sin(x), x=0, 32), polynom):
- polycos:=convert(series(cos(x), x=0, 32), polynom):
- log[2](numapprox[infnorm](1 - polysin/sin(x), x=0..Pi/4));
- log[2](numapprox[infnorm](1 - polysin/sin(x), x=0..2^(-17)));
-
- log[2](numapprox[infnorm](1 - polycos/cos(x), x=0..Pi/4));
- log[2](numapprox[infnorm](1 - polycos/cos(x), x=0..2^(-18)));
-
- polytan:=convert(series(tan(x), x=0, 128), polynom):
- log[2](numapprox[infnorm](  (tan(x) - polytan)/tan(x), x=0..Pi/4));
- log[2](numapprox[infnorm](  (tan(x) - polytan)/tan(x), x=0..2^(-18)));
-
-
-
- ftany := tan(sqrt(y))/sqrt(y^3)-1/y;
- ymin:=2^(-1075);
- ymax:=Pi^2/16;
-
- # to avoid pb of singularity in the minimax, work on a Taylor approx
- pTanTaylor := convert(series(ftany, y=0, 150), polynom):
- maxepsApprox1 := abs(evalf(eval(1-pTanTaylor/ftany, y=ymax))); # the max error is there
- log2(maxepsApprox1);
-
- pErrTan := convert(series( y^(3/2)/tan(sqrt(y)), y=0, 3), polynom);
- ptanscs_y := numapprox[minimax](pTanTaylor, y=ymin..ymax,[5,0], pErrTan,'err'    );
-log2(err);
-abs(evalf(eval(1-convert(series(ftany, y=0, 5), polynom)/ftany, y=ymax)))
- ptanscs_y := numapprox[minimax](ftany,
-                                 y=ymin..ymax,
-                                 [4,0],
-                                 pErrTan,
-                                 'err'    );
-log2(err);
-
-#################################################
-
-
-
-if(1+1=3) then
-# Modifications to hi_lo
-# x ~ x_hi + x_lo
-hi_lo_sincos:= proc(x)
-  local x_hi, x_lo, res, s,m,e, den, num:
-  if x=nearest(x) then
-    x_hi := x; x_lo:= 0;
-  else
-    s,e,m := ieeedouble(x):
-
-    num:=numer(m);
-    den:=denom(m);
-    num:=round(num/2^25) * 2^25;
-    x_hi:=nearest(s*(num/den)*2^e);
-    res:=x-x_hi:
-    if (res = 0) then
-      x_lo:=0:
-    else
-      x_lo:=nearest(evalf(res)):
-    end if;
-  end if;
-x_hi,x_lo;
-end:
-
-
-fi:
-
-
-
-#####################################################################
-#Old stuff for SCS, cut from various old maple worksheets, not checked
-
-if(1+2=4) then
-Poly_P    := series(sin(sqrt(x))/(x^(3/2))-1/x, x=0, 40):
-Poly_Q    := convert(Poly_P,polynom):
-Poly_cheb := chebpade(Poly_Q, x=0..evalf(Pi/4), [17,0]);
-Poly_Res  := x + x^3 * subs(x=x^2, Poly_cheb);
-log(infnorm( 1 - (Poly_Res)/sin(x),x=0..evalf(Pi/4), err))/log(2.);
-
-Poly_P    := series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, 40):
-Poly_Q    := convert(Poly_P,polynom):
-Poly_cheb := chebpade(Poly_Q, x=0..evalf(Pi/4), [17,0]);
-Poly_Res  := x + x^3 * subs(x=x^2, Poly_cheb);
-log2(infnorm( 1 - (Poly_Res)/tan(x),x=0..evalf(Pi/4)));
-
-fi:

@@ -1,21 +1,26 @@
 # Usage: You need to set the constants cah, cal, sah, sal. Running the trigo.mpl Maple script
 # should create 64 files in TEMPTRIG, which can be tested independently as 
-#    cat  TEMPTRIG/SinACosA_1.gappa  SinCosCase3.gappa | gappa>/dev/null
+#    sed -f    TEMPTRIG/SinACosA_1.sed  trigoSinCosCase3.gappa | ~/gappa/src/gappa > /dev/null
 
 # NOTATION CONVENTION 
 # Variables that correspond to double-precision variables in the code begin with a small letter
 # Other variables begin with a capital letter.
+# Variables that will be replaced with Maple-computed constants begin with an underscore
 # Otherwise avoid underscores as they are painful to carry on to LaTeX :)
 
-# polynomial coefficients in Gappa binary format: sign, integer, power of two
-s3 = -6004799503160661b-55;
-s5 = +4803839602528529b-59;
-s7 = -7320136537186330b-65;
-s9 = +6506788033054516b-71;
-c2 = -4503599627370496b-53;
-c4 = +6004799503154328b-57;
-c6 = -6405110857547344b-62;
-c8 = +7320136537186330b-68;
+# polynomial coefficients, computed by Maple
+s3 = _s3;
+s5 = _s5;
+s7 = _s7;
+c2 = _c2;
+c4 = _c4;
+c6 = _c6;
+
+# Table values, computed by Maple
+cah = _cah;
+cal = _cal;
+sah = _sah;
+sal = _sal;
 
 # The variables used here:
 # x input
@@ -25,7 +30,6 @@ c8 = +7320136537186330b-68;
 # TcHat perfect tc
 # SinX exact result for sin(x)
 # SinA, CosA perfect sin(kPi/256) and cos(kPi/256)
-
 
 
 yh = <float64ne>(Ydd);
@@ -131,14 +135,12 @@ PolyCosY = 1 + TcHat;
 #tc is an approximation to TcHat through the rounding errors, defined
 #in the definition of tc. Same for ts
 
-
 #-------------------------------------
 # SinReconstrExact is an approximation to ResultSin 
 SinReconstrExact = PolySinY * CosA  +  PolyCosY * SinA ;
 # The delta between ResultSin and SinReconstrExact is due to the two
 # mathematical poly approx, and has been defined just above
 CosReconstrExact = PolyCosY * CosA  -  PolySinY * SinA ;
-
 
 #-------------------------------------
 # The reconstruction approximates the following
@@ -165,10 +167,10 @@ NeglectedCosTerms = CosReconstrNoRound - (thiCos + TloCos2NoRound);
 ###########################################################################################
 #  The theorem to prove
 {
-    Ydd in [-0.0062852, 0.0062852]          # ymaxCase3 computed by Maple
- /\ Ydd - Y in [-0.253e-22, 0.253e-22]      # delta_ArgRed in Maple
- /\ PolySinY - SinY in [-0.24126e-23, 0.24126e-23]     # delta_approx_Sin_Case3
- /\ PolyCosY - CosY in [-0.7287717127e-22, 0.7287717127e-22]     # delta_approx_Cos_Case3
+    Ydd in             [-_ymaxCase3,     _ymaxCase3]                            # computed by Maple
+ /\ Ydd - Y in         [-_delta_ArgRed,  _delta_ArgRed]                         # computed by Maple
+ /\ PolySinY - SinY in [-_delta_approx_Sin_Case3,  _delta_approx_Sin_Case3]     # computed by Maple
+ /\ PolyCosY - CosY in [-_delta_approx_Cos_Case3,  _delta_approx_Cos_Case3]     # computed by Maple
  /\ SinA-sah-sal in [-1b-104, 1b-104] 
  /\ CosA-cah-cal in [-1b-104, 1b-104] # double-double absolute rounding error, with margin
 

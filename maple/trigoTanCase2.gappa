@@ -45,16 +45,25 @@ Poly = x+x*Tt;
 epsilon=(rdd - TanX)/TanX;
 
 {
-# Je veux au final:    x in [1b-30, _XMAX]
-# En attendant je mets, en faisant confiance a la monotonicite...
-    x in [3b-6, _XMAX]
- /\ (Poly - TanX)/TanX in [-_MAXEPSAPPROX, _MAXEPSAPPROX]
+# Je veux au final:    x in [1b-30, _xmax]
+
+# HELP: essaye toi-meme les trois lignes suivantes; Les deux premieres
+# passent, la troisieme pas, alors que sauf ivrognerie de ma part
+# c'est l'union des intervalles. voir HINT LOUCHE ci-dessous
+
+#    x in [1b-6, 1b-5]
+#    x in [1b-7, 1b-6]
+#
+    x in [1b-7, 1b-5]
+
+ /\ (Poly - TanX)/TanX in [-_maxEpsApprox, _maxEpsApprox]
+ /\ ((Poly - TanX)/TanX)/x in [-_maxEpsApproxOverX, _maxEpsApproxOverX]
 
 ->  
 
 epsilon in ?
 /\
-epsilon/x in ?
+epsilon/x in  [-1b-56,1b-56] # c'est vraiment cela que je veux prouver. Je m'en fous d'un encadrement plus fin
  
 
 #/\
@@ -71,18 +80,18 @@ epsilon/x in ?
 #(tt - Tt) in ?
 }
 
-# HELP ici
+# HELP : sur quelle requete faut-il mettre le $ au juste ? 
 epsilon/x $ x;
 
-#(rdd - TanX)/TanX -> (rdd - Poly)/TanX  + (Poly - TanX)/TanX ; 
-(rdd - TanX)/TanX -> (rdd - Poly)/Poly  + (Poly - TanX)/TanX + ((rdd - Poly)/Poly) * ((Poly - TanX)/TanX) ; 
+# Hint louche: c'est le tien mais j'ai ajoute /x*x   pour qu'il utilise l'encadrement fait par Maple
+(rdd - TanX)/TanX -> (rdd - Poly)/Poly  + (((Poly - TanX)/TanX)/x)*x + ((rdd - Poly)/Poly) * ((Poly - TanX)/TanX) ; 
 
 (rdd - Poly)/Poly  ->  ((<float64ne>(x*tt) - x*Tt) / x) * (x/Poly);
 
-# " a verifier soigneusement -- ameliore un peu le resultat"
+# "a verifier soigneusement" -- ameliore un peu le resultat mais bon...
 (<float64ne>(x*tt) - x*Tt)/x -> ((<float64ne>(x*tt) - x*tt)/(x*tt)) * tt   +  (tt - Tt);  
 
-# C'est un peu etrange d'avoir a donner ceux--ci mais bon.
+# C'est un peu etrange d'avoir a donner ceux-ci, non ?
 x/Poly -> 1/(Poly/x);
 Poly/x -> 1+Tt;
 

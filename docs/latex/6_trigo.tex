@@ -1,40 +1,53 @@
-This chapter is contributed by C. Daramy-Loirat, D. Defour
-and F. de~Dinechin.  
+This chapter is contributed by F. de~Dinechin with assistance of C.
+Daramy-Loirat and D. Defour.
 
 \section*{Introduction}
 This chapter describes the implementations of sine, cosine and
 tangent, as they share much of their code. The proof sketch below is
 supported by the Maple script \texttt{maple/trigo.mpl} and the Gappa
-script \texttt{maple/trigoSinCosCase3.gappa} of the \crlibm\
-distribution, which implement the computations of error bounds and
-validity bounds for the various algorithmic paths described here.
+scripts \texttt{maple/trigoSinCosCase3.gappa} and
+\texttt{maple/trigoTanCase2.gappa} of the \crlibm\ distribution, which
+implement the computations of error bounds and validity bounds for the
+various algorithmic paths described here.
 
 \section{Overview of the algorithms}
 
 \subsection{Exceptional cases}
 
 The three trigonometric functions return NaN for infinite and NaN
-arguments, and are defined otherwise. $\tan$ may not return
-infinities: an argument based on continued fractions to find the worst
-cases for range reduction may also be used to show that the sine of a
+arguments, and are defined otherwise. 
+
+An argument based on continued fractions to find the worst cases for
+range reduction may also be used to show that the sine and cosine of a
 floating-point number outside of $[-1,1]$ is always larger than
-$2^{-150}$, and therefore never flushes to zero nor to denormals (see
-\cite{Muller97} p. 151 and following). This property is important,
-since it means that we can use the rounding tests from Section
-\ref{section:testrounding}.
+$2^{-150}$, and therefore never flushes to zero nor to subnormal (see
+\cite{Muller97} p. 151 and following). Therefore
+$\tan(x)=\sin(x)/\cos(x)$ also remains larger than $2^{-150}$.
+
+This has two important consequences:
+
+\begin{itemize}
+\item as the output a trigonometric function is never a subnormal except for
+  inputs around zero (for which the value to return is trivial
+  anyway), we can safely use the rounding tests from Section
+  \ref{section:testrounding}.
+
+\item as the cosine never flushes to zero, the tangent of a floating-point
+  number is never an infinity.
+\end{itemize}
 
 For very small arguments,
 \begin{itemize}
 \item $\sin(x) = x-x^3/6 + O(x^5) = x(1-x^2/6) + O(x^5)$ where
   $O(x^5)$ has the sign of $x$. Therefore $\sin(x)$ is rounded to $x$
-  for all the rounding  modes if $|x|<2^{-26}$.
+  or one of its floating-point neighbours $|x|<2^{-26}$.
 \item $\cos(x) = 1-x^2/2 + O(x^4)$ where $O(x^4)$ is positive.
   Therefore $\cos(x)$ is rounded to $1$ in RN and RU mode if
   $x<\sqrt{2^{-53}}$. In RD and RZ modes, we have $\cos(0)=1$ and
   $\cos(x)=1-2^{-53}$ for $|x|<2^{-26}$.
 \item $\tan(x) = x+x^3/3 + O(x^5) = x(1+x^2/3) + O(x^5)$ where
   $O(x^5)$ has the sign of $x$. Therefore $\tan(x)$ is rounded to $x$
-  for all the rounding  modes if $|x|<2^{-27}$.
+  or one of its neighbours for all the rounding  modes if $|x|<2^{-27}$.
 \end{itemize}
 
 
@@ -43,7 +56,7 @@ For very small arguments,
 Most implementations of the trigonometric functions have two steps of argument reduction: 
 \begin{itemize}
 \item first the input number $x$ is reduced to $y\in
-  [0;\frac{\pi}{2}]$, with reconstruction using periodicity and
+  [-\frac{\pi}{4}, \frac{\pi}{4}]$, with reconstruction using periodicity and
   symmetry properties,
 \item then the reduced argument is further broken down as $y=a+z$,
   with reconstruction using the formula for $\sin(a+z)$ and
@@ -88,7 +101,7 @@ Then we use the reconstruction steps:
 \end{equation}
 
 \begin{equation} 
-  tan(x) = \frac{\sin(x)}{\cos(x)} = \frac{\cos(a) \sin(y) +  \sin(a) \cos(y)}{\cos(a) \cos(y) -  \sin(a) \sin(y)}
+  tan(x) = \frac{\sin(x)}{\cos(x)} 
   \label{eq:tanapy}
 \end{equation}
 
@@ -232,7 +245,7 @@ which do the actual computation after argument reduction as per
 Figures~\ref{fig:sine-reconstruction} and
 \ref{fig:cosine-reconstruction}. The tangent function is computed by
 dividing the sine by the cosine. These procedures are studied in
-section \ref{trigo:auxilliary}.
+section \ref{trigo:auxiliary}.
 
 Finally, each of the three trigonometric functions comes in four
 variants for the four rounding modes. These four variants differ in
@@ -653,8 +666,8 @@ We have two cases here.
 \paragraph*{Case when $k\mod 256\ne 0$}
 
 In this case we will need the absolute error of range reduction to compute the
-total relative error of \verb!do_sin_k_notzero! and
-\verb!do_cos_k_notzero!: These procedures add tabulated values to the
+total relative error of DoSinNotZero and
+DoCosNotZero: These procedures add tabulated values to the
 reduced argument. This error bound is computed by the following Maple code.
 
 \begin{lstlisting}[caption={Maple script computing the absolute error bound of range reduction}, firstnumber=1,
@@ -774,11 +787,32 @@ less-than-ulp difference between $y_h$, $y_h+y_l$ and $\widehat{y}$.
 
 
 
-\section{Details of auxilliary functions
-  \label{trigo:auxilliary}}
+\section{Actual computation of sine and cosine
+  \label{trigo:auxiliary}}
 
-\subsection{DoSinZero \label{dosinzero}}
-Upon entering  \texttt{do\_sin\_k\_zero}, we have in
+A sine or a cosine will actually be computed by one of DoSinZero,
+DoSinNotZero, DoCosZero and DoCosNotZero (with a possible change of sine).
+Section~\ref{sec:dosinnotzero} will show how we compute the maximum
+total error of DoSinNotZero and DoCosNotZero. As DoCosZero is a
+simpler, more accurate computation than DoCosNotZero, its worst-case
+error will be smaller than that of DoCosNotZero, and we do not need to
+compute it. We currently have only one rounding constant for the Zero and
+NotZero cases, because having separate constants would degrade performance.
+
+However, DoSinZero is slightly different in that it doesn't add a
+constant value at the end of the computation, as do the three others.
+Its error computation has to consider more relative errors than
+absolute errors. We therefore need to compute its error separately,
+which is done in the following section.
+
+This section \ref{sec:dosinzero} should also help understanding the
+method used to write the Gappa input file given in
+Section~\ref{sec:dosinnotzero}.
+
+
+
+\subsection{DoSinZero \label{sec:dosinzero} }
+Upon entering  DoSinZero, we have in
 $y_h+y_l$ an approximation to the ideal reduced value
 $\hat{y}=x-k\frac{\pi}{256}$ with a relative accuracy $\epsilon_{\mathrm{argred}}$:
 
@@ -857,13 +891,12 @@ The final \texttt{Add12} is exact. Therefore the overall relative error is:
   &=& \frac{\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl} + \mathtt{yh}    \ +\  (\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl}).\epsilon_{-53}}{\sin(\hat{y})} -1\\
 \end{eqnarray*}
 
-Define 
+Let us define for now 
 \begin{equation}
-  \delta_{\mathrm{addsin}} = (\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl}).\epsilon_{-53}
+  \delta_{\mathrm{addsin}} = (\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl}).\epsilon_{-53} 
 \label{eq:addsin}
 \end{equation}
-($\maxdelta_{\mathrm{addsin}}$ may be computed out of the the maximum
-values taken by \texttt{ts}, \texttt{yh} and \texttt{yl}). Then we have
+Then we have
 \begin{eqnarray*}
   \epsilon_{\mathrm{sinkzero}} 
   &=& \frac{(\mathtt{yh} + \mathtt{yl})\mathtt{ts}(1+\epsilon_{-53})^2 + \mathtt{yl} + \mathtt{yh}    \ +\  \delta_{\mathrm{addsin}} }{\sin(\hat{y})} -1\\
@@ -889,25 +922,16 @@ We get
 \label{eq:sinkzero}
 \end{eqnarray*}
 
-Again we may compute the value of $\maxeps_{\mathrm{sinkzero}}$ as an
-infinite norm under Maple. Or, we may compute majorations using
-$y_{\mathrm{maxargred}}$.
+Using the following bound:
+\begin{equation}
+  |\delta_{\mathrm{addsin}}| = |(\mathtt{yh}\otimes\mathtt{ts} + \mathtt{yl}).\epsilon_{-53}| \quad < \quad 2^{-53}\times |y|^3/3 
+\end{equation}
+ we may compute the value of $\maxeps_{\mathrm{sinkzero}}$ as an
+infinite norm under Maple. We get an error smaller than $2^{-67}.$ 
 
- 
 
-\subsection{DoCosZero}
-This is currently left as an exercise for the reader. We need to
-compute the error of the following code:
-\begin{lstlisting}[caption={DoCosZero},firstnumber=1]
-  yh2 = yh*yh ;                                   
-  tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));	  
-  Add12(*pch,*pcl, 1., tc);		          
-\end{lstlisting}
 
-The same code is used for small arguments to the cosine (when there is
-no argument reduction).
-
-\subsection{DoSinNotZero and DoCosNotZero}
+\subsection{DoSinNotZero and DoCosNotZero\label{sec:dosinnotzero} }
 
 The proof would here be much longer than the previous one, in the same
 spirit. It would therefore be much more error prone. We probably would
@@ -951,37 +975,48 @@ The additional information we have is
   Maple
 \end{itemize}
 
-We use Gappa to compute the evaluation error. Currently, we actually
-have to lauch Gappa 63 times, one time for each of the possibles
-values of $a=k\pi/256$ that appear in our tables. The reason is that,
-in the current version of Gappa, we are unable to express the identity
-$sin^2(a) + cos^2(a) = 1$ in a useful manner. Without this identity,
-the only information that we could give to Gappa is that both $sin(a)$
-and $cos(a)$ belong to $[-1,1]$, which leads to a gross overestimation of the error. 
+We use Gappa to compute the evaluation error, then the total error.
+Currently, we actually have to lauch Gappa 63 times, one time for each
+of the possibles values of $a=k\pi/256$ that appear in our tables. The
+reason is that, in the current version of Gappa, we are unable to
+express the identity $sin^2(a) + cos^2(a) = 1$ in a useful manner.
+Without this identity, the only information that we could give to
+Gappa is that both $sin(a)$ and $cos(a)$ belong to $[-1,1]$, which
+leads to a gross overestimation of the error.
+
+The Maple script that computes the table of $(ca_h,ca_l,sa_h,sa_l)$,
+the polynomial coefficient, and the approximation errors, also outputs
+it in a form suitable for input to Gappa (for technical reasons they
+have to be substituted in the code using the Unix utility
+\texttt{sed}).  
 
 The input to Gappa is as follows:
 
 \begin{lstlisting}[caption={Gappa input to compute the error of DoSineNotZero},
   language={sh}, numbers=none]
-
 # Usage: You need to set the constants cah, cal, sah, sal. Running the trigo.mpl Maple script
 # should create 64 files in TEMPTRIG, which can be tested independently as 
-#    cat  TEMPTRIG/SinACosA_1.gappa  SinCosCase3.gappa | gappa>/dev/null
+#    sed -f    TEMPTRIG/SinACosA_1.sed  trigoSinCosCase3.gappa | ~/gappa/src/gappa > /dev/null
 
 # NOTATION CONVENTION 
 # Variables that correspond to double-precision variables in the code begin with a small letter
 # Other variables begin with a capital letter.
+# Variables that will be replaced with Maple-computed constants begin with an underscore
 # Otherwise avoid underscores as they are painful to carry on to LaTeX :)
 
-# polynomial coefficients in Gappa binary format: sign, integer, power of two
-s3 = -6004799503160661b-55;
-s5 = +4803839602528529b-59;
-s7 = -7320136537186330b-65;
-s9 = +6506788033054516b-71;
-c2 = -4503599627370496b-53;
-c4 = +6004799503154328b-57;
-c6 = -6405110857547344b-62;
-c8 = +7320136537186330b-68;
+# polynomial coefficients, computed by Maple
+s3 = _s3;
+s5 = _s5;
+s7 = _s7;
+c2 = _c2;
+c4 = _c4;
+c6 = _c6;
+
+# Table values, computed by Maple
+cah = _cah;
+cal = _cal;
+sah = _sah;
+sal = _sal;
 
 # The variables used here:
 # x input
@@ -991,7 +1026,6 @@ c8 = +7320136537186330b-68;
 # TcHat perfect tc
 # SinX exact result for sin(x)
 # SinA, CosA perfect sin(kPi/256) and cos(kPi/256)
-
 
 
 yh = <float64ne>(Ydd);
@@ -1097,14 +1131,12 @@ PolyCosY = 1 + TcHat;
 #tc is an approximation to TcHat through the rounding errors, defined
 #in the definition of tc. Same for ts
 
-
 #-------------------------------------
 # SinReconstrExact is an approximation to ResultSin 
 SinReconstrExact = PolySinY * CosA  +  PolyCosY * SinA ;
 # The delta between ResultSin and SinReconstrExact is due to the two
 # mathematical poly approx, and has been defined just above
 CosReconstrExact = PolyCosY * CosA  -  PolySinY * SinA ;
-
 
 #-------------------------------------
 # The reconstruction approximates the following
@@ -1131,10 +1163,10 @@ NeglectedCosTerms = CosReconstrNoRound - (thiCos + TloCos2NoRound);
 ###########################################################################################
 #  The theorem to prove
 {
-    Ydd in [-0.0062852, 0.0062852]          # ymaxCase3 computed by Maple
- /\ Ydd - Y in [-0.253e-22, 0.253e-22]      # delta_ArgRed in Maple
- /\ PolySinY - SinY in [-0.24126e-23, 0.24126e-23]     # delta_approx_Sin_Case3
- /\ PolyCosY - CosY in [-0.7287717127e-22, 0.7287717127e-22]     # delta_approx_Cos_Case3
+    Ydd in             [-_ymaxCase3,     _ymaxCase3]                            # computed by Maple
+ /\ Ydd - Y in         [-_delta_ArgRed,  _delta_ArgRed]                         # computed by Maple
+ /\ PolySinY - SinY in [-_delta_approx_Sin_Case3,  _delta_approx_Sin_Case3]     # computed by Maple
+ /\ PolyCosY - CosY in [-_delta_approx_Cos_Case3,  _delta_approx_Cos_Case3]     # computed by Maple
  /\ SinA-sah-sal in [-1b-104, 1b-104] 
  /\ CosA-cah-cal in [-1b-104, 1b-104] # double-double absolute rounding error, with margin
 
@@ -1175,12 +1207,11 @@ ResultCos - CosReconstrNoRound -> (ResultCos - (thiCos + TloCos2NoRound)) - (Cos
 \end{lstlisting}
 
 
-The Maple script that computes the table of $(ca_h,ca_l,sa_h,sa_l)$
-also outputs it in a form suitable for input to Gappa.  The max of the
-bounds computed by Gappa for all the values of this table is a little
-bit smaller than $2^{-66}$. Therefore, we take
-$\maxeps_{SinCosCase3}=2^{-66}$ for the trigonometric functions (because the
-reconstructions simply manipulates the signs and is therefore exact).
+The max of the bounds computed by Gappa for all the
+values of this table is a little bit smaller than $2^{-66}$.
+Therefore, we take $\maxeps_{SinCosCase3}=2^{-66}$ for the
+trigonometric functions (because the reconstruction simply manipulates
+the signs and is therefore exact).
 
 In the very near future, this bound should be machine-checked by the
 Coq proof assistant.
@@ -1819,19 +1850,21 @@ The results of the search for worst cases are the following so far:
   \end{tabular}
 \end{center}
 
-The Taylor polynomial used are
+The polynomials used are Pade approximation computed in
+\texttt{maple/trigo.mpl}. This maple script produces the \texttt{trigo.h} file, and also prints out the
+approximation error, as follows.
 \begin{itemize}
-\item of degree 32 (16 terms) for sine, with an approximation error
-  lower than $2^{-133}$ on $[-\pi/4, \pi/4]$, and lower than
-  $2^{-600}$ for $|x|< 2^{-17}$,
+\item of degree 25 for sine, with an approximation error
+  lower than $2^{-125}$ on $[-\pi/4, \pi/4]$, and lower than
+  $2^{-158}$ for $|x|< 2^{-17}$,
 
-\item of degree 32 (16 terms) for cosine, with an approximation error
-  lower than $2^{-128}$ on $[-\pi/4, \pi/4]$, and lower than
-  $2^{-300}$ for $|x|< 2^{-18}$,
+\item of degree 26 for cosine, with an approximation error
+  lower than $2^{-132}$ on $[-\pi/4, \pi/4]$, and lower than
+  $2^{-168}$ for $|x|< 2^{-18}$,
 
-\item of degree 68 for the tangent, with an approximation error lower
-  than $2^{-151}$ on $[-\pi/4, \pi/4]$, and lower than
-  $2^{-300}$ for $|x|< 2^{-18}$.
+\item of degree 69 for the tangent, with an approximation error lower
+  than $2^{-30}$ on $[-\pi/4, \pi/4]$, and lower than
+  $2^{-163}$ for $|x|< 2^{-18}$.
 \end{itemize}
 
 
@@ -1840,37 +1873,39 @@ than $2^{-200}$ accumulated roundoff errors. Therefore, the overall
 evaluation error for the accurate phase is lower than the worst case accuracy for
 each function on each interval of the previous table.
 
+This Maple script, and \crlibm\ in general, are designed to allow easy
+increase of the accuracy, should cases worst than those of this table
+be found in the future.
+
 
 \section{Performance results}
 
 Table~\ref{tbl:sine_abstime} gives performance results for input numbers with random
 mantissa and exponents uniformely distributed between -20 and 40, by the command:\\
-\verb!tests/crlibm_testperf sin RN 100000!.
+\verb!tests/crlibm_testperf sin RN 10000!.
 
-In this case the second step was taken 79 times out of 100000.
+In this case the second step was taken 3 times out of 10000.
 
 Which input interval should be used to measure the performance of
-trigonometric functions is an open question for us. For larger exponents, \texttt{libultim}
-is faster than \texttt{crlibm}.
+trigonometric functions is an open question for us. For larger
+exponents, \texttt{libultim} is faster than \texttt{crlibm}.
 
 \begin{table}[!htb]
 \begin{center}
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{|l|r|r|r|}
 \hline
- \multicolumn{4}{|c|}{Pentium 4 Xeon / Linux Debian sarge / gcc 3.3}   \\ 
+ \multicolumn{4}{|c|}{Pentium III / Linux Debian sarge / gcc 3.3}   \\ 
  \hline
                         & min time       & avg time     & max time        \\ 
  \hline
- \texttt{libm}          & 144           &        171    & 308      \\ 
+ \texttt{libm}          & 108           &        118    & 142      \\ 
  \hline
- \texttt{mpfr}          & 17096         &      57296    & 179188      \\ 
+ \texttt{mpfr}          & 16715         &      67153    & 186925      \\ 
  \hline
- \texttt{libultim}      & 104           &        250    & 3005616      \\ 
+ \texttt{libultim}      & 91            &        300    & 1294619      \\ 
  \hline
- \texttt{libmcr}        & 356           &       1716    & 156452      \\ 
- \hline
-\texttt{crlibm}         & 100           &        213    & 46444      \\ 
+\texttt{crlibm}         & 81            &        229    & 13616      \\ 
  \hline
 \end{tabular}
 \end{center}
@@ -1882,31 +1917,29 @@ Results for the cosine are very similar. The tangent leaves more room
 for improvement, as Table~\ref{tbl:tan_abstime} shows. The culprit is
 the Div22 procedure, which is very expensive. 
 
-Directed rounding mode have a penalty of about 100 cycles, due to the
-heavy use of integer 64-bit arithmetic.
+Directed rounding mode have a penalty of about 50 cycles on a Pentium
+III, due to the heavy use of integer 64-bit arithmetic.
 
 \begin{table}[!htb]
 \begin{center}
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{|l|r|r|r|}
 \hline
- \multicolumn{4}{|c|}{Pentium 4 Xeon / Linux Debian sarge / gcc 3.3}   \\ 
+ \multicolumn{4}{|c|}{Pentium III / Linux Debian sarge / gcc 3.3}   \\ 
  \hline
                         & min time       & avg time     & max time        \\ 
  \hline
- \texttt{libm}          & 1472          &       2575    & 251084      \\ 
+ \texttt{libm}          & 158           &        167    & 183      \\ 
  \hline
- \texttt{mpfr}          & 23884         &      71856    & 183088      \\ 
+ \texttt{mpfr}          & 22759         &      80108    & 222550      \\ 
  \hline
- \texttt{libultim}      & 116           &        530    & 3160808      \\ 
+ \texttt{libultim}      & 113           &        428    & 1357592      \\ 
  \hline
- \texttt{libmcr}        & 1516          &       2539    & 252368      \\ 
- \hline
-\texttt{crlibm}         & 152           &        550    & 67128      \\ 
+ \texttt{crlibm}         & 105           &        367    & 33830      \\ 
  \hline
 \end{tabular}
 \end{center}
-\caption{Absolute timings for the sine (arbitrary units)
+\caption{Absolute timings for the tangent (arbitrary units)
   \label{tbl:tan_abstime}}
 \end{table}
 
