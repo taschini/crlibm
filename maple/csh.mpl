@@ -6,6 +6,14 @@ read "common-procedures.mpl";
 mkdir("TEMPCSH");
 
 
+#######################################################################
+# Some values to go to the .testdata
+# What is the first value that rounds to nearest to +inf ?
+ieeehexa(arcsinh(hexa2ieee(["7fefffff","ffffffff"])));
+
+# What is the first value that rounds to +inf to +inf ?
+
+
 ######################################################################
 #First, some constants variables (used in the polynomial evaluations)
 n_double_ch := 11: # max degree for cosh's polynomial evaluation
@@ -411,8 +419,7 @@ for big_little from 1 to 2 do
 	fprintf(fd, "\n");
 
 	fprintf(fd,"/* some bounds */ \n"):
-	fprintf(fd, cat(  "  static db_number const max_input_ch =  ",IEEE2db_number(max_input_ch,big_little))):
-	fprintf(fd, cat(  "  static db_number const max_input_sh =  ",IEEE2db_number(max_input_sh,big_little))):
+	fprintf(fd, cat(  "  static db_number const max_input_csh =  ",IEEE2db_number(max_input_ch,big_little))):
 
     fprintf(fd, "\n"):
 	fprintf(fd, cat(cat("  static const db_number cosh_sinh_table[",convert(2*size_of_table+1,string)),"][4] = { \n"));

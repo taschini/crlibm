@@ -5,39 +5,41 @@
 
 #---------------------------------------------------------------------
 
-log2:=proc(x) evalf( log(x)/log(2) ) end proc:
+log2:=proc(x) evalf( log[2](x)) end proc:
 
 
 #---------------------------------------------------------------------
 # ieeedouble converts a number to IEEE double format.
 # returns sign (-1 or 1), exponent between -1022 and 1023, mantissa as a fraction between 0.5 and 1.
-# Handles denorms well, infinities more or less
+# Digits should be at least 30.
 
 ieeedouble:=proc(xx)
-local x, sign, logabsx, exponent, mantissa, infmantissa;
+local x, sgn, logabsx, exponent, mantissa, infmantissa:
 x:=evalf(xx):
 if (x=0) then
-  sign,exponent,mantissa := 0,0,0;
+  sgn,exponent,mantissa := 0,0,0:
 else
- if (x<0) then sign:=-1:
- else sign:=1:
+ if (x<0) then sgn:=-1:
+ else sgn:=1:
  fi:
- exponent := floor(log2(sign*x));
- if (exponent>1023) then mantissa:=infinity: exponent=1023:
- elif (exponent<-1022) then
-    # denorm
-    exponent := -1023
+ exponent := floor(log2(sgn*x)):
+ if (exponent>1023) then
+     mantissa:=infinity:
+     exponent:=1023:
+ else if (exponent<-1022) then
+          # denorm
+          exponent := -1023
+      fi:
+     infmantissa := sgn*x*2^(52-exponent):
+     if frac(infmantissa) <> 0.5 then mantissa := round(infmantissa)
+     else
+         mantissa := floor(infmantissa):
+         if type(mantissa,odd) then mantissa := mantissa+1 fi:
+     fi:
+     mantissa := mantissa*2^(-52):
  fi:
- infmantissa := sign*x*2^(52-exponent);
- if frac(infmantissa) <> 0.5 then mantissa := round(infmantissa)
- else
-    mantissa := floor(infmantissa);
-    if type(mantissa,odd) then mantissa := mantissa+1 fi;
- fi;
- Digits := 53;
- mantissa := mantissa*2^(-52);
-fi;
-sign,exponent,mantissa;
+fi:
+    sgn,exponent,mantissa:
 end:
 
 
@@ -45,9 +47,9 @@ end:
 # pulp returns the precision of the ulp of x
 
 pulp:=proc(x)
-local flt, ulpy;
-flt:=ieeedouble(x);
-ulpy:=-52+flt[2];
+local flt, ulpy:
+flt:=ieeedouble(x):
+ulpy:=-52+flt[2]:
 end proc:
 
 
@@ -55,7 +57,7 @@ end proc:
 #---------------------------------------------------------------------
 # ulp returns the absolute value of the ulp of x
 ulp:=proc(x)
-2**(pulp(x));
+2**(pulp(x)):
 end proc:
 
 
@@ -64,10 +66,10 @@ end proc:
 #---------------------------------------------------------------------
 # Returns nearest IEEE double:
 nearest := proc(x)
-  local sign, exponent, mantissa;
+  local sgn, exponent, mantissa:
 
-  sign,exponent,mantissa := ieeedouble(x);
-  sign*mantissa*2^(exponent);
+  sgn,exponent,mantissa := ieeedouble(x):
+  sgn*mantissa*2^(exponent):
 end:
 
 
@@ -75,29 +77,29 @@ end:
 # ieehexa returns a string containing the hexadecimal representation of the double nearest to input x.
 
 ieeehexa:= proc(x)
-local  hex2, xx, longint, expo, sgn, frac, resultat;
-    if(x=0) then resultat:=["00000000","00000000"];
-    elif(x=-0) then resultat:=["80000000","00000000"];   # nice try
+local  hex2, xx, longint, expo, sgn, frac, resultat:
+    if(x=0) then resultat:=["00000000","00000000"]:
+    elif(x=-0) then resultat:=["80000000","00000000"]:   # nice try
     else
-        xx:=ieeedouble(x);
+        xx:=ieeedouble(x):
         sgn:=xx[1]:
         expo:=xx[2]:
         frac:=xx[3]:
         if (expo = -1023) then
-            longint := (frac)*2^51 ;   # subnormal
+            longint := (frac)*2^51 :   # subnormal
         else
-            longint := (frac-1)*2^52 +   (expo+1023)*2^52;
+            longint := (frac-1)*2^52 +   (expo+1023)*2^52:
         fi:
         if (sgn=-1) then
-            longint := longint + 2^63;
+            longint := longint + 2^63:
         fi:
         longint := longint + 2^64:  # to get all the hexadecimal digits when we'll convert to string
-        hex2:=convert(longint, hex);
+        hex2:=convert(longint, hex):
         hex2:=convert(hex2, string):
 
         resultat:=[substring(hex2,2..9), substring(hex2,10..18)]:
     fi:
-    resultat;
+    resultat:
 end proc:
 
 
@@ -105,11 +107,11 @@ end proc:
 #---------------------------------------------------------------------
 # reciprocal of the previous
 hexa2ieee:= proc(hexa)
-local dec, bin, expo, mantis, sgn, hex1, hex2, hexcat, res;
+local dec, bin, expo, mantis, sgn, hex1, hex2, hexcat, res:
 
     hex1:= op(1, hexa):
     hex2:= op(2, hexa):
-    hexcat:= cat(hex1, hex2);
+    hexcat:= cat(hex1, hex2):
     dec:= convert(hexcat, decimal, hex):
 
     if(dec >= 2^63) then
@@ -117,7 +119,7 @@ local dec, bin, expo, mantis, sgn, hex1, hex2, hexcat, res;
         sgn:= -1:
     else
         sgn:= 1:
-    fi;
+    fi:
     expo:= trunc(dec/(2^52)) - 1023:
     if(expo=-1023) then
         mantis:= frac(dec/(2^51)): # denormal
@@ -125,7 +127,7 @@ local dec, bin, expo, mantis, sgn, hex1, hex2, hexcat, res;
         mantis:= 1+frac(dec/(2^52)):
     fi:
     res:= evalf(sgn*2^(expo)*mantis):
-    res;
+    res:
 end proc:
 
 #---------------------------------------------------------------------
@@ -140,7 +142,7 @@ xhl:=ieeehexa(x):
 if(isbig=0 or isbig=1) then
   fprintf(fd,"{{0x%+0.8s,0x%+0.8s}} /* %+0.10e */", xhl[2-isbig], xhl[isbig+1], x):
 else
-  print("ERROR, isbig must be equal to 0 or 1");
+  print("ERROR, isbig must be equal to 0 or 1"):
 end if:
 end proc:
 
@@ -157,8 +159,8 @@ if (res = 0) then
   x_lo:=0:
 else
   x_lo:=nearest(evalf(res)):
-end if;
-x_hi,x_lo;
+end if:
+x_hi,x_lo:
 end:
 
 
@@ -166,12 +168,12 @@ end:
 #---------------------------------------------------------------------
 # same as hi_lo, but returns hexadecimal strings
 ieeehexa2:=proc(x)
-local reshi, reslo, hexhi, hexlo;
-reshi:=nearest(x);
-hexhi:=ieee2hexa(reshi);
-reslo:= nearest(x-reshi);
-hexlo:=ieee2hexa(reslo);
-reshi, reslo;
+local reshi, reslo, hexhi, hexlo:
+reshi:=nearest(x):
+hexhi:=ieee2hexa(reshi):
+reslo:= nearest(x-reshi):
+hexlo:=ieee2hexa(reslo):
+reshi, reslo:
 end proc:
 
 
@@ -181,7 +183,7 @@ end proc:
 # Computes the constant for the round-to-nearest test.
 # delta is the overall relative error of the approximation scheme
 compute_rn_constant := proc(delta)
-  local k;
+  local k:
   k := trunc(-log2(delta)) - 53:
   nearest(  1+ 2**(-52) + (2**(54+k)*delta)  /  ( (2**k-1) * (1-2**(-53)) )  ):
 end proc:
@@ -223,7 +225,7 @@ deg:=degree(P,x):
     coef_t:=nearest(coef):
     Q:= Q + coef_t*x^i:
   od:
-return(Q);
+return(Q):
 end:
 
 
@@ -245,7 +247,7 @@ deg:=degree(P,x):
         Q := Q + coef_lo*x^i:
     fi:
   od:
-  return(Q);
+  return(Q):
 end:
 
 
@@ -266,7 +268,7 @@ deltap:=0:
 delta:=0:
 deg:=degree(poly):
 
-prec:=53; # precision of the first iterations
+prec:=53: # precision of the first iterations
 
 S:=coeff(poly, x, deg):
 Smax:=abs(S):
@@ -278,14 +280,14 @@ for i from (deg-1) to 0 by -1 do
   P:= convert(S*x, polynom):
   Smin := abs(coeff(poly,x,i)) - xmax*Smax :
   if(Smin<=0) then
-    printf("Warning! in compute_abs_rounding_error, Smin<=0 at iteration %d, consider decreasing xmax\n",i);
+    printf("Warning! in compute_abs_rounding_error, Smin<=0 at iteration %d, consider decreasing xmax\n",i):
   fi:
   delta:= evalf(xmax*deltap + 2**(-prec)*xmax*Smax):
   if i<n then
     # fast Add22 ?
     if abs(coeff(poly,x,i)) < xmax*Smax  # may be improved to xmax*Smax/2
-    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , i  );
-         printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*Smax );
+    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , i  ):
+         printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*Smax ):
     fi:
   fi:
   S:=convert(P+coeff(poly,x,i), polynom):
@@ -294,7 +296,7 @@ for i from (deg-1) to 0 by -1 do
   deltap:= evalf(delta + 2**(-prec)*(delta + Snorm)):
   Smax := Snorm + deltap:
 od:
-deltap, Smin, Smax;
+deltap, Smin, Smax:
 end proc:
 
 
@@ -315,7 +317,7 @@ else
    deltap, Smin, Smax := compute_abs_rounding_error(poly,xmax, n):
    rho := deltap /  Smin:
 fi:
-rho;
+rho:
 end proc:
 
 
@@ -338,7 +340,7 @@ deltap:=0:
 delta:=0:
 deg:=degree(poly):
 
-prec:=53; # precision of the first iterations
+prec:=53: # precision of the first iterations
 
 S:=coeff(poly, x, deg):
 Smax:=abs(S):
@@ -351,14 +353,14 @@ for i from (deg-1) to 0 by -1 do
   P:= convert(S*x, polynom):
   Smin := abs(coeff(poly,x,i)) - xmax*Smax :
   if(Smin<=0) then
-    printf("Warning! in compute_abs_rounding_error, Smin<=0 at iteration %d, consider decreasing xmax\n",i);
+    printf("Warning! in compute_abs_rounding_error, Smin<=0 at iteration %d, consider decreasing xmax\n",i):
   fi:
   delta:= evalf(xmax*deltap + 2**(-prec)*xmax*Smax):
   if i<n then
     # fast Add22 ?
     if abs(coeff(poly,x,i)) < xmax*Smax  # may be improved to xmax*Smax/2
-    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , i  );
-         printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*Smax );
+    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , i  ):
+         printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*Smax ):
     fi:
   fi:
   S:=convert(P+coeff(poly,x,i), polynom):
@@ -366,7 +368,7 @@ for i from (deg-1) to 0 by -1 do
   deltap:= evalf(delta + 2**(-prec)*(delta + Snorm)):
   Smax := Snorm + deltap:
 od:
-deltap, Smin, Smax;
+deltap, Smin, Smax:
 end proc:
 
 
@@ -388,7 +390,7 @@ else
    deltap, Smin, Smax := compute_abs_rounding_error_firstmult(poly,xmax, n):
    rho := deltap /  Smin:
 fi:
-rho;
+rho:
 end proc:
 
 
@@ -399,7 +401,7 @@ end proc:
 # The function f(x) must have as input interval xmin..xmax
 # returns [ truncated polynomial, relative approx error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]
 poly_trunc_classic:=proc(f,deg,xmin,xmax,n)
-  local pe, repe, pt, ppe, rept, maxpt;
+  local pe, repe, pt, ppe, rept, maxpt:
   pe:=numapprox[minimax]( f,  x=xmin..xmax,  [deg,0],  1,  'err'):
   pt := poly_exact2(pe,n):
   rept := numapprox[infnorm]( 1-pt/f, x=xmin..xmax) :
@@ -414,7 +416,7 @@ end proc:
 # The function f(x) must have as input interval xmin..xmax
 # returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]
 poly_trunc_f2d_2:=proc(f,deg,xmin,xmax)
-  local pe, repe, pt, c0, c1, c2, ppe, abserr, relerr, maxpt, err;
+  local pe, repe, pt, c0, c1, c2, ppe, abserr, relerr, maxpt, err:
   pe:=numapprox[minimax](  f,  x=xmin..xmax,  [deg,0],  1,  'err'):
   pt := poly_exact2(pe,2):
   c0:=coeff(pt,x,0):
@@ -437,7 +439,7 @@ end proc:
 #  The function f(x) must have as input interval xmin..xmax
 # returns [ truncated polynomial, relative error of trunc. poly.  ,  infinite precision polynomial,   rel. error of inf. prec. poly ]
 poly_trunc_f2d_1:=proc(f,deg,xmin,xmax)
-  local pe, repe, pt, c0, c1, ppe, relerr, abserr, maxpt, err;
+  local pe, repe, pt, c0, c1, ppe, relerr, abserr, maxpt, err:
   pe:=numapprox[minimax](  f ,  x=xmin..xmax,  [deg,0],  1,  'err'):
   pt := poly_exact2(pe,1):
   c0:=coeff(pt,x,0):
@@ -480,68 +482,68 @@ end proc:
 #   maxP  max of the evaluated polynomial.
 
 compute_horner_rounding_error:=proc(poly, x, xmax, errors, check_dd)
-local deg, Sk, maxSk, minSk, epsaddk, epsmulk, deltaaddk, k, ck, epsx, epsmul, epsadd, deltaadd, Pk, maxPk;
+local deg, Sk, maxSk, minSk, epsaddk, epsmulk, deltaaddk, k, ck, epsx, epsmul, epsadd, deltaadd, Pk, maxPk:
 
   if assigned(x) then
-    printf("Error in compute_horner_rounding_error, polynomial variable is assigned\n");
-    return 'procname(args)';
-  fi;
+    printf("Error in compute_horner_rounding_error, polynomial variable is assigned\n"):
+    return 'procname(args)':
+  fi:
 
   deg:=degree(poly,x):
-  if(deg<0) then  printf("ERROR: negative degree in compute_abs_rounding_error"); return 'procname(args)'; fi:
+  if(deg<0) then  printf("ERROR: negative degree in compute_abs_rounding_error"): return 'procname(args)': fi:
 
   Sk:=coeff(poly, x, deg):
-  maxSk:=abs(Sk);
-  minSk:=maxSk;
-  epsmulk:=0;
-  deltaaddk:=0;
-  epsaddk:=0;
+  maxSk:=abs(Sk):
+  minSk:=maxSk:
+  epsmulk:=0:
+  deltaaddk:=0:
+  epsaddk:=0:
 
   for k from (deg) to 1 by -1 do
 
     # the errors to consider for this step
-    epsx := errors[k][1];
-    epsadd := errors[k][2];
-    epsmul := errors[k][3];
+    epsx := errors[k][1]:
+    epsadd := errors[k][2]:
+    epsmul := errors[k][3]:
 
     # multiplication operation
     Pk:= convert(Sk*x, polynom):
     maxPk:=numapprox[infnorm](Pk, x=-xmax..xmax):
 
-    ck:=coeff(poly,x,k-1);
-    epsmulk:=evalf( (1+epsx)*(1+epsaddk)*(1+epsmul)-1  + 10^(-Digits+2)   );
+    ck:=coeff(poly,x,k-1):
+    epsmulk:=evalf( (1+epsx)*(1+epsaddk)*(1+epsmul)-1  + 10^(-Digits+2)   ):
 
     #addition
     if(ck=0)  then
-      Sk:=Pk;
-      maxSk := maxPk;
-      minSk:=0;
-      deltaaddk:= evalf(epsmulk*maxPk);
-      epsaddk:=epsmulk;
+      Sk:=Pk:
+      maxSk := maxPk:
+      minSk:=0:
+      deltaaddk:= evalf(epsmulk*maxPk):
+      epsaddk:=epsmulk:
     else
-      Sk:=convert(Pk+ck , polynom);
+      Sk:=convert(Pk+ck , polynom):
       maxSk:=numapprox[infnorm](Sk, x=-xmax..xmax):
-      minSk:=minimize(abs(Sk), x=-xmax..xmax);
+      minSk:=minimize(abs(Sk), x=-xmax..xmax):
       if(epsadd=2^(-53)) then   # compute deltadd exactly as the max half ulp of the result
-	deltaadd := 0.5*ulp(maxSk+epsmulk*maxSk);
+	deltaadd := 0.5*ulp(maxSk+epsmulk*maxSk):
       else    # compute deltaadd out of the relative error
         deltaadd := epsadd * (maxSk+epsmulk*maxSk):
       fi:
       deltaaddk := evalf(  epsmulk*maxPk + deltaadd  + 10^(-Digits+2)  ):
-      epsaddk := deltaaddk/minSk + 10^(-Digits+2) ;
+      epsaddk := deltaaddk/minSk + 10^(-Digits+2) :
       # warnings
       if (minSk=0) then
-        printf("Warning! in compute_abs_rounding_error, minSk=0 at iteration %d, consider decreasing xmax\n",k);
+        printf("Warning! in compute_abs_rounding_error, minSk=0 at iteration %d, consider decreasing xmax\n",k):
       fi:
     fi:
-    printf("step %d   epsmulk=%1.4e  deltaaddk=%1.4e   minSk=%1.4e   maxSk=%1.4e\n", k, epsmulk, deltaaddk, minSk, maxSk);
+    printf("step %d   epsmulk=%1.4e  deltaaddk=%1.4e   minSk=%1.4e   maxSk=%1.4e\n", k, epsmulk, deltaaddk, minSk, maxSk):
 
 
 #  if (epsadd=2**(-103)) then
 #    # fast Add22 ?
 #    if abs(coeff(poly,x,k)) < xmax*maxSk  # may be improved to xmax*Smax/2
-#    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , k  );
-#         printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*maxSk );
+#    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , k  ):
+#         printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*maxSk ):
 #    fi:
 #  fi:
 
@@ -560,7 +562,7 @@ end proc:
 #   ddepsx error on x in the double-double steps (when x is represented by a double-double)
 
 errlist_quickphase_horner := proc(n,ddadd, ddmul,depsx, ddepsx)
- local nddadd, epsadd, nddmul, epsmul, epsx;
+ local nddadd, epsadd, nddmul, epsmul, epsx:
  if n=0
   then []
   else
@@ -574,7 +576,7 @@ errlist_quickphase_horner := proc(n,ddadd, ddmul,depsx, ddepsx)
     if ddmul>0 then
       nddmul:=ddmul-1:
       epsmul:=2**(-102):
-      epsx:=ddepsx;
+      epsx:=ddepsx:
     else
       nddmul:=ddmul:
       epsmul:=2**(-53):
@@ -593,39 +595,39 @@ end proc:
 # but then check
 
 WorstCaseForAdditiveRangeReduction:=proc(B,n,emin,emax,C)
-  local epsilonmin,powerofBoverC,e,a,Plast,r,Qlast, Q,P,NewQ,NewP,epsilon, numbermin,expmin,l;
-  epsilonmin := 12345.0 ;
-  powerofBoverC := B^(emin-n)/C;
+  local epsilonmin,powerofBoverC,e,a,Plast,r,Qlast, Q,P,NewQ,NewP,epsilon, numbermin,expmin,l:
+  epsilonmin := 12345.0 :
+  powerofBoverC := B^(emin-n)/C:
   for e from emin-n+1 to emax-n+1 do
-    powerofBoverC := B*powerofBoverC;
-    a := floor(powerofBoverC);
-    Plast := a;
-    r := 1/(powerofBoverC-a);
-    a := floor(r);
-    Qlast := 1;
-    Q := a;
-    P := Plast*a+1;
+    powerofBoverC := B*powerofBoverC:
+    a := floor(powerofBoverC):
+    Plast := a:
+    r := 1/(powerofBoverC-a):
+    a := floor(r):
+    Qlast := 1:
+    Q := a:
+    P := Plast*a+1:
     while Q < B^n-1 do
-      r := 1/(r-a);
-      a := floor(r);
-      NewQ := Q*a+Qlast;
-      NewP := P*a+Plast;
-      Qlast := Q;
-      Plast := P;
-      Q := NewQ;
+      r := 1/(r-a):
+      a := floor(r):
+      NewQ := Q*a+Qlast:
+      NewP := P*a+Plast:
+      Qlast := Q:
+      Plast := P:
+      Q := NewQ:
       P := NewP
-      od;
-   epsilon := evalf(C*abs(Plast-Qlast*powerofBoverC));
+      od:
+   epsilon := evalf(C*abs(Plast-Qlast*powerofBoverC)):
    if epsilon < epsilonmin then
-     epsilonmin := epsilon; numbermin := Qlast;
+     epsilonmin := epsilon: numbermin := Qlast:
      expmin := e
      fi
-   od;
-  print('mantissa',numbermin);
-  print('exponent',expmin);
-  print('epsilon',epsilonmin);
-  l := evalf(log(epsilonmin)/log(B),10);
-  print(numberofdigits,l);
+   od:
+  print('mantissa',numbermin):
+  print('exponent',expmin):
+  print('epsilon',epsilonmin):
+  l := evalf(log(epsilonmin)/log(B),10):
+  print(numberofdigits,l):
   (numbermin, expmin, epsilonmin)
 end proc:
 
@@ -653,50 +655,50 @@ SCS_NB_BITS  := 30:
 # This procedure convert a decimal number into it SCS representation.
 #        x : input number to convert into it SCS representation
 real_to_SCS := proc(x)
-        local exception, index, sign, mantissa, nb, i;
+        local exception, index, sgn, mantissa, nb, i:
 
             if x <> 0 then
-                exception := 1;
+                exception := 1:
                 if x > 0 then
-                    sign  := 1;
-                    nb    := x;
+                    sgn  := 1:
+                    nb    := x:
                 elif x < 0 then
-                    sign := -1;
-                    nb   := -x;
-                end if;
+                    sgn := -1:
+                    nb   := -x:
+                end if:
 
-                index := 0;
+                index := 0:
 
                 if nb >= 1 then
                     for i from 0 while nb > (2^(SCS_NB_BITS+1)-1) do
-                        index := index+1;
-                        nb    := nb * 2^(-SCS_NB_BITS);
-                    end do;
+                        index := index+1:
+                        nb    := nb * 2^(-SCS_NB_BITS):
+                    end do:
                 else
                     for i from 0 while nb < 1 do
-                        index := index-1;
-                        nb    := nb * 2^(SCS_NB_BITS);
-                    end do;
-                end if;
+                        index := index-1:
+                        nb    := nb * 2^(SCS_NB_BITS):
+                    end do:
+                end if:
 
                 for i from 0 by 1 to (SCS_NB_WORDS-1) do
-                    mantissa[i] := trunc(nb);
-                    nb          := (nb - mantissa[i]) * 2^(SCS_NB_BITS);
-                end do;
+                    mantissa[i] := trunc(nb):
+                    nb          := (nb - mantissa[i]) * 2^(SCS_NB_BITS):
+                end do:
             else
                 for i from 0 by 1 to (SCS_NB_WORDS-1) do
-                    mantissa[i] := 0;
-                end do;
+                    mantissa[i] := 0:
+                end do:
 
-                index     := 1;
-                exception := x;
-                sign      := 1;
-            end if;
-            mantissa[SCS_NB_WORDS]   := exception;
-            mantissa[SCS_NB_WORDS+1] := index;
-            mantissa[SCS_NB_WORDS+2] := sign;
+                index     := 1:
+                exception := x:
+                sgn      := 1:
+            end if:
+            mantissa[SCS_NB_WORDS]   := exception:
+            mantissa[SCS_NB_WORDS+1] := index:
+            mantissa[SCS_NB_WORDS+2] := sgn:
 
-            return mantissa;
+            return mantissa:
         end proc:
 
 
@@ -706,20 +708,20 @@ real_to_SCS := proc(x)
 # Convert an SCS number into a rational number
 
 SCS_to_real := proc(tab)
-       local res, i;
+       local res, i:
 
            if (tab[SCS_NB_WORDS] <> 1) then
-               return tab[SCS_NB_WORDS];
-           end if;
+               return tab[SCS_NB_WORDS]:
+           end if:
 
-           res := 0;
+           res := 0:
            for i from (SCS_NB_WORDS-1) by -1 while i>=0 do
                res := 2^(-SCS_NB_BITS)*res + tab[i]
-           end do;
+           end do:
 
-           res := tab[SCS_NB_WORDS+2]*(res * 2.^(SCS_NB_BITS * tab[SCS_NB_WORDS+1]));
+           res := tab[SCS_NB_WORDS+2]*(res * 2.^(SCS_NB_BITS * tab[SCS_NB_WORDS+1])):
 
-           return res;
+           return res:
 
        end proc:
 
@@ -734,26 +736,26 @@ SCS_to_real := proc(tab)
 # You probably want to use WriteSCS below !
 
 WriteSCS_from_table := proc(fd, tab)
-              local i;
+              local i:
 
-                  fprintf(fd,"{{");
+                  fprintf(fd,"{{"):
 
-                  fprintf(fd,"0x%+0.8x, ", tab[0]);
+                  fprintf(fd,"0x%+0.8x, ", tab[0]):
                   for i from 1 by 1 to (SCS_NB_WORDS-2) do
-                      fprintf(fd,"0x%+0.8x, ", tab[i]);
+                      fprintf(fd,"0x%+0.8x, ", tab[i]):
                       if (i mod 4 = 3) then
-                          fprintf(fd,"\n");
-                      fi;
-                  end do;
-                  fprintf(fd,"0x%+0.8x},\n", tab[SCS_NB_WORDS-1]);
+                          fprintf(fd,"\n"):
+                      fi:
+                  end do:
+                  fprintf(fd,"0x%+0.8x},\n", tab[SCS_NB_WORDS-1]):
                   if (tab[SCS_NB_WORDS]=1) then
-                      fprintf(fd,"DB_ONE, %3d, %3d ", tab[SCS_NB_WORDS+1], tab[SCS_NB_WORDS+2]);
+                      fprintf(fd,"DB_ONE, %3d, %3d ", tab[SCS_NB_WORDS+1], tab[SCS_NB_WORDS+2]):
                   else
                       # the only other possible value is 0 so ...
-                      fprintf(fd,"{0x00000000, 0x00000000}, %3d, %3d ", tab[SCS_NB_WORDS+1], tab[SCS_NB_WORDS+2]);
-                  end if;
+                      fprintf(fd,"{0x00000000, 0x00000000}, %3d, %3d ", tab[SCS_NB_WORDS+1], tab[SCS_NB_WORDS+2]):
+                  end if:
 
-                  fprintf(fd, "} \n");
+                  fprintf(fd, "} \n"):
               end proc:
 
 
@@ -761,7 +763,7 @@ WriteSCS_from_table := proc(fd, tab)
 # Write a real number as an SCS array to a file
 
 WriteSCS := proc (fd,x)
-      WriteSCS_from_table(fd , real_to_SCS (x));
+      WriteSCS_from_table(fd , real_to_SCS (x)):
       end:
 
 
@@ -770,16 +772,16 @@ WriteSCS := proc (fd,x)
 # A procedure to count the non-zero coefficients of a polynomial (to store it)
 
 get_nb_terms := proc(poly)
-       local i, deg_poly;
+       local i, deg_poly:
 
-           deg_poly := degree(poly);
+           deg_poly := degree(poly):
            for i from deg_poly by -1 while i>=0 do
                if coeff(poly, x, i)=0 then
-                   deg_poly := deg_poly-1;
-               end if;
-           end do;
+                   deg_poly := deg_poly-1:
+               end if:
+           end do:
 
-           return deg_poly;
+           return deg_poly:
        end proc:
 
 
@@ -797,24 +799,24 @@ get_nb_terms := proc(poly)
 # name : name of the array
 
 Write_SCS_poly := proc(fd,  name, poly)
-local i, deg;
-           #fclose(fd);
+local i, deg:
+           #fclose(fd):
            try
            finally
-               fprintf(fd,"static const scs %s [%d]=\n", name, get_nb_terms(poly)+1);
-               deg := degree(poly);
+               fprintf(fd,"static const scs %s [%d]=\n", name, get_nb_terms(poly)+1):
+               deg := degree(poly):
 
-               fprintf(fd,"/* ~%1.50e */ \n{", coeff(poly, x, deg));
-               WriteSCS(fd, coeff(poly, x, deg));
+               fprintf(fd,"/* ~%1.50e */ \n{", coeff(poly, x, deg)):
+               WriteSCS(fd, coeff(poly, x, deg)):
                for i from (deg-1) by (-1) while i>=0 do
                    if (coeff(poly, x, i)<>0) then
-                       fprintf(fd,",\n/* ~%1.50e */ \n", coeff(poly, x, i));
-                       WriteSCS(fd, coeff(poly, x, i), 0);
-                   end if;
-               end do;
-               fprintf(fd,"};\n");
-            end try;
-       end proc:
+                       fprintf(fd,",\n/* ~%1.50e */ \n", coeff(poly, x, i)):
+                       WriteSCS(fd, coeff(poly, x, i), 0):
+                   end if:
+               end do:
+               fprintf(fd,"}:\n"):
+            end try:
+          end proc:
 
 
 
