@@ -277,24 +277,8 @@ int rem_pio256_scs(scs_ptr result, const scs_ptr x){
  
 
 
-#define LoadTableSinCos()                                 \
-do  {                                                       \
-    if(index<=(64<<2)) {                                    \
-      sah=sincosTable[index+0].d; /* sin(a), high part */   \
-      sal=sincosTable[index+1].d; /* sin(a), low part  */   \
-      cah=sincosTable[index+2].d; /* cos(a), high part */   \
-      cal=sincosTable[index+3].d; /* cos(a), low part  */   \
-    }else { /* cah <= sah */                                \
-      index=(128<<2) - index;                               \
-      cah=sincosTable[index+0].d; /* cos(a), high part */   \
-      cal=sincosTable[index+1].d; /* cos(a), low part  */   \
-      sah=sincosTable[index+2].d; /* sin(a), high part */   \
-      sal=sincosTable[index+3].d; /* sin(a), low part  */   \
-    }                                                       \
-  } while(0)
 
-
-#define DoSinZero(psh,psl)                     \
+#define DoSinZero(psh,psl)                         \
 do{                                                \
   yh2 = yh*yh ;                                    \
   ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));	   \
@@ -303,20 +287,6 @@ do{                                                \
   Add12(*psh,*psl,   yh, yl+ts*yh);	           \
 } while(0)						   
 
-#define DoSinNotZero(psh,psl)                                      \
-do {                                                                   \
-  double thi, tlo, cahyh_h, cahyh_l  ;          		       \
-  yh2 = yh*yh ;                                                        \
-  Mul12(&cahyh_h,&cahyh_l, cah, yh);				       \
-  Add12(thi, tlo, sah,cahyh_h);					       \
-  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));			       \
-  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */		       \
-  tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));			       \
-  /* 1+ tc is an approx to cos(yh+yl) */			       \
-  tlo = tc*sah+(ts*cahyh_h+(sal+(tlo+(cahyh_l+(cal*yh + cah*yl))))) ;  \
-  Add12(*psh,*psl,  thi, tlo);	   			               \
-} while(0)
- 
 #define DoCosZero(pch,pcl)                        \
 do {                                              \
   yh2 = yh*yh ;                                   \
@@ -326,15 +296,22 @@ do {                                              \
   Add12(*pch,*pcl, 1., tc);		          \
 } while(0)					  
 
+
+/* See the documentation for explanations on DoSinNotZero */
+#define DoSinNotZero(psh,psl)                                          \
+do {                                                                   \
+  double thi, tlo, cahyh_h, cahyh_l  ;          		       \
+  Mul12(&cahyh_h,&cahyh_l, cah, yh);				       \
+  Add12(thi, tlo, sah,cahyh_h);					       \
+  tlo = tc*sah+(ts*cahyh_h+(sal+(tlo+(cahyh_l+(cal*yh + cah*yl))))) ;  \
+  Add12(*psh,*psl,  thi, tlo);	   			               \
+} while(0)
+ 
+/* See the documentation for explanations on DoCosNotZero */
 #define DoCosNotZero(pch,pcl)                                       \
 do {                                                                \
   double thi, tlo, sahyh_h,sahyh_l;      			    \
-  yh2 = yh*yh ;                                                     \
   Mul12(&sahyh_h,&sahyh_l, sah, yh);			            \
-  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));		            \
-  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */	            \
-  tc = yh2 * (c2.d + yh2*(c4.d + yh2*(c6.d)));		            \
-  /* 1+ tc is an approx to cos(yh+yl) */		            \
   Add12(thi, tlo,  cah, -sahyh_h);			            \
   tlo = tc*cah-(ts*sahyh_h-(cal+(tlo-(sahyh_l+(sal*yh+sah*yl))))) ; \
   Add12(*pch, *pcl,    thi, tlo);                                   \
@@ -376,10 +353,10 @@ do { 								\
    ComputeTrigWithArgred2 and the 12 functions sin_rn etc
 
    It is purely for performance (almost 100 cycles out of 300 on a P4
-   when compared to passing a list of arguments). Instead of saving a
-   few memory accesses, it it allows other small optimizations like
-   deferring the possible change of sign of the result to the the last
-   moment using rri->changesign.
+   when compared to passing a list of arguments). In addition to
+   saving a few memory accesses, it also allows other small
+   optimizations like deferring the possible change of sign of the
+   result to the the last moment using rri->changesign.
 
    All this is not very elegant, but it is safe.
 */
@@ -442,8 +419,7 @@ static void ComputeTrigWithArgred2(rrinfo *rri){
       else 
 	goto computeNotZero;
     }
-    else {   /*  index<>0 */
-      /* double-double argument reduction*/
+    else {   /*  index<>0 : double-double argument reduction*/
       /* all this is exact */
       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
@@ -465,6 +441,7 @@ static void ComputeTrigWithArgred2(rrinfo *rri){
       goto computeNotZero;
   }
 
+
  computeZero:
   switch(rri->function) {
  
@@ -485,10 +462,10 @@ static void ComputeTrigWithArgred2(rrinfo *rri){
     return;
 
   case TAN: 
+    rri->changesign = quadrant&1;
     if (quadrant&1) {
       DoSinZero(&ch, &cl);
       DoCosZero(&sh, &sl);
-      sh=-sh; sl=-sl;
     } else {
       DoSinZero(&sh, &sl);
       DoCosZero(&ch, &cl);
@@ -498,7 +475,21 @@ static void ComputeTrigWithArgred2(rrinfo *rri){
   }
   
  computeNotZero:
-  LoadTableSinCos();
+  if(index<=(64<<2)) {                                    
+    sah=sincosTable[index+0].d; /* sin(a), high part */   
+    sal=sincosTable[index+1].d; /* sin(a), low part  */   
+    cah=sincosTable[index+2].d; /* cos(a), high part */   
+    cal=sincosTable[index+3].d; /* cos(a), low part  */   
+  }else { /* cah <= sah */                                
+    index=(128<<2) - index;                               
+    cah=sincosTable[index+0].d; /* cos(a), high part */   
+    cal=sincosTable[index+1].d; /* cos(a), low part  */   
+    sah=sincosTable[index+2].d; /* sin(a), high part */   
+    sal=sincosTable[index+3].d; /* sin(a), low part  */   
+  }                                                       
+  yh2 = yh*yh ;
+  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));	
+  tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));	
   switch(rri->function) {
 
   case SIN: 
@@ -518,13 +509,10 @@ static void ComputeTrigWithArgred2(rrinfo *rri){
     return;
 
   case TAN: 
-      /* Remark: the computation of ts and tc is done twice but the
-	 compiler seems to remove the redundant one (as long as DoSin and
-	 DoCos are #defines anyway) */
+    rri->changesign = quadrant&1;
     if (quadrant&1) {
       DoSinNotZero(&ch, &cl);
       DoCosNotZero(&sh, &sl);
-      sh=-sh; sl=-sl;
     } else {
       DoSinNotZero(&sh, &sl);
       DoCosNotZero(&ch, &cl);
@@ -1068,7 +1056,7 @@ double tan_rn(double x){
 
     /* Test if round to nearest achieved */ 
     if(rri.rh == (rri.rh + (rri.rl * RN_CST_TAN_CASE3)))
-      return rri.rh;
+      if(rri.changesign) return -rri.rh; else return rri.rh;
     else
       return scs_tan_rn(x); 
   }    
@@ -1139,7 +1127,11 @@ double tan_ru(double x){
     rri.function=TAN;
     ComputeTrigWithArgred2(&rri);
     epsilon=EPS_TAN_CASE3; 
-   }
+    if(rri.changesign) {
+      rri.rh= -rri.rh; 
+      rri.rl=-rri.rl;
+    }
+  }
   
   /* Rounding test to + infinity */
   absyh.d = rri.rh;
@@ -1220,6 +1212,10 @@ double tan_rd(double x){
     rri.function=TAN;
     ComputeTrigWithArgred2(&rri);
     epsilon=EPS_TAN_CASE3; 
+    if(rri.changesign) {
+      rri.rh= -rri.rh; 
+      rri.rl=-rri.rl;
+    }
   }
   
   /* Rounding test to - infinity */
@@ -1258,38 +1254,38 @@ double tan_rz(double x){
     if (rri.absxhi < XMAX_RETURN_X_FOR_TAN) {
       return x;
     }
-    
-    /* Fast Taylor series */
-    x2 = x*x;
-    p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
-    t  = x2*(t3l.d +x2*(t5.d + x2*p7));
-    
-    sh = x*(x2*t3h.d + t);
-    Add12(rri.rh, rri.rl, x, sh);   
-
-    /* Rounding test to zero */
-    absyh.d=rri.rh;
-    absyl.d=rri.rl;
-    absyh.l = absyh.l & 0x7fffffffffffffffLL;
-    absyl.l = absyl.l & 0x7fffffffffffffffLL;
-    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
-    u.l   = u53.l - 0x0350000000000000LL;
-    epsilon=EPS_TAN_CASE22; 
-    if(absyl.d > epsilon * u53.d){ 
-      if(rri.rh>0) 
-	if(rri.rl>0) return rri.rh;
-	else     return rri.rh-u.d;
-      else 
-	if(rri.rl>0) return rri.rh+u.d;
-	else    return rri.rh;
-    }
-    else {
-      /* Still relatively fast, but more accurate */
-      Mul12(&sh, &sl, x2, t3h.d);
-      Add12(ch, cl, sh, (t+sl));
-      Mul22(&sh, &sl, x, 0, ch, cl);
-      Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
-      epsilon=EPS_TAN_CASE21; 
+    else{ /* Fast Taylor series */
+      x2 = x*x;
+      p7 = t7.d + x2*(t9.d + x2*(t11.d + x2*(t13.d + x2*t15.d)));
+      t  = x2*(t3l.d +x2*(t5.d + x2*p7));
+      
+      sh = x*(x2*t3h.d + t);
+      Add12(rri.rh, rri.rl, x, sh);   
+      
+      /* Rounding test to zero */
+      absyh.d=rri.rh;
+      absyl.d=rri.rl;
+      absyh.l = absyh.l & 0x7fffffffffffffffLL;
+      absyl.l = absyl.l & 0x7fffffffffffffffLL;
+      u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+      u.l   = u53.l - 0x0350000000000000LL;
+      epsilon=EPS_TAN_CASE22; 
+      if(absyl.d > epsilon * u53.d){ 
+	if(rri.rh>0) 
+	  if(rri.rl>0) return rri.rh;
+	  else     return rri.rh-u.d;
+	else 
+	  if(rri.rl>0) return rri.rh+u.d;
+	  else    return rri.rh;
+      }
+      else {
+	/* Still relatively fast, but more accurate */
+	Mul12(&sh, &sl, x2, t3h.d);
+	Add12(ch, cl, sh, (t+sl));
+	Mul22(&sh, &sl, x, 0, ch, cl);
+	Add22(&rri.rh, &rri.rl, x, 0, sh, sl);
+	epsilon=EPS_TAN_CASE21; 
+      }
     }
   }
   else { 
@@ -1298,7 +1294,11 @@ double tan_rz(double x){
     rri.function=TAN;
     ComputeTrigWithArgred2(&rri);
     epsilon=EPS_TAN_CASE3; 
-   }
+    if(rri.changesign) {
+      rri.rh = -rri.rh; 
+      rri.rl = -rri.rl;
+    }
+  }
   /* Rounding test to zero */
   absyh.d=rri.rh;
   absyl.d=rri.rl;
