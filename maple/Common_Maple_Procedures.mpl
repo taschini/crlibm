@@ -438,7 +438,6 @@ end proc:
 #  compute_horner_rounding_error
 
 # Computes a bound on the accumulated rounding error caused by the Horner evaluation of a truncated polynomial 
-# Computes the accumulated rounding error during the polynomial evaluation.
 # It is designed to allow evaluating the error for various schemes:
 #   - with or without an error on x
 #   - using SCS operators
@@ -462,7 +461,7 @@ end proc:
 #   maxP  max of the evaluated polynomial. 
 
 compute_horner_rounding_error:=proc(poly, x, xmax, errors, check_dd)
-local deg, Sk, maxSk, minSk, epsk, epsprimek, deltak, k, ck, epsx, epsmul, epsadd, deltaadd, Pk, maxPk;
+local deg, Sk, maxSk, minSk, epsaddk, epsmulk, deltaaddk, k, ck, epsx, epsmul, epsadd, deltaadd, Pk, maxPk;
  
   if assigned(x) then 
     printf("Error in compute_horner_rounding_error, polynomial variable is assigned\n");
@@ -475,9 +474,9 @@ local deg, Sk, maxSk, minSk, epsk, epsprimek, deltak, k, ck, epsx, epsmul, epsad
   Sk:=coeff(poly, x, deg):
   maxSk:=abs(Sk);
   minSk:=maxSk;
-  epsprimek:=0;
-  deltak:=0;
-  epsk:=0;
+  epsmulk:=0;
+  deltaaddk:=0;
+  epsaddk:=0;
 
   for k from (deg) to 1 by -1 do
 
@@ -489,34 +488,35 @@ local deg, Sk, maxSk, minSk, epsk, epsprimek, deltak, k, ck, epsx, epsmul, epsad
     # multiplication operation
     Pk:= convert(Sk*x, polynom):
     maxPk:=numapprox[infnorm](Pk, x=-xmax..xmax):
-    epsprimek:=evalf( (1+epsx)*(1+epsk)*(1+epsmul)-1  + 10^(-Digits+2)   );
 
-    #addition
     ck:=coeff(poly,x,k-1);
+    epsmulk:=evalf( (1+epsx)*(1+epsaddk)*(1+epsmul)-1  + 10^(-Digits+2)   );
+ 
+    #addition
     if(ck=0)  then
       Sk:=Pk;
       maxSk := maxPk; 
       minSk:=0;
-      deltak:= evalf(epsprimek*maxPk); 
-      epsk:=epsprimek;
+      deltaaddk:= evalf(epsmulk*maxPk); 
+      epsaddk:=epsmulk;
     else
       Sk:=convert(Pk+ck , polynom);
       maxSk:=numapprox[infnorm](Sk, x=-xmax..xmax):
       minSk:=minimize(abs(Sk), x=-xmax..xmax);
       if(epsadd=2^(-53)) then   # compute deltadd exactly as the max half ulp of the result
-	deltaadd := 0.5*ulp(maxSk+epsprimek*maxSk);
+	deltaadd := 0.5*ulp(maxSk+epsmulk*maxSk);
       else    # compute deltaadd out of the relative error
-        deltaadd := epsadd * (maxSk+epsprimek*maxSk) :
+        deltaadd := epsadd * (maxSk+epsmulk*maxSk):
       fi:
-      deltak := evalf(  epsprimek*maxPk + deltaadd  + 10^(-Digits+2)  ):
-      epsk := deltak/minSk + 10^(-Digits+2) ;
+      deltaaddk := evalf(  epsmulk*maxPk + deltaadd  + 10^(-Digits+2)  ):
+      epsaddk := deltaaddk/minSk + 10^(-Digits+2) ;
+      # warnings
+      if (minSk=0) then 
+        printf("Warning! in compute_abs_rounding_error, minSk=0 at iteration %d, consider decreasing xmax\n",k);
+      fi:
     fi:
-    printf("step %d   epsprimek=%1.4e  deltak=%1.4e   minSk=%1.4e   maxSk=%1.4e\n", k, epsprimek, deltak, minSk, maxSk);
+    printf("step %d   epsmulk=%1.4e  deltaaddk=%1.4e   minSk=%1.4e   maxSk=%1.4e\n", k, epsmulk, deltaaddk, minSk, maxSk);
 
-    # warnings
-    if(minSk=0) then 
-      printf("Warning! in compute_abs_rounding_error, minSk=0 at iteration %d, consider decreasing xmax\n",k);
-    fi:
 
 #  if (epsadd=2**(-103)) then 
 #    # fast Add22 ?    
@@ -528,7 +528,7 @@ local deg, Sk, maxSk, minSk, epsk, epsprimek, deltak, k, ck, epsx, epsmul, epsad
 
 od:
 
-return (epsprimek, deltak, minSk, maxSk)
+return (epsmulk, deltaaddk, minSk, maxSk)
 end proc:
 
 
