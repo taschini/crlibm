@@ -178,3 +178,42 @@ double scs_sin_ru(double x){
 }
 
 
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TOWARD  ZERO
+ *************************************************************
+ *************************************************************/
+double scs_sin_rz(double x){  
+  scs_t sc1, sc2;
+  double resd;
+  int N;
+
+  scs_set_d(sc1, x);
+  N = rem_pio2_scs(sc2, sc1);
+  N = N & 0x0000003;		/* extract the 2 last bits of  N */
+  switch (N){
+  case 0:
+    sine(sc2);
+    scs_get_d_zero(&resd, sc2);
+    return resd;
+  case 1:
+    cosine(sc2);
+    scs_get_d_zero(&resd, sc2);
+    return resd;
+   case 2:
+    sine(sc2);
+    scs_get_d_zero(&resd, sc2);
+    return -resd;
+  case 3:
+    cosine(sc2);
+    scs_get_d_zero(&resd, sc2);
+    return -resd;
+  default:
+    fprintf(stderr,"ERREUR: %d is not a valid value in s_sine \n", N);
+    exit(1);
+  }
+  return resd;
+}
+
+
+
