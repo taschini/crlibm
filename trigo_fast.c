@@ -340,6 +340,20 @@ double cos_rn(double x){
 
   xx.d=x;
   absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
+
+  if (absxhi < XMAX_COS_FAST){
+    if (absxhi <XMAX_RETURN_1_FOR_COS)
+      return 1.;
+    /* Fast Taylor series */
+    yh=x*x;
+    tc = yh * (c2.d + yh*(c4.d + yh*(c6.d + yh*(c8.d))));
+    Add12(reshi,reslo, 1, tc);
+    if(reshi == (reshi + (reslo * RN_CST_COSFAST))){	
+      return reshi;
+    }else{ 
+      return scs_cos_rn(x); 
+    } 
+  }
   
   /* Otherwise : Range reduction then standard evaluation */
   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);

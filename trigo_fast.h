@@ -8,7 +8,7 @@
 #define XMAX_COS_FAST 0x3FA00000
 
 #define RN_CST_SINFAST 1.005973 
-#define RN_CST_COSFAST 1.02942 
+#define RN_CST_COSFAST 1.002942 
 
 #define INV_PIO256 81.48733086305041191366848684672735336164333861911370 
 
@@ -36,8 +36,8 @@ static db_number const s7 = {{0xBF2A01A0,0x1A01A01A}} /* -1.9841269841e-04 */;
 static db_number const s9 = {{0x3EC71DE3,0xA556C734}} /* +2.7557319224e-06 */;
 
 static db_number const c2 = {{0xBFE00000,0x00000000}} /* -5.0000000000e-01 */;
-static db_number const c4 = {{0x3FA55555,0x55553C98}} /* +4.1666666667e-02 */;
-static db_number const c6 = {{0xBF56C16A,0x15693E50}} /* -1.3888870214e-03 */;
+static db_number const c4 = {{0x3FA55555,0x55555555}} /* +4.1666666667e-02 */;
+static db_number const c6 = {{0xBF56C16C,0x16C16C17}} /* -1.3888888889e-03 */;
 static db_number const c8 = {{0x3EFA01A0,0x1A01A01A}} /* +2.4801587302e-05 */;
 
 
@@ -315,8 +315,8 @@ static db_number const s7 = {{0x1A01A01A,0xBF2A01A0}} /* -1.9841269841e-04 */;
 static db_number const s9 = {{0xA556C734,0x3EC71DE3}} /* +2.7557319224e-06 */;
 
 static db_number const c2 = {{0x00000000,0xBFE00000}} /* -5.0000000000e-01 */;
-static db_number const c4 = {{0x55553C98,0x3FA55555}} /* +4.1666666667e-02 */;
-static db_number const c6 = {{0x15693E50,0xBF56C16A}} /* -1.3888870214e-03 */;
+static db_number const c4 = {{0x55555555,0x3FA55555}} /* +4.1666666667e-02 */;
+static db_number const c6 = {{0x16C16C17,0xBF56C16C}} /* -1.3888888889e-03 */;
 static db_number const c8 = {{0x1A01A01A,0x3EFA01A0}} /* +2.4801587302e-05 */;
 
 
