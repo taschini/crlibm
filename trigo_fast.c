@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <crlibm.h>
 #include <crlibm_private.h>
-#include "sine_fast.h"
+#include "trigo_fast.h"
 #include "coefpi2.h"
 
 
