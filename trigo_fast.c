@@ -28,316 +28,140 @@ extern double scs_tan_rz(double);
 #define DEBUG 0
 /* TODO: 
  *
+ * In some Cody and Waite there are Mul12 involving k, CH and CM. They
+ *	 can be improved by pre-splitting CH, CM (tabulated values)
+ *	 and k (as an int) Then you can improve the precision by
+ *	 taking kmax into account
+ *
  * - The first coefficient of the cosine polynomial is equal exactly
  *   to 1/2 and this should be modified in order to increase to accuracy
  *   of the approximation.
  * 
  * - For the Sin and Cos we go into the second step if x<2^-1, bound
  *   that doesn't have any scientific reason. We should put an approx of Pi/sthing
-
- Get rid of old #defines in the .h
+ *
+ * Get rid of old #defines in the .h
  */
 
 
-#define LOAD_TABLE_SINCOS(){                             \
-    k=(k&127)<<2;                                        \
-    if(k<=(64<<2)) {                                     \
-      sah=sincosTable[k+0].d; /* sin(a), high part */    \
-      sal=sincosTable[k+1].d; /* sin(a), low part  */    \
-      cah=sincosTable[k+2].d; /* cos(a), high part */    \
-      cal=sincosTable[k+3].d; /* cos(a), low part  */    \
+
+#define scs_range_reduction()                                   \
+do { 								\
+  scs_t X, Y,Yh,Yl;						\
+      scs_set_d(X, x*128.0); 					\
+      k= rem_pio2_scs(Y, X);					\
+      quadrant = (k>>7)&3;                                    	\
+      index=(k&127)<<2;                                         \
+      /* TODO an optimized procedure for the following */	\
+      scs_get_d(&yh, Y);					\
+      scs_set_d(Yh, yh);					\
+      scs_sub(Yl, Y,Yh);					\
+      scs_get_d(&yl, Yl);					\
+      yh = yh * (1./128.) ;					\
+      yl = yl * (1./128.) ;					\
+}while(0)
+
+
+#define LOAD_TABLE_SINCOS()                              \
+do  {                                                      \
+    if(index<=(64<<2)) {                                     \
+      sah=sincosTable[index+0].d; /* sin(a), high part */    \
+      sal=sincosTable[index+1].d; /* sin(a), low part  */    \
+      cah=sincosTable[index+2].d; /* cos(a), high part */    \
+      cal=sincosTable[index+3].d; /* cos(a), low part  */    \
     }else { /* cah <= sah */                             \
-      int k1=(128<<2) - k;                               \
-      cah=sincosTable[k1+0].d; /* cos(a), high part */   \
-      cal=sincosTable[k1+1].d; /* cos(a), low part  */   \
-      sah=sincosTable[k1+2].d; /* sin(a), high part */   \
-      sal=sincosTable[k1+3].d; /* sin(a), low part  */   \
-    }}
+      index=(128<<2) - index;                               \
+      cah=sincosTable[index+0].d; /* cos(a), high part */   \
+      cal=sincosTable[index+1].d; /* cos(a), low part  */   \
+      sah=sincosTable[index+2].d; /* sin(a), high part */   \
+      sal=sincosTable[index+3].d; /* sin(a), low part  */   \
+    }                                                    \
+  } while(0)
 
-#if DEBUG
-	printf("sah=%1.30e sal=%1.30e  \n", sah,sal);
-	printf("cah=%1.30e cal=%1.30e  \n", cah,cal);
-#endif
-
-
-#if 1
-static void do_sin_k_notzero(double* psh, double* psl, double yh, double yl, 
-			     double sah, double sal, double cah, double cal) {
-  double thi, tlo, cahyh_h, cahyh_l, yh2, ts, tc;
-  /* Add optimizations for small yh here ? */
-  yh2 = yh*yh;
-  Mul12(&cahyh_h,&cahyh_l, cah, yh);
-  Add12(thi, tlo, sah,cahyh_h);
-  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
-  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */
-  tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));
-  /* 1+ tc is an approx to cos(yh+yl) */
-  /* now we compute an approximation to cos(a)sin(x) + sin(a)cos(x)   */
-  tlo = tc*sah + (ts*cahyh_h  +(sal + (tlo + (cahyh_l  + (cal*yh + cah*yl))))) ;
-  Add12(*psh,*psl,  thi, tlo );
-  
-}
-
-
-static void do_sin_k_zero(double* psh, double* psl, double yh, double yl) {
-  double ts,yh2;
-  yh2 = yh*yh;
-  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
-  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */
-  /* Now we need to compute (1+ts)*(yh+yl) */
-  Add12(*psh,*psl,   yh, yl+ ts*yh);
-}
-
-
-static void do_cos_k_notzero(double* pch, double* pcl, double yh, double yl, 
-			     double sah, double sal, double cah, double cal) {
-  double yh2, ts, tc, thi, tlo, sahyh_h,sahyh_l; 
-  /* Add optimizations for small yh  here ? */
-  yh2 = yh*yh ;
-  /* now compute an approximation to cos(a)cos(x) - sin(a)sin(x)   */
-  Mul12(&sahyh_h,&sahyh_l, sah, yh);
-  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
-  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */
-  tc = yh2 * (c2.d + yh2*(c4.d + yh2*(c6.d)));
-  /* 1+ tc is an approx to cos(yh+yl) */
-  Add12(thi, tlo,  cah, -sahyh_h);
-  tlo = tc*cah - (ts*sahyh_h -  (cal + (tlo  - (sahyh_l + (sal*yh + sah*yl)) ))) ;
-  Add12(*pch, *pcl,    thi, tlo );
-}
-
-
-
-static void do_cos_k_zero(double* pch, double* pcl, double yh, double yl) {
-  double yh2,  tc; 
-  yh2 = yh*yh ;
-  tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));
-  /* 1+ tc is an approx to cos(yh+yl) */
-  /* Now compute 1+tc */
-  Add12(*pch,*pcl, 1., tc);
-}
-
-
-
-#else
-
-
-
-#define do_sin_k_notzero(psh,psl, yh,  yl, sah, sal, cah, cal)                    \
-{ \
-  double thi, tlo, cahyh_h, cahyh_l, yh2  ;      				  \
-  /* Add optimizations for small yh here ? */					  \
-  yh2 = yh*yh;									  \
-  Mul12(&cahyh_h,&cahyh_l, cah, yh);						  \
-  Add12(thi, tlo, sah,cahyh_h);							  \
-  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));					  \
-  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */				  \
-  tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));					  \
-  /* 1+ tc is an approx to cos(yh+yl) */					  \
-  /* now we compute an approximation to cos(a)sin(x) + sin(a)cos(x)   */	  \
-  tlo = tc*sah + (ts*cahyh_h  +(sal + (tlo + (cahyh_l  + (cal*yh + cah*yl))))) ;  \
-  Add12(*(psh),*(psl),  thi, tlo);	   					  \
-}
 
 #define do_sin_k_zero(psh,psl, yh,  yl)            \
-{                                                  \
+do{                                                  \
   double yh2 ;	              			   \
   yh2 = yh*yh;					   \
   ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));	   \
   /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */  \
-  /* Now we need to compute (1+ts)*(yh+yl) */      \
-  Add12(*(psh),*(psl),   yh, yl+ ts*yh);	   \
-}						   
-						   
-						   
-#define do_cos_k_notzero(pch,pcl, yh,  yl, sah, sal, cah, cal)                      \
-{                                                                                   \
-  double yh2, thi, tlo, sahyh_h,sahyh_l;      				            \
-  /* Add optimizations for small yh  here ? */					    \
-  yh2 = yh*yh ;									    \
-  /* now compute an approximation to cos(a)cos(x) - sin(a)sin(x)   */		    \
-  Mul12(&sahyh_h,&sahyh_l, sah, yh);						    \
-  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));					    \
-  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */				    \
-  tc = yh2 * (c2.d + yh2*(c4.d + yh2*(c6.d)));					    \
-  /* 1+ tc is an approx to cos(yh+yl) */					    \
-  Add12(thi, tlo,  cah, -sahyh_h);						    \
-  tlo = tc*cah - (ts*sahyh_h -  (cal + (tlo  - (sahyh_l + (sal*yh + sah*yl)) ))) ;  \
-  Add12(*(pch), *(pcl),    thi, tlo );                                              \
-}
+  /* Now compute (1+ts)*(yh+yl) */                 \
+  Add12(*psh,*psl,   yh, yl+ts*yh);	           \
+} while(0)						   
 
-
+#define do_sin_k_notzero(psh,psl, yh,  yl, sah, sal, cah, cal)         \
+do {                                                                      \
+  double thi, tlo, cahyh_h, cahyh_l, yh2  ;      		       \
+  yh2 = yh*yh;							       \
+  Mul12(&cahyh_h,&cahyh_l, cah, yh);				       \
+  Add12(thi, tlo, sah,cahyh_h);					       \
+  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));			       \
+  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */		       \
+  tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));			       \
+  /* 1+ tc is an approx to cos(yh+yl) */			       \
+  tlo = tc*sah+(ts*cahyh_h+(sal+(tlo+(cahyh_l+(cal*yh + cah*yl))))) ;  \
+  Add12(*psh,*psl,  thi, tlo);	   			               \
+} while(0)
 
 #define do_cos_k_zero(pch,pcl, yh,  yl)           \
-{                                                 \
-  double yh2;          \
+do {                                                 \
+  double yh2;                                     \
   yh2 = yh*yh ;					  \
   tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));	  \
   /* 1+ tc is an approx to cos(yh+yl) */	  \
   /* Now compute 1+tc */			  \
-  Add12(*(pch),*(pcl), 1., tc);			  \
-}						  
-#endif						  
-						  
-						  
-int static trig_range_reduction(double* pyh, double* pyl, 
-				double x, int absxhi, 
-				double (*scs_fun)(double)   ) {
-  int k;
-  double kd;
-  if  (absxhi < XMAX_CODY_WAITE_3) {
-    DOUBLE2INT(k, x * INV_PIO256);
-    kd = (double) k;
-    if(((k&127) == 0)) { 
-      /* Here we risk a large cancellation on yh+yl; 
-	 on the other hand we will have sa=0 and ca=1*/
-      double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
-      /* TODO : improve this code by pre-splitting CH,  CM and k (as an int) 
-	 Then you can improve the precision by taking kmax into account */
-      /* all this is exact */
-      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
-      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
-      Add12 (th,tl,  kch_l, kcm_h) ;
-      /* only rounding error in the last multiplication and addition */ 
-      Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-    } 
-    else {      
-      /* Argument reduction  by Cody & Waite algorithm */ 
-      /* Here we do not care about cancellations on *pyh+yl */
-      if (absxhi < XMAX_CODY_WAITE_2) { 
-	/* all this is exact but the rightmost multiplication */
-	Add12 (*pyh,*pyl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
-      }
-     else 
-       /* all this is exact but the rightmost multiplication */
-       Add12Cond(*pyh,*pyl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
-    }
-  }
-  else  if ( absxhi < XMAX_DDRR ) {
-    long long int kl;
-    double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
-    DOUBLE2LONGINT(kl, x*INV_PIO256);
-    kd=(double)kl;
-    k = (int) kl;
-#if DEBUG
-    printf("kl=%lld  \n", kl);
-#endif
-    if((k&127) == 0) { 
-      scs_t X, Y,Yh,Yl;
-      scs_set_d(X, x*128.0); 
-      k= rem_pio2_scs(Y, X);
-      /* TODO an optimized procedure for the following */
-      scs_get_d(pyh, Y);
-      scs_set_d(Yh, *pyh);
-      scs_sub(Yl, Y,Yh);
-      scs_get_d(pyl, Yl);
-      *pyh = *pyh * (1./128.) ;
-      *pyl = *pyl * (1./128.) ;
-    } 
-    else {
-      /* all this is exact */
-      Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
-      Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
-      Add12 (th,tl,  kch_l, kcm_h) ;
-      /* only rounding error in the last multiplication and addition */ 
-      Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-    }
-  }
-  else {
-    scs_t X, Y,Yh,Yl;
-    if (absxhi > 0x7F700000) /*2^(1023-7)*/
-      return (*scs_fun)(x);
-    else {      
-      scs_set_d(X, x*128.0); 
-      k= rem_pio2_scs(Y, X);
-      /* TODO an optimized procedure for the following */
-      scs_get_d(pyh, Y);
-      scs_set_d(Yh, *pyh);
-      scs_sub(Yl, Y,Yh);
-      scs_get_d(pyl, Yl);
-      *pyh = *pyh * (1./128.) ;
-      *pyl = *pyl * (1./128.) ;
-    } 
-  }
- return k;
-}
+  Add12(*pch,*pcl, 1., tc);		          \
+} while(0)					  
+
+#define do_cos_k_notzero(pch,pcl, yh,  yl, sah, sal, cah, cal)      \
+do {                                                                   \
+  double yh2, thi, tlo, sahyh_h,sahyh_l;      			    \
+  yh2 = yh*yh ;						            \
+  Mul12(&sahyh_h,&sahyh_l, sah, yh);			            \
+  ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));		            \
+  /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */	            \
+  tc = yh2 * (c2.d + yh2*(c4.d + yh2*(c6.d)));		            \
+  /* 1+ tc is an approx to cos(yh+yl) */		            \
+  Add12(thi, tlo,  cah, -sahyh_h);			            \
+  tlo = tc*cah-(ts*sahyh_h-(cal+(tlo-(sahyh_l+(sal*yh+sah*yl))))) ; \
+  Add12(*pch, *pcl,    thi, tlo);                                   \
+} while(0)
 
 
 
 
 
+ 
 
 
 
-/*************************************************************
- *************************************************************
- *              SIN ROUNDED  TO NEAREST			     *
- *************************************************************
- *************************************************************/ 
-double sin_rn(double x){ 
-  double sah,sal,cah,cal;
-  double sh, sl, yh, yl, xx;
-  double ts,tc; 
-  int quadrant;
-  int k;
-  double kd;
-  int absxhi;
-  db_number x_split;
-  scs_t X, Y,Yh,Yl;
+static void compute_sine_with_argred(double* psh, double* psl, int* pquadrant,  double x, int absxhi){ 
+  double sah,sal,cah,cal, yh, yl, ts,tc, kd; 
+  double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
+  int k, quadrant, index;
+  long long int kl;
 
-
-
-  x_split.d=x;
-  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
-
-  /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
-  if (absxhi>=0x7ff00000) return x-x;    
-
-  if (absxhi < XMAX_SIN_FAST){
-    /* CASE 1 : x small enough sin(x)=x */
-    if (absxhi <XMAX_RETURN_X_FOR_SIN)
-      return x;
-    
-    /* CASE 2 : x < ???
-       Fast polynomial evaluation */
-    xx = x*x;
-    ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
-    Add12(sh,sl, x, ts);
-    if(sh == (sh + (sl * RN_CST_SINFAST1))){	
-      return sh;
-    }else{ 
-      return scs_sin_rn(x); 
-    } 
-  }
-  
   /* Case 3 : x sufficiently small for Cody and Waite argument reduction */
   if  (absxhi < XMAX_CODY_WAITE_3) {
     DOUBLE2INT(k, x * INV_PIO256);
     kd = (double) k;
     quadrant = (k>>7)&3;      
-    
-    if(((k&127) == 0)) { 
+    index=(k&127)<<2;
+    if((index == 0)) { 
       /* Here we risk a large cancellation on yh+yl; 
 	 on the other hand we will have sa=0 and ca=1*/
-      double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
-      /* TODO : improve this code by pre-splitting CH,  CM and k (as an int) 
-	 Then you can improve the precision by taking kmax into account */
       /* all this is exact */
       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
       Add12 (th,tl,  kch_l, kcm_h) ;
       /* only rounding error in the last multiplication and addition */ 
       Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
-      if (quadrant&1){   /* compute the cos  */
-	do_cos_k_zero(&sh, &sl, yh,yl);
-      }
-      else {             /* compute the sine */
-	do_sin_k_zero(&sh, &sl, yh,yl);
-      }
-      if(sh == (sh + (sl * 1.0004))){	
-	return ((quadrant==2)||(quadrant==3))? -sh : sh;
-      }else{
-	return scs_sin_rn(x); 
-      } 
+      *pquadrant=quadrant;
+      if (quadrant&1)
+	do_cos_k_zero(psh, psl, yh,yl);
+      else 
+	do_sin_k_zero(psh, psl, yh,yl);
+      return;
     } 
     else {      
       LOAD_TABLE_SINCOS();
@@ -352,61 +176,33 @@ double sin_rn(double x){
 	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
     }
 
-    if (quadrant&1){   
-      /* compute the cos  */
-      do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-    } 
-    else {
-      /* compute the sine */ 
-      do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-    }
-
-    if(sh == (sh + (sl * 1.0004))){	
-      return ((quadrant==2)||(quadrant==3))? -sh : sh;
-    }else{
-      return scs_sin_rn(x); 
-    }
+    *pquadrant=quadrant;
+    if (quadrant&1) 
+      do_cos_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+    else 
+      do_sin_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+    return;
   }
 
-
-  /* Case 4 : x sufficiently small for a Cody and Waite, in double-double */
+  /* Case 4 : x sufficiently small for a Cody and Waite in double-double */
   if ( absxhi < XMAX_DDRR ) {
-    long long int kl;
-    double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
     DOUBLE2LONGINT(kl, x*INV_PIO256);
     kd=(double)kl;
     k = (int) kl;
-    quadrant = (k>>7)&3;                                    
-#if DEBUG
-    printf("kl=%lld  \n", kl);
-#endif
-    if((k&127) == 0) { /* In this case cancellation may occur, so we
+    quadrant = (k>>7)&3;
+    index=(k&127)<<2;
+    if(index == 0) { /* In this case cancellation may occur, so we
 			  do the accurate range reduction */
-      scs_set_d(X, x*128.0); 
-      k= rem_pio2_scs(Y, X);
-      quadrant = (k>>7)&3;                                    
-      /* TODO an optimized procedure for the following */
-      scs_get_d(&yh, Y);
-      scs_set_d(Yh, yh);
-      scs_sub(Yl, Y,Yh);
-      scs_get_d(&yl, Yl);
-      yh = yh * (1./128.) ;
-      yl = yl * (1./128.) ;
-      
-      if (quadrant&1){   /* compute the cos  */
-	do_cos_k_zero(&sh, &sl, yh,yl);
-      }
-      else {             /* compute the sine */
-        do_sin_k_zero(&sh, &sl, yh,yl);
-      }
-      if(sh == (sh + (sl * 1.0004))){	
-	return ((quadrant==2)||(quadrant==3))? -sh : sh;
-      }else{
-	return scs_sin_rn(x); 
-      } 
+      scs_range_reduction(); 
+      *pquadrant=quadrant;
+      if (quadrant&1)
+	do_cos_k_zero(psh, psl, yh,yl);
+      else 
+        do_sin_k_zero(psh, psl, yh,yl);
+      return;
     }
     else {
-      LOAD_TABLE_SINCOS();
+      LOAD_TABLE_SINCOS(); /* in advance */
       /* all this is exact */
       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
@@ -414,82 +210,197 @@ double sin_rn(double x){
       /* only rounding error in the last multiplication and addition */ 
       Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
       
-      if (quadrant&1){   
-	/* compute the cos  */
-	do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      } 
-      else {
-	/* compute the sine */ 
-	do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      }
-      
-      if(sh == (sh + (sl * 1.0004))){	
-	return ((quadrant==2)||(quadrant==3))? -sh : sh;
-      }else{
-	return scs_sin_rn(x); 
-      }
-
+      *pquadrant=quadrant;
+      if (quadrant&1)
+	do_cos_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+      else 
+	do_sin_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+      return;
     }
   }
   
   /* Worst case : x very large, sin(x) probably meaningless, we return
      correct rounding but do't mind taking time for it */
- {
-    if (absxhi > 0x7F700000) /*2^(1023-7)*/
-      return scs_sin_rn(x);
-    else {      
-      scs_set_d(X, x*128.0); 
-      k= rem_pio2_scs(Y, X);
-      quadrant = (k>>7)&3;                                    
-      /* TODO an optimized procedure for the following */
-      scs_get_d(&yh, Y);
-      scs_set_d(Yh, yh);
-      scs_sub(Yl, Y,Yh);
-      scs_get_d(&yl, Yl);
-      yh = yh * (1./128.) ;
-      yl = yl * (1./128.) ;
-    } 
+#if 0  
+  if (absxhi > 0x7F700000) /*2^(1023-7)*/
+    return scs_sin_rn(x);
+  else {      
+    scs_range_reduction(); 
+  } 
+#else
+    /* THIS IS A BUG Remove the above test as soon as rem_pio2_scs has
+       been superseded by rem_pio256_scs.
+
+ UNTIL THEN THE MULTIPLICATION BY 128 OVERFLOWS IN THESE CASES
+ */
+  scs_range_reduction(); 
+  *pquadrant=quadrant;
+#endif
+  if(index == 0) { 
+    if (quadrant&1)
+      do_cos_k_zero(psh, psl, yh,yl);
+    else
+      do_sin_k_zero(psh, psl, yh,yl);
+  }
+  else {
+    LOAD_TABLE_SINCOS();
+    if (quadrant&1)   
+      do_cos_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+    else 
+      do_sin_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+    return;
+  }
+}
 
 
-    if((k&127) == 0) { 
-      if (quadrant&1){   /* compute the cos  */
-	do_cos_k_zero(&sh, &sl, yh,yl);
+
+
+
+/*************************************************************
+ *************************************************************
+ *              SIN ROUNDED  TO NEAREST			     *
+ *************************************************************
+ *************************************************************/ 
+
+double sin_rn(double x){ 
+  double xx, ts,sh,sl,rncst; 
+  int  absxhi, quadrant;
+  db_number x_split;
+  
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  
+  /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;    
+   
+  else if (absxhi < XMAX_SIN_FAST){
+    /* CASE 1 : x small enough sin(x)=x */
+    if (absxhi <XMAX_RETURN_X_FOR_SIN)
+      return x;
+    
+    /* CASE 2 : x < ???
+       Fast polynomial evaluation */
+    xx = x*x;
+    ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
+    Add12(sh,sl, x, ts);
+    if(sh == (sh + (sl * RN_CST_SIN_CASE2)))	
+      return sh;
+    else
+      return scs_sin_rn(x); 
+  }
+  
+  /* CASE 3 : Need argument reduction */ 
+  else {
+    rncst= RN_CST_SIN_CASE3;
+    compute_sine_with_argred(&sh,&sl,&quadrant,x,absxhi);
+  }
+  if(sh == (sh + (sl * rncst)))	
+    return ((quadrant==2)||(quadrant==3))? -sh : sh;
+  else
+    return scs_sin_rn(x); 
+}
+
+
+
+
+
+
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TOWARD  +INFINITY
+ *************************************************************
+ *************************************************************/
+
+
+double sin_ru(double x){
+  double xx, ts,sh,sl, epsilon; 
+  int  absxhi, quadrant;
+  db_number x_split,  absyh, absyl, u, u53;
+  
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+  
+  /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;    
+  
+  if (absxhi < XMAX_SIN_FAST){
+
+    /* CASE 1 : x small enough, return x suitably rounded */
+    if (absxhi <XMAX_RETURN_X_FOR_SIN) {
+      if(x>=0.)
+	return x;
+      else {
+	x_split.l --;
+	return x_split.d;
       }
-      else {             /* compute the sine */
-	do_sin_k_zero(&sh, &sl, yh,yl);
-      }
+    }
+
+    /* CASE 2 : x < Pi/512
+       Fast polynomial evaluation */
+    xx = x*x;
+    ts = x * xx * (s3.d + xx*(s5.d + xx*s7.d ));
+    Add12(sh,sl, x, ts);
+    
+    /* Rounding test to + infinity */
+    absyh.d=sh;
+    absyl.d=sl;
+    absyh.l = absyh.l & 0x7fffffffffffffffLL;
+    absyl.l = absyl.l & 0x7fffffffffffffffLL;
+    u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+    u.l   = u53.l - 0x0350000000000000LL;
+    epsilon=EPS_SIN_CASE2; 
+    if(absyl.d > epsilon * u53.d){ 
+      if(sl>0)
+	return sh+u.d;
+      else
+      return sh;
     }
     else {
-      LOAD_TABLE_SINCOS();
-      if (quadrant&1){   
-	/* compute the cos  */
-	do_cos_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      } 
-      else {
-	/* compute the sine */ 
-	do_sin_k_notzero(&sh, &sl, yh,yl,sah,sal,cah,cal);
-      }
+#if DEBUG
+      printf("Going for Accurate Phase");
+#endif
+      return scs_sin_ru(x); 
     }
-    if(sh == (sh + (sl * 1.0004))){	
-      return ((quadrant==2)||(quadrant==3))? -sh : sh;
-    }else{
-      return scs_sin_rn(x); 
+  }
+
+   
+    /* CASE 3 : Need argument reduction */ 
+  compute_sine_with_argred(&sh,&sl,&quadrant,x,absxhi);
+  epsilon=EPS_SIN_CASE3;
+  
+  /* Rounding test to + infinity */
+  absyh.d=sh;
+  absyl.d=sl;
+  absyh.l = absyh.l & 0x7fffffffffffffffLL;
+  absyl.l = absyl.l & 0x7fffffffffffffffLL;
+  u53.l     = (absyh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;
+  u.l   = u53.l - 0x0350000000000000LL;
+   
+  if(absyl.d > epsilon * u53.d){ 
+    if ((quadrant==2)||(quadrant==3)) {
+      sl=-sl;
+      sh=-sh;
     }
-
- }
-
+    if(sl>0)
+      return sh+u.d;
+    else
+      return sh;
+  }
+  else {
+#if DEBUG
+    printf("Going for Accurate Phase");
+#endif
+    return scs_sin_ru(x); 
+  }
+    
 }
 
 
 
+
 /* TODO */
-double sin_rd(double x){
+double sin_rd(double x){ 
 return scs_sin_rd(x);
-}
-
-/* TODO */
-double sin_ru(double x){ 
-return scs_sin_ru(x);
 }
 
 /* TODO */
@@ -527,7 +438,7 @@ double cos_rn(double x){
     xx = x*x;
     ts = xx * (c2.d + xx*(c4.d + xx*c6.d ));
     Add12(ch,cl, 1, ts);
-    if(ch == (ch + (cl * RN_CST_COSFAST1))){	
+    if(ch == (ch + (cl * RN_CST_COS_CASE2))){	
       return ch;
     }else{ 
       return scs_cos_rn(x); 
