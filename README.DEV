@@ -1,21 +1,23 @@
-Commands to type after a cvs checkout (in this order)
 
-cd scs_lib;
-aclocal
-autoheader
-autoconf
-automake --add-missing
-cd ..
-aclocal
-autoheader
-autoconf
-automake --add-missing
+To compile crlibm after a cvs checkout, type
+
+./prepare
+make
+
+or, if you want to perform accuracy tests against the MPFR library,
+
+./prepare --enable-mpfr --with-gmp=/usr/local
+make
+
+(if necessary replace /usr/local/ with the actual location of the MPFR
+source)
+
+The prepare script requires to be invoked only once. After that, use:
 ./configure 
 
-or, if you want to perform accuracy tests
-./configure --enable-mpfr -enable-ultim --with-gmp=/usr/local
-(replace /usr/local/ with the actual location of the mpfr source)
-
-Remark: on debian woody, use autoconf2.50
+The prepare script ends with a call to ./configure, and the options to
+prepare are the options of configure. For a list of these options, type
+ 
+./configure --help
 
 

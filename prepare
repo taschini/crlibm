@@ -1,0 +1,20 @@
+#!/bin/sh --
+
+# This script is inspired by the prepare script distributed with with
+#   mpfr, which is inspired by the prepare script distributed with Mutt.
+
+if cd scs_lib && aclocal && autoheader &&autoconf && automake --add-missing && cd .. && aclocal && autoheader && autoconf&& automake --add-missing && autoconf && ./configure $@
+then
+  echo
+  echo "The crlibm source code was successfully prepared."
+  echo "Type 'make' to build crlibm."
+  echo
+  echo "Note: if you want to reconfigure crlibm, you can now use the 'configure'"
+  echo "script directly; you do not need the 'prepare' script any longer."
+  echo
+else
+  echo
+  echo "Some part of the preparation process failed."
+  echo
+  exit 1
+fi
