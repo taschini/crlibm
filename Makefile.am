@@ -36,8 +36,9 @@ endif
 EXTRA_DIST = VERSION\
 	maple/common-procedures.mpl \
 	maple/log.mpl maple/trigo.mpl maple/atan.mpl maple/csh.mpl \
-	maple/SinCase3.gappa
-	docs/latex/crlibm.tex\
+	maple/SinCase3.gappa \
+	docs/crlibm.pdf \
+	docs/latex/crlibm.tex \
 	docs/latex/0_intro.tex docs/latex/0_getting-started.tex\
 	docs/latex/1_common.tex docs/latex/2_exp.tex docs/latex/3_log.tex\
 	docs/latex/4_atan.tex docs/latex/5_csh.tex \
