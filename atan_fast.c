@@ -24,7 +24,6 @@ while(0)
 /* the second step :   A VOIR PLUS TARD */ 
 double scs_atan_rn(double); 
 
-
 /*
  * 1) Argument reduction : 
  * 
@@ -47,8 +46,9 @@ static double atan_rn2 (double x) {
   
   double atanhi,atanlo;
   double tmphi,tmplo, x0hi,x0lo;
-  double q,x2;
-  double xhi,xlo;
+  double q,Xred2,x2;
+  double Xredhi,Xredlo;
+  
   
   int i;
   db_number x_db;
@@ -67,16 +67,16 @@ static double atan_rn2 (double x) {
     if ( hx < 0x3E400000 )
       {return x;                   /* x<2^-27 then atan(x) =~ x */}
   
-  if (x > my_e) /* test if reduction is necessary : */
+  if (x > MIN_REDUCTION_NEEDED) /* test if reduction is necessary : */
     {
-      double xmBIhi, xmBIlo;
+      double xmBihi, xmBilo;
       
       if (x > value[61][B].d) {
         i=61;
-        Add12( xmBIhi , xmBIlo , x , -value[61][B].d);
+        Add12( xmBihi , xmBilo , x , -value[61][B].d);
       }
       else {
-        /* determine i so that x E [a[i],a[i+1]] */
+        /* determine i so that a[i] < x < a[i+1] */
         i=31;
         if (x < value[i][A].d) i-= 16;
         else i+=16;
@@ -87,15 +87,13 @@ static double atan_rn2 (double x) {
         if (x < value[i][A].d) i-= 2;
         else i+= 2;
         if (x < value[i][A].d) i-= 1;
-        else if (i<61) i+= 1;
-        if (x < value[i][A].d) i-= 1;
-          
-        xmBIhi = x-value[i][B].d;
-        xmBIlo = 0.0;
+        else i+= 1;
+        if (x < value[i][A].d) i-= 1;     
+        xmBihi = x-value[i][B].d;
+        xmBilo = 0.0;
       }
         
-        
-      /* we now compute X = ( x-b[i] ) / ( 1 + x*b[i] )
+      /* we now compute Xred = ( x-b[i] ) / ( 1 + x*b[i] )
        * 
        * def : x0 := 1+x*b[i]
        *
@@ -107,15 +105,14 @@ static double atan_rn2 (double x) {
        *                   
        */
       
-            
       Mul12(&tmphi,&tmplo, x, value[i][B].d);
 
-      if (tmphi > 1)
+      if (x > 1)
         Add22(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
       else {Add22( &x0hi , &x0lo , 1.0,0.0,tmphi,tmplo);}
-      
-      DIV2( xmBIhi , xmBIlo , x0hi,x0lo, xhi,xlo);
-      
+
+      DIV2( xmBihi , xmBilo , x0hi,x0lo, Xredhi,Xredlo);
+
       /* Polynomial evaluation : 
        *  
        *  1rt compute Q(x^2) = (1 - x^2/3 + ...)
@@ -123,26 +120,19 @@ static double atan_rn2 (double x) {
        *
        */
 
-      x2 = xhi*xhi;
+      Xred2 = Xredhi*Xredhi;
       
-#if 0
-      q = coef_poly[0];
-      int j=1;
-      /* a derouler ? */
-      for (;j<DEGREE;j++) {
-        q *= x2;
-        q += coef_poly[j];
-      }
-      q*=x2;
-#else
-      q = x2*(coef_poly[3]+x2*(coef_poly[2]+x2*(coef_poly[1]+x2*coef_poly[0]))) ;
-#endif 
-      double atanXhi,atanXlo;
-      
-      Add12(atanXhi,atanXlo,xhi,( (xhi*q)+xlo));
-      
+      q = Xred2*(coef_poly[3]+Xred2*
+                 (coef_poly[2]+Xred2*
+                  (coef_poly[1]+Xred2*
+                   coef_poly[0]))) ;
+
       /* reconstruction : atan(x) = atan(b[i]) + atan(x) */
-      Add22 (&atanhi,&atanlo, value[i][ATAN_BHI].d,value[i][ATAN_BLO].d,atanXhi,atanXlo);  
+      double testlo = Xredlo+ value[i][ATAN_BLO].d + Xredhi*q;
+      double tmphi2, tmplo2;
+      Add12( tmphi2, tmplo2, value[i][ATAN_BHI].d, Xredhi);
+      Add12( atanhi, atanlo, tmphi2, (tmplo2+testlo));
+
     }
   else 
     // no reduction needed
@@ -155,26 +145,32 @@ static double atan_rn2 (double x) {
        */
       
       x2 = x*x;
-#if 0
-      q = coef_poly[0];
-      int j=1;
-      for (;j<DEGREE;j++) 
-        {q *= x2;
-        q += coef_poly[j];}
-      q*=x2;
-#else
-      q = x2*(coef_poly[3]+x2*(coef_poly[2]+x2*(coef_poly[1]+x2*coef_poly[0]))) ;
-#endif
-
+      q = x2*(coef_poly[3]+x2*
+                 (coef_poly[2]+x2*
+                  (coef_poly[1]+x2*
+                   coef_poly[0]))) ;
       Add12(atanhi,atanlo, x , x*q);
+      
+      if ( (atanhi == (atanhi + (atanlo*e_no_reduction)))
+           || ( (hx <= 0x3F500000 ) && 
+                atanhi == (atanhi + (atanlo*e_no_reduction_m10) ) ) )
+        /* there is two cases : x > 2^-10 and x < 2^-10 */
+        {
+          return atanhi;}
+      else
+        {/* more accuracy is needed , lauch accurate phase */ 
+          return scs_atan_rn(x);
+        }
     }
   
   /* test if rounding is possible */
-  if (atanhi == (atanhi + (atanlo*e)))
+  if (atanhi == (atanhi + (atanlo*e)) 
+      || ( i>=10 && (atanhi == (atanhi + (atanlo*e_i_10)) )))
     {
       return atanhi;}
   else
-    {/* more accuracy is needed , lauch accurate phase */ 
+    {
+      /* more accuracy is needed , lauch accurate phase */ 
       return scs_atan_rn(x);
     }
 }
