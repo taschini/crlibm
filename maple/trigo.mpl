@@ -285,30 +285,45 @@ rnconstantCosCase2 := evalf(compute_rn_constant(maxepstotalCosCase2)):
 
 ######################## Case2 Tangent #########################
 #
-xmaxTanCase2   := 2**(-3):
-degreeTanCase2 := 16:
-
-
 # Compute the Taylor series
 with(orthopoly):
+degreeTanCase2 := 12:
+xmaxTanCase2   := 2**(-4):
+xminTanCase2   := 2**(-30):
+
 Poly_P := convert(series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, degreeTanCase2*4),polynom):
-Poly_cheb := numapprox[chebpade](Poly_P, x=0..xmaxTanCase2^2, [degreeTanCase2/2-2,0]):
+Poly_cheb := numapprox[chebpade](Poly_P, x=xminTanCase2..xmaxTanCase2^2, [degreeTanCase2/2-2,0]):
 polyTanCase2 :=  poly_exact2(expand(x + x^3 * subs(x=x^2, Poly_cheb)), 4):
 
+maxepsApproxTanCase2:=numapprox[infnorm](1 - polyTanCase2 / tan(x), x=xminTanCase2..xmaxTanCase2):
+
+# Now we pass these values to Gappa
+
+filename:="TEMPTRIG/TanCase2.sed":
+fd:=fopen(filename, WRITE, TEXT):
+  t3h, t3l := hi_lo(coeff(polyTanCase2,x,3)):
+  fprintf(fd, " s/_t3h/%1.40e/g\n", t3h):
+  fprintf(fd, " s/_t3l/%1.40e/g\n", t3l):
+  fprintf(fd, " s/_t5/%1.40e/g\n",  coeff(polyTanCase2,x,5)):
+  fprintf(fd, " s/_t7/%1.40e/g\n",  coeff(polyTanCase2,x,7)):
+  fprintf(fd, " s/_t9/%1.40e/g\n",  coeff(polyTanCase2,x,9)):
+  fprintf(fd, " s/_t11/%1.40e/g\n", coeff(polyTanCase2,x,11)):
+  fprintf(fd, " s/_XMAX/%1.40e/g\n", xmaxTanCase2):
+  fprintf(fd, " s/_MAXEPSAPPROX/%1.40e/g\n", maxepsApproxTanCase2*1.00001):
+fclose(fd);
+
+printf("Now you should use  \n    sed -f TEMPTRIG/TanCase2.sed trigoTanCase2.gappa | gappa  > /dev/null \n");
 
 
-approx_errorTanCase2:=numapprox[infnorm](1 - polyTanCase2 / tan(x), x=0..xmaxTanCase2):
-#log2(approx_errorTanCase2);
+
+maxepstotalTanCase2:=4.59602e-19:  # Cut from Gappa output
+
+log2(maxepstotalTanCase2): # almost 61 bits
 
 
-#TODO
-###TO REMOVE ONCE THE PREVIOUS IS FINISHED
-maxepstotalTanCase21:=2**(-61):
-maxepstotalTanCase22:=2**(-59):
+#rnconstantTanCase22 := evalf(compute_rn_constant(maxepstotalTanCase22)):
 
 
-rnconstantTanCase21 := evalf(compute_rn_constant(maxepstotalTanCase21)):
-rnconstantTanCase22 := evalf(compute_rn_constant(maxepstotalTanCase22)):
 
 
 
@@ -413,10 +428,7 @@ fprintf(fd, "\n"):
 fprintf(fd, "#define EPS_SINCOS_CASE3     %1.25e \n", maxepstotalSinCosCase3):
 fprintf(fd, "#define RN_CST_SINCOS_CASE3  %1.25f \n", rnconstantSinCosCase3):
 fprintf(fd, "\n"):
-fprintf(fd, "#define EPS_TAN_CASE21    %1.25e \n", maxepstotalTanCase21):
-fprintf(fd, "#define RN_CST_TAN_CASE21 %1.25e \n", rnconstantTanCase21):
-fprintf(fd, "#define EPS_TAN_CASE22    %1.25e \n", maxepstotalTanCase22):
-fprintf(fd, "#define RN_CST_TAN_CASE22 %1.25e \n", rnconstantTanCase22):
+fprintf(fd, "#define EPS_TAN_CASE2     %1.25e \n", maxepstotalTanCase2):
 fprintf(fd, "#define EPS_TAN_CASE3     %1.25e \n", maxepstotalTanCase3):
 fprintf(fd, "#define RN_CST_TAN_CASE3  %1.25f \n", rnconstantTanCase3):
 
@@ -517,12 +529,6 @@ for isbig from 1 to 0 by -1 do
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const t11 = "):
   printendian(fd, coeff(polyTanCase2,x,11), isbig):
-  fprintf(fd, ";\n"):
-  fprintf(fd, "static db_number const t13 = "):
-  printendian(fd, coeff(polyTanCase2,x,13), isbig):
-  fprintf(fd, ";\n"):
-  fprintf(fd, "static db_number const t15 = "):
-  printendian(fd, coeff(polyTanCase2,x,15), isbig):
   fprintf(fd, ";\n\n"):
 
 
@@ -541,7 +547,6 @@ for isbig from 1 to 0 by -1 do
       printendian(fd,c[1],isbig):
       fprintf(fd," ,\n"):
       printendian(fd,c[2],isbig):
-
     if i<SinCosSize-1 then fprintf(fd," ,\n"): fi:
   od:
   fprintf(fd, "\n};\n\n"):
@@ -552,7 +557,7 @@ fprintf(fd,"#endif /* WORDS_BIGENDIAN */\n\n\n"):
 
 fclose(fd):
 
-print("************ DONE TEMPTRIG/trigo_fast.h ************");
+printf("\n\n************ DONE TEMPTRIG/trigo_fast.h ************\n Copy it to the crlibm source directory.\n\n");
 
 
 # The Gappa files in TEMPTRIG
@@ -569,7 +574,7 @@ for i from 1 to SinCosSize/2 do
 od:
 
 
-print("************ DONE TEMPTRIG/*.gappa ************");
+printf("************ DONE TEMPTRIG/*.gappa ************\n");
 
 # A shell script to use them
 filename:="trigo_test.sh":
@@ -583,13 +588,13 @@ fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fclose(fd):
 
-print("************ DONE trigo_test.sh ************"):
-print("Now you should run"):
-print(" sh trigo_test.sh 2>TEMPTRIG/Gappa.out"):
-print("Then"):
-print(" grep '{' TEMPTRIG/Gappa.out| sed  -e 's/}.*{/\n/g'  -e 's/^.*{-//g' -e 's/}]//g'  | sort | head "):
+printf("************ DONE trigo_test.sh ************"):
+printf("Now you should run"):
+printf(" sh trigo_test.sh 2>TEMPTRIG/Gappa.out"):
+printf("Then"):
+printf(" grep '{' TEMPTRIG/Gappa.out| sed  -e 's/}.*{/\n/g'  -e 's/^.*{-//g' -e 's/}]//g'  | sort | head "):
 
-print("If the first number is smaller than 2^(-66) then everything is OK and the rounding constants in TEMPTRIG/trigo_fast.h are proven upper bounds."):
+printf("If the first number is smaller than 2^(-66) then everything is OK and the rounding constants in TEMPTRIG/trigo_fast.h are proven upper bounds."):
 
 
 
@@ -609,6 +614,27 @@ if(1+1=3) then
  log[2](numapprox[infnorm](  (tan(x) - polytan)/tan(x), x=0..Pi/4));
  log[2](numapprox[infnorm](  (tan(x) - polytan)/tan(x), x=0..2^(-18)));
 
+
+
+ ftany := tan(sqrt(y))/sqrt(y^3)-1/y;
+ ymin:=2^(-1075);
+ ymax:=Pi^2/16;
+
+ # to avoid pb of singularity in the minimax, work on a Taylor approx
+ pTanTaylor := convert(series(ftany, y=0, 150), polynom):
+ maxepsApprox1 := abs(evalf(eval(1-pTanTaylor/ftany, y=ymax))); # the max error is there
+ log2(maxepsApprox1);
+
+ pErrTan := convert(series( y^(3/2)/tan(sqrt(y)), y=0, 3), polynom);
+ ptanscs_y := numapprox[minimax](pTanTaylor, y=ymin..ymax,[5,0], pErrTan,'err'    );
+log2(err);
+abs(evalf(eval(1-convert(series(ftany, y=0, 5), polynom)/ftany, y=ymax)))
+ ptanscs_y := numapprox[minimax](ftany,
+                                 y=ymin..ymax,
+                                 [4,0],
+                                 pErrTan,
+                                 'err'    );
+log2(err);
 
 #################################################
 
@@ -657,6 +683,6 @@ Poly_P    := series(tan(sqrt(x))/(x^(3/2))-1/x, x=0, 40):
 Poly_Q    := convert(Poly_P,polynom):
 Poly_cheb := chebpade(Poly_Q, x=0..evalf(Pi/4), [17,0]);
 Poly_Res  := x + x^3 * subs(x=x^2, Poly_cheb);
-log(infnorm( 1 - (Poly_Res)/tan(x),x=0..evalf(Pi/4), err))/log(2.);
+log2(infnorm( 1 - (Poly_Res)/tan(x),x=0..evalf(Pi/4)));
 
 fi:
