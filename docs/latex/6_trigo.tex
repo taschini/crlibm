@@ -257,10 +257,79 @@ simple polynomial approximation to the function suffices.
 
 \section{Detailed examination of the sine}
 
+The sine begins with casting the high part of the absolute value of
+the input number into a 32-bit integer. This will enable faster
+comparisons. However we now compare to integer constants and we have
+to be aware that we lost the lower part of \texttt{x}, which had a
+value up to $(2^{31}-1)\ulp(x)$. This is taken care of in the
+procedure that converts a Maple high-precision number into such an
+integer.
+
+\begin{lstlisting}[caption={Casting to an int for faster comparisons},firstnumber=1]
+  db_number x_split;
+  x_split.d=x;
+  absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
+\end{lstlisting}
+
+
 \subsection{Exceptional cases in RN mode}
+\begin{lstlisting}[caption={Exceptional cases for sine RN},firstnumber=1]
+  /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;    
+   
+  else if (absxhi < XMAX_SIN_CASE2){
+    /* CASE 1 : x small enough sin(x)=x */
+    if (absxhi <XMAX_RETURN_X_FOR_SIN)
+      return x;
+\end{lstlisting}
+
 \subsection{Exceptional cases in RU mode}
+\begin{lstlisting}[caption={Exceptional cases for sine RU},firstnumber=1]
+  /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;    
+  
+  if (absxhi < XMAX_SIN_CASE2){
+
+    /* CASE 1 : x small enough, return x suitably rounded */
+    if (absxhi <XMAX_RETURN_X_FOR_SIN) {
+      if(x>=0.)
+	return x;
+      else {
+	x_split.l --;
+	return x_split.d;
+      }
+    }
+\end{lstlisting}
 \subsection{Exceptional cases in RD mode}
+\begin{lstlisting}[caption={Exceptional cases for sine RD},firstnumber=1]
+  /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;    
+  
+  if (absxhi < XMAX_SIN_CASE2){
+
+    /* CASE 1 : x small enough, return x suitably rounded */
+    if (absxhi <XMAX_RETURN_X_FOR_SIN) {
+      if(x<=0.)
+	return x;
+      else {
+	x_split.l --;
+	return x_split.d;
+      }
+    }
+\end{lstlisting}
 \subsection{Exceptional cases in RZ mode}
+\begin{lstlisting}[caption={Exceptional cases for sine RZ},firstnumber=1]
+  /* SPECIAL CASES: x=(Nan, Inf) sin(x)=Nan */
+  if (absxhi>=0x7ff00000) return x-x;    
+  
+  if (absxhi < XMAX_SIN_CASE2){
+
+    /* CASE 1 : x small enough, return x suitably rounded */
+    if (absxhi <XMAX_RETURN_X_FOR_SIN) {
+      x_split.l --;
+      return x_split.d;
+    }
+\end{lstlisting}
 \subsection{Fast approximation for small arguments}
 
 \begin{lstlisting}[caption={Sine, case 2},firstnumber=1]
