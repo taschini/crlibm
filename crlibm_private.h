@@ -12,17 +12,6 @@
 #include "scs_lib/scs_private.h"
 
 
-#ifdef CRLIBM_TYPECPU_X86
-#include <fpu_control.h>
-/* don't remember why it's here, but it doesn't hurt to keep it (2004) */
-#ifndef _FPU_SETCW
-#define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
-#endif
-#ifndef _FPU_GETCW
-#define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
-#endif 
-#endif
-
  /* undef all the variables that might have been defined in
     scs_lib/scs_private.h */
 #undef VERSION 
@@ -32,6 +21,11 @@
 #undef HAVE_MATHLIB_H
 /* then include the proper definitions  */
 #include "crlibm_config.h"
+
+
+#if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) 
+#include <fpu_control.h>
+#endif /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
 
 
 
@@ -331,18 +325,6 @@ extern const scs scs_zer, scs_half, scs_one, scs_two, scs_sixinv;
 
 
 
-
-/* This sets round to the nearest and disables extended precision on
-   the x86s. For the Itanii on Linux there is nothing to do.
-
-   This probably doesn't work on all unix systems...
- */
-#ifdef SCS_TYPECPU_X86
-#include <fpu_control.h>
-#ifndef __setfpucw
-#define __setfpucw(cw) __asm__ ("fldcw %0" : : "m" (cw))
-#endif 
-#endif /*SCS_TYPECPU_X86*/
 
 
 

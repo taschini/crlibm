@@ -35,7 +35,7 @@
 
 /* An init function which sets FPU flags when needed */
 unsigned short crlibm_init() {
-#ifdef CRLIBM_TYPECPU_X86
+#if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) 
   unsigned short oldcw, cw;
   /* save old state */
   _FPU_GETCW(oldcw);
@@ -46,18 +46,20 @@ unsigned short crlibm_init() {
   return oldcw;
 #else
   return 0;
-#endif
+#endif /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
 }
+
+
 
 /* An exit function which sets FPU flags to initial value */
 void crlibm_exit(unsigned short oldcw) {
-#ifdef CRLIBM_TYPECPU_X86
+#if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) 
   /* Set FPU flags to use double, not double extended, 
      with rounding to nearest */
   _FPU_SETCW(oldcw);
 #else
 
-#endif
+#endif /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
 }
 
 
