@@ -347,11 +347,51 @@ Line 13 & Let us prove that z.d is computed exactly, without rounding error: \\
 & \vspace{1ex}Table~\ref{table:TablePolysLog1} gives: $\frac{25}{32} \leq {\middlei} \leq \frac{22}{16}$\\ 
 & \vspace{1ex}Therefore ${\middlei}/{2} \leq \frac{22}{32} < \frac{23}{32} \leq \middlei - \frac{1}{16} \leq y.d$\\
 & and $y.d \leq \middlei + \frac{1}{16} \leq \frac{23}{16} < \frac{25}{16} \leq \middlei\times 2$\\
+Line 17 & The computation of $E\log(2)$ is done as early as possible. \\
+        & Neither $E$ nor  $E\log(2)$ is greater than $2^{970}$ so we may use the unconditional Mul22. \\
+Lines 24-27 & Begin of Horner evaluation in double arithmetic\\
+Line 29 & This test is equivalent to $|ln2\_times\_E_HI| < \mathtt{MIN\_FASTPATH}$\\
+        & Currently $\mathtt{MIN\_FASTPATH}=128.5$ but the Maple programs in \texttt{coef\_log.mw}\\
+        & allow to change this value.\\
+Lines 31-53 & Slow path, divided two cases:\\
+Lines 31-38 & ~Case $E=0$: in this case, there is no addition of $E\log(2)$ in the end, \\
+            & ~~~to reach the required relative accuracy we do two $\times$ and two $+$ in double double\\
+Lines 40-52 & ~Case $E\ne 0$ Thanks to the final addition to $E\log(2)$,\\
+            & ~~we have to bound only the absolute accuracy of the polynomial evaluation\\
+            & ~~which allows to save the first Mult22.\\
+Lines 54-62 & Fast path : the polynomial evaluation is entirely in double-precision, and the \\
+            & ~ final addition with a large  $E\log(2)$ scales the resulting bad absolute accuracy\\
+            & ~ to acceptable relative accuracy\\ 
+Lines 34,36,47 & None of the intermediate values reaches  $2^{970}$ so we may use the unconditional Mul22.\\
+Lines 35,37,46,48 & The Maple procedure checks that the first argument is always greater \\
+                  & than the second, so we may use the unconditional Add22.\\
+Lines 51,61 & $E\log(2)$ is greater than  $\log(2)\approx 0.69$, and $\infnorm{P_i(x)}<0.4$\\
+                  & so we may use the unconditional Add22.\\
+
 \end{tabular}
 
 
 
 \subsection{Rounding}
+
+\subsubsection{Rounding to the nearest}
+
+The code for rounding is strictly identical to that of
+Theorem~\ref{th:roundingRN1}.  The condition to this theorem that
+$\mathtt{res\_hi}\ge 2^{-1022+53}$ is ensured by the image domain of
+the $\log$ over the floating-point numbers: as already mentionned, the
+smallest possible value of the logarithm of a floating-point number is
+larger than $2^{-53}$. As $\mathtt{res\_hi}$ approximates this value
+with a relative accuracy much smaller than $1$, the condition is
+ensured.
+
+
+\subsection{Directed rounding}
+
+Here again, the code is strictly identical to that of
+Theorem~\ref{th:roundingDirected}, and the conditions to this theorem
+are ensured by the image domain of the log.
+
 
 
 
@@ -444,6 +484,7 @@ You are encouraged for further details to have a look at the research report RR 
 \section{Analysis of the logarithm performance}
 \label{section:log_results}
 
+\subsection{Speed}
 Table \ref{tbl:log_abstime} (produced by the \texttt{crlibm\_testperf}
 executable) gives absolute timings for a variety of processors and
 operating systems. Contributions to this table for new
@@ -479,9 +520,22 @@ seems a rather good balance considering the respective costs of the
 first and second steps (seen in the table as the min and max times,
 respectively).
 
-Table size is $8\times 15\times8=960$ bytes for the eight polynomials,
-plus another $64$ bytes for the rounding constants, or a total of
-exactly 1kB.
+
+\subsection{Memory requirements}
+
+Table size is
+\begin{itemize}
+\item for the \quick\ phase,
+  $8\times 15\times8=960$ bytes for the eight polynomials, plus
+  another $64$ bytes for the rounding constants, or a total of exactly
+  1kB.
+\item for the \accurate\ phase, $1+13+13+20$ SCS constants ($\log(2)$,
+  the 13 $log(w_i)$ and the 13 $\frac{1}{w_i}$, and the polynomial of
+  degree 20 with a null first coefficient), or a little more than 2kB.
+\end{itemize}
+
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -489,10 +543,24 @@ exactly 1kB.
 
 
 In the log we have a fairly good balance between both evaluation
-phases. The IBM library has specific code for the cases when $x$ is
-close to $1$. By following this approach we could hope for a further
-50\% performance improvement in average, at the cost of a more
-complicated proof.
+phases, which was obtained thanks to automated testing of various
+sceniarii. Here, designing a rigorous proof along with the code helped
+tuning performance.
+
+Our log is a few percent slower in average than Ziv/IBM's, but if we
+inline the code of \texttt{log\_quick} then the speed becomes similar
+or better: Inlining saves a function call, but also allows other minor
+improvements, like removing the need for the constant index, and
+loading the constants for rounding test in advance to hide its loading
+time. However, as it increases the size of the code and degrades its
+maintainability we chose to keep our current approach for the initial
+release.
+
+
+To improve performance further we should derive specific code for 
+the cases when $x$ is close to $1$, as does the Ziv/IBM Library. This
+could bring a further 50\% performance improvement in average, at the
+cost of a more complicated proof.
 
 
 

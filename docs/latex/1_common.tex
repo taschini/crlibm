@@ -855,70 +855,57 @@ doesn't: unrolling does bring a speed-up.
 
 \subsection{Conversions}
 
-Procedure \texttt{nearest} provides the closest IEEE-double number
-from input value \texttt{u}.
+
+Procedure \texttt{IEEEdouble} returns the sign, the exponent and the
+mantissa of the IEEE-754 double-precision number closest to input
+value \texttt{x}.
 
 \begin{lstlisting}[caption={nearest},firstnumber=1]
-
-nearest := proc(u)
-local arrondi, signe, x, exposant, mantisseinfinie, mantisse;
-Digits:=200:
-if u = 0 then arrondi := 0
+ieeedouble:=proc(xx) 
+local x, sign, logabsx, exponent, mantissa, infmantissa; 
+x:=evalf(xx):
+if (x=0) then 
+  sign,exponent,mantissa := 0,0,0; 
 else 
-  if (u < 0) then signe := -1; x := -u else signe := 1; x := u fi;
-  exposant := floor(evalf(log(x)/log(2.0)));
-  mantisseinfinie := x*2^(52-exposant);
-  if frac(mantisseinfinie) < 0.5 then mantisse := round(mantisseinfinie)
-   else
-     mantisse := floor(mantisseinfinie);
-     if type(mantisse,odd) then mantisse := mantisse+1 fi;
-   fi;
-   arrondi := signe*mantisse*2^(exposant-52)
-fi;
-arrondi;
-end:
-\end{lstlisting}
-
-
-
-Procedure \texttt{IEEEdouble} returns the exponent, the mantissa and the
-binary conversion of the closest IEEE-double number of input value \texttt{x}.
-
-\begin{lstlisting}[caption={IEEEdouble},firstnumber=1]
-IEEEdouble:=proc(x) local signe, logabsx, exposant, mantisse, mantisseinfinie, resultat; 
- Digits:=200;
-if (x=0) then [0,0,0]; 
-else 
- if (x<0) then signe:=-1:
- else signe:=1:
+ if (x<0) then sign:=-1:
+ else sign:=1:
  fi:
- exposant := floor(evalf(log(signe*x)/log(2.0)));
- if (exposant>1023) then mantisse:=infinity:
- elif (exposant<-1022) then mantisse:=0:
- else 
-  mantisseinfinie := signe*x*2^(52-exposant);
-  if frac(mantisseinfinie) <
-0.5 then mantisse := round(mantisseinfinie)
-   else
-     mantisse := floor(mantisseinfinie);
-     if type(mantisse,odd) then mantisse := mantisse+1 fi;
-   fi;
- mantisse:= signe*mantisse*2**(-52);
- Digits := 53;
- resultat:=convert(mantisse*2.0^(exposant),binary);
+ exponent := floor(log2(sign*x));
+ if (exponent>1023) then mantissa:=infinity: exponent=1023:
+ elif (exponent<-1022) then 
+    # denorm
+    exponent := -1023
+ fi:
+ infmantissa := sign*x*2^(52-exponent);
+ if frac(infmantissa) <> 0.5 then mantissa := round(infmantissa)
+ else
+    mantissa := floor(infmantissa);
+    if type(mantissa,odd) then mantissa := mantissa+1 fi;
  fi;
-[exposant, mantisse, resultat];
+ Digits := 53;
+ mantissa := mantissa*2^(-52);
 fi;
+sign,exponent,mantissa;
 end:
 \end{lstlisting}
+
+Procedure \texttt{nearest} returns the nearest IEEE-754 double-precision number.
+\begin{lstlisting}[caption={nearest},firstnumber=1]
+nearest := proc(x)
+  local sign, exponent, mantissa;
+
+  sign,exponent,mantissa := ieeedouble(x);
+  sign*mantissa*2^(exponent);
+end:
+\end{lstlisting}
+
+
 
 Procedure \texttt{hi\_lo} returns two IEEE-double numbers $x\_hi$ and $x\_lo$ so that $x = x\_hi + x\_lo + \epsilon_{-103}$.
 
 \begin{lstlisting}[caption={hi\_lo},firstnumber=1]
-
 hi_lo:= proc(x)
-global x_hi, x_lo, res:
-local tamp:
+local x_hi, x_lo, res:
 x_hi:= nearest(evalf(x)):
 res:=x-x_hi:
 if (res = 0) then
@@ -926,65 +913,12 @@ if (res = 0) then
 else
   x_lo:=nearest(evalf(res)):
 end if;
-(x_hi,x_lo);
+x_hi,x_lo;
 end:
 \end{lstlisting}
 \vspace{0.5cm}
 
 
-
-Procedure "ieee2Hexa" returns the closest IEEE-double number from x, in hexadecimal.
-
-\begin{lstlisting}[caption={ieee2Hexa},firstnumber=1]
-
-ieee2Hexa:= proc(x)
-  local signe, hex1, hex2, ma, manti, expo, expos, bina, bin1, bin2, dec1, dec2;
-  if(x=0) then resultat:=["00000000","00000000"];
-  elif(x=-0) then resultat:=["80000000","00000000"];
-  elif(x=2) then resultat:=["40000000","00000000"];
-  elif(x=-2) then resultat:=["C0000000","00000000"];
-  else
-   ma:=IEEEdouble(x);
-   expo:=ma[1]:
-   if (ma[2]<0) then 
-    manti:=2**64 + 2**63+(-ma[2]-1)*2**52+(expo+1023)*2**52;
-   else 
-     manti:=2**64 + (ma[2]-1)*2**52+(expo+1023)*2**52;
-   fi:
-   hex2:=convert(manti, hex); 
-   hex2:=convert(hex2, string):  
-  
-   resultat:=[substring(hex2,2..9), substring(hex2,10..18)];
-  end if;
-  resultat;
-end proc:
-\end{lstlisting}
-\vspace{0.5cm}
-
-Procedure "Hexa2ieee" returns the decimal IEEE-double number associated with the hexadecimal enter value "hexa".
-
-\begin{lstlisting}[caption={Hexa2ieee},firstnumber=1]
-
-Hexa2ieee:= proc(hexa)
-local dec, bin, expobin, expo, mantis, sign, hex1, hex2, hexcat;
-global res;
-
-hex1:= op(1, hexa):
-hex2:= op(2, hexa):
-hexcat:= cat(hex1, hex2);
-dec:= convert(hexcat, decimal, hex):
-
-if(dec >= 2**63) then
-  dec = dec - 2**63:
-  sign:= -1:
-else
-  sign:= 1:
-fi;  
-expo:= trunc(dec/(2**52))-1023:
-mantis:= 1+frac(dec/(2**52));
-res:= evalf(sign*2**(expo)*mantis);
-end proc:
-\end{lstlisting}
 
 
 \subsection{Procedures for polynomial approximation}
@@ -994,46 +928,43 @@ Procedure \texttt{Poly\_exact2} takes in arguments a polynomial \texttt{P} and a
 integer \texttt{n}. It returns a truncated polynomial, of wich coefficients
 are exactly IEEE-double numbers. The \texttt{n} first coefficients are written
 over 2 IEEE-double numbers.
- 
 
 \begin{lstlisting}[caption={poly\_exact2},firstnumber=1]
-
 poly_exact2:=proc(P,n)
-local i, coef, coef_t:
-global deg, Q, psup, pinf, pfull:
-psup:=0: pinf:=0:
-Q:=[];
-convert(psup, polynom): convert(pinf, polynom):
+local deg,i, coef, coef_hi, coef_lo, Q:
+Q:= 0:
+convert(Q, polynom):
 deg:=degree(P,x):
   for i from 0 to deg do
-    coef:=coeff(P,x,i):
-    if (coef=0) then
-      Q:= (Q,[0,0]):
-    elif(coef=1) then
-        Q:= (Q,[1,0]):
-        psup:=psup+x^i:
-    else        
-      coef_t:=hi_lo(coef):
-      Q:= (Q,[coef_t]):
-      psup:=psup + coef_t[1]*x^i:
-        if(i<n) then
-        pinf:=pinf + coef_t[2]*x^i:
-        fi;
-    end if;
+    coef :=coeff(P,x,i):
+    coef_hi, coef_lo:=hi_lo(coef):
+    Q:= Q + coef_hi*x^i:
+    if(i<n) then
+        Q := Q + coef_lo*x^i:
+    fi:
   od:
-Q:=Q[2..deg+2];
-pfull:=expand(psup+pinf):
+  return(Q);
 end:
 \end{lstlisting}
 \vspace{0.5cm}
 
 
+We also have procedures for computing good truncated polynomial
+approximation for a function. As they are useless to the proof, we do
+not describe them here, the interested reader is referred to file
+\texttt{maple/Common\_maple\_procedures.mw} for more details.
 
 
 
 
 
-\section{Error analysis}
+
+
+
+
+
+
+\subsection{Error analysis}
 
 The error analysis for a function evaluation aims at providing an
 overall relative error of the whole evaluation process, which can then
@@ -1156,13 +1087,101 @@ $$\rho = \frac{2^{-p}(1+\maxs{1})}{\mins{1}} $$
 \end{itemize}
 
 
-We designed Maple procedures that, given a polynomial with
-coefficients exactly representable as doubles (or, for the upper ones,
-as double-doubles), compute bounds on the accumulated rounding error
-$\delta'$ (as an absolute error), and the $\mins{}$, $\mins{maxs}$,
-$\rho$ and max values above. In additions these procedures check that
-$\maxx$ is sufficiently small for $mins$ to be strictly positive.
-Finally, if some of the coefficients are double-double, these
-procedures check that the conditions for using the test-free versions
-of \texttt{Add22} and \texttt{Mult22} double-double operations are
-always satisfied.
+The following  Maple procedures implement these inequations.
+
+Procedure \texttt{compute\_abs\_rounding\_error} computes a bound on
+the accumulated rounding error caused by the Horner evaluation of a
+truncated polynomial. P is the polynomial,  xmax is the max
+value of |x|,  n is the degree when P is computed in double double, and the first double-double operation is an addition.
+
+This procedure returns the maximum absolute error, and safe bounds on the
+minimum and maximum values of the function. It also checks on the fly
+that the fast (test-free) versions of the double-double addition can
+be used, i.e. that for all x, at each Horner step i computing ci+x*Si,
+we have |ci|>|x*Si|. It prints warnings if it not the case.
+
+\begin{lstlisting}[caption={compute\_abs\_rounding\_error},firstnumber=1]
+compute_abs_rounding_error:=proc(poly,xmax, nn)
+local n, deg, delta, deltap, i, S, P, Snorm, Smin, Smax, prec:
+deltap:=0:
+delta:=0:
+deg:=degree(poly):
+
+prec:=53; # precision of the first iterations
+
+S:=coeff(poly, x, deg):
+Smax:=abs(S):
+Smin:=Smax:
+
+if nn<0 then n:=0: else n:=nn: fi:# sometimes called by compute_rel_rounding_error with n=-1
+
+for i from (deg-1) to 0 by -1 do
+  P:= convert(S*x, polynom):
+  Smin := abs(coeff(poly,x,i)) - xmax*Smax : 
+  if(Smin<=0) then 
+    printf("Warning! in compute_abs_rounding_error, Smin<=0 at iteration %d, consider decreasing xmax\n",i);
+  fi:
+  delta:= evalf(xmax*deltap + 2**(-prec)*xmax*Smax):
+  if i<n then 
+    # fast Add22 ?    
+    if abs(coeff(poly,x,i)) < xmax*Smax  # may be improved to xmax*Smax/2
+    then printf("WARNING Add22 cannot be used at step %d, use Add22Cond\n" , i  );   
+         printf("    coeff=%1.20e,  xmax*Smax=%1.20e"  ,  abs(coeff(poly,x,i)),  xmax*Smax );
+    fi:
+  fi:
+  S:=convert(P+coeff(poly,x,i), polynom):
+  Snorm:=evalf(infnorm(S, x=-xmax..xmax)):
+  if i=n-1 then prec:=100: fi:  # from the addition of the n-1-th iteration
+  deltap:= evalf(delta + 2**(-prec)*(delta + Snorm)): 
+  Smax := Snorm + deltap:  
+od:
+deltap, Smin, Smax;
+end proc:
+\end{lstlisting}
+\vspace{0.5cm}
+
+Procedure \texttt{compute\_rel\_rounding\_error} computes a bound on
+the total relative rounding error of a Horner polynomial evaluation,
+in the same condition as the previous procedure.
+
+\begin{lstlisting}[caption={compute\_abs\_rounding\_error},firstnumber=1]
+compute_rel_rounding_error:=proc(poly,xmax, n)
+local deg, p, rho, deltap, Smin, Smax:
+
+deg:=degree(poly):
+if(n>0) then p:=100: else p:=53: fi: 
+
+if coeff(poly,x, 0) = 0 then
+   deltap, Smin, Smax := compute_abs_rounding_error(poly/x,xmax, n-1):
+   rho :=  (2^(-p)*(Smax+deltap) +deltap ) / Smin :
+else
+   deltap, Smin, Smax := compute_abs_rounding_error(poly,xmax, n):
+   rho := deltap /  Smin:
+fi:
+rho;
+end proc:
+\end{lstlisting}
+\vspace{0.5cm}
+
+Procedures \texttt{compute\_abs\_rounding\_error\_firstmult} and
+\texttt{compute\_abs\_rounding\_error\_firstmult} are similar to the
+previous, but in the case when the first double-double operation is a
+multiplication.
+
+
+
+\subsection{Rounding}
+
+Procedure \texttt{compute\_rn\_constant} computes the best (smallest)
+possible constant for the round-to-nearest test of
+Theorem~\ref{th:roundingRN1}, for an input delta which is the overall
+relative error of the approximation scheme
+
+\begin{lstlisting}[caption={compute\_rn\_constant},firstnumber=1]
+compute_rn_constant := proc(delta)
+  local k;
+  k := trunc(-log2(delta)) - 53: 
+  nearest(  1+ 2**(-52) + (2**(54+k)*delta)  /  ( (2**k-1) * (1-2**(-53)) )  ):
+end proc:
+\end{lstlisting}
+\vspace{0.5cm}
