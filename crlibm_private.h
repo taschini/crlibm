@@ -31,9 +31,6 @@ functions, or as #defines.  Which one is better depends on the
 processor/compiler/OS.  As #define has to be used with more care (not
 type-safe), the two following variables should  be set to 1 in the
 development/debugging phase, until no type warning remains.  
-Optimal values for Pentium 4:
-#define ADD22_AS_FUNCTIONS 0
-#define DEKKER_AS_FUNCTIONS 1
 
 */
 
@@ -74,6 +71,9 @@ int crlibm_second_step_taken;
 
 /* If the processor has a FMA, use it !   **/
 
+/* All this probably works only with gcc. 
+   See Markstein book for the case of HP's compiler */
+
 #ifdef CRLIBM_TYPECPU_POWERPC
 #define PROCESSOR_HAS_FMA 1
 #define FMA(r, a,b,c)  /* r = a*b + c*/                \
@@ -104,13 +104,13 @@ do{                                                    \
 
 
 
-#ifdef CRLIBM_TYPECPU_ITANNIUM
+#ifdef CRLIBM_TYPECPU_ITANIUM
 #define PROCESSOR_HAS_FMA 1
-#define FMA(r, a,b,c)\  /* r = a*b + c*/
+#define FMA(r, a,b,c)  /* r = a*b + c*/                \
 do{                                                    \
   double _a, _b,_c,_r;                                 \
   _a=a; _b=b;_c=c;                                     \
-  __asm__ __volatile__("fms %0 = %1, %2, %3\n ;;\n"    \
+  __asm__("fms %0 = %1, %2, %3\n ;;\n"                 \
 		       : "=f"(_r)                      \
 		       : "f"(_a), "f"(_b), "f"(_c)     \
 		       );                              \
@@ -118,11 +118,11 @@ do{                                                    \
 } while(1+1==3)
 
 
-#define FMS(r, a,b,c)\  /* r = a*b - c*/
+#define FMS(r, a,b,c)  /* r = a*b - c*/                \
 do{                                                    \
   double _a, _b, _c, _r;                               \
   _a=a; _b=b;_c=c;                                     \
-  __asm__ __volatile__("fms %0 = %1, %2, %3\n ;;\n"    \
+  __asm__("fms %0 = %1, %2, %3\n ;;\n"                 \
 		       : "=f"(_r)                      \
 		       : "f"(_a), "f"(_b), "f"(_c)     \
 		       );                              \

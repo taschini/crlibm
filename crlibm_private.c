@@ -31,58 +31,6 @@ void crlibm_init() {
 }
 
 
-/*
- * In the following, when an operator is preceded by a '@' it means that we
- * are considering the IEEE-compliant machine operator, otherwise it
- * is the mathematical operation.
- *
- */
-
-
-
-#if  DEKKER_AS_FUNCTIONS 
-/* else it is defined in crlibm_private.h */
-
-/*
- * computes rh and rl such that rh + rl = a * b with rh = a @* b exactly
- * under the conditions : a < 2^970 et b < 2^970 
- */
-#ifndef CRLIBM_TYPECPU_ITANIUM
-#ifndef CRLIBM_TYPECPU_POWERPC
-/* otherwise Mul12 and Mul12cond are #defined using FMS in crlibm_private.h  */
-void  Mul12(double *rh, double *rl, double u, double v){
-  const double c = 134217729.;   /*  1+2^27 */ 
-  double up, u1, u2, vp, v1, v2;
-
-  up = u*c;        vp = v*c;
-  u1 = (u-up)+up;  v1 = (v-vp)+vp;
-  u2 = u-u1;       v2 = v-v1;
-  
-  *rh = u*v;
-  *rl = (((u1*v1-*rh)+(u1*v2))+(u2*v1))+(u2*v2);
-}
-
-/*
- * Computes rh and rl such that rh + rl = a * b and rh = a @* b exactly
- */
-void Mul12Cond(double *rh, double *rl, double a, double b){
-  const double two_970 = 0.997920154767359905828186356518419283e292;
-  const double two_em53 = 0.11102230246251565404236316680908203125e-15;
-  const double two_e53  = 9007199254740992.;
-  double u, v;
-
-  if (a>two_970)  u = a*two_em53; 
-  else            u = a;
-  if (b>two_970)  v = b*two_em53; 
-  else            v = b;
-
-  Mul12(rh, rl, u, v);
-
-  if (a>two_970) {*rh *= two_e53; *rl *= two_e53;} 
-  if (b>two_970) {*rh *= two_e53; *rl *= two_e53;} 
-}
-#endif /*CRLIBM_TYPECPU_ITANIUM*/
-#endif /*CRLIBM_TYPECPU_POWERPC*/
 
 
 
@@ -121,18 +69,56 @@ s = xh-r+yh+yl+xl;
 *zl = r - (*zh) + s;
 }
 
-#endif
+#endif /*ADD22_AS_FUNCTIONS*/
 
 
+
+#if  DEKKER_AS_FUNCTIONS && (!defined PROCESSOR_HAS_FMA)
+/* else it is defined in crlibm_private.h */
+
+/*
+ * computes rh and rl such that rh + rl = a * b with rh = a @* b exactly
+ * under the conditions : a < 2^970 et b < 2^970 
+ */
+void  Mul12(double *rh, double *rl, double u, double v){
+  const double c = 134217729.;   /*  1+2^27 */ 
+  double up, u1, u2, vp, v1, v2;
+
+  up = u*c;        vp = v*c;
+  u1 = (u-up)+up;  v1 = (v-vp)+vp;
+  u2 = u-u1;       v2 = v-v1;
+  
+  *rh = u*v;
+  *rl = (((u1*v1-*rh)+(u1*v2))+(u2*v1))+(u2*v2);
+}
+
+/*
+ * Computes rh and rl such that rh + rl = a * b and rh = a @* b exactly
+ */
+void Mul12Cond(double *rh, double *rl, double a, double b){
+  const double two_970 = 0.997920154767359905828186356518419283e292;
+  const double two_em53 = 0.11102230246251565404236316680908203125e-15;
+  const double two_e53  = 9007199254740992.;
+  double u, v;
+
+  if (a>two_970)  u = a*two_em53; 
+  else            u = a;
+  if (b>two_970)  v = b*two_em53; 
+  else            v = b;
+
+  Mul12(rh, rl, u, v);
+
+  if (a>two_970) {*rh *= two_e53; *rl *= two_e53;} 
+  if (b>two_970) {*rh *= two_e53; *rl *= two_e53;} 
+}
+
+  
 /*
  * computes double-double multiplication: zh+zl = (xh+xl) *  (yh+yl)
  * under the conditions : xh < 2^970 et xl < 2^970 
  * relative error is smaller than 2^-102
  */
-  
 
-#ifndef CRLIBM_TYPECPU_POWERPC  /* otherwise they have been #defined using FMAs */
-  
 void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl)
 {
 double mh, ml;
@@ -151,6 +137,10 @@ double mh, ml;
   *zh = mh+ml;
   *zl = mh - (*zh) + ml;
 }
-#endif /* ifndef CRLIBM_TYPECPU_POWERPC */ 
 
-#endif  /*DEKKER_AS_FUNCTIONS */
+#endif /* DEKKER_AS_FUNCTIONS && (!defined PROCESSOR_HAS_FMA)  */
+
+
+
+
+  
