@@ -269,6 +269,7 @@ accurate range reduction. As a compensation, in this case when $k \mod
 simple polynomial approximation to the function suffices.
 
 
+
 In the following we note $$C=\frac{\pi}{256}$$
 
 \subsection{Cody and Waite argument reduction with two constants}
@@ -276,10 +277,11 @@ Here we split $C$ into two floating-point constants $C_h$ and $C_l$
 such that $C_h$ holds 21 bits of the mantissa of $C$ (the rest being
 zeroes), and $C_l=\round(C-C_h)$.  The following is an excerpt of the
 Maple code that computes these constants, and then computes the
-absolute error on this argument reduction out of them.
+bound on which this argument reduction is valid.
 
 \begin{lstlisting}[caption={Computing constants for Cody and Waite 2},
   firstnumber=1,  language={sh}]% of course it's maple
+%Skip a line here, I don't know why, otherwise latex eats the first line
 bitsCh_0:=32:  # ensures at least 53+11 bits
 
 # 1/2 <= C/2^(expC+1) <1
@@ -295,8 +297,32 @@ kmax_cw2:=2^(53-bitsCh):
 RR_CW2_CH := Ch:
 RR_CW2_MCL := -Cl:
 XMAX_CODY_WAITE_2 := nearest(kmax_cw2*C):
+\end{lstlisting}
 
-# The error in this case (we need absolute error)
+The C code that performs the reduction in this case is the following:
+
+\begin{lstlisting}[caption={Cody and Waite argument reduction with two
+    constants},firstnumber=1]
+      if (absxhi < XMAX_CODY_WAITE_2) { 
+	Add12 (yh,yl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
+      }
+\end{lstlisting}
+
+Here only the rightmost multiplication involving a rounding: 
+\begin{itemize}
+\item The multiplication $\mathit{kd}\otimes \mathit{RR\_CW2\_CH}$ is
+  exact because $kd$ is a small integer and $\mathit{RR\_CW2\_CH}$
+  has enough zeroes in the mantissa.
+\item The subtraction is exact thanks to Sterbenz Lemma.
+\item The \texttt{Add12} procedure is exact.
+\end{itemize}
+
+The following Maple code thus computes the maximum absolute error on
+the reduced argument (with respect to the ideal reduced argument) in
+this case.
+\begin{lstlisting}[caption={Computing constants for Cody and Waite 2},
+  firstnumber=1,  language={sh}]% of course it's maple
+
 delta_repr_C_cw2   := abs(C-Ch-Cl);
 delta_round_cw2    := kmax_cw2* 1/2 * ulp(Cl) ;
 delta_cody_waite_2 := kmax_cw2 * delta_repr_C_cw2 + delta_round_cw2;
@@ -305,8 +331,174 @@ delta_cody_waite_2 := kmax_cw2 * delta_repr_C_cw2 + delta_round_cw2;
 
 
 \subsection{Cody and Waite argument reduction with three constants}
+The C code that performs the reduction in this case is the following:
+
+\begin{lstlisting}[caption={Cody and Waite argument reduction with three 
+    constants},firstnumber=1]
+      else 
+	Add12Cond(yh,yl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
+    }
+\end{lstlisting}
+
+Here again all the operations are exact except the rightmost multiplication. 
+
+The following Maple code computes the constants, the bound on $x$ for
+this reduction to work, and the resulting absolute error of the reduced
+argument with respect to the ideal reduced argument.
+
+\begin{lstlisting}[caption={Computing constants for Cody and Waite 3},
+  firstnumber=1,  language={sh}]% of course it's maple
+%Skip a line here, I don't know why, otherwise latex eats the first line
+
+bitsCh_0:=21:
+Ch:= round(evalf(  C * 2^(bitsCh_0-expC-1))) / (2^(bitsCh_0-expC-1)):
+# recompute bitsCh in case we are lucky
+bitsCh:=1+log2(op(2,ieeedouble(Ch)[3])) :  # this means the log of the denominator
+
+r := C-Ch:
+Cmed := round(evalf(  r * 2^(2*bitsCh-expC-1))) / (2^(2*bitsCh-expC-1)):
+bitsCmed:=1+log2(op(2,ieeedouble(Cmed)[3])) :
+
+Cl:=nearest(C - Ch - Cmed):
+
+kmax_cw3 := 2^31:# Otherwise we have integer overflow
+
+# The constants to move to the .h file
+RR_CW3_CH  := Ch;
+RR_CW3_CM  := Cmed:
+RR_CW3_MCL := -Cl:
+XMAX_CODY_WAITE_3 := nearest(kmax_cw3*C):
+
+# The error in this case (we need absolute error)
+delta_repr_C_cw3   := abs(C - Ch - Cmed - Cl):
+delta_round_cw3    := kmax_cw3 * 1/2 * ulp(Cl) :
+delta_cody_waite_3 := kmax_cw3 * delta_repr_C_cw3 + delta_round_cw3:
+# This is the delta on y, the reduced argument
+\end{lstlisting}
+
 \subsection{Cody and Waite argument reduction in double-double}
+The C code that performs the reduction in this case is the following:
+
+\begin{lstlisting}[caption={Cody and Waite argument reduction in
+    double-double},firstnumber=1]
+  if ( absxhi < XMAX_DDRR ) {
+    DOUBLE2LONGINT(kl, x*INV_PIO256);
+    kd=(double)kl;
+    quadrant = (kl>>7)&3;
+    index=(kl&127)<<2;
+    if(index == 0) { /* In this case cancellation may occur, so we
+			  do the accurate range reduction */
+      scs_range_reduction(); 
+      /* Now it may happen that the new k differs by 1 of kl, so check that */
+      if(index==0) {  /* no surprise */
+	*pquadrant=quadrant;
+	if (quadrant&1)
+	  do_cos_k_zero(psh, psl, yh,yl);
+	else 
+	  do_sin_k_zero(psh, psl, yh,yl);
+      	return;
+      }
+      else { /*recompute index and quadrant */
+	if (index==4) kl++;   else kl--; /* no more than one bit difference */
+	kd=(double)kl;
+	quadrant = (kl>>7)&3;
+      }
+    }
+    /* arrive here if index<>0 */
+    *pquadrant=quadrant;
+    LOAD_TABLE_SINCOS(); /* in advance */
+    /* all this is exact */
+    Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+    Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+    Add12 (th,tl,  kch_l, kcm_h) ;
+    /* only rounding error in the last multiplication and addition */ 
+    Add22 (&yh, &yl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+    if (quadrant&1)
+      do_cos_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+    else 
+      do_sin_k_notzero(psh, psl, yh,yl,sah,sal,cah,cal);
+    return;
+\end{lstlisting}
+
+
+The error and the bound are computed by the following Maple code.
+
+\begin{lstlisting}[caption={Computing constants for Cody and Waite
+    double-double}, firstnumber=1,
+  language={sh}]% of course it's maple
+%Skip a line here, I don't know why, otherwise latex eats the first line
+
+# max int value that we can be produced by DOUBLE2LONGINT
+kmax:=2^51-1:
+XMAX_DDRR:=nearest(kmax*C);
+
+#in this case we have C stored as 3 doubles
+Ch   := nearest(C):
+Cmed := nearest(C-Ch):
+Cl   := nearest(C-Ch-Cmed):
+
+RR_DD_MCH := -Ch:
+RR_DD_MCM := -Cmed:
+RR_DD_CL  := Cl:
+
+delta_repr_C := abs(C - Ch - Cmed - Cl):
+
+# and we have only exact Add12 and Mul12  operations. The only place
+# with possible rounding errors is:
+#       Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+# where (x + kch_h) is exact (Sterbenz) with up to kmax bits of cancellation
+# and the error is simply the error in  (kcm_l - kd*RR_DD_CL)
+# At the very worst :
+delta_round :=
+              kmax * 1/2 * ulp(Cl) # for   kd*RR_DD_CL
+              + kmax*ulp(Cl)         # for the subtraction
+              + 2^(-100) * Pi/512 :    # for the Add22
+delta_RR_DD :=  kmax * delta_repr_C + delta_round:
+
+#  the last case, Payne and Hanek reduction, gives a very small delta:
+#  red arg is on 9*30 bits, then rounded to a double-double (106 bits)
+# This should, of course, be optimized some day
+delta_PayneHanek := 2^(-100):
+
+# Finally the max delta on the reduced argument is
+delta_ArgRed := max(delta_cody_waite_2, delta_cody_waite_3,
+                    delta_RR_DD, delta_PayneHanek):
+\end{lstlisting}
+
+
 \subsection{Payne and Hanek argument reduction }
+
+This argument reduction is very classical (see K.C. Ng's paper) and
+the code both too long and too simple to appear here. The Payne and
+Hanek reduction uses SCS computations which ensure relative accuracy
+of $2^{-200}$. The result is then converted to a double-double.
+Even counting a worst-case cancellation of less than 70 bits, the final
+absolute error is much smaller than for the other reductions. 
+
+\begin{lstlisting}[caption={Computing constants for Cody and Waite
+    double-double}, firstnumber=1,
+  language={sh}]% of course it's maple
+%Skip a line here, I don't know why, otherwise latex eats the first line
+
+delta_PayneHanek := 2^(-100):
+\end{lstlisting}
+
+
+\subsection{Maximum error of argument reduction }
+The error and the bound are computed by the following Maple code.
+
+\begin{lstlisting}[caption={Payne and Hanek error bound}, firstnumber=1,
+  language={sh}]% of course it's maple
+%Skip a line here, I don't know why, otherwise latex eats the first line
+
+delta_ArgRed := max(delta_cody_waite_2, delta_cody_waite_3,
+                    delta_RR_DD, delta_PayneHanek):
+\end{lstlisting}
+
+We find that $\maxdelta_{\mathrm{argred}}\approx 2^{-71}$
+
+We will use this absolute value if $k\mod 256\ne 0$, as there will be
+an addition of the reduced argument. Otherwise we need to compute the relative error.
 
 
 
@@ -352,7 +544,7 @@ to compute is
 \end{equation}
 
 
-\begin{lstlisting}[caption={do\_sin\_k\_zero},firstnumber=1]
+ \begin{lstlisting}[caption={do\_sin\_k\_zero},firstnumber=1]
 #define do_sin_k_zero(psh,psl, yh,  yl)            \
 do{                                                \
   double yh2 ;	              			   \
@@ -587,5 +779,5 @@ Finally
 
 
 
-\section{Detailed examination of the sine}
+\section{Detailed examination of the cosine}
 \section{Detailed examination of the tangent}
