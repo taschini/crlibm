@@ -491,7 +491,7 @@ The following test determines whether $y_h$ is the
   absyh.lli = absyh.lli & 0x(*@\texttt{7fffffffffffffff}@*)LL;
   absyl.lli = absyl.lli & 0x(*@\texttt{7fffffffffffffff}@*)LL;
   u53.lli  = (absyh.lli & 0x(*@\texttt{7fff000000000000}@*)LL) + 0x0001000000000000LL;
-  u.lli    = (absyh.lli & 0x(*@\texttt{7fff000000000000}@*)LL) - (52LL<<52);
+  u.lli    = (absyh.lli & 0x(*@\texttt{7fff000000000000}@*)LL) + (53LL<<52);
   /* back to double arithmetic */
   if (absyl.d > (*@$\delta$@*)*u53.d ) {
     /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
@@ -841,7 +841,7 @@ a clear edge on the other in this respect. Some argue, however, that
 this issue is pointless, as superscalarity, along with register
 renaming and branch prediction inside modern processors, sum up to the
 equivalent of dynamic unrolling of the code. In our tests (in 2003), it
-doessn't: unrolling does bring a speed-up.
+doesn't: unrolling does bring a speed-up.
 
 
 
@@ -1029,6 +1029,41 @@ end:
 
 
 
+
+
+
+
+\section{Error analysis}
+
+The error analysis for a function evaluation aims at providing an
+overall relative error of the whole evaluation process, which can then
+be used to test rounding thanks to theorems given in
+\ref{section:testrounding}. Care must be taken that only
+\emph{absolute} error terms can be added, although some error terms
+are best expressed as\emph{relative}, like the the rounding error of
+an IEEE operation, or the minimax approximation error. Remark also
+that the error needed for the theorems in \ref{section:testrounding}
+is a \emph{relative} error. Managing the relative and absolute error
+terms is very dependent on the function, and usually involves keeping
+upper and lower bounds on the values manipulated along with the error terms.
+
+Error terms to consider are the following:
+\begin{itemize}
+\item approximation errors, typically minimax approximation,
+\item rounding error, which fall into two categories:
+  \begin{itemize}
+  \item roundoff errors in  values tabulated as doubles or double-doubles,
+  \item roundoff errors in IEEE-compliant operations.
+  \end{itemize}
+\end{itemize}
+
+
+
+
+
+\subsubsection{Error analysis for polynomial approximations}
+
+
 The following Maple procedure gives a bound on the accumulated
 rounding errors in the evaluation of a polynomial returned by the
 previous procedure, assuming all the operations are performed in
@@ -1036,11 +1071,6 @@ IEEE-754 round to the nearest mode, and assuming $x$ is exact.
 
 Here is an explanation of this computation, for a polynomial of degree 4.
 
-
-
-
-%\newcommand{\maxx}{{\mathrm{max}_{|x|}}}
-%\newcommand{\maxs}[1]{{\mathrm{max}_{|s_{#1}|}}}
 
  We note 
 \begin{itemize}
@@ -1055,6 +1085,7 @@ Here is an explanation of this computation, for a polynomial of degree 4.
   \le \maxx$.
 \item $\infnorm{S_j}$ the infinite norm of $S_j$ for $-\maxx \le
   x\le \maxx$.
+\item $\delta$ and $\delta'$ are upper bounds on the \emph{absolute} error.
 \end{itemize}
 
 Given $ |x| \leq \maxx$, we have
@@ -1062,21 +1093,76 @@ Given $ |x| \leq \maxx$, we have
 \begin{align*}
   s_4 & \ = \ c_4\\
   \maxs{4} & \ = \  |c_4|\\
-  p_4 & \ = \  x \otimes s_4 \ = \  x c_4 + \epsilon_{-53} x c_4 \\
-      & \ = \  xc_4 + \epsilon_4 \quad \mathrm{with} \quad |\epsilon_4| \le \delta_4 = 2^{-53}\maxx \maxs{4}\\
-  s_3 & \ = \  c_3 \oplus p_4 \ = \  c_3 + p_4 + \epsilon_{-53}(c_3 + p_4) \\
-      & \ = \  c_3 +  xc_4 + \epsilon_4 + \epsilon_{-53}(c_3 + xc_4 + \epsilon_4) \\
+  p_3 & \ = \  x \otimes s_4 \ = \  x c_4 + \epsilon_{-53} x c_4 \\
+      & \ = \  xc_4 + \epsilon_3 \quad \mathrm{with} \quad |\epsilon_3| \le \delta_3 = 2^{-53}\maxx \maxs{4}\\
+  s_3 & \ = \  c_3 \oplus p_3 \ = \  c_3 + p_3 + \epsilon_{-53}(c_3 + p_3) \\
+      & \ = \  c_3 +  xc_4 + \epsilon_3 + \epsilon_{-53}(c_3 + xc_4 + \epsilon_3) \\
       & \ = \  c_3 +  xc_4 + \epsilon'_3  
       \quad \mathrm{with} |\epsilon'_3| \le \delta'_3\\
-  \delta'_3 & \ =\  \delta_4 + 2^{-53}(\infnorm{c_3 + xc_4} + \delta_4)\  =\  \delta_4 + 2^{-53}(\infnorm{S_3} + \delta_4)\\
-  \maxs{3} & \ = \  \infnorm{c_3 + xc_4} + \delta'_3 \ = \  \infnorm{S_3} + \delta'_3\\ 
-  p_3 & \ = \  x \otimes s_3 \ = \  x s_3 + \epsilon_{-53} x s_3 \\
+  \delta'_3 & \ =\  \delta_3 + 2^{-53}(\infnorm{c_3 + xc_4} + \delta_3)\  =\  \delta_3 + 2^{-53}(\infnorm{S_3} + \delta_3)\\
+  \maxs{3} & \ = \  \infnorm{c_3 + xc_4} + \delta'_3 \ = \  \infnorm{S_3} + \delta'_3\\
+  p_2 & \ = \  x \otimes s_3 \ = \  x s_3 + \epsilon_{-53} x s_3 \\
       & \ = \  x(c_3 +  xc_4 + \epsilon'_3) + \epsilon_{-53} x s_3\\
       & \ = \  x(c_3 +  xc_4) + x\epsilon'_3 + \epsilon_{-53} x s_3\\
       & \ = \  x(c_3 +  xc_4) +  \epsilon_3 \quad \mathrm{with} \quad 
-      |\epsilon_3| \le \delta_3\\
-  \delta_3 & \ =\ \maxx\delta'_3 + 2^{-53} \maxx \maxs{3}\\
-...
+      |\epsilon_2| \le \delta_2\\
+  \delta_2 & \ =\ \maxx\delta'_3 + 2^{-53} \maxx \maxs{3}\\
+...\\
 \end{align*}
 
+Or, in a generic way, 
 
+\begin{align*}
+\delta'_d &\ = \ 0 \\
+s_d & \ = \ c_d\\
+\maxs{d} & \ = \  |c_d|\\
+p_{k}  & \ = \  x \otimes s_{k+1} \ = \ xS_{k+1}(x) + \epsilon_{k+1}         \quad \mathrm{with} \quad  |\epsilon_{k+1}| \le \delta_{k}\\
+\delta_k & \ =\ \maxx\delta'_{k+1} + 2^{-53} \maxx \maxs{k+1}\\
+s_{k}  & \ = \  c_k \oplus p_k \  = \  S_{k}(x) + \epsilon'_k      \quad \mathrm{with} |\epsilon'_k| \le \delta'_k\\
+\delta'_k & \ =\  \delta_k + 2^{-53}(\infnorm{S_{k+1}} + \delta_{k})\\
+\maxs{k} & \ = \   \infnorm{S_k} + \delta'_k\\
+\end{align*}
+
+To compute a  relative error out of the absolute error
+$\delta'_0$, there are several cases to consider.
+\begin{itemize}
+\item If $c_0\ne 0$, for small values of $x$, a good approximation to
+  the overall relative error is to divide $\delta'_0$ by the minimum
+  of $|S_0|$, which -- provided $\maxx$ is sufficiently small --  is well approximated by 
+$$\mins{0}=|c_0| - \maxx . \maxs{1}$$
+  An upper bound on the total
+  relative error is then
+$$\rho = \frac{\delta'_0}{|c_0| - \maxx . \maxs{1}}$$
+
+\item If $c_0=0$, then the last addition is exact (in double as well
+  as double-double) and the overall relative error is that of the last
+  multiplication. Rewriting the error analysis above, we get:
+\begin{align*}
+p_{0}  & \ = \  x \otimes s_{1} \ = \ xs_1(1 + \epsilon^r_{1})         \quad \mathrm{with} \quad  |\epsilon^r_{1}| < 2^{-p}\\
+       & \ = \  x (S_1(x) + \epsilon'_1)(1 + \epsilon^r_{1}) \\
+\end{align*}
+so 
+\begin{align*}
+\frac{p_{0} - xS_1(x)}{xS_1(x)}  & \ = \ \frac{ \epsilon'_1 + S_1(x)\epsilon^r_{1} + \epsilon'_1\epsilon^r_{1}}{S_1(x)}\\
+     & \ < \frac{2^{-p}(1+\maxs{1})}{\mins{1}}  
+\end{align*}
+
+with $\mins{1}  =|c_1| - \maxx . \maxs{2}$
+(again, provided $\maxx$ is sufficiently small). Finally a bound on the relative error in this case is:
+$$\rho = \frac{2^{-p}(1+\maxs{1})}{\mins{1}} $$
+
+
+ 
+\end{itemize}
+
+
+We designed Maple procedures that, given a polynomial with
+coefficients exactly representable as doubles (or, for the upper ones,
+as double-doubles), compute bounds on the accumulated rounding error
+$\delta'$ (as an absolute error), and the $\mins{}$, $\mins{maxs}$,
+$\rho$ and max values above. In additions these procedures check that
+$\maxx$ is sufficiently small for $mins$ to be strictly positive.
+Finally, if some of the coefficients are double-double, these
+procedures check that the conditions for using the test-free versions
+of \texttt{Add22} and \texttt{Mult22} double-double operations are
+always satisfied.

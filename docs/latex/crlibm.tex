@@ -29,12 +29,18 @@
 \newcommand{\rounddown}{\bigtriangledown}
 \newcommand{\crlibm}{\texttt{crlibm}}
 \newcommand{\scslib}{\texttt{scslib}}
+
 \renewcommand{\epsilon}{\varepsilon}
 
-\newcommand{\maxx}{{\widehat{|x|}}}
-\newcommand{\maxz}{{\widehat{|z|}}}
-\newcommand{\maxs}[1]{\widehat{|s_{#1}|}}
+\newcommand{\maxx}{{\overline{|x|}}}
+\newcommand{\maxz}{{\overline{|z|}}}
+\newcommand{\maxs}[1]{\overline{|s_{#1}|}}
+\newcommand{\mins}[1]{\underline{|s_{#1}|}}
+\newcommand{\maxp}{\overline{|P|}}
+\newcommand{\minp}{\underline{|P|}}
 \newcommand{\infnorm}[1]{||{#1}||^{\infty}}
+\newcommand{\deltapprox}{\delta_{\mathrm{approx}}}
+\newcommand{\deltaround}{\delta_{\mathrm{round}}}
 
 
 
@@ -123,13 +129,13 @@ the code.
 
 
 \chapter{Introduction: Goals and methods \label{chap:intro}}
-\input{0_intro.tex}
+%\input{0_intro.tex}
 
 \chapter{Common notations, theorems and procedures \label{chap:common}}
 \input{1_common.tex}
 
 \chapter{The exponential \label{chap:exp}}
-\input{2_exp.tex}
+%\input{2_exp.tex}
 
 \chapter{The natural logarithm \label{chap:log}}
 \input{3_log.tex}
