@@ -25,15 +25,16 @@ $\pm\round(\pi/2) =\pm\rounddown(\pi/2) $. That could be a probem for
 rounding up but we choose not to have a x with $\arctan(x) > \pi/2$.
 \section{Quick phase}
 
-We have five function. One (\texttt{atan_quick}) which returns two doubles
+We have five function. One (\texttt{atan\_quick}) which returns two doubles
 ($atanhi$ and $atanlo$) that represent $\arctan(x)$ with a precision of
-about 64 bits. Four other functions compute the correct rounding. First
-we'll see the main algorithm and then the rounding.
+about 64 bits. Four other functions compute the correct rounding :
+\texttt{atan\_rn}, \texttt{atan\_ru}, \texttt{atan\_rd} and
+\texttt{atan\_rz}. First we'll see the main algorithm and then the rounding.
 
 \subsection{Overview of the algorithm.}
 
 We try to have about 64 bits of precision. This phase is computed in double
-or double.
+or double-double.
 
 There are two steps in the algorithm: an argument reduction and a polynomial
 approximation with a polynomial of degree 9. 
@@ -80,7 +81,7 @@ arithmetic.
 %\end{equation}
 
 \bigskip
-\subsection{Error analysis on log_quick}
+\subsection{Error analysis on atan\_quick}
 
 We choose four rounding constant : two when there is a argument reduction, two in
 the other case. For each case, we made two constants on order to
