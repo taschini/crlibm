@@ -352,7 +352,7 @@ The code is very simple so there are few errors:
 \begin{tabular}{ll}
 Line 1 & $\epsilon_{53}$ \\
 Line 2 & The Maple procedure to compute Horner approximation gives $\epsilon_{51}$\\
-Line 3 & $delta_{no\_reduction} = \epsilon_{105}.x + \epsilon_q.x^3 + 
+Line 3 & $\delta_{no\_reduction} = \epsilon_{105}.x + \epsilon_q.x^3 + 
 \epsilon_{x.q}.x^3 + |arctan(x) - x.(1+q)| $
 \end{tabular}
 
@@ -596,8 +596,8 @@ Table size is
 \item for the \quick\ phase,
   $62\times (1+1+2) \times8=1984$ bytes for the 62 $a_i$, $b_i$,
   $\arctan(b_i)$ (hi and lo), plus another $8$ bytes for the rounding
-  constant, plus $4\times8$ for the polynomial, $8$ Bytes for
-  $\frac{\pi}{2}$ and $64$ for the rounding constants or $2096$ Bytes in
+  constant, plus $4\times8$ for the polynomial, $8$ bytes for
+  $\frac{\pi}{2}$ and $64$ for the rounding constants or $2096$ bytes in
   total.
   
 \item for the \accurate\ phase, we just have $10$ SCS constants for the
@@ -612,7 +612,7 @@ bytes.
 
 Our $\arctan$ is reasonably fast.  Libultim is faster but requires ten
 times more memory (241 polynomials of degree 7 and 241 of degree 16
-that represents more than 40ko !). Instead, our argument reduction
+that represents more than 40KB !). Instead, our argument reduction
 performs a division, which is an expensive operation.
 
 To improve performances we could inline the code of \texttt{atan\_quick},
