@@ -51,7 +51,6 @@ int crlibm_first_step_taken;
 /* Basic-like programming with global variables: */
 db_number input, res_crlibm, res_mpfr, res_ibm, res_libm;
 
-double worst_case; /* worst case for round to nearest only */
 
 /* The random number generator*/
 double (*randfun)       () = NULL;
@@ -353,7 +352,7 @@ mp_rnd_t mpfr_rnd_mode;
 
   /************  WORST CASE TESTS   *********************/
   /* worst case test */
-  input = worst_case;
+  input = worstcase;
   /* libm timing */
   dtmin=1<<30;
   for(j=0; j<N1; j++) {

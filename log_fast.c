@@ -92,15 +92,17 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
     else
       i = ((i-1)>>1);
 
-    /* Compute ln2_times_E = E*log(2)   in double-double */
-    Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, (double)(*pE), 0.);
     
     z = (*py).d - (middle[i]).d;  /* (exact thanks to Sterbenz Lemma) */
     
 
+    /* Compute ln2_times_E = E*log(2)   in double-double */
+    Mul22(&ln2_times_E_HI, &ln2_times_E_LO, ln2hi.d, ln2lo.d, (double)(*pE), 0.);
+
     /* Now begin the polynomial evaluation of log(1 + z)      */
 
     res = (poly_log_fast_h[i][DEGREE]).d;
+
 
     for(k=DEGREE-1; k>1; k--){
       res *= z;
