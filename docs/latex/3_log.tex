@@ -85,9 +85,9 @@ will be noted $P$ when no ambiguity arises.
 \begin{table}[htdp]\caption{polynomial precision\label{table:TablePolysLog1}}
 \renewcommand{\arraystretch}{1.3}
 \begin{center}
-\begin{tabular}{|c|c|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|}
 \hline
-polynomial &   definition interval     &   $\middlei$   & max value of $|z|$ & relative approx. error\\
+polynomial &   definition interval     &   $\middlei$   & max value of $|z|$\\
 \hline  
 P[0] & $[\frac{11}{16},\frac{12}{16}]$ &  $\frac{23}{32}$ & $2^{-5}$  \\ 
 \hline 
@@ -97,7 +97,7 @@ P[2] & $[\frac{13}{16},\frac{14}{16}]$ &  $\frac{27}{32}$ & $2^{-5}$  \\
 \hline 
 P[3] & $[\frac{14}{16},\frac{15}{16}]$ &  $\frac{29}{32}$ & $2^{-5}$  \\ 
 \hline
-P[4] & $[\frac{15}{16},\frac{17}{16}]$ &  $\frac{31}{32}$ & $2^{-4}$  & 61.72 \\ 
+P[4] & $[\frac{15}{16},\frac{17}{16}]$ &  $\frac{31}{32}$ & $2^{-4}$ \\ 
 \hline 
 P[5] & $[\frac{17}{16},\frac{19}{16}]$ &  $\frac{18}{16}$ & $2^{-4}$  \\ 
 \hline 
@@ -163,34 +163,39 @@ the values of the rounding constants required by theorems of section
 Error analysis distinguishes four cases, corresponding to four
 execution paths in the program.
 \begin{enumerate}
-\item {If $|E\log(2)| > \mathtt{MIN\_FASTPATH}=128.5$} then
-the whole polynomial evaluation may be performed in double-precision,
-with a total (approximation and rounding) absolute error smaller than
-$2^{-55.7}$. As the absolute value of $P(x)$ in this scheme is always
-smaller than $0.38$, this ensures a relative error on $E\log(2)+P(x)$
-smaller than $2^{-62.8}$.
+\item {If $|E\log(2)| > \mathtt{MIN\_FASTPATH}=128.5$} then the whole
+  polynomial evaluation may be performed in double-precision, with a
+  total (approximation and rounding) absolute error smaller than
+  $2^{-55.7}$. As the absolute value of $P(x)$ in this scheme is
+  always smaller than $0.38$, this ensures a relative error on
+  $E\log(2)+P(x)$ smaller than $2^{-62.8}$. This case represents a
+  trade-off between accuracy (which impacts the percentage of calls to
+  the \accurate\ phase), and speed.
 
+  
 \item {If $16.5<|E\log(2)|\le 128.5$} then the last two additions and
-the last multiplication of the Horner polynomial evaluation are
-performed in double-double-precision. The total relative error in this
-case is smaller than $2^{-64.8}$.
-
-\item {If $0<|E\log(2)| < 16.5$}
-then we use double-double arithmetic as in the previous case, and the
-bound on the relative error is $2^{-60.2}$.
-
-\item {If E=0} then the last two additions and
-the last two multiplications of the Horner polynomial evaluation are
-performed in double-double-precision. The total relative error in this
-case is smaller than $2^{-57.7}$.
+  the last multiplication of the Horner polynomial evaluation are
+  performed in double-double-precision. The total relative error in
+  this case is smaller than $2^{-64.8}$.
+  
+\item {If $0<|E\log(2)| < 16.5$} then we use double-double arithmetic
+  as in the previous case, and the bound on the relative error is
+  $2^{-60.2}$.
+  
+\item {If E=0} then the last two additions and the last two
+  multiplications of the Horner polynomial evaluation are performed in
+  double-double-precision. The total relative error in this case is
+  smaller than $2^{-57.7}$. This is the error for the fifth
+  polynomial, which has $\middlei=1$ and therefore approximates
+  $\log(1+z)$. Therefore its first coefficient is exactly zero. In the
+  case when $E\ne0$ it only means a smaller absolute error, and
+  therefore a smaller relative error of $E\log(2)+P(x)$. However, for
+  $E=0$, the overall relative error is the relative error in
+  evaluating $P(x)$, and has to be computed specifically as shown in
+  \ref{sec:error_maple}.
 \end{enumerate}
 
-The first case represents a trade-off between accuracy (which impacts
-the percentage of calls to the \accurate\ phase), and  speed. The last
-case is required by the fact that the polynomial corresponding to
-input values around $1$ requires a specific rounding error analysis.
-
-
+ 
 
 
 
@@ -395,14 +400,13 @@ are ensured by the image domain of the log.
 
 
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Accurate phase}
 
 
 The function called is \texttt{scs\_log\_rn} for a result rounded to
 nearest, \texttt{scs\_log\_rd} for rounding down, or
 \texttt{scs\_log\_ru} for rounding up.
-
 
 
 \subsection{Argument reduction}
@@ -424,8 +428,15 @@ $$log(1+f) = log(w_i) + log(1+\frac{1+f-w_i}{w_i})$$
 
 where $r=\frac{1+f-w_i}{w_i} \leq 2^{-5}$.
 
+$log(w_i)$ and $log(2)$ are tabulated. 
 
 \begin{lstlisting}[caption={Argument reduction},firstnumber=1]
+void scs_log(scs_ptr res, db_number y, int E){ 
+  scs_t R, sc_ln2_times_E, res1, addi;
+  scs_ptr ti, inv_wi;
+  db_number z, wi;
+  int i;
+
  /* to normalize y.d and round to nearest      */
   /* + (1-trunc(sqrt(2.)/2 * 2^(4))*2^(-4) )+2.^(-(4+1))*/ 
   z.d = y.d + norm_number.d; 
@@ -448,35 +459,62 @@ where $r=\frac{1+f-w_i}{w_i} \leq 2^{-5}$.
 
 \end{lstlisting}
 
-\begin{tabular}{ll}
-Lines 3-5 & We compute the "i" corresponding to z, through the four first bits of z's mantissa.\\
-Line 7 & $w_i$ is computed.\\
-Lines 14-15 & We get tabulated values: $t_i = log(w_i)$ and $\frac{1}{w_i}$\\
-Lines 18-19 & We compute the polynomial argument: $R = \frac{1+f-w_i}{w_i}$.\\ 
-\end{tabular}
 
 
 
 \subsection{Polynomial approximation}
-$log(1+\frac{1+f-w_i}{w_i})$ is approximated by  a polynomial $Q(\frac{1+f-w_i}{w_i})$ with an error less than $2^{-130}$.
 
-$log(w_i)$ and $log(2)$ are tabulated. The polynomials are given in appendix
+$log(1+\frac{1+f-w_i}{w_i})$ is approximated by a polynomial
+$Q(\frac{1+f-w_i}{w_i})$ with an overall relative error less than $2^{-130}$.
+
+The polynomials are available in \texttt{log.h}.
 
 
-The computation is similar as the first step computation, except that everything is computed in SCS format, it means that every computation is realized with 211 bits precision.
-so it is clearly enough to reach a result with 130 bits precision.\\
+\begin{lstlisting}[caption={Polynomial approximation},firstnumber=1]
+  scs_mul(res1, constant_poly_ptr[0], R);
+  for(i=1; i<20; i++){
+    scs_add(addi, constant_poly_ptr[i], res1);
+    scs_mul(res1, addi, R);
+  }
+\end{lstlisting}
+
+TODO:
+Add a Maple script that computes the relative error of a polynomial given an error on the input. It is required here.
+
 
 
 
 \subsection{Reconstruction}
-So, at the end, we compute:\\
+At the end, we compute:
+
 \begin{equation}result = E\times log(2) + log(w_i) + Q(\frac{1+f-w_i}{w_i})\end{equation}
 
+\begin{lstlisting}[caption={Reconstruction},firstnumber=1]
+  if(E==0){
+    scs_add(res, res1, ti);
+  }else{
+    /* sc_ln2_times_E = E*log(2)  */
+    scs_set(sc_ln2_times_E, sc_ln2_ptr);
 
-\subsection{Rounding mode}
-The procedures $scs\_get\_d$, $scs\_get\_d\_pinf$ and $scs\_get\_d\_minf$ assure the conversion from type "scs" to type "IEEE" according to the selected round mode.\\
-You are encouraged for further details to have a look at the research report RR 2003-37.pdf at www.ens-lyon.fr/LIP/Pub/rr2003.html
+    if (E >= 0){
+      scs_mul_ui(sc_ln2_times_E, (unsigned int) E);
+    }else{
+      scs_mul_ui(sc_ln2_times_E, (unsigned int) -E);
+      sc_ln2_times_E->sign = -1;
+    }
+    scs_add(addi, res1, ti);
+    scs_add(res, addi, sc_ln2_times_E); 
+  }
+}
+\end{lstlisting}
 
+
+
+\subsection{Rounding}
+
+The procedure \texttt{scs\_log} returns an SCS number. It is rounded
+in the required mode by one of \texttt{scs\_get\_d}, \texttt{scs\_get\_d\_pinf} and
+\texttt{scs\_get\_d\_minf} in the corresponding functions in \texttt{log\_fast.c}. 
 
 
 
@@ -495,7 +533,7 @@ processors/OS/compiler combinations are welcome.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{|l|r|r|r||r|}
 \hline\hline
- \multicolumn{4}{|c|}{Pentium 4 Xeon / Debian sarge / gcc 3.3}   \\ 
+ \multicolumn{4}{|c|}{Pentium 4 Xeon / Linux Debian sarge / gcc 3.3}   \\ 
  \hline
                          & min time      & max time      & avg time \\ 
  \hline
@@ -507,6 +545,18 @@ processors/OS/compiler combinations are welcome.
  \hline\hline
  \texttt{crlibm}         & 968          & 51392         &       1147 \\ 
  \hline
+ \hline
+ \multicolumn{4}{|c|}{Pentium III / Linux Debian woody / gcc 3.2}   \\
+ \hline
+                         & min time      & max time      & avg time \\
+ \hline
+ \texttt{libm}           & 387          & 1138          &        390 \\
+ \hline
+  \texttt{mpfr}          & 431          & 315982        &      92250 \\
+ \hline
+  \texttt{libultim}      & 376          & 217005        &        534 \\
+ \hline\hline
+ \texttt{crlibm}         & 383          & 22861         &        654 \\
  \hline
 \end{tabular}
 \end{center}

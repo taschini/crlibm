@@ -128,7 +128,7 @@ if (hx <= 0x3C900000) return 1.;             /* if (hx <= 2^(-54)) */ (*@ \label
 \endfoot 
 % en fin de derniere page
 \endlastfoot 
-\ref{exp:code:1} & Put the high part of $x$ in $hx$. (cf. prog. \ref{chap0:lst:endian})
+\ref{exp:code:1} & Put the high part of $x$ in $hx$.
 \\
 \ref{exp:code:3} & Remove the sign information within $hx$. It will make tests on special cases simpler.
 \\
@@ -340,7 +340,7 @@ if (k != 0){
   /* r_hi+r_lo =  x - (ln2_hi + ln2_me + ln2_lo)*k */
   rp_hi = x-ln2_hi*k;
   rp_lo =  -ln2_me*k;
-  Fast2SumCond(r_hi, u, rp_hi, rp_lo);         (*@ \label{exp:code:12} @*)
+  Add12Cond(r_hi, u, rp_hi, rp_lo);         (*@ \label{exp:code:12} @*)
   r_lo = u - ln2_lo*k;                         (*@ \label{exp:code:13} @*)
 }else {
   r_hi = x;  r_lo = 0.;                        (*@ \label{exp:code:14} @*)
@@ -374,7 +374,7 @@ By construction:
   $ln2\_hi$ and $ln2\_me$ hold at most $42$ bits of precision
 \end{prop}
 \\
-\ref{exp:code:11} & Put in $k$ the closest integer of $x*inv\_ln2$. We use the property of DOUBLE2INT that convert a floating-point number in rounding to nearest mode (program \ref{chap0:lst:conversion2}, page \pageref{chap0:lst:conversion2}).
+\ref{exp:code:11} & Put in $k$ the closest integer of $x*inv\_ln2$. We use the property of DOUBLE2INT that convert a floating-point number in rounding to nearest mode (program \ref{sec:double2int}, page \pageref{sec:double2int}).
 
 In addition $k$ satisfy the following property :
 \begin{prop}
@@ -407,7 +407,7 @@ $$
 x/2 \leq k \times ln2\_hi \leq 2.x
 $$
 
-By the Sterbenz theorem (theorem \ref{chap0:theo:sterbenz}, page \pageref{chap0:theo:sterbenz}), we have 
+By the Sterbenz theorem (theorem \ref{sec:sterbenz}, page \pageref{sec:sterbenz}), we have 
 $$x \ominus (ln2\_hi \otimes k) = x - (ln2\_hi \otimes k)$$ 
 Combined with property \pref{chap3:exp:prop5} we have :
 \begin{prop}
@@ -415,7 +415,7 @@ Combined with property \pref{chap3:exp:prop5} we have :
   $x \ominus (ln2\_hi \otimes k) = x - (ln2\_hi \times k)$ exactly
 \end{prop}
 
-We use conditional Fast2Sum algorithm (with tests on entries), because $x-ln2\_hi \times k$ can be equal to zero (due to the $58$ bits of cancellation). The conditional Fast2Sum algorithm (program \ref{chap0:lst:fast2sumcond}, page \pageref{chap0:lst:fast2sumcond}) leads to 
+We use conditional Add12 algorithm (with tests on entries), because $x-ln2\_hi \times k$ can be equal to zero (due to the $58$ bits of cancellation). The conditional Add12 algorithm (program \ref{lst:Add12Cond}, page \pageref{lst:Add12Cond}) leads to 
 $$r\_hi + u = (x \ominus ln2\_hi \otimes k) + (- ln2\_me \otimes k)$$
  
 With properties  \pref{chap3:exp:prop5} and \pref{chap3:exp:prop6} we have : 
@@ -542,7 +542,7 @@ index    += bias;
 r_hi     -= index_flt;               (*@ \label{exp:code:24} @*)
 
 /* Results normalization */
-Fast2Sum(rp_hi, rp_lo, r_hi, r_lo)   (*@ \label{exp:code:25} @*)
+Add12(rp_hi, rp_lo, r_hi, r_lo)   (*@ \label{exp:code:25} @*)
 
 /* Table lookup */
 ex_hi = tab_exp[index][0];           (*@ \label{exp:code:26} @*)
@@ -566,7 +566,7 @@ The constant $two\_44\_43 = 2^{44} + 2^{43}$ is used in rounding to nearest mode
 In C language, tables are address with positive index. We consider positive values as well as negative one for $index$, therefore we need to use a bias equal to $178/2 =89$.
 \\
 (\ref{exp:code:23}, \ref{exp:code:24})&
-This sequence of instructions is similar to the one used within DOUBLE2INT (program \ref{chap0:lst:conversion2}, page \pageref{chap0:lst:conversion2}). It puts in $index$ variable, bits of weight $2^0$ to $2^{-8}$, minus the value of the bias. Meanwhile, it puts in $index\_flt$ the floating-point value corresponding to the first $8$ bits of $r\_hi$.
+This sequence of instructions is similar to the one used within DOUBLE2INT (program \ref{sec:double2int}, page \pageref{sec:double2int}). It puts in $index$ variable, bits of weight $2^0$ to $2^{-8}$, minus the value of the bias. Meanwhile, it puts in $index\_flt$ the floating-point value corresponding to the first $8$ bits of $r\_hi$.
 
 In line \ref{exp:code:24} we have :
 \begin{prop}
@@ -576,7 +576,7 @@ In line \ref{exp:code:24} we have :
 
 \\
 \ref{exp:code:25}&
-The Fast2Sum algorithm guarantee :
+The Add12 algorithm guarantee :
 \begin{prop}
   \label{chap3:exp:rphi_rplo}
 $|rp\_hi| \leq 2^{-9}$ ~~and~~ $|rp\_lo| \leq 2^{-63}$, 
@@ -786,24 +786,24 @@ HI(R1) = HI(R1)-0x00100000;                (*@ \label{exp:code:30} @*)
 
 R2 =  P_r * crp_hi;                        (*@ \label{exp:code:31} @*)
 
-Dekker(R3_hi, R3_lo, ex_hi, rp_hi);        (*@ \label{exp:code:32} @*)
+Mul12(R3_hi, R3_lo, ex_hi, rp_hi);        (*@ \label{exp:code:32} @*)
 R4 = ex_hi * rp_lo;                        (*@ \label{exp:code:33} @*)
 
-Dekker(R5_hi, R5_lo, ex_hi, R1);           (*@ \label{exp:code:34} @*)
+Mul12(R5_hi, R5_lo, ex_hi, R1);           (*@ \label{exp:code:34} @*)
 R6 = R4 + (ex_lo * (R1 + rp_hi));          (*@ \label{exp:code:35} @*)
 
 R7  = ex_hi * R2;                          (*@ \label{exp:code:36} @*)
 R7 += (R6 + R5_lo) + (R3_lo + ex_lo);      (*@ \label{exp:code:37} @*)
 
-Fast2Sum(R9, R8, R7, R5_hi);               (*@ \label{exp:code:38} @*)
+Add12(R9, R8, R7, R5_hi);               (*@ \label{exp:code:38} @*)
 
-Fast2Sum(R10, tmp, R3_hi, R9);             (*@ \label{exp:code:39} @*)
+Add12(R10, tmp, R3_hi, R9);             (*@ \label{exp:code:39} @*)
 R8 += tmp;                                 (*@ \label{exp:code:40} @*)
 
-Fast2Sum(R11, tmp, ex_hi, R10);            (*@ \label{exp:code:41} @*)
+Add12(R11, tmp, ex_hi, R10);            (*@ \label{exp:code:41} @*)
 R8 += tmp;                                 (*@ \label{exp:code:42} @*)
 
-Fast2Sum(R11, R8, R11, R8);                (*@ \label{exp:code:43} @*)
+Add12(R11, R8, R11, R8);                (*@ \label{exp:code:43} @*)
 
 \end{lstlisting}
 
@@ -854,8 +854,8 @@ By using properties  \pref{chap3:exp:prop27bis} and \pref{chap3:exp:prop29}
   $R2 = P\_r \times (rp\_hi)^3 .(1 + \epsilon_{-52})$
 \end{prop}\\
 \ref{exp:code:32}&
-By using Dekker algorithm (programme \ref{chap0:lst:Dekker0}, page
-\pageref{chap0:lst:Dekker0}) and properties  \pref{chap3:exp:rphi_rplo} and \pref{chap3:exp:ex_hilo} we have :
+By using Mul12 algorithm (programme \ref{lst:Mul12}, page
+\pageref{lst:Mul12}) and properties  \pref{chap3:exp:rphi_rplo} and \pref{chap3:exp:ex_hilo} we have :
 \begin{prop}
   \label{chap3:exp:prop32}
   $|R3\_hi| \leq 2^{-10}$ and $|R3\_lo| \leq 2^{-64}$,
@@ -871,7 +871,7 @@ By using properties \pref{chap3:exp:rphi_rplo} and \pref{chap3:exp:ex_hilo} :
   $R4 = ex\_hi \times rp\_lo . (1 + \epsilon_{-54})$
 \end{prop}\\
 \ref{exp:code:34}&
-By using Dekker algorithm and properties \pref{chap3:exp:ex_hilo} and \pref{chap3:exp:prop30} we have :
+By using Mul12 algorithm and properties \pref{chap3:exp:ex_hilo} and \pref{chap3:exp:prop30} we have :
 \begin{prop}
   \label{chap3:exp:prop34}
   $|R5\_hi| \leq 2^{-20}$ and $|R5\_lo| \leq 2^{-74} $,
@@ -959,7 +959,7 @@ $
 \\ 
 
 \ref{exp:code:38}&
-Fast2Sum algorithm guarantee :
+Add12 algorithm guarantee :
 \begin{prop}
   \label{chap3:exp:prop38}
   $|R9| \leq 2^{-19}$ and $|R8| \leq 2^{-73}$,
@@ -967,7 +967,7 @@ Fast2Sum algorithm guarantee :
   $R7 + R5\_hi = R9 + R8$ exactly
 \end{prop}\\
 \ref{exp:code:39}&
-Fast2Sum algorithm guarantee :
+Add12 algorithm guarantee :
 \begin{prop}
   \label{chap3:exp:prop39}
   $|R10| \leq 2^{-9}$ and $|tmp| \leq 2^{-63}$,
@@ -984,7 +984,7 @@ By using properties \pref{chap3:exp:prop38} and \pref{chap3:exp:prop39} :
   $R8 = R8 + tmp + \epsilon_{-116}$
 \end{prop}\\
 \ref{exp:code:41}&
-Fast2Sum algorithm guarantee :
+Add12 algorithm guarantee :
 \begin{prop}
   \label{chap3:exp:prop41}
   $|R11| \leq 2^{0}$ and $|tmp| \leq 2^{-54}$,
@@ -1000,7 +1000,7 @@ By using properties \pref{chap3:exp:prop40} and \pref{chap3:exp:prop41} :
   $R8 = R8 + tmp + \epsilon_{-107}$
 \end{prop}\\
 \ref{exp:code:43}&
-Fast2Sum algorithm guarantee :
+Add12 algorithm guarantee :
 \begin{prop}
   \label{chap3:exp:prop43}
   $|R11| \leq 2^{1}$ and $|R8| \leq 2^{-53}$,

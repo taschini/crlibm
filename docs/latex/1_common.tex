@@ -31,7 +31,7 @@ in the IEEE-754 \emph{round to nearest} mode.
 
 \section{Common C procedures  for double-precision numbers\label{section:commonCdouble}}
 
-\subsection{Sterbenz Lemma}
+\subsection{Sterbenz Lemma \label{sec:sterbenz}}
 
 \begin{theorem}[Sterbenz Lemma~\cite{Ste74,Gol91}]
 \label{sterbenz}
@@ -71,7 +71,7 @@ precision number $x$.
 
 
 
-\subsection{Conversion from floating-point to integer}
+\subsection{Conversion from floating-point to integer \label{sec:double2int}}
 
 \begin{theorem}[Conversion floating-point to integer]
   The following algorithm, taken from \cite{AMDoptim2001}, converts a
@@ -123,7 +123,7 @@ numbers represented the sum of two floating-point numbers (or
 
 The algorithms are given as plain C functions, but it may be
 preferable, for performance issue, to implement them as macros, as in
-\texttt{libnultim}.  Sometimes, the code offers both versions,
+\texttt{libnultim}.  The code offers both versions,
 selected by the \texttt{DEKKER\_AS\_FUNCTIONS} constant which is set
 by default to 1 (functions).
 
@@ -259,14 +259,16 @@ is the example code for the Itanium processor.
 
 
 
+
+
 \subsection{Double-double addition {Add22}}
   
 This algorithm, also due to Dekker \cite{Dek71}, computes the sum of
 two double-double numbers as a double-double, with a relative error
 smaller than $2^{-103}$.
 
-\begin{lstlisting}[label={Add22},caption={Add22},firstnumber=1]
-void Add22(double *zh, double *zl, double xh, double xl, double yh, double yl)
+\begin{lstlisting}[label={Add22Cond},caption={Add22Cond},firstnumber=1]
+void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, double yl)
 {
 double r,s;
 
@@ -277,7 +279,21 @@ s = (ABS(xh) > ABS(yh))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);
 }
 \end{lstlisting}
 
-Here ABS is a macro that returns the absolute value of a floating-point number.
+Here ABS is a macro that returns the absolute value of a
+floating-point number. Again, if this test can be resolved at
+compile-time, we get the faster \texttt{Add22} procedure:
+
+\begin{lstlisting}[label={Add22},caption={Add22},firstnumber=1]
+void Add22(double *zh, double *zl, double xh, double xl, double yh, double yl)
+{
+double r,s;
+
+r = xh+yh;
+s = xh-r+yh+yl+xl;
+*zh = r+s;
+*zl = r - (*zh) + s;
+}
+\end{lstlisting}
 
 
 
@@ -286,7 +302,7 @@ Here ABS is a macro that returns the absolute value of a floating-point number.
   
 This algorithm, also due to Dekker \cite{Dek71}, computes the product of
 two double-double numbers as a double-double, with a relative error
-smaller than $2^{-102}$.
+smaller than $2^{-102}$, under the condition $x_h<2^{970}$ and $y_h<2^{970}$ . 
 
 \begin{lstlisting}[label={Mul22},caption={Mul22},firstnumber=1]
 void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl)
@@ -310,11 +326,12 @@ double mh, ml;
 \end{lstlisting}
 
 Note that the bulk of this algorithm is a \texttt{Mul12(mh,ml,xh,yh)}.
+Of course there is a conditional version of this procedure but we have not needed it so far.
 
-Note that our algorithms will sometimes need to multiply a double by a
+Our algorithms will sometimes need to multiply a double by a
 double-double. In this case we use \texttt{Mul22} with one of the
 arguments set to zero, which only performs one useless multiplication
-by zero and one useless addition.
+by zero and one useless addition: a specific procedure is not needed.
 
 
 
@@ -490,8 +507,8 @@ The following test determines whether $y_h$ is the
   /* 64-bit arithmetic */
   absyh.lli = absyh.lli & 0x(*@\texttt{7fffffffffffffff}@*)LL;
   absyl.lli = absyl.lli & 0x(*@\texttt{7fffffffffffffff}@*)LL;
-  u53.lli  = (absyh.lli & 0x(*@\texttt{7fff000000000000}@*)LL) + 0x0001000000000000LL;
-  u.lli    = (absyh.lli & 0x(*@\texttt{7fff000000000000}@*)LL) + (53LL<<52);
+  u53.lli  = (absyh.lli & 0x(*@\texttt{7ff0000000000000}@*)LL) + 0x(*@\texttt{0001000000000000}@*)LL;
+  u.lli    = (absyh.lli & 0x(*@\texttt{7ff0000000000000}@*)LL) - 0x(*@\texttt{035000000000000}@*)0LL;
   /* back to double arithmetic */
   if (absyl.d > (*@$\delta$@*)*u53.d ) {
     /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
@@ -524,23 +541,23 @@ one cannot prove statically that this case doesn't appear, a sensible solution
 is to test for denormals and lauch the accurate phase.
 
 
-\begin{lstlisting}[caption={Rounding up},
-  firstnumber=1]    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
+\begin{lstlisting}[caption={Rounding up}, firstnumber=1]
+    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
     if ( (*@$y_l$@*) > 0.)
        (*@$y_h$@*) += u.d;
     return (*@$y_h$@*);
 \end{lstlisting}
 
-\begin{lstlisting}[caption={Rounding down},
-  firstnumber=1]    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
+\begin{lstlisting}[caption={Rounding down}, firstnumber=1]
+    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
     if ( (*@$y_l$@*) < 0.)
        (*@$y_h$@*) -= u.d;
     return (*@$y_h$@*);
 \end{lstlisting}
 
 
-\begin{lstlisting}[caption={Rounding towards zero},
-  firstnumber=1]    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
+\begin{lstlisting}[caption={Rounding towards zero}, firstnumber=1]
+    /* enough accuracy do round, according to the signs of (*@$y_l$@*) and (*@$y_h$@*) */
     if ( (*@$y_h$@*) < 0.) {
       if ( (*@$y_l$@*) > 0.)
          (*@$y_h$@*) += u.d;
@@ -602,7 +619,7 @@ fields:
   referred to \cite{DefDin2002,DinDef2003}.
 \item[\emph{R.index}] An integer storing the index of the first digit
   in the range of representable numbers, as depicted on
-  Figure~\ref{fig:representation};
+  Figure~\ref{fig:scsrepresentation};
  \item[\emph{R.sign}] A sign information.  
 \end{description}
 
@@ -704,7 +721,7 @@ addition.
 Here also, a rounding error is involved when two $n_r$-digit numbers
 are multiplied if the result is to fit on $n_r$ digits. The actual
 implementation tests if the most significant digit ($z_1$ on
-Figure~\ref{fig:multiplication}) is null, in which case the index of
+Figure~\ref{fig:scsmultiplication}) is null, in which case the index of
 the result is that of $z_2$.
 
 If the whole of the computations of
@@ -765,7 +782,7 @@ arithmetics as follows:
 \begin{itemize}
 \item MP digits are stored as 32-bit numbers where only a few bits are
   reserved for carries. This removes the main problem of the initial
-implementation \cite{Dinechin2002b}, namely its memory inefficiency.
+implementation \cite{DefDin2002}, namely its memory inefficiency.
 
 \item Addition uses 32-bit arithmetic. 
 
@@ -964,14 +981,15 @@ not describe them here, the interested reader is referred to file
 
 
 
-\subsection{Error analysis}
+\subsection{Error analysis for polynomial approximations \label{sec:error_maple}}
+
 
 The error analysis for a function evaluation aims at providing an
 overall relative error of the whole evaluation process, which can then
 be used to test rounding thanks to theorems given in
 \ref{section:testrounding}. Care must be taken that only
 \emph{absolute} error terms can be added, although some error terms
-are best expressed as\emph{relative}, like the the rounding error of
+are best expressed as \emph{relative}, like the the rounding error of
 an IEEE operation, or the minimax approximation error. Remark also
 that the error needed for the theorems in \ref{section:testrounding}
 is a \emph{relative} error. Managing the relative and absolute error
@@ -983,7 +1001,9 @@ Error terms to consider are the following:
 \item approximation errors, typically minimax approximation,
 \item rounding error, which fall into two categories:
   \begin{itemize}
-  \item roundoff errors in  values tabulated as doubles or double-doubles,
+  \item roundoff errors in values tabulated as doubles or
+    double-doubles (with the exception of roundoff errors on the coefficient
+    of a polynomial, which are counted in the appproximation error),
   \item roundoff errors in IEEE-compliant operations.
   \end{itemize}
 \end{itemize}
@@ -991,21 +1011,13 @@ Error terms to consider are the following:
 
 
 
-
-\subsubsection{Error analysis for polynomial approximations}
-
-
-The following Maple procedure gives a bound on the accumulated
-rounding errors in the evaluation of a polynomial returned by the
-previous procedure, assuming all the operations are performed in
-IEEE-754 round to the nearest mode, and assuming $x$ is exact.
-
-Here is an explanation of this computation, for a polynomial of degree 4.
-
-
- We note 
+Here is how we compute bounds on the absolute and relative errors. Let
+us take the example of a polynomial of degree 4. We note 
 \begin{itemize}
 \item $P$ the polynomial, $d$ its degree
+\item $p$ the relative precision of an atomic $+$ or $\times$. It
+  can change during a Horner evaluation, typically if the evaluation
+  begins in double-precision ($p=53$) and ends in double-double ($p=103$).
 \item $c_j$ the coefficient of $P$ of degree $j$
 \item $S_j(x)$ the intermediate polynomial in the Horner evaluation:
   $S_d=c_d$ and $S_j(x) = c_j+xS_{j+1}$ for $1\le j <d$
@@ -1024,20 +1036,20 @@ Given $ |x| \leq \maxx$, we have
 \begin{align*}
   s_4 & \ = \ c_4\\
   \maxs{4} & \ = \  |c_4|\\
-  p_3 & \ = \  x \otimes s_4 \ = \  x c_4 + \epsilon_{-53} x c_4 \\
-      & \ = \  xc_4 + \epsilon_3 \quad \mathrm{with} \quad |\epsilon_3| \le \delta_3 = 2^{-53}\maxx \maxs{4}\\
-  s_3 & \ = \  c_3 \oplus p_3 \ = \  c_3 + p_3 + \epsilon_{-53}(c_3 + p_3) \\
-      & \ = \  c_3 +  xc_4 + \epsilon_3 + \epsilon_{-53}(c_3 + xc_4 + \epsilon_3) \\
+  p_3 & \ = \  x \otimes s_4 \ = \  x c_4 + \epsilon_{-p} x c_4 \\
+      & \ = \  xc_4 + \epsilon_3 \quad \mathrm{with} \quad |\epsilon_3| \le \delta_3 = 2^{-p}\maxx \maxs{4}\\
+  s_3 & \ = \  c_3 \oplus p_3 \ = \  c_3 + p_3 + \epsilon_{-p}(c_3 + p_3) \\
+      & \ = \  c_3 +  xc_4 + \epsilon_3 + \epsilon_{-p}(c_3 + xc_4 + \epsilon_3) \\
       & \ = \  c_3 +  xc_4 + \epsilon'_3  
       \quad \mathrm{with} |\epsilon'_3| \le \delta'_3\\
-  \delta'_3 & \ =\  \delta_3 + 2^{-53}(\infnorm{c_3 + xc_4} + \delta_3)\  =\  \delta_3 + 2^{-53}(\infnorm{S_3} + \delta_3)\\
+  \delta'_3 & \ =\  \delta_3 + 2^{-p}(\infnorm{c_3 + xc_4} + \delta_3)\  =\  \delta_3 + 2^{-p}(\infnorm{S_3} + \delta_3)\\
   \maxs{3} & \ = \  \infnorm{c_3 + xc_4} + \delta'_3 \ = \  \infnorm{S_3} + \delta'_3\\
-  p_2 & \ = \  x \otimes s_3 \ = \  x s_3 + \epsilon_{-53} x s_3 \\
-      & \ = \  x(c_3 +  xc_4 + \epsilon'_3) + \epsilon_{-53} x s_3\\
-      & \ = \  x(c_3 +  xc_4) + x\epsilon'_3 + \epsilon_{-53} x s_3\\
+  p_2 & \ = \  x \otimes s_3 \ = \  x s_3 + \epsilon_{-p} x s_3 \\
+      & \ = \  x(c_3 +  xc_4 + \epsilon'_3) + \epsilon_{-p} x s_3\\
+      & \ = \  x(c_3 +  xc_4) + x\epsilon'_3 + \epsilon_{-p} x s_3\\
       & \ = \  x(c_3 +  xc_4) +  \epsilon_3 \quad \mathrm{with} \quad 
       |\epsilon_2| \le \delta_2\\
-  \delta_2 & \ =\ \maxx\delta'_3 + 2^{-53} \maxx \maxs{3}\\
+  \delta_2 & \ =\ \maxx\delta'_3 + 2^{-p} \maxx \maxs{3}\\
 ...\\
 \end{align*}
 
@@ -1048,9 +1060,9 @@ Or, in a generic way,
 s_d & \ = \ c_d\\
 \maxs{d} & \ = \  |c_d|\\
 p_{k}  & \ = \  x \otimes s_{k+1} \ = \ xS_{k+1}(x) + \epsilon_{k+1}         \quad \mathrm{with} \quad  |\epsilon_{k+1}| \le \delta_{k}\\
-\delta_k & \ =\ \maxx\delta'_{k+1} + 2^{-53} \maxx \maxs{k+1}\\
+\delta_k & \ =\ \maxx\delta'_{k+1} + 2^{-p} \maxx \maxs{k+1}\\
 s_{k}  & \ = \  c_k \oplus p_k \  = \  S_{k}(x) + \epsilon'_k      \quad \mathrm{with} |\epsilon'_k| \le \delta'_k\\
-\delta'_k & \ =\  \delta_k + 2^{-53}(\infnorm{S_{k+1}} + \delta_{k})\\
+\delta'_k & \ =\  \delta_k + 2^{-p}(\infnorm{S_{k+1}} + \delta_{k})\\
 \maxs{k} & \ = \   \infnorm{S_k} + \delta'_k\\
 \end{align*}
 
@@ -1082,12 +1094,10 @@ with $\mins{1}  =|c_1| - \maxx . \maxs{2}$
 (again, provided $\maxx$ is sufficiently small). Finally a bound on the relative error in this case is:
 $$\rho = \frac{2^{-p}(1+\maxs{1})}{\mins{1}} $$
 
-
- 
 \end{itemize}
 
 
-The following  Maple procedures implement these inequations.
+The following  Maple procedures implement these computations.
 
 Procedure \texttt{compute\_abs\_rounding\_error} computes a bound on
 the accumulated rounding error caused by the Horner evaluation of a
