@@ -137,6 +137,10 @@ double mh, ml;
 }
 
 
+/*
+ * computes double-double division: pzh+pzl = (xh+xl) /  (yh+yl)
+ * relative error is smaller than 2^-104
+ */
 
 void Div22(double* pzh, double* pzl, double xh, double xl, double yh, double yl){
   double _ch,_cl,_uh,_ul;  
