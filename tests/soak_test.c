@@ -77,7 +77,7 @@ void test_all() {
     res_libm.d = testfun_libm(input.d);
 
 #ifdef HAVE_MATHLIB_H
-    if(mpfr_rnd_mode==GMP_RNDN)
+    if(mpfr_rnd_mode==GMP_RNDN && testfun_ibm != NULL) /* not all the functions are in libultim */
       res_ibm.d = testfun_ibm(input.d);
 #endif
     mpfr_set_d(mp_inpt, input.d, GMP_RNDN);
@@ -114,7 +114,7 @@ void test_all() {
 	    || (res_libm.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) ) failures_libm++;
 	  
 #ifdef HAVE_MATHLIB_H
-	if(mpfr_rnd_mode==0
+	if(mpfr_rnd_mode==0  && testfun_ibm != NULL 
 	   && ((res_ibm.i[LO_ENDIAN] != res_mpfr.i[LO_ENDIAN]) 
 	       || (res_ibm.i[HI_ENDIAN] != res_mpfr.i[HI_ENDIAN]) )) 
 	  {
