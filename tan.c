@@ -191,4 +191,37 @@ double scs_tan_ru(double x){
   return resd;
 }
 
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TOWARD  ZERO
+ *************************************************************
+ *************************************************************/
+double scs_tan_rz(double x){  
+  scs_t sc1, sc2;
+  double resd;
+  int N;
+
+  scs_set_d(sc1, x);
+  N = rem_pio2_scs(sc2, sc1); 	/* x is in [-Pi/4,Pi/4] */ 
+  N = N & 0x0000001;		/* extract the 2 last bits of  N */
+
+    switch (N){
+    case 0:
+	scs_tan(sc2);
+	scs_get_d_zero(&resd, sc2);
+	return resd;
+   	break;
+    case 1:
+	scs_tan(sc2);
+	scs_inv(sc2, sc2);
+	scs_get_d_zero(&resd, sc2);
+	return -(resd);
+	break;
+    default:
+    fprintf(stderr,"ERREUR: %d is not a valid value in su_tan \n", N);
+    exit(1);
+    }
+  return resd;
+}
+
 
