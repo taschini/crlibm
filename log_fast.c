@@ -13,9 +13,7 @@
 #include "log_fast.h"
 
 /* The prototypes of the second step */
-extern double scs_log_rn(db_number, int);
-extern double scs_log_ru(db_number, int);
-extern double scs_log_rd(db_number, int);
+extern void scs_log(scs_ptr,db_number, int);
 
 
 
@@ -182,21 +180,16 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
   /* Test for rounding to the nearest */
   if(res_hi == (res_hi + (res_lo * roundcst)))
     return res_hi;
-  else { 
+  else {
+    scs_t res;
 #if DEBUG
-    printf("Going for Accurate Phase");
+    printf("Going for Accurate Phase for x=%1.50e\n",x);
 #endif
-    return scs_log_rn(y, E);    
+    scs_log(res, y, E);
+    scs_get_d(&res_hi, res);
+    return res_hi;
   }
  }
-
-
-
-
-
-
-
-
 
 
 
@@ -259,11 +252,14 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
      if(res_lo<0.)
        res_hi -= u.d;
     return res_hi;
-  }else{
+  }else {
+    scs_t res;
 #if DEBUG
     printf("Going for Accurate Phase");
 #endif
-    return scs_log_rd(y, E);
+    scs_log(res, y, E);
+    scs_get_d_minf(&res_hi, res);
+    return res_hi;
   }
 }
 
@@ -321,13 +317,29 @@ double log_ru(double x){
    if(absyl.d > roundcst*u53.d){ 
      if(res_lo>0.)    res_hi += u.d;
      return res_hi;
-   }
-   else {
+   }else {
+     scs_t res;
 #if DEBUG
      printf("Going for Accurate Phase");
 #endif
-     return scs_log_ru(y, E);
+     scs_log(res, y, E);
+     scs_get_d_pinf(&res_hi, res);
+     return res_hi;
    }
-   
 }
 
+
+
+
+
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TOWARD  ZERO		     *
+ *************************************************************
+ *************************************************************/
+double log_rz(double x){ 
+  if(x>1)
+    return log_rd(x);
+  else
+    return log_ru(x);
+}

@@ -73,6 +73,7 @@ extern double exp2_ru(double); /* toward +inf */
 extern double log_rn(double); /* to nearest  */
 extern double log_rd(double); /* toward -inf */ 
 extern double log_ru(double); /* toward +inf */ 
+extern double log_rz(double); /* toward zero */ 
 
 extern double log2_rn(double); /* to nearest  */
 extern double log2_rd(double); /* toward -inf */ 

@@ -55,15 +55,12 @@
  */
 
 
-/*************************************************************
- *************************************************************
- *               ROUNDED  TO NEAREST			     *
- *************************************************************
- *************************************************************/
-double scs_log_rn(db_number y, int E){ 
+
+
+void scs_log(scs_ptr res, db_number y, int E){ 
   scs_t R, sc_ln2_times_E, res1, addi;
   scs_ptr ti, inv_wi;
-  db_number z, wi, resd;
+  db_number z, wi;
   int i;
 
 
@@ -104,161 +101,20 @@ double scs_log_rn(db_number y, int E){
   }
 
   if(E==0){
-   scs_add(res1, res1, ti);
+    scs_add(res, res1, ti);
   }else{
-  /* sc_ln2_times_E = E*log(2)  */
-  scs_set(sc_ln2_times_E, sc_ln2_ptr);
+    /* sc_ln2_times_E = E*log(2)  */
+    scs_set(sc_ln2_times_E, sc_ln2_ptr);
 
-  if (E >= 0){
-    scs_mul_ui(sc_ln2_times_E, (unsigned int) E);
-     }else{
-    scs_mul_ui(sc_ln2_times_E, (unsigned int) -E);
-    sc_ln2_times_E->sign = -1;
+    if (E >= 0){
+      scs_mul_ui(sc_ln2_times_E, (unsigned int) E);
+    }else{
+      scs_mul_ui(sc_ln2_times_E, (unsigned int) -E);
+      sc_ln2_times_E->sign = -1;
+    }
+    scs_add(addi, res1, ti);
+    scs_add(res, addi, sc_ln2_times_E); 
   }
-  scs_add(addi, res1, ti);
-  scs_add(res1, addi, sc_ln2_times_E); 
-  }
-  scs_get_d(&resd.d, res1);
-  return resd.d;
 }
 /*  */
 
-
-
-
-
-/*************************************************************
- *************************************************************
- *               ROUNDED  TOWARD  -INFINITY		     *
- *************************************************************
- *************************************************************/
-double scs_log_rd(db_number y, int E){ 
-  scs_t R, sc_ln2_times_E, res1, addi;
-  scs_ptr ti, inv_wi;
-  db_number z, wi, resd;
-  int i;
-
-  /* to normalize y.d and round to nearest      */
-  /* + (1-trunc(sqrt(2.)/2 * 2^(4))*2^(-4) )+2.^(-(4+1))*/ 
-  z.d = y.d + norm_number.d; 
-  i = (z.i[HI_ENDIAN] & 0x000fffff);
-  i = i >> 16; /* 0<= i <=11 */
-  
-
-  wi.d = (11+i)*(double)0.6250e-1;
-
-  /* (1+f-w_i) */
-  y.d -= wi.d; 
-
-
-  /* Table reduction */
-  ti     = table_ti_ptr[i]; 
-  inv_wi = table_inv_wi_ptr[i];
-
- 
-  /* R = (1+f-w_i)/w_i */
-  scs_set_d(R, y.d);
-  scs_mul(R, R, inv_wi);
- 
-
- 
-  /*
-   * Polynomial evaluation of log(1 + R) with an error less than 2^(-130)
-   */
-  scs_mul(res1, constant_poly_ptr[0], R);
-  for(i=1; i<20; i++){
-    scs_add(res1, constant_poly_ptr[i], res1);
-    scs_mul(res1, res1, R);
-  }
-   
-  if (E==0){
-    scs_add(res1, res1, ti);  
-  }else{  
-   /* sc_ln2_times_E = E*log(2)  */
-  scs_set(sc_ln2_times_E, sc_ln2_ptr);
-
-  if (E >= 0){
-    scs_mul_ui(sc_ln2_times_E, (unsigned int) E);
-  }else{
-    scs_mul_ui(sc_ln2_times_E, (unsigned int) -E);
-    sc_ln2_times_E->sign = -1;
-  }
-  scs_add(addi, res1, ti);
-  scs_add(res1, addi, sc_ln2_times_E);  
-  }
-  
-  scs_get_d_minf(&resd.d, res1);  
-  return resd.d;
-}
-
-
-
-
-
-
-
-/*************************************************************
- *************************************************************
- *               ROUNDED  TOWARD  +INFINITY		     *
- *************************************************************
- *************************************************************/
-double scs_log_ru(db_number y, int E){ 
-  scs_t R, sc_ln2_times_E, res1, addi;
-  scs_ptr ti, inv_wi;
-  db_number z, wi, resd;
-  int i;
-
-  /* to normalize y.d and round to nearest      */
-  /* + (1-trunc(sqrt(2.)/2 * 2^(4))*2^(-4) )+2.^(-(4+1))*/ 
-  z.d = y.d + norm_number.d; 
-  i = (z.i[HI_ENDIAN] & 0x000fffff);
-  i = i >> 16; /* 0<= i <=11 */
-  
-
-  wi.d = (11+i)*(double)0.6250e-1;
-
-  /* (1+f-w_i) */
-  y.d -= wi.d; 
-
-
-  /* Table reduction */
-  ti     = table_ti_ptr[i]; 
-  inv_wi = table_inv_wi_ptr[i];
-
- 
-  /* R = (1+f-w_i)/w_i */
-  scs_set_d(R, y.d);
-  scs_mul(R, R, inv_wi);
- 
-
- 
-  /*
-   * Polynomial evaluation of log(1 + R) with an error less than 2^(-130)
-   */
-  scs_mul(res1, constant_poly_ptr[0], R);
-  for(i=1; i<20; i++){
-    scs_add(res1, constant_poly_ptr[i], res1);
-    scs_mul(res1, res1, R);
-  }
-
-  if (E==0){
-  scs_add(res1, res1, ti);
-  }else{
-  
-   /* sc_ln2_times_E = E*log(2)  */
-   scs_set(sc_ln2_times_E, sc_ln2_ptr);
-
-  if (E > 0){
-     scs_mul_ui(sc_ln2_times_E, (unsigned int) E);
-  }else if (E < 0){
-    scs_mul_ui(sc_ln2_times_E, (unsigned int) -E);
-    sc_ln2_times_E->sign = -1;
-  }
-
-  scs_add(addi, res1, ti);
-  scs_add(res1, addi, sc_ln2_times_E);  
-  }
-
-  scs_get_d_pinf(&resd.d, res1);  
-  return resd.d;
-}

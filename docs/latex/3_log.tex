@@ -178,7 +178,9 @@ value of the rounding constant $e= 1 +  \dfrac{1}{(2^{k}-1)(1-2^{-53})}$
 
 Here $k$ is the parameter of a compromise between the percentage of
 calls going through the fast path, and the percentage of calls to the
-fast path which will launch the accurate step.
+fast path which will launch the accurate step. Currently the only
+value yielding a performance improvement is the greatest possible,
+$k=9$.
 
 Note that a three-path optimization is possible, with an intermediate
 accuracy where only one step is performed in double-double. It is
