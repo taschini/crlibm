@@ -65,7 +65,7 @@ void scs_log(scs_ptr res, db_number y, int E){
 
 
 #if EVAL_PERF
-	crlibm_second_step_taken++;
+  crlibm_second_step_taken++;
 #endif
 
 
@@ -75,7 +75,7 @@ void scs_log(scs_ptr res, db_number y, int E){
   i = (z.i[HI_ENDIAN] & 0x000fffff);
   i = i >> 16; /* 0<= i <=11 */
   
-
+  
   wi.d = ((double)(11+i))*0.0625;
 
   /* (1+f-w_i) */
@@ -116,5 +116,4 @@ void scs_log(scs_ptr res, db_number y, int E){
     scs_add(res, addi, sc_ln2_times_E); 
   }
 }
-/*  */
 
