@@ -37,6 +37,7 @@ EXTRA_DIST = VERSION\
 	maple/common-procedures.mpl \
 	maple/log.mpl maple/trigo.mpl maple/atan.mpl maple/csh.mpl \
 	maple/trigoSinCosCase3.gappa \
+	maple/trigoTanCase2.gappa \
 	docs/crlibm.pdf \
 	docs/latex/crlibm.tex \
 	docs/latex/0_intro.tex docs/latex/0_getting-started.tex\
