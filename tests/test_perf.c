@@ -111,7 +111,7 @@ int main (int argc, char *argv[])
     libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc,
     crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc,
     mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc,
-    ibm_dtmin, ibm_dtmax, ibm_dtsum, ibm_dtwc,
+    ibm_dtmin, ibm_dtmax, ibm_dtsum, ibm_dtwc, tbx_time,
     dtsum, min_dtsum;
   unsigned long seed = 42;
   int output_latex=0;
@@ -244,6 +244,10 @@ mp_rnd_t mpfr_rnd_mode;
 
   /* take the min of N1 identical calls to leverage interruptions */
   /* As a consequence, the cache impact of these calls disappear...*/
+  
+  TBX_GET_TICK(t1);
+  TBX_GET_TICK(t2);
+  tbx_time = TBX_TICK_RAW_DIFF(t1, t2);
 
   for(i=0; i< n; i++){ 
     input = randfun();
@@ -256,10 +260,10 @@ mp_rnd_t mpfr_rnd_mode;
 #ifdef CRLIBM_TYPECPU_POWERPC
       for(k=0; k<50;k++)
 #endif
-	result = testfun_libm(input);
+        result = testfun_libm(input);
       TBX_GET_TICK(t2);
-      dt = TBX_TICK_RAW_DIFF(t1, t2); 
-      if (dt<dtmin)  dtmin=dt;
+      dt = TBX_TICK_RAW_DIFF(t1, t2);
+      if (dt<dtmin)  dtmin=dt-tbx_time;
     }
     libm_dtsum+=dtmin;
     if (dtmin<libm_dtmin)  libm_dtmin=dtmin;
@@ -280,7 +284,7 @@ mp_rnd_t mpfr_rnd_mode;
 	result = testfun_crlibm(input);
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
-      if (dt<dtmin)  dtmin=dt;
+      if (dt<dtmin)  dtmin=dt-tbx_time;
     }
     crlibm_dtsum+=dtmin;
     if (dtmin<crlibm_dtmin)  crlibm_dtmin=dtmin;
@@ -308,7 +312,7 @@ mp_rnd_t mpfr_rnd_mode;
 #endif
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
-      if (dt<dtmin)  dtmin=dt;
+      if (dt<dtmin)  dtmin=dt-tbx_time;
     }
     mpfr_dtsum+=dtmin;
     if (dtmin<mpfr_dtmin)  mpfr_dtmin=dtmin;
@@ -330,7 +334,7 @@ mp_rnd_t mpfr_rnd_mode;
       result = testfun_ibm(input);
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
-      if (dt<dtmin)  dtmin=dt;
+      if (dt<dtmin)  dtmin=dt-tbx_time;
     }
     Exit_Lib(Original_Mode);
     ibm_dtsum+=dtmin;
@@ -363,7 +367,7 @@ mp_rnd_t mpfr_rnd_mode;
     result = testfun_libm(input);
     TBX_GET_TICK(t2);
     dt = TBX_TICK_RAW_DIFF(t1, t2); 
-    if (dt<dtmin)  dtmin=dt;
+    if (dt<dtmin)  dtmin=dt-tbx_time;
   }
   libm_dtwc = dtmin;
   /* crlibm timing */
@@ -376,7 +380,7 @@ mp_rnd_t mpfr_rnd_mode;
     result = testfun_crlibm(input);
     TBX_GET_TICK(t2);
     dt = TBX_TICK_RAW_DIFF(t1, t2); 
-    if (dt<dtmin)  dtmin=dt;
+    if (dt<dtmin)  dtmin=dt-tbx_time;
   }
   crlibm_dtwc = dtmin;
 
@@ -396,7 +400,7 @@ mp_rnd_t mpfr_rnd_mode;
 #endif
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
-      if (dt<dtmin)  dtmin=dt;
+      if (dt<dtmin)  dtmin=dt-tbx_time;
     }
     mpfr_dtwc = dtmin;
 #endif /*HAVE_MPFR_H*/
@@ -412,7 +416,7 @@ mp_rnd_t mpfr_rnd_mode;
       result = testfun_ibm(input);
       TBX_GET_TICK(t2);
       dt = TBX_TICK_RAW_DIFF(t1, t2); 
-      if (dt<dtmin)  dtmin=dt;
+      if (dt<dtmin)  dtmin=dt-tbx_time;
     }
     Exit_Lib(Original_Mode);
     ibm_dtwc = dtmin;
