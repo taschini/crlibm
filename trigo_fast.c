@@ -320,7 +320,7 @@ double sin_rn(double x){
     if (quadrant&1)  do_cos_ffast(&sh, &sl, rxh, rxl, sx, cx);
     else             do_sin_ffast(&sh, &sl, rxh, rxl, sx, cx);
     if (sh == (sh + (sl * RN_CST_SINFAST2))){	
-      return (quadrant>=2)? -sh : sh;
+	return ((quadrant==2)||(quadrant==3))? -sh : sh;
     }else{  
 #if DEBUG
       printf("CASE 3bis\n");
@@ -329,7 +329,7 @@ double sin_rn(double x){
       else             do_sin_fast(&sh, &sl, rxh, rxl, sx, cx);
 
       if (sh == (sh + (sl * RN_CST_SINFAST3)))	
-	return (quadrant>=2)? -sh : sh;
+	return ((quadrant==2)||(quadrant==3))? -sh : sh;
       else
 	return scs_sin_rn(x); 
     }
@@ -356,7 +356,7 @@ double sin_rn(double x){
 
   
   if(sh == (sh + (sl * 1.0004))){	
-    return (quadrant>=2)? -sh : sh;
+    return ((quadrant==2)||(quadrant==3))? -sh : sh;
   }else{
     return scs_sin_rn(x); 
   } 

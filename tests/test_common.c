@@ -137,9 +137,9 @@ double rand_for_trig(){
   result.i[LO_ENDIAN]=rand_int();
   /* then the high bits of the mantissa, and the sign bit */
   result.i[HI_ENDIAN]=  rand_int() & 0x800fffff;
-  /* Now set the exponent  between -20 and 20 */
-  e =  (int) ( (rand_double_normal()-1) * 40 ); 
-  result.i[HI_ENDIAN] += (1023 + e - 20)<<20;
+  /* Now set the exponent  between -30 and 30 */
+  e =  (int) ( (rand_double_normal()-1) * 60 ); 
+  result.i[HI_ENDIAN] += (1023 + e - 30)<<20;
   return result.d;
 
 }
