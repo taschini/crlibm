@@ -339,9 +339,8 @@ by zero and one useless addition: a specific procedure is not needed.
 
 \subsection{Multiplication of a double-double by an integer}
 
-TODO better
 
-Cody and Waite algorithm, used in the $\log$ and in the trigonometric
+Use Cody and Waite algorithm. See for instance  the $\log$ and the trigonometric
 argument reduction.
 
 
@@ -385,25 +384,25 @@ recursion:
   double-double, or an SCS operation.
 
 
-  
-  For fast and accurate function evaluation, we try to have
-  $|x|<\maxx$ where $\maxx$ is small with respect to the coefficients.
-  In this case the error in one step is scaled down for the next step
-  by the multiplication by $x$, allowing for an accumulated overall
-  error which is actually close to that of the last operation.
+  For fast and accurate function evaluation, we try to have $\maxx$
+  small with respect to the coefficients.  In this case the error in
+  one step is scaled down for the next step by the multiplication by
+  $x$, allowing for an accumulated overall error which is actually
+  close to that of the last operation. 
 
   
   
 In addition we note 
 \begin{itemize}
-
+  
 \item $\delta_\oplus$ and $\delta_\otimes$ the absolute error when
   performing an atomic $\oplus$ or $\otimes$, and $\epsilon_\oplus$
   and $\epsilon_\otimes$ the corresponding relative error (we use
   whichever allows the finer error analysis, as detailed below).  It
   can change during a Horner evaluation, typically if the evaluation
-  begins in double-precision ($\maxeps_\oplus=\maxeps_\otimes=53$) and ends in double-double
-  ($\maxeps_\oplus=\maxeps_\otimes=102$).
+  begins in double-precision
+  ($\maxeps_\oplus=\maxeps_\otimes=2^{-53}$) and ends in double-double
+  ($\maxeps_\oplus=\maxeps_\otimes=2^{-102}$).
 
 \item $c_j$ the coefficient of $P$ of degree $j$, considered exactly
   representable (if $c_j$ is an approximation to some exact value
@@ -425,18 +424,19 @@ In addition we note
   double-double arithmetic on $x_h+x_l$, the error will be improved to
   $\maxeps_x=\maxeps$.
   
-\item $p_j = x \otimes s_j $  the result of a multiplication step in
-  the Horner scheme. We recursively evaluate its error $\maxeps'_j$
-  with respect to the exact mathematical value $P_j(\hat{x})=xS_{j+1}(\hat{x})$.
+\item $p_k = x \otimes s_k $ the result of a multiplication step in
+  the Horner scheme. We recursively evaluate its relative and absolute
+  error $\maxeps^\times_j$ and $\maxdelta^\times_j$ with respect to
+  the exact mathematical value $P_j(\hat{x})=xS_{j+1}(\hat{x})$.
 
-\item $s_j = c_j \oplus p_{j+1}$ (with $s_d = c_d$)  the result of
-  an addition step in the Horner scheme. We recursively evaluate its
-  error $\maxeps_j$ with respect to the exact mathematical value $S_j(\hat{x})$.
+\item $s_k = c_k \oplus p_{k+1}$ (with $s_d = c_d$)  the result of
+  an addition step in the Horner scheme. We recursively evaluate its absolute
+  error $\maxeps^+_j$ with respect to the exact mathematical value $S_k(\hat{x})$.
 
-\item $\maxs{j}$ the  maximum value that $s_j$ may take for $|x|
+\item $\maxs{k}$ the  maximum value that $s_k$ may take for $|x|
   \le \maxx$.
 
-\item $\infnorm{S_j}$ the infinite norm of $S_j$ for $|x| \leq \maxx$.
+\item $\infnorm{S_k}$ the infinite norm of $S_k$ for $|x| \leq \maxx$.
 
 \end{itemize}
 
@@ -444,15 +444,15 @@ Given $ |x| \leq \maxx$, we want to compute by recurrence
   $$ \left\{
     \begin{array}{rl}
       p_{k}  &= x \otimes s_{k+1}
-             \ = \ \hat{x}.S_{k+1}(\hat{x}) (1+\epsilon'_k)\\
+             \ = \ \hat{x}S_{k+1}(\hat{x}) (1+\maxeps^\times_k)\\
       s_{k}  &=  c_k \oplus p_k
-             \ = \ S_{k}(\hat{x}) + \delta_k\\
+             \ = \ S_{k}(\hat{x}) + \maxdelta^+_k\\
       \end{array}
   \right.
   $$
 
 
-The following computes tight bounds on $\epsilon'_k$ and on $\delta_k$.
+The following computes tight bounds on $\epsilon^\times_k$ and on $\delta^+_k$.
 
 \begin{itemize}
 \item Initialization/degree 0 polynomial: 
@@ -460,7 +460,7 @@ The following computes tight bounds on $\epsilon'_k$ and on $\delta_k$.
     \begin{array}{rl}
       s_d & \ = \ c_d\\
       \maxs{d} & \ = \ \mins{d} \ = \ |c_d|\\
-      \maxeps_d &\ = \ 0\\
+      \maxeps^+_d &\ = \ 0\\
     \end{array}
   \right.
   $$
@@ -468,19 +468,19 @@ The following computes tight bounds on $\epsilon'_k$ and on $\delta_k$.
 
 \item Horner steps: 
   \begin{itemize}
-  \item multiplication step:%  $p_{k}  \ = \ x \otimes s_{k+1} \ = \ P_{k}(\hat{x})(1+\epsilon'_k)$
+  \item multiplication step:%  $p_{k}  \ = \ x \otimes s_{k+1} \ = \ P_{k}(\hat{x})(1+\epsilon^\times_k)$
     \begin{eqnarray*}
       p_{k}  &=& x \otimes s_{k+1} \\
-             &=& \hat{x}(1+\epsilon_x)\ \otimes \ (S_{k+1}(\hat{x}) + \delta_{k+1})\\
-             &=& \hat{x}.S_{k+1}(\hat{x})(1+\epsilon_x)(1 + \frac{\delta_{k+1}}{S_{k+1}(\hat{x})})(1+\epsilon_\otimes)\\
+             &=& \hat{x}(1+\epsilon_x)\ \otimes \ (S_{k+1}(\hat{x}) + \delta^+_{k+1})\\
+             &=& \hat{x} S_{k+1}(\hat{x})(1+\epsilon_x)(1 + \frac{\delta^+_{k+1}}{S_{k+1}(\hat{x})})(1+\epsilon_\otimes)\\
     \end{eqnarray*}
     We therefore get 
     \begin{equation}
-      p_{k} \ = \ P_{k}(\hat{x})(1+\epsilon'_k)\label{eq:pk}
+      p_{k} \ = \ P_{k}(\hat{x})(1+\epsilon^\times_k)\label{eq:pk}
     \end{equation}
     with 
     \begin{equation}
-      \maxeps'_k \ = \ (1+\maxeps_x)(1 + \maxeps_{k+1})(1+\maxeps_\otimes) - 1 \label{eq:maxepsp}
+      \maxeps^\times_k \ = \ (1+\maxeps_x)(1 + \maxeps^+_{k+1})(1+\maxeps_\otimes) - 1 \label{eq:maxepsp}
     \end{equation}
     Here we will take $\maxeps'_\otimes = 2^{-53}$ or
     $\maxeps'_\otimes = 2^{-102}$ or $\maxeps'_\otimes = 2^{-205}$
@@ -490,32 +490,31 @@ The following computes tight bounds on $\epsilon'_k$ and on $\delta_k$.
       \begin{eqnarray*}
         s_{k} &=&  c_k \oplus p_k \\
               &=& c_k + p_k + \delta_\oplus\\
-              &=&  c_k + P_k(\hat{x})(1+\epsilon'_k) + \delta_\oplus\\
-              &=&  c_k + P_k(\hat{x}) + \epsilon'_k P_k(\hat{x})  + \delta_\oplus\\
-              &=&  S_{k}(\hat{x})\  +\  \epsilon'_k P_k(\hat{x}) +  \delta_\oplus \\
+              &=&  c_k + P_k(\hat{x})(1+\epsilon^\times_k) + \delta_\oplus\\
+              &=&  c_k + P_k(\hat{x}) + \epsilon^\times_k P_k(\hat{x})  + \delta_\oplus\\
+              &=&  S_{k}(\hat{x})\  +\  \epsilon^\times_k P_k(\hat{x}) +  \delta_\oplus \\
       \end{eqnarray*}
 
     We therefore get 
       \begin{equation}
-        s_{k} \ = \  S_{k}(\hat{x}) + \delta_k \label{eq:sk}
+        s_{k} \ = \  S_{k}(\hat{x}) + \delta^+_k \label{eq:sk}
       \end{equation}
       
       \begin{equation}
-        \maxdelta_k  \ = \  \maxeps'_k\infnorm{P_{k}} + \maxdelta_\oplus\label{eq:maxdelta}
+        \maxdelta^+_k  \ = \  \maxeps^\times_k\infnorm{P_{k}} + \maxdelta_\oplus\label{eq:maxdelta}
       \end{equation}
       
       Here $\maxdelta_\oplus$ will be computed for double-precision operations as 
-      $$\maxdelta_\oplus = \frac{1}{2}\ulp(S_k(\hat{x}) + \epsilon'_k
-      P_k(\hat{x}))\quad .$$
+      $$\maxdelta_\oplus = \frac{1}{2}\ulp(\infnorm{S_{k}} + \maxeps^\times_k\infnorm{P_{k}})\quad .$$
       For double-double or SCS operations, $\maxdelta_\oplus$ will be computed as
-      $$\maxdelta_\oplus=2^{-\nu}(\infnorm{S_{k}} + \maxeps'_k\infnorm{P_{k}})$$
+      $$\maxdelta_\oplus=2^{-\nu}(\infnorm{S_{k}} + \maxeps^\times_k\infnorm{P_{k}})$$
       with $\nu=102$ and $\nu=205$ respectively.
     \end{itemize}
   \end{itemize}
   
 
   To compute a  relative error out of the absolute error
-  $\maxdelta_0$, there are two cases to consider.
+  $\maxdelta^+_0$, there are two cases to consider.
 \begin{itemize}
 \item If $c_0\ne 0$, for small values of $x$, a good bound on the
   overall relative error is to divide $\delta_0$ by the minimum of
@@ -525,7 +524,7 @@ The following computes tight bounds on $\epsilon'_k$ and on $\delta_k$.
   where $\maxs{1}=\infnorm{S_1} + \delta_1$.
   An upper bound on the total
   relative error is then
-  $$\rho = \frac{\delta_0}{|c_0| - \maxx . \maxs{1}}$$
+  $$\rho = \frac{\delta^+_0}{|c_0| - \maxx . \maxs{1}}$$
   
   When computing on double-precision numbers we want the error bound
   to be as tight as possible, as it directly impacts the performance
@@ -535,11 +534,10 @@ The following computes tight bounds on $\epsilon'_k$ and on $\delta_k$.
   the tightest possible. If it is not the case (which is unlikely, as
   $p_k$ is small w.r.t $c_k$), then the $\ulp$ above may take two
   different values. We divide the interval of $p_k$ into two
-  sub-intervals, and we compute $\delta_k$, $\mins{0}$ and $\rho$ on
+  sub-intervals, and we compute $\delta^+_k$, $\mins{0}$ and $\rho$ on
   both to take the max.
   
-  TODO : check and implement this.
-
+\emph{This is currently not implemented.}
 
 \item If $c_0=0$, then the last addition is exact in double as well as
   double-double, and an efficient implementation will skip it anyway.
