@@ -41,15 +41,9 @@ yl = Ydd - yh;
 # should eventually) be generated automatically from the actual code
 
 # ---------------------Code shared by sin and cos, cut from ComputeTrigWithArgRed : 
-#yh2 = yh * yh; 
-yh2 = <float64ne>(yh * yh);
-
-# ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
-ts = <float64ne>(yh2 * <float64ne>(s3 + <float64ne>(yh2 * <float64ne>(s5 + <float64ne>(yh2 * s7)))));
-
-# tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d));
-tc = <float64ne>(yh2 * <float64ne>(c2 + <float64ne>(yh2 * <float64ne>(c4 + <float64ne>(yh2 * c6)))));
-
+yh2 <float64ne>=  yh * yh;
+ts  <float64ne>=  yh2 * (s3 + yh2*(s5 + yh2*s7));
+tc  <float64ne>=  yh2 * (c2 + yh2*(c4 + yh2*c6));
 
 # ---------------------Code for the sine, cut from DosinNotZero: 
 # Mul12(&cahyh_h,&cahyh_l, cah, yh);
@@ -67,9 +61,7 @@ tloSin1 = TSin - thiSin;          # Exact equation because Add12 is exact
 # using Gappa, modern compilers won't make any difference.
 
 #  tlo = tc*sah+(ts*cahyh_h+(sal+(tlo+(cahyh_l+(cal*yh + cah*yl))))) ;
-tloSin2 = <float64ne>(<float64ne>(tc * sah) + <float64ne>(<float64ne>(ts * cahyh_h)
- + <float64ne>(sal + <float64ne>(tloSin1 + <float64ne>(cahyh_l
- + <float64ne>(<float64ne>(cal * yh) + <float64ne>(cah * yl)))))));
+tloSin2 <float64ne>= tc*sah + (ts*cahyh_h + (sal + (tloSin1 + (cahyh_l + (cal*yh + cah*yl)))));
 
 # Add12(*reshi, *reslo, thi, tlo);
 ResultSin = thiSin + tloSin2; # we don't need to split it for the proof.
@@ -86,10 +78,8 @@ TCos = cah - sahyh_h;
 thiCos = <float64ne>(TCos);
 tloCos1 = TCos - thiCos; # Exact equation because Add12 is exact
 
-#  tlo = tc*cah-(ts*sahyh_h-(cal+(tlo-(sahyh_l+(sal*yh+sah*yl))))) ; 
-tloCos2 = <float64ne>(<float64ne>(tc * cah) - <float64ne>(<float64ne>(ts * sahyh_h)
- - <float64ne>(cal + <float64ne>(tloCos1 - <float64ne>(sahyh_l
- + <float64ne>(<float64ne>(sal * yh) + <float64ne>(sah * yl)))))));
+#  tlo = tc*sah+(ts*cahyh_h+(sal+(tlo+(cahyh_l+(cal*yh + cah*yl))))) ;
+tloCos2 <float64ne>= tc*cah-(ts*sahyh_h-(cal+(tloCos1-(sahyh_l+(sal*yh+sah*yl))))) ; 
 
 #  Add12(*pch, *pcl,    thi, tlo);                                   
 ResultCos = thiCos + tloCos2;   # No need to split it for the proof.
@@ -144,7 +134,7 @@ CosReconstrExact = PolyCosY * CosA  -  PolySinY * SinA ;
 
 #-------------------------------------
 # The reconstruction approximates the following
-SinReconstrNoRound = (Ydd * (1 + ts)  * (cah+cal)   +  (1 + tc) * (sah+sal) );
+SinReconstrNoRound = Ydd*(1 + ts)*(cah+cal) + (1 + tc)*(sah+sal);
 # where Ydd is an approximation to Y
 #       ts is an approximation to TsHat
 #       tc is an approximation to TcHat : all already described
@@ -176,10 +166,14 @@ NeglectedCosTerms = CosReconstrNoRound - (thiCos + TloCos2NoRound);
 
  -> 
 
-(ResultSin - SinX)/SinX in ?   #[-1b-62,1b-62]
+(ResultSin - SinX)/SinX in    [-3b-66,3b-66]
 /\ 
-(ResultCos - CosX)/CosX in ?   #[-1b-62,1b-62]
+(ResultCos - CosX)/CosX in   [-3b-66,3b-66]
+
+
 }
+
+#(ResultSin - SinX)/SinX $ SinX;
 
 ###########################################################################################
 # Hints to the reduction engine: Gappa is not supposed to be clever, it's an assistant 
@@ -203,8 +197,8 @@ Y ->  Ydd - (Ydd - Y);
 ResultSin - SinX ->  (ResultSin - SinReconstrNoRound) + (SinReconstrNoRound - SinReconstrExact) + (SinReconstrExact - SinX);
 ResultCos - CosX ->  (ResultCos - CosReconstrNoRound) + (CosReconstrNoRound - CosReconstrExact) + (CosReconstrExact - CosX);
 
-NeglectedSinTerms ->  sal*tc + cal*yl + ts*(cahyh_l + cah*yl + cal*yh + cal*yl); # Should be machine-checked
+NeglectedSinTerms ->  sal*tc + cal*yl + ts*(cahyh_l + cah*yl + cal*yh + cal*yl); 
 ResultSin - SinReconstrNoRound -> (ResultSin - (thiSin + TloSin2NoRound)) - (SinReconstrNoRound    -  (thiSin + TloSin2NoRound)) ;
 
-NeglectedCosTerms ->  cal*tc - sal*yl - ts*(sahyh_l + sah*yl + sal*yh + sal*yl); # Should be machine-checked
+NeglectedCosTerms ->  cal*tc - sal*yl - ts*(sahyh_l + sah*yl + sal*yh + sal*yl); 
 ResultCos - CosReconstrNoRound -> (ResultCos - (thiCos + TloCos2NoRound)) - (CosReconstrNoRound    -  (thiCos + TloCos2NoRound)) ;

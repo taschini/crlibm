@@ -210,7 +210,8 @@ Muller. Three cases may happen:
   function. In this case the correct rounding property for this
   function is fully proven. As of \texttt{crlibm0.8}, this is the case
   of the exponential and natural logarithm functions, and for the
-  hyperbolic sine and cosine.
+  hyperbolic sine and cosine. The inverse trigonometric functions
+  should follow soon.
 
 \item The worst cases have been computed only over a subdomain of the
   function. Then the correct rounding property is proven on this
@@ -349,15 +350,14 @@ instance the arctangent and the logarithm).
 
 
 Apart from these considerations, computing the errors is mostly
-textbook science. Care must be taken that only \emph{absolute} error terms
-(noted $\delta$) can be added, although some error terms are best
-expressed as \emph{relative} (noted $\epsilon$), like the rounding
-error of an IEEE operation, or the minimax approximation error. Remark
-also that the error needed for the theorems in
-\ref{section:testrounding} is a \emph{relative} error.  Managing the
-relative and absolute error terms is very dependent on the function,
-and usually involves keeping upper and lower bounds on the values
-manipulated along with the error terms.
+textbook science. Care must be taken that only \emph{absolute} error
+terms (noted $\delta$) can be added, although some error terms (like
+the rounding error of an IEEE operation) are best expressed as
+\emph{relative} (noted $\epsilon$). Remark also that the error needed
+for the theorems in \ref{section:testrounding} is a \emph{relative}
+error.  Managing the relative and absolute error terms is very
+dependent on the function, and usually involves keeping upper and
+lower bounds on the values manipulated along with the error terms.
 
 Error terms to consider are the following:
 \begin{itemize}
@@ -437,21 +437,22 @@ Most mathematical libraries do not offer correct rounding. They can be classifie
 Operating systems often include several mathematical libraries, some of which are derivatives of one
 of the previous.
 
-Three libraries offer correct correct rounding:
+To our knowledge, three libraries currently offer correct rounding:
 \begin{itemize}
-\item The \emph{libultim} library, also called MathLib, is developed at
-  IBM by Ziv and others \cite{IBMlibultimweb}. It provides correct rounding,
-  under the assumption that 800 bits are enough in all case. This
-  approach suffers two weaknesses. The first is the absence of proof
-  that 800 bits are enough: all there is is a very high probability.
-  The second is that, as we will see in the sequel, for challenging
-  cases, 800 bits are much of an overkill, which can increase the
-  execution time up to 20,000 times a normal execution. This will
-  prevent such a library from being used in real-time applications.
-  Besides, to prevent this worst case from degrading average
-  performance, there is usually some intermediate levels of precision
-  in MathLib's elementary functions, which makes the code larger, more
-  complex, and more difficult to prove.
+\item The \emph{libultim} library, also called MathLib, is developed
+  at IBM by Ziv and others \cite{IBMlibultimweb}. It provides correct
+  rounding, under the assumption that 800 bits are enough in all case.
+  This approach suffers two weaknesses. The first is the absence of
+  proof that 800 bits are enough: all there is is a very high
+  probability.  The second is that, as we will see in the sequel, for
+  challenging cases, 800 bits are much of an overkill, which can
+  increase the execution time up to 20,000 times a normal execution.
+  This will prevent such a library from being used in real-time
+  applications.  Besides, to prevent this worst case from degrading
+  average performance, there is usually some intermediate levels of
+  precision in MathLib's elementary functions, which makes the code
+  larger, more complex, and more difficult to prove (and indeed this
+  library is scarcely documented).
   
   In addition this library provides correct rounding only to nearest.
   This is the most used rounding mode, but it might not be the most
@@ -541,9 +542,10 @@ Again, this policy is open to discussion.
 \section{Organization of the source code}
 
 For each function, the file containing the source code for the
-accurate phase is named after the function itself (for instance
-\texttt{exp.c}, \texttt{log.c}), and the quick phase, when available,
-is named with the \texttt{\_fast} suffix (for instance
+accurate phase is named after the function with the
+\texttt{\_accurate} suffix (for instance \texttt{exp\_accurate.c},
+\texttt{log\_accurate.c}), and the quick phase, when available, is
+named with the \texttt{\_fast} suffix (for instance
 \texttt{exp\_fast.c}). The names of auxiliary files \texttt{.c} or
 \texttt{.h} files relative to a function are also prefixed with the
 name of the function.

@@ -2,7 +2,9 @@ Summary of changes between version 0.8 and version 0.8beta3
 ==========================================================
 <Florent de Dinechin>
 	Finished proofs of trigonometric functions
-	Some cleaning up
+	Some cleaning up and documentation improvement
+	Fixed bug for large arguments to sinh and cosh
+	Added crlibm.spec (to build RPMs)
 	
 Summary of changes between version 0.8beta4 and version 0.8beta3
 ==========================================================

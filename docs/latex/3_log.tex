@@ -15,7 +15,7 @@ We therefore proceed in two phases \cite{Ziv91}.  The first, quick
 phase (program \texttt{log\_fast.c}) is accurate only to $2^57$ and $2^64$,
 depending on the execution path as detailed below.  If this is not
 enough to decide correct rounding, a second phase, accurate to $120$
-bits using the SCS library is launched (program \texttt{log.c}).
+bits using the SCS library is launched (program \texttt{log\_accurate.c}).
 
 
 \subsubsection*{Definition interval and exceptional cases}
@@ -125,7 +125,7 @@ also given in Table~\ref{table:TablePolysLog1}.
 \hline
 polynomial &    interval     &   $\middlei$   & $\max(|z|)$ & $\log_2(\maxrelerr{approx}[i])$\\
 \hline  
-P[0] & $[\frac{11}{16},\frac{12}{16}]$ &  $\frac{23}{32}$ & $2^{-5}$  &  63.24  \\ 
+P[0] & $[\frac{11}{16},\frac{12}{16}]$ &  $\frac{23}{32}$ & $<2^{-5}$  &  65.17  \\ 
 \hline                                                                                
 P[1] & $[\frac{12}{16},\frac{13}{16}]$ &  $\frac{25}{32}$ & $2^{-5}$  &  62.23  \\
 \hline                                                                                
@@ -139,7 +139,7 @@ P[5] & $[\frac{17}{16},\frac{19}{16}]$ &  $\frac{18}{16}$ & $2^{-4}$  &  59.33  
 \hline                                                                                
 P[6] & $[\frac{19}{16},\frac{21}{16}]$ &  $\frac{20}{16}$ & $2^{-4}$  &  62.34 \\ 
 \hline                                                                                
-P[7] & $[\frac{21}{16},\frac{23}{16}]$ &  $\frac{22}{16}$ & $2^{-4}$  &  63.03  \\ 
+P[7] & $[\frac{21}{16},\frac{23}{16}]$ &  $\frac{22}{16}$ & $<2^{-4}$  &  62.25  \\ 
 \hline
 \end{tabular}\end{center}\end{table}
 
@@ -269,14 +269,14 @@ benefit will be minimal.
       \hline
       $P$ & $\infnorm{P}$ &  $E=0$ & $1 \le E < 24$ & $24\le E < 186$ & fast path\\ 
       \hline
-P[1] & 0.375 & 61.44 & 60.43& 66.10 & 63.24\\ 
-P[2] & 0.288 & 60.81 & 60.83& 66.16 & 63.29\\ 
-P[3] & 0.208 & 60.02 & 61.11& 66.19 & 63.14\\ 
-P[4] & 0.134 & 58.96 & 61.39& 66.27 & 63.34\\ 
-P[5] & 0.065 & 57.63 & 60.04& 64.76 & 62.39\\ 
-P[6] & 0.172 & 57.94 & 60.15& 65.13 & 63.01\\ 
-P[7] & 0.272 & 59.89 & 60.23& 65.51 & 63.05\\ 
-P[8] & 0.363 & 60.58 & 60.02& 65.65 & 63.23\\ 
+P[1] & .347 & 62.76 & 61.78& 67.34  & 64.17\\ 
+P[2] & .288 & 60.81 & 60.83& 66.16  & 63.29\\ 
+P[3] & .208 & 60.02 & 61.11& 66.19  & 63.14\\ 
+P[4] & .134 & 58.96 & 61.39& 66.27  & 63.34\\ 
+P[5] & .065 & 57.63 & 60.04& 64.76  & 62.39\\ 
+P[6] & .172 & 57.94 & 60.15& 65.13  & 63.01\\ 
+P[7] & .272 & 59.89 & 60.23& 65.51  & 63.05\\ 
+P[8] & .347 & 60.80 & 60.46& 66.02  & 63.28\\ 
       \hline
       \hline
     \end{tabular}
@@ -286,7 +286,6 @@ P[8] & 0.363 & 60.58 & 60.02& 65.65 & 63.23\\
 \end{table}
 
 
-\newpage
 \subsection{Details of computer program}
 
 A procedure \texttt{log\_quick} contains the computation shared by the
@@ -304,7 +303,8 @@ p.~\pageref{th:roundingRN1} for round-to nearest.
 \newpage
 \subsubsection{Exceptional cases and argument reduction}
 
-This part  is shown for \texttt{log\_rn}, but it is identical for the three functions.
+Here is the listing of  \texttt{log\_rn}. 
+
 
 \begin{lstlisting}[caption={Exceptional cases},firstnumber=1]
  double log_rn(double x) { 
@@ -359,6 +359,20 @@ Line 28 & y.d is reduced to $\frac{x}{2^E}$. Correct because $y$ was a normal nu
 Line 29-31 & Now, we have: $ 1 \leq y.d < 2$ and we want $ \frac{1}{\sqrt2} \leq y.d < \sqrt2$.\\
 & So, if it's not the case, we update E and y.\\
 \end{tabular}
+
+\label{pageref:log_of_one}
+For the other functions it is almost identical, with one subtlety: for
+the input value exactly exact to $1$, the procedure
+\texttt{log\_quick} does return exactly zero as a double-double.
+However, in this case, the rounding test of macro
+\verb!TEST_AND_RETURN_RD! launches the SCS computation, which
+(correctly) returns a number smaller than $2^{-150}$, which is
+(correctly) rounded down to the smallest representable negative
+number. Of course, the value to be returned should be zero. This
+problem happens because $\log(1)$ is exactly representable as a double
+(fortunately, $1$ is the only double with this property). To avoid
+this, we add a test for $x=1$ to the filtering of exceptional cases in
+directed rounding mode.
 
 
 \newpage
@@ -694,7 +708,7 @@ Tables sizes are
   1kB.
 \item for the \accurate\ phase, $1+13+13+20$ SCS constants:  $\log(2)$,
   the 13 $log(w_i)$ and the 13 $\frac{1}{w_i}$,  the polynomial of
-  degree 20 with a null first coefficient. This amount represents a bit more than 2kB.
+  degree 20 with a null first coefficient. This amounts to a little more than 2kB.
 \end{itemize}
 
 

@@ -456,7 +456,6 @@ int main (int argc, char *argv[]){
 #if EVAL_PERF==1  
   crlibm_second_step_taken=0; 
 #endif
-  counter=0;
 
   /* take the min of N1 identical calls to leverage interruptions */
   /* As a consequence, the cache impact of these calls disappear...*/
@@ -481,7 +480,7 @@ int main (int argc, char *argv[]){
 
 #if EVAL_PERF==1  
   printf("\nCRLIBM : Second step taken %d times out of %d\n",
-	 crlibm_second_step_taken/N1, counter/N1 );
+	 crlibm_second_step_taken/N1, n );
 #endif
 
 
@@ -525,10 +524,10 @@ int main (int argc, char *argv[]){
   latex_output("MPFR", testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
 #endif /*HAVE_MPFR_H*/
 #ifdef   HAVE_MATHLIB_H
-  latex_output("IBM", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);
+  latex_output("IBM ", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);
 #endif /*HAVE_MATHLIB_H*/
 #ifdef   HAVE_LIBMCR_H
-  latex_output("SUN", testfun_libmcr, libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, n);
+  latex_output("SUN ", testfun_libmcr, libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, n);
 #endif /*HAVE_LIBMCR_H*/
   latex_output("CRLIBM", testfun_crlibm, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, n);
 

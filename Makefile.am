@@ -7,13 +7,13 @@ lib_LIBRARIES = libcrlibm.a
 
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c\
-	exp.h exp.c exp_fast.h exp_fast.c\
-	log.h log.c log_fast.c log_fast.h\
-	log10.h	log10.c\
-	log2.h  log2.c \
-	coefpi2.h rem_pio2.c\
-	trigo.c trigo.h trigo_fast.c trigo_fast.h\
-	atan.h atan.c atan_fast.c atan_fast.h\
+	exp_fast.h exp_fast.c exp_accurate.h exp_accurate.c \
+	log_fast.c log_fast.h log_accurate.h log_accurate.c \
+	log10_accurate.h log10_accurate.c \
+	log2_accurate.h  log2_accurate.c \
+	coefpi2_accurate.h rem_pio2_accurate.c \
+	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
+	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
 	csh_fast.h csh_fast.c
 
 # add all the scs_lib useful functions
@@ -36,8 +36,7 @@ endif
 EXTRA_DIST = VERSION\
 	maple/common-procedures.mpl \
 	maple/log.mpl maple/trigo.mpl maple/atan.mpl maple/csh.mpl \
-	maple/trigoSinCosCase3.gappa \
-	maple/trigoTanCase2.gappa \
+	maple/trigoSinCosCase3.gappa maple/trigoTanCase2.gappa \
 	docs/crlibm.pdf \
 	docs/latex/crlibm.tex \
 	docs/latex/0_intro.tex docs/latex/0_getting-started.tex\

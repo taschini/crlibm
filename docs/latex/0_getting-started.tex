@@ -87,13 +87,16 @@ function from \texttt{crlibm} library.
 #include<crlibm.h>
 
 int main(void){
-  double x, res1, res2;
+  double x, res_libm, res_crlibm;
 
-  printf("Enter a floating point number :");
-  scanf("%e",&x);
-
-  printf("\n cos(x) with the system : %.25e \n");
-  printf("\n cos(x) with crlibm     : %.25e \n");
+  crlibm_init(); /* no need here to save the old processor state returned by crlibm_init() */ 
+  printf("Enter a floating point number: ");
+  scanf("%lf", &x);
+  res_libm = cos(x);
+  res_crlibm = cos_rn(x);
+  printf("\n x=%.25e \n", x);
+  printf("\n cos(x) with the system : %.25e \n", res_libm);
+  printf("\n cos(x) with crlibm     : %.25e \n", res_crlibm);
   return 0;
 }
 \end{lstlisting}
@@ -102,9 +105,11 @@ This example will be compiled with \texttt{gcc compare.c -lm -lcrlibm -o compare
 
 
 \section{Currently available functions}
-In the sequel $x$ and $y$ are of type $double$ and every function
-return a double precision number. For trigonometric functions the
-angles are express in radian.
+
+The currently available functions are summarized in the following
+table, where $x$ is of type $double$ and every function returns a
+double-precision number. For trigonometric functions the angles are
+expressed in radian.
 \begin{center}
 \begin{tabular}{|c|c|c|c|c|}    \hline
  & \multicolumn{4}{c|}{crlibm} \\ \cline{2-5}

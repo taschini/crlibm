@@ -100,7 +100,9 @@ int main (int argc, char *argv[])
 	printf(" \n");
 
     }
-    if(output.l!=expected.l) {
+    /* The following tests is a little bit contrived because of NaN */
+    if(    ((expected.d != expected.d) && (output.d == output.d)) /* expected NaN, got non-NaN */
+        || ((expected.d == expected.d) && (output.l != expected.l))    ) { /* or expected non-NaN, got something different */
       failures ++;
       printf("ERROR for %s with rounding %s\n", function_name, rounding_mode);
       printf("    Input: %08x %08x  (%0.50e)\n", input.i[HI], input.i[LO], input.d ); 

@@ -41,6 +41,17 @@ P fff80000 00000000 fff80000 00000000 # NaN
 M fff80000 00000000 fff80000 00000000 # NaN
 Z fff80000 00000000 fff80000 00000000 # NaN
 
+N 408F4000 00000000 7ff00000 00000000 # A large positive
+P 408F4000 00000000 7ff00000 00000000 
+M 408F4000 00000000 7fefffff ffffffff # (returns infty rounded down) 
+Z 408F4000 00000000 7fefffff ffffffff
+N C08F4000 00000000 fff00000 00000000 # A large negative
+P C08F4000 00000000 ffefffff ffffffff
+M C08F4000 00000000 fff00000 00000000 
+Z C08F4000 00000000 ffefffff ffffffff
+
+#TODO check the transition to infinity (as in exp.checkdate)
+
 # One in five of the very worst cases computed by Lefevre and Muller.
 # Rounding these values requires evaluating the function to at least 2^(-100).
 # If you want the full list please contact Jean-Michel Muller

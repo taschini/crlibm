@@ -88,7 +88,7 @@ where each operation is computed in double.
 As $|z| \leq e$, $Q(z) \leq e^2$
 
 At the end, the reconstruction implements equation
-(\ref{eq:poly_eva1l}) and (\ref{eq:arctan_redu}) in double-double
+(\ref{eq:poly_eval1}) and (\ref{eq:arctan_redu}) in double-double
 arithmetic.
 
 
@@ -157,12 +157,11 @@ We have no rounding error in the computation of $x-b_i$.
 \begin{lstlisting}[caption={Reduction part 2},firstnumber=1]
       Mul12(&tmphi,&tmplo, x, arctan_table[i][B].d);
 
-      if (tmphi > 1)
+      if (x > 1)
         Add22(&x0hi,&x0lo,tmphi,tmplo, 1.0,0.0);
       else {Add22( &x0hi , &x0lo , 1.0,0.0,tmphi,tmplo);}
-      
-      Div22( xmBihi , xmBilo , x0hi,x0lo, xhi,xlo);
 
+      Div22( &Xredhi, &Xredlo, xmBihi , xmBilo , x0hi,x0lo);
 \end{lstlisting}
 
 \begin{tabular}{ll}
@@ -205,7 +204,7 @@ The error due to the polynomial approximation is $\delta_{approx} =
 
 \end{lstlisting}
 \begin{tabular}{ll}
-Line 1 & The error between $\mathrm{Xred2}$ and the ideal value of $\xred^2$\\
+Line 1 & The error between $\mathrm{Xred2}$ and the ideal value of $\xred^2$ comes from\\
        & $\bullet$~ the error $\epsilon_{\xred}$  on $\xredhi+\xredlo$\\
        & $\bullet$~ the truncation of $\xredlo$ adds $\epsilon_{53}$\\
        & $\bullet$~ then the FP multiplication squares this term and adds a rounding error of $\epsilon_{53}$\\
@@ -218,9 +217,9 @@ Line 3 & Horner approximation with error on $\mathrm{Xred2}$:
 
 \subsubsection{Reconstruction}
 
-The reconstruction adds $\arctan(b_i)$ that is read as a double-double
-from a table, and $\arctan(\xred)$, approximated by
-$(\xredhi+\xredlo)(1+q)$.  The terms of this developed product are
+The reconstruction adds $\arctan(b_i)$ (read as a double-double
+from a table) to $\arctan(\xred)$ (approximated by
+$(\xredhi+\xredlo)(1+q)$).  The terms of this developed product are
 depicted in the following figure.
 
 

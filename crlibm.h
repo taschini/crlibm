@@ -20,16 +20,8 @@
 #ifndef CRLIBM_H
 #define CRLIBM_H
 
-
-#ifdef CRLIBM_TYPECPU_X86
-#include <fpu_control.h>
-/* don't remember why it's here, but it doesn't hurt to keep it (2004) */
-#ifndef _FPU_SETCW
-#define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
-#endif
-#ifndef _FPU_GETCW
-#define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
-#endif 
+#if defined (__cplusplus)
+extern "C" {
 #endif
 
 /* An init function which sets FPU flags when needed (mostly on Intel
@@ -123,5 +115,8 @@ extern double log10_rn(double); /* to nearest  */
 extern double log10_rd(double); /* toward -inf */ 
 extern double log10_ru(double); /* toward +inf */ 
 
+#if defined (__cplusplus)
+}
+#endif
 
 #endif /* ifdef CRLIBM_H*/

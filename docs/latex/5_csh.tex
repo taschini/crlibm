@@ -135,7 +135,7 @@ coefficients being coded on double-precision numbers.
 
 If the input is very small (i.e. $|b| \leq 2^{-40}$), $tsb$ and $tcb$
 are not calculated but directly set to $0$, to avoid any problem with
-subnormalized numbers.
+subnormal numbers.
 
 
 At this stage, we have computed all the needed sub-terms before the
@@ -429,7 +429,7 @@ Line 47    & Put $b^2$ in $square\_b_{hi}$. We have $square\_b_{hi} = \widehat{b
 Line 50    & Match $b_{hi}$ and then $b$ with $2^{-40}$\\
 Line 51-52 & If $|b| \leq 2^{-40}$, we will have $|tcb|,[tsb| \leq \maxabserr{square\_b}$, so we can directly set $tcb$ and $tsb$ to zero: \\
            & converning the mathematical values, we have $|\widehat{tcb}|, |\widehat{tsb}| \leq 2^{-24}$. \\
-           & We can avoid by this way any problem with subnormalized numbers. \\
+           & We can avoid by this way any problem with subnormal numbers. \\
 Line 55-56 & Polynomial evaluation of $\cosh(x)-1$ and $\frac{\sinh(x)}{x}-1$, following the Hörner scheme. \\
            & A maple procedure is used to compute the error on this computations\\
            & There are 2 reasons for the total error :\\

@@ -10,10 +10,6 @@
  * E-Mail : Matthieu.Gallet, ens-lyon.fr
  * Date of creation : 16/06/2004  
  *
- * TODO :
- * - function cosh_rn(double x), sinh_rn(double x) 
- *      there exist tests unreacheable that need to be check
- * - in csh_fast.h : declaration of c8, c1, s1 unused, can we removed it ?
  *
  * 
  */
@@ -23,7 +19,7 @@
 #include "crlibm.h"
 #include "crlibm_private.h"
 #include "csh_fast.h"
-#include "exp.h"
+#include "exp_accurate.h"
 
 
 /* switches on various printfs. Default 0 */
@@ -87,7 +83,6 @@ static void do_cosh(double x, double* preshi, double* preslo){
   }
   else {
     /*   second, cosh(y) = y² * (1/2 + y² * (1/24 + y² * 1/720)) */
-    /*tcb_hi = (square_y_hi)* (c2.d + square_y_hi * (c4.d + square_y_hi * (c6.d + square_y_hi * c8.d)));*/
     tcb_hi = (square_b_hi)* (c2.d + square_b_hi * (c4.d + square_b_hi * c6.d));
     tsb_hi = square_b_hi * (s3.d + square_b_hi * (s5.d + square_b_hi * s7.d));
   }
@@ -202,17 +197,16 @@ double cosh_rn(double x){
 
   /* Filter special cases */
   if (hx > max_input_csh.i[HI]) { /* strictly greater, implies x > max_input_csh */
-    if (hx >= 0x7ff00000){
+    if (hx >= 0x7ff00000){  /* Infty or NaN */ 
       if (((hx&0x000fffff)|y.i[LO])!=0)
 	return x+x;                                        /* Nan */ 
       else {/* otherwise the result should be +infty */
 	y.i[HI] = 0x7FF00000; 
 	return (y.d);
       }
-      /* !!! the following test is unreachable !!! */
-      if (x > max_input_csh.d || x < -max_input_csh.d) 
-	return largest_double * largest_double;     /* overflow  */ 
     }
+    if (x > max_input_csh.d || x < -max_input_csh.d) 
+      return largest_double * largest_double;     /* overflow  */ 
   }
   if (hx<0x3e500000) {
     if(x==0) 
@@ -294,26 +288,11 @@ double cosh_rd(double x){
 	y.i[HI] = hx;
 	return (y.d);
       }
-    }
-    if (y.d > max_input_csh.d) { /* out of range */
-	y.i[LO] = 0xFFFFFFFF; y.i[HI] = 0x7FEFFFFF ; return (y.d);
-    }
 
-
-#if 0
-    if (((hx&0x7FF00000) == 0x7FF00000) && (((y.i[HI] & 0x000FFFFF)!=0) || (y.i[LO]!=0)) )
-      return x;
-    else if ((hx == 0x7FF00000) && ((y.i[LO] == 0))) { /* Infinity ?*/
-      y.i[HI] = 0x7ff00000 + (y.i[HI] & 0x80000000); 
-      y.i[LO] = 0;
-      return (y.d); /* TODO we should raise the overflow flag  as david does*/
     }
-      else {/* otherwise the result should be the largest representable number */
-      y.i[LO] = 0xffffffff; y.i[HI] = 0x7fefffff; 
-      return (y.d); /* TODO we should raise the inexact flag */
+    if (y.d > max_input_csh.d || y.d  < max_input_csh.d) { /* out of range */
+      y.i[LO] = 0xFFFFFFFF; y.i[HI] = 0x7FEFFFFF ; return (y.d);
     }
-#endif
-
   }
   
   if (hx<0x3e500000)
@@ -401,7 +380,6 @@ static void do_sinh(double x, double* prh, double* prl){
   else {
     tsb_hi = square_y_hi * (s3.d + square_y_hi * (s5.d + square_y_hi * s7.d));
     /*   second, cosh(y) = y² * (1/2 + y² * (1/24 + y² * 1/720)) */
-    /*   tcb_hi = (square_y_hi)* (c2.d + square_y_hi * (c4.d + square_y_hi * (c6.d + (square_y_hi * c8.d))));*/
     tcb_hi = (square_y_hi)* (c2.d + square_y_hi * (c4.d + square_y_hi * c6.d));
   }
   
@@ -520,19 +498,19 @@ double sinh_rn(double x){
 
   /* Filter special cases */
   if (hx > max_input_csh.i[HI]) { /* strictly greater, implies x > max_input_csh */
-    if (hx >= 0x7ff00000){
+    if (hx >= 0x7ff00000){ /* infinity or NaN */
       if (((hx&0x000fffff)|y.i[LO])!=0)
-	return x+x;                                        /* Nan */ 
+	return x+x;                                        /* NaN */ 
       else {/* otherwise the result should be +infty */
 	return (y.d);
       }
-      /* !!! the following tests is unreachable !!! */
-      if (x > max_input_csh.d) 
-	return largest_double * largest_double;     /* overflow  */ 
-      if (x < -max_input_csh.d) 
-	return -largest_double * largest_double;     /* overflow  */ 
     }
+    if (x > max_input_csh.d) 
+      return largest_double * largest_double;     /* overflow  */ 
+    if (x < -max_input_csh.d) 
+      return -largest_double * largest_double;     /* overflow  */ 
   }
+
   if (hx<0x3e500000) {
       return x; /* exact, we should find some way of raising the inexact flag */
   }

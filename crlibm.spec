@@ -1,6 +1,6 @@
 Summary: cr-libm, a portable, efficient, correctly rounded mathematical library.
 Name: crlibm
-Version: 0.8beta
+Version: 0.8
 Release: 1
 License: GNU LESSER GENERAL PUBLIC LICENSE
 Group: System/Mathematics

@@ -12,6 +12,17 @@
 #include "scs_lib/scs_private.h"
 
 
+#ifdef CRLIBM_TYPECPU_X86
+#include <fpu_control.h>
+/* don't remember why it's here, but it doesn't hurt to keep it (2004) */
+#ifndef _FPU_SETCW
+#define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
+#endif
+#ifndef _FPU_GETCW
+#define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
+#endif 
+#endif
+
  /* undef all the variables that might have been defined in
     scs_lib/scs_private.h */
 #undef VERSION 
@@ -106,7 +117,13 @@ extern int rem_pio2_scs(scs_ptr, scs_ptr);
 
 /* Macros for the rounding tests in directed modes */
 /* After Evgeny Gvozdev pointed out a bug in the rounding procedures I
-   decided to centralize them here */
+   decided to centralize them here 
+
+Note that these tests launch the accurate phase when yl=0, in
+particular in the exceptional cases when the image of a double is a
+double. See the chapter about the log for an example
+
+*/
 
 
 #define TEST_AND_RETURN_RU(__yh__, __yl__, __eps__)                    \

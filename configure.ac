@@ -32,7 +32,7 @@ ia64)
 esac;
 
 
-AC_CONFIG_SRCDIR([exp.c])
+AC_CONFIG_SRCDIR([exp_accurate.c])
 AC_PROG_MAKE_SET
 
 dnl Check for compiler

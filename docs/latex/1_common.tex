@@ -128,10 +128,10 @@ In ANSI-C99, the following instructions raise exceptions and
 flags:
 
 \begin{itemize}
-\item {\bf underflow} : the multiplication $\pm smallest \times smallest$ where $smallest$ correspond to the smallest subnormalized number,
+\item {\bf underflow} : the multiplication $\pm smallest \times smallest$ where $smallest$ correspond to the smallest subnormal number,
 \item {\bf overflow} : the multiplication  $\pm largest \times largest$ where $largest$ correspond to the largest normalized number,
 \item {\bf division by zero} : the division $\pm 1.0/0.0$,
-\item {\bf inexact} : the addition $(x + smallest) - smallest$ where $x$ is the result and  $smallest$ the smallest subnormalized number,
+\item {\bf inexact} : the addition $(x + smallest) - smallest$ where $x$ is the result and  $smallest$ the smallest subnormal number,
 \item {\bf invalid} : the division $\pm 0.0/0.0$.
 \end{itemize}
 
@@ -377,7 +377,7 @@ by zero and one useless addition: a specific procedure is not needed.
 
 
 Use Cody and Waite algorithm. See for instance the $\log$ and the
-trigonometric argument reduction (chapter \ref{chap3:log}, \pageref{chap3:log}).
+trigonometric argument reduction (chapter \ref{chap3:log}, p. \pageref{chap3:log}).
 
 
 
@@ -579,12 +579,12 @@ The following computes tight bounds on $\epsilon^\times_k$ and on $\delta^+_k$.
 \label{section:testrounding}}
 
 We assume here that an evaluation of $y=f(x)$ has been computed with a
-total relative error smaller than $\epsilon$, and that the result is
+total relative error smaller than $\maxeps$, and that the result is
 available as the sum of two non-overlapping floating-point numbers
 $y_h$ and $y_l$ (as is the case if computed by the previous
 algorithms). This section gives and proves algorithms for testing if
 $y_h$ is the correctly rounded value of $y$ according to the relative
-error $\epsilon$. This correspond to detect whether we are in a hard
+error $\maxeps$. This correspond to detect whether we are in a hard
 to round case.
 
 
@@ -598,12 +598,12 @@ to round case.
 Let $y$ be a real number, and  $\maxeps$, $e$, $y_h$ and $y_l$ be
   floating-point numbers such that 
   \begin{itemize}
-  \item Non overlapping: $y_h=y_h\oplus y_l$,
-  \item equality required by ieee-754 for NaN: none of $y_h$ and $y_l$ is a  NaN.
-  \item non-underflowing numbers: $|y_h|\ge 2^{-1022+53}$ 
-  \item definition of the error term: $|y_h+y_l - y| <\maxeps.|y|$
-  \item error greater than the precision of one dp number: $0<\maxeps \le 2^{-53-k}$ with $k\ge 2$ integer
-  \item condition over the constant $e$: $e\ge 1+  \dfrac{2^{53+k+1}\maxeps}{(2^{k}-1)(1-2^{-53})}$
+  \item $y_h=y_h\oplus y_l$ (or, non-overlapping mantissas),
+  \item none of $y_h$ and $y_l$ is a  NaN or $\pm \infty$,
+  \item $|y_h|\ge 2^{-1022+53}$ (or, $0.5\ulp(yh)$ is not subnormal), 
+  \item $|y_h+y_l - y| <\maxeps.|y|$ (or, the total relative error of $y_h+yl$ with respect to $y$ is bounded by $\maxeps$),
+  \item $0<\maxeps \le 2^{-53-k}$ with $2\le k \le 52$ integer,
+  \item $e\ge 1+  \dfrac{2^{53+k+1}\maxeps}{(2^{k}-1)(1-2^{-53})}$.
 \end{itemize}
 
 The following test determines whether $y_h$ is the
@@ -618,14 +618,12 @@ else /* more accuracy is needed, launch accurate phase */
 \end{theorem}
 
 \begin{proof}
-  The theorem holds if $y_h$ is $\pm \infty$.
+
+  Remark that the condition $|y_h|\ge 2^{-1022+53}$ implies that $y_h$ is a normal
+  number. We will assume that $y\ge0$ (so $y_h\ge0$), as the other
+  case is symmetric.
   
-  It also holds if $y_h$ is a subnormal: In this case $y_l$ is zero, so
-  the correctly rounded result is $y_h$, and the test is true. In the
-  following we therefore assume that $y_h$ is a normal number. We also
-  assume that $y\ge0$ (so $y_h\ge0$), as the other case is symmetric.
-  
-  Let us note $u=\ulp(y_h)$. By definition of the \ulp, we have $y_h
+  Let us note $u=\ulp(y_h)$. By definition of the \ulp\ of a normal number, we have $y_h
   \in [2^{52}u, (2^{53}-1)u]$, which implies $y<2^{53}u$ as $y < y_h + y_l +\maxeps y
   < (2^{53}-1)u +\frac{1}{2}u +\frac{1}{2}u$.
 
@@ -642,8 +640,7 @@ else /* more accuracy is needed, launch accurate phase */
     nearest, and $y_h = \round(y)$ regardless of the result of the test.
 
     Now consider the case when $y_l \ge (\frac{1}{2} - \frac{1}{2^{k+1}})u$.
-   % = \frac{2^{k}-1}{2^{k+1}}u
-    Remark that the condition $|y_h|\ge 2^{-1022+54}$ ensures that
+    Remark that the condition $|y_h|\ge 2^{-1022+53}$ ensures that
     $\frac{1}{2}u$ is a normal number, so in this case
     $y_l$ is a normal number. As $e>1$ this ensures that
     $$y_l\times e(1-2^{-53})\ \le\ y_l \otimes e\ \le\ y_l\times e(1+2^{-53})$$
@@ -670,6 +667,11 @@ else /* more accuracy is needed, launch accurate phase */
 
 
 
+
+The following theorem must be used where and when it cannot be proven
+statically that $|y_h|\ge 2^{-1022+53}$. The test itself doesn't
+change, only the way the constant $e$ is computed changes. 
+
 \begin{theorem}[Correct rounding of a double-double to the nearest double, general case]
 \label{th:roundingRN2}
 ~\\
@@ -677,16 +679,16 @@ else /* more accuracy is needed, launch accurate phase */
   floating-point numbers such that 
   \begin{itemize}
   \item $y_h=y_h\oplus y_l$,
-  \item none of $y_h$ and $y_l$ is a  NaN.
-  \item $|y_h+y_l - y| <\maxeps.|y|$
-  \item $0<\maxeps \le 2^{-53-k}$ with $k\ge 2$ integer
-  \item $e\ge 1+  \dfrac{2^{53+k+2}\maxeps}{2^{k}-1}$
+  \item none of $y_h$ and $y_l$ is a  NaN  or $\pm \infty$,
+  \item $|y_h+y_l - y| <\maxeps.|y|$,
+  \item $0<\maxeps \le 2^{-53-k}$ with $k\ge 2$ integer,
+  \item $e\ge 1+  \dfrac{2^{53+k+2}\maxeps}{2^{k}-1}$.
 \end{itemize}
 
 The following test determines whether $y_h$ is the
   correctly rounded value of $y$ in  round to nearest mode.
 
-\begin{lstlisting}[firstnumber=1,caption={Test for rounding to the nearest}]
+\begin{lstlisting}[firstnumber=1]
 if( (*@$y_h$@*) == ((*@$y_h$@*) + ((*@$y_l$@*)*e)) )
   return (*@$y_h$@*);
 else /* more accuracy is needed, launch accurate phase */
@@ -694,11 +696,32 @@ else /* more accuracy is needed, launch accurate phase */
 \end{theorem}
 
 \begin{proof}
-  The proof is identical to the previous theorem, with the exception
-  that we cannot ensure anymore that $y_l$ will not be a subnormal.
-  Therefore the relative error on $y_l\times e$ may be as high as
-  $\frac{1}{2}$, and the condition on $e$ is reinforced accordingly.
+  First note that the theorem holds if $y_h$ is a subnormal: In this
+  case $y_l$ is zero, so the correctly rounded result is $y_h$. And in
+  this case, the test is always true since $y_l$ is zero.
+
+  The difficult case is when $y_h$ is normal, but $y_l$ is subnormal.
+  The proof is identical to that of the previous theorem, with the
+  exception that we cannot ensure anymore that $y_l$ will not be a
+  subnormal.  Therefore the relative error on $y_l\times e$ may be as
+  high as $\frac{1}{2}$, and the condition on $e$ is reinforced
+  accordingly. 
 \end{proof}
+
+Note that this theorem has very rarely to be used: in most cases when
+the function may come close to subnormals, the correctly rounded
+result can be deduced directly from the input without any computation
+and rounding test. Typical are the sine and tangent function:
+mathematically, they go through zero an infinite number of times, but
+we are able to prove that for floating-point arguments they never
+approach subnormals except in $[-\pi/4, \pi/4]$. And on this interval,
+their Taylor expansions ensure that returning $x$ returns the
+correctly rounded value of the function. This is detailed in
+Chapter~\ref{chap:trigo}.
+
+Indeed, the only function for which Theorem~\ref{th:roundingRN2} has
+been used so far is the exponential function.
+
 
 
 \subsubsection*{Notes}
@@ -708,9 +731,32 @@ else /* more accuracy is needed, launch accurate phase */
   $2^{-53-10}$ to balance the execution times of the quick and
   accurate phases. In this case, using the first theorem almost divides
   by two the frequency of calls to the accurate phase. 
+
+\item These theorems are not proven for $y_h = \pm \infty$ (an
+  implementation would depend on the correct behaviour of the
+  double-double arithmetic in the neighborhood of $\pm \infty$
+  anyway).  This is not a problem in practice, because an
+  implementation will fall into one of the following cases:
+\begin{itemize}
+\item It can be proven statically that the function is bounded well
+  below the largest representable double-precision number. This will
+  be the case of the logarithm and tangent functions in their
+  respective chapters.
+\item The function comes close to infinity, but monotonicity or
+  another mathematical property allows to prove that $\pm \infty$
+  should be returned for $x$ above or below some statically-defined
+  threshold, and never otherwise. This will be the case of exponential
+  and hyperbolic functions, for instance.
+\end{itemize}
+In both cases, returning a value close to infinity won't require a
+rounding test.
+
+
 \item It is not obvious that a fused multiply-and-add may be used for
   the computation of $y_h+y_l\times e$, but the proof should be easy
   to adapt to this (more accurate) operation (TODO).
+
+
 \end{itemize}
 
 
@@ -731,14 +777,14 @@ It should be used as follows (example taken from \texttt{atan\_fast.c}):
 
 \begin{lstlisting}[caption={An occurence of the test for rounding up},
   firstnumber=1]
-  TEST_AND_RETURN_RU(atanhi, atanlo, roundcst);
+  TEST_AND_RETURN_RU(atanhi, atanlo, maxepsilon);
   /* if the previous block didn't return a value, launch accurate phase */
   return scs_atan_ru(x);
 \end{lstlisting}
 
 
 
-\begin{theorem}[Test for correct directed rounding of a double-double to a double]
+\begin{theorem}[Test for correct rounding up of a double-double to a double]
 \label{th:roundingDirected}
 ~\\
 Let $y$ be a real number, and $y_h$, $y_l$ and $\maxeps$ be
@@ -800,16 +846,29 @@ The following test determines whether $y_h$ is the
 \end{proof}
 
 
-It is important to note that all this doesn't work if $y_h$ is a subnormal. If
-one cannot prove statically that this case doesn't appear, a sensible solution
-is to test for subnormals and launch the accurate phase.
 
-Finally, remark that for some functions, the tests on the sign of
-$y_h$ are statically predictable to be true because the function is
-always positive. We shall use this macro anyway for safety. Tanks to
-branch predictor logic in modern processors, it will make little
-difference from a performance point of view.
 
+
+\paragraph*{Notes}
+\begin{itemize}
+\item Rounding down and to zero are identical to the previous, except
+  for the computation of the rounded value itself.
+
+\item These tests launch the accurate phase when yl=0, in particular
+  in the exceptional cases when the image of a double is a double. See
+  the chapter \ref{chap3:log} (page \pageref{pageref:log_of_one}) for
+  an example where it can introduce a misround.
+
+\item These tests don't work if $y_h$ is a subnormal. If one cannot
+  prove statically that this case doesn't appear, a sensible solution
+  is to test for subnormals and launch the accurate phase.
+
+\item Finally, remark that for some functions, the tests on the sign of
+  $y_h$ are statically predictable to be true because the function is
+  always positive. We shall use this macro anyway for safety. Tanks to
+  branch predictor logic in modern processors, it will make little
+  difference from a performance point of view.
+\end{itemize}
 
 
 
@@ -1125,43 +1184,50 @@ mantissa of the IEEE-754 double-precision number closest to input
 value \texttt{x}.
 
 \begin{lstlisting}[caption={ieeedouble},firstnumber=1]
-ieeedouble:=proc(xx) 
-local x, sign, logabsx, exponent, mantissa, infmantissa; 
-x:=evalf(xx):
-if (x=0) then 
-  sign,exponent,mantissa := 0,0,0; 
-else 
- if (x<0) then sign:=-1:
- else sign:=1:
- fi:
- exponent := floor(log2(sign*x));
- if (exponent>1023) then mantissa:=infinity: exponent=1023:
- elif (exponent<-1022) then 
-    # denorm
-    exponent := -1023
- fi:
- infmantissa := sign*x*2^(52-exponent);
- if frac(infmantissa) <> 0.5 then mantissa := round(infmantissa)
- else
-    mantissa := floor(infmantissa);
-    if type(mantissa,odd) then mantissa := mantissa+1 fi;
- fi;
- Digits := 53;
- mantissa := mantissa*2^(-52);
+ieeedouble:=proc(xx)
+local x, sgn, logabsx, exponent, mantissa, infmantissa,powermin,powermax,expmin,expmax,expmiddle,powermiddle;
+Digits := 100;
+x := evalf(xx);
+if (x=0) then sgn, exponent, mantissa := 1, -1022, 0
+else
+  if (x < 0) then sgn := -1
+  else sgn := 1
+  fi:
+  x := abs(x);
+  if x >=  2^(1023)*(2-2^(-53)) then mantissa := infinity; exponent := 1023
+  else if x <= 2^(-1075) then mantissa := 0; exponent := -1022
+      else
+         if x <= 2^(-1022) then exponent := -1022
+         else
+# x is between 2^(-1022) and 2^(1024)
+         powermin := 2^(-1022); expmin := -1022;
+         powermax := 2^1024; expmax := 1024;
+         while (expmax-expmin > 1) do
+            expmiddle := round((expmax+expmin)/2);
+            powermiddle := 2^expmiddle;
+            if x >= powermiddle then
+                powermin := powermiddle;
+                expmin := expmiddle
+            else
+                powermax := powermiddle;
+                expmax := expmiddle
+            fi
+          od;
+# now, expmax - expmin = 1 and powermin <= x < powermax,
+# powermin = 2^expmin and powermax = 2^expmax, so expmin is the exponent of x
+         exponent := expmin;
+         fi;
+         infmantissa := x*2^(52-exponent);
+	 if frac(infmantissa) <> 0.5 then mantissa := round(infmantissa)
+            else
+              mantissa := floor(infmantissa);
+               if type(mantissa,odd) then mantissa := mantissa+1 fi
+            fi;
+         mantissa := mantissa*2^(-52);
+      fi;
+  fi;
 fi;
-sign,exponent,mantissa;
-end:
-\end{lstlisting}
-
-Procedure \texttt{nearest} returns the nearest IEEE-754
-double-precision number.
-
-\begin{lstlisting}[caption={nearest},firstnumber=1]
-nearest := proc(x)
-  local sign, exponent, mantissa;
-
-  sign,exponent,mantissa := ieeedouble(x);
-  sign*mantissa*2^(exponent);
+sgn,exponent,mantissa;
 end:
 \end{lstlisting}
 

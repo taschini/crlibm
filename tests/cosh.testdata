@@ -37,8 +37,20 @@ Z fff00000 00000000 7ff00000 00000000 # -inf
 
 N fff80000 00000000 fff80000 00000000 # NaN
 P fff80000 00000000 fff80000 00000000 # NaN
-M fff80000 00000000 fff80000 00000000 # NaN
+M fff80000 00000000 fff80001 00000000 # NaN
 Z fff80000 00000000 fff80000 00000000 # NaN
+
+N 408F4000 00000000 7ff00000 00000000 # A large positive
+P 408F4000 00000000 7ff00000 00000000 
+M 408F4000 00000000 7fefffff ffffffff # (returns infty rounded down) 
+Z 408F4000 00000000 7fefffff ffffffff
+N C08F4000 00000000 7ff00000 00000000 # A large negative
+P C08F4000 00000000 7ff00000 00000000
+M C08F4000 00000000 7fefffff ffffffff 
+Z C08F4000 00000000 7fefffff ffffffff
+
+#TODO check the transition to infinity (as in exp.checkdate)
+
 
 # Behaviour at the bounds of the domain 
 N 408633ce 8fb9f87e 7ff00000 00000000 # The first value whose cosh is  +inf

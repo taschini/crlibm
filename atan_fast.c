@@ -181,7 +181,7 @@ extern double atan_rn(double x) {
 extern double atan_rd(double x) {
   double atanhi,atanlo;
   int index_of_e;
-  double roundcst;
+  double maxepsilon;
   db_number x_db;
   int absxhi;
   int sign;
@@ -222,13 +222,13 @@ extern double atan_rd(double x) {
       }
   
   atan_quick(&atanhi, &atanlo,&index_of_e, x_db.d);
-  roundcst = epsilon[index_of_e];
+  maxepsilon = epsilon[index_of_e];
   atanhi = sign*atanhi;
   atanlo = sign*atanlo;
   
   /* Rounding test to - infinity */ 
   
-  TEST_AND_RETURN_RD(atanhi, atanlo, roundcst);
+  TEST_AND_RETURN_RD(atanhi, atanlo, maxepsilon);
 
   /* if the previous block didn't return a value, launch accurate phase */
   return scs_atan_rd(sign*x_db.d);
@@ -244,7 +244,7 @@ extern double atan_ru(double x) {
   double atanhi,atanlo;
   int index_of_e;
   int sign;
-  double roundcst;
+  double maxepsilon;
   db_number x_db;
   int absxhi;
 
@@ -286,11 +286,11 @@ extern double atan_ru(double x) {
   }                   /* x<2^-27 then atan(x) =~ x */
   
   atan_quick(&atanhi, &atanlo, &index_of_e, x_db.d);
-  roundcst = epsilon[index_of_e];
+  maxepsilon = epsilon[index_of_e];
   atanhi = sign*atanhi;
   atanlo = sign*atanlo;
   
-  TEST_AND_RETURN_RU(atanhi, atanlo, roundcst);
+  TEST_AND_RETURN_RU(atanhi, atanlo, maxepsilon);
 
   /* if the previous block didn't return a value, launch accurate phase */
   return scs_atan_ru(x);

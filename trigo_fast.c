@@ -993,7 +993,7 @@ double tan_rn(double x){
     /* Fast Taylor series */
     x2 = x*x;
     p5 = t5.d + x2*(t7.d + x2*(t9.d + x2*t11.d));
-    tt = x2*(t3h.d + (t3l.d +x2*p5));
+    tt = x2*(t3h.d + (t3l.d + x2*p5));
     Add12(rri.rh, rri.rl, x, x*tt);  
     /* Test if round to nearest achieved */ 
     if(rri.rh == (rri.rh + (rri.rl * rndcst.d)))
