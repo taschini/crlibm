@@ -35,7 +35,7 @@ static void scs_sin(scs_ptr x){
   scs_square(x2, x);
   scs_mul(res_scs, sin_scs_poly_ptr[0], x2);
 
-  for(i=1; i<16; i++){
+  for(i=1; i<(DEGREE_SIN_SCS-1)/2; i++){ /* Last coeff is one, not read from the file*/
     scs_add(res_scs, sin_scs_poly_ptr[i], res_scs);
     scs_mul(res_scs, res_scs, x2);
   } 
@@ -56,10 +56,11 @@ static void scs_cos(scs_ptr x){
 
   scs_square(x2, x);
   scs_mul(res_scs, cos_scs_poly_ptr[0], x2);
-  for(i=1; i<16; i++){
+  for(i=1; i<DEGREE_COS_SCS/2; i++){
     scs_add(res_scs, cos_scs_poly_ptr[i], res_scs);
     scs_mul(res_scs, res_scs, x2);
   }
+  /* The last coefficient is exactly one and is not read from the file */
   scs_add(x, res_scs, SCS_ONE);
 
   return ;
@@ -104,7 +105,7 @@ double scs_sin_rn(double x){
     return -resd;
     default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_scs_sin \n", N);
-    exit(EXIT_FAILURE);
+    return 0.0;
   }
 }
 
@@ -142,7 +143,7 @@ double scs_sin_rd(double x){
     return -resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_scs_sin \n", N);
-    exit(EXIT_FAILURE);
+    exit(1);
   }
   return resd;
 }
@@ -181,7 +182,7 @@ double scs_sin_ru(double x){
     return -resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_scs_sin \n", N);
-    exit(EXIT_FAILURE);
+    exit(1);
   }
   return resd;
 }
@@ -220,7 +221,7 @@ double scs_sin_rz(double x){
     return -resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_scs_sin \n", N);
-    exit(EXIT_FAILURE);
+    exit(1);
   }
   return resd;
 }
@@ -262,7 +263,7 @@ double scs_cos_rn(double x){
     return resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_cos \n", N);
-    exit(EXIT_FAILURE);
+    return 0.0;
   }
   
 }
@@ -299,7 +300,7 @@ double scs_cos_rd(double x){
     return resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_cos \n", N);
-    exit(EXIT_FAILURE);
+    exit(1);
   }
   return resd;
 }
@@ -336,7 +337,7 @@ double scs_cos_ru(double x){
     return resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_cos \n", N);
-    exit(EXIT_FAILURE);
+    exit(1);
   }
   return resd;
 }
@@ -374,7 +375,7 @@ double scs_cos_rz(double x){
     return resd;
   default:
     fprintf(stderr,"ERREUR: %d is not a valid value in s_cos \n", N);
-    exit(EXIT_FAILURE);
+    exit(1);
   }
   return resd;
 }
@@ -406,7 +407,7 @@ static void scs_tan(double x, scs_ptr res_scs){
 
   scs_mul(res_scs, tan_scs_poly_ptr[0], x2);
   
-  for(i=1; i<33; i++){					/* accuracy 2^(-151) */
+  for(i=1; i<(DEGREE_TAN_SCS-1)/2; i++){ /* The last coeff is not read from the file. */
     scs_add(res_scs, tan_scs_poly_ptr[i], res_scs);
     scs_mul(res_scs, res_scs, x2);
   }
