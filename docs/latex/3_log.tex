@@ -256,22 +256,6 @@ P[8] & 0.363 & 60.58 & 60.02& 65.65 & 63.23\\
   \label{tab:logerror}
 \end{table}
 
-%%        P[1] & 0.375 & 61.10& 61.26 & 66.93 & 63.30\\ 
-%%       \hline                             
-%%       P[2] & 0.288 & 60.89& 61.87 & 67.20 & 63.46\\ 
-%%       \hline                             
-%%       P[3] & 0.208 & 60.47& 62.35 & 67.43 & 63.39\\ 
-%%       \hline                             
-%%       P[4] & 0.134 & 59.62& 62.77 & 67.65 & 63.73\\ 
-%%       \hline                             
-%%       P[5] & 0.065 & 57.68& 60.16 & 64.88 & 62.91\\ 
-%%       \hline                             
-%%       P[6] & 0.172 & 58.12& 61.22 & 66.20 & 62.78\\ 
-%%       \hline                             
-%%       P[7] & 0.272 & 59.93& 61.22 & 66.50 & 62.94\\ 
-%%       \hline                             
-%%       P[8] & 0.363 & 60.90& 61.19 & 66.81 & 63.23\\
-
 
 \newpage
 \subsection{Details of computer program}
@@ -624,15 +608,27 @@ operating systems.
  \hline
                          & min time      & max time      & avg time \\ 
  \hline
+ \texttt{libm}           & 180          & 6612          &        193 \\ 
  \hline
- \texttt{libm}           & 180          & 6612          &        189 \\ 
+  \texttt{mpfr}          & 8            & 266808        &      46698 \\ 
  \hline
-  \texttt{mpfr}          & 4            & 331372        &      61529 \\ 
+  \texttt{libultim}      & 440          & 498976        &        521 \\ 
  \hline
-  \texttt{libultim}      & 240          & 370036        &        520 \\ 
+ \texttt{crlibm}         & 332          & 52392         &        528 \\ 
  \hline
- \texttt{crlibm}         & 336          & 53700         &        529 \\ 
  \hline
+\multicolumn{4}{|c|}{Pentium III / Linux Debian woody / gcc 3.0}   \\
+ \hline
+  \hline
+                         & min time      & max time      & avg time \\ 
+ \hline
+ \texttt{libm}           & 184          & 699           &        184 \\ 
+ \hline
+  \texttt{mpfr}          & 239          & 184801        &      51279 \\ 
+ \hline
+  \texttt{libultim}      & 182          & 201400        &        293 \\ 
+ \hline
+ \texttt{crlibm}         & 173          & 19404         &        319 \\ 
  \hline
   \multicolumn{4}{|c|}{PowerPC G4 / MacOS X / gcc2.95}   \\
  \hline
