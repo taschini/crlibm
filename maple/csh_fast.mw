@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout alignment="left" bullet="none" name="Error"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout alignment="left" bullet="none" firstindent="0.0" leftmargin="0.0" linebreak="space" name="Normal" rightmargin="0.0" spaceabove="0.0" spacebelow="0.0"/><Layout alignment="centred" bullet="none" linespacing="0.5" name="Maple Output"/><Font background="[0,0,0]" bold="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" opaque="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[255,0,255]" name="Error" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" family="Lucida Bright" foreground="[0,0,255]" name="2D Output" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" opaque="false" size="12"/><Font background="[0,0,0]" family="Monospaced" foreground="[0,0,255]" name="Line Printed Output" opaque="false" readonly="true" size="12"/></Styles><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">restart:
+Digits := 150;
+with (numapprox):with(orthopoly):</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSdEaWdpdHNHNiIiJF0i</Equation></Text-field></Output></Group><Text-field/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "Common_maple_procedures.m";
+deg:=18;
+mkdir("TEMPLOG");
+
+</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSRkZWdHNiIiIz0=</Equation></Text-field><Text-field layout="Error" style="Error">Error, (in mkdir) directory exists and is not empty
+</Text-field></Output></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">Variables</Text-field></Title><Text-field layout="Normal" style="Text">n_double : maximal degree of the interpolation polynom
+n_double_double : maximal coefficient which is coded on 2 doubles</Text-field><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">n_double_ch := 16:
+n_double_double_ch := 3:
+n_double_sh := 15:
+n_double_double_sh := 4:
+x_max := ln(2.)/2.:
+</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Computation of bounds</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">max_inf_input_ch := arccosh(hexa2ieee(["7FEFFFFF","FFFFFFFF"])):
+max_input_ch := solve(exp(x) = 2**160*exp(-x),x):
+k_max_ch := max_input_ch / ln(2):
+min_inf_input_ch := -arccosh(hexa2ieee(["7FEFFFFF","FFFFFFFF"])):
+min_input_ch := solve(exp(-x) = 2**160*exp(x),x):
+min_absolute_input_ch := 2^(-27.):
+k_min_ch := min_input_ch / ln(2):
+ieeehexa(cosh(min_absolute_input_ch)) = ieeehexa(1.);
+
+max_inf_input_exp := ln(hexa2ieee(["7FEFFFFF","FFFFFFFF"])):
+
+max_inf_input_sh := arcsinh(hexa2ieee(["7FEFFFFF","FFFFFFFF"])):
+max_input_sh := solve(exp(x) = 2**160*exp(-x),x):
+k_max_sh := max_input_sh / ln(2):
+min_inf_input_sh := -arcsinh(hexa2ieee(["FFEFFFFF","FFFFFFFF"])):
+min_absolute_input_sh := 2^(-26.):
+min_input_sh := solve(exp(-x) = 2**160*exp(x),x):
+k_min_sh := min_input_sh / ln(2):
+ieeehexa(sinh(min_absolute_input_sh)) = ieeehexa(min_absolute_input_sh);
+
+inv_ln_2 := 1/ln(2.):
+ln2_hi := hexa2ieee(["3FE62E42", "FEFA3800"]):
+ln2_lo := ln(2.)-hexa2ieee(["3FE62E42", "FEFA3800"]):
+
+
+</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMvNyRRKTNGRjAwMDAwNiJRKTAwMDAwMDAwRiZGJA==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMvNyRRKTNFNTAwMDAwNiJRKTAwMDAwMDAwRiZGJA==</Equation></Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Computation of polynomial coefficients</Text-field></Title><Group><Input><Text-field layout="Normal" style="Maple Input">poly_ch :=series(cosh(x),x,n_double_ch):
+poly_ch := convert(poly_ch,polynom);</Text-field></Input><Input><Text-field layout="Normal" style="Maple Input">poly_sh :=series(sinh(x),x,n_double_sh):
+poly_sh := convert(poly_sh,polynom);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SShwb2x5X2NoRzYiLDIiIiJGJyokSSJ4R0YlIiIjI0YnRioqJEYpIiIlI0YnIiNDKiRGKSIiJyNGJyIkPygqJEYpIiIpI0YnIiY/LiUqJEYpIiM1I0YnIigrKUdPKiRGKSIjNyNGJyIqKzsreiUqJEYpIiM5I0YnIiwrN0h5cik=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SShwb2x5X3NoRzYiLDBJInhHRiUiIiIqJEYnIiIkI0YoIiInKiRGJyIiJiNGKCIkPyIqJEYnIiIoI0YoIiVTXSokRiciIiojRigiJyEpR08qJEYnIiM2I0YoIikrbyIqUiokRiciIzgjRigiKyszLUZp</Equation></Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Computation of errors</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">horner_error_ch := compute_abs_rounding_error(poly_ch,x_max,n_double_double_ch);
+sprintf("In bits :"); -log2(horner_error_ch);</Text-field></Input><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 13, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 11, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 9, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 7, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 5, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 3, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 1, consider decreasing xmax
+WARNING Add22 cannot be used at step 1, use Add22Cond
+    coeff=0.00000000000000000000e+00,  xmax*Smax=1.75028258012441631295e-01</Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STBob3JuZXJfZXJyb3JfY2hHNiI2JSQiYXQrRGYzO1V0WGkjUmhVMDR0TyZbNlksKXA/eW1McnRuJFF5KWUjejsoSD5cQTdFX0g6VUopPiFmUkQjZmVzZDpZYyYqPiEpUWo5KWYuJTMpbzc1cCMhJG8iJCJhdHBaRGZyIylvVDBdXygzbFEneUs5Oj9DQyRcLClHYj14TT1hcGRpSi9DT2tjdTZfY2xQbWdSIjNwSiQpeWAhKXojMyFmY09xSkpyeSxBRylSJFIqISRdIiQiYXRidkBrUkl0ZUkjZVt2RiUqMztbJm86dyUqXHo8KEc1KGYwdFgpUXUkZSQ+c1YhXEE/SiJHOVVMYSZcIVInW1pGeHcsM1RWakhvb0dAKXo8PGcxMSIhJFwi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRKklufmJpdHN+OjYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0bSMqSGNIISl6IVJ6dC96anQoUWQqKTMjNCFlcHVSUnMyO1EkR2YleTlfVHlUR296JWZnIj5idShHTywocClRS0BEUFInXFVEZykpZnRFIWU0WVspb2ghJFsi</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">horner_error_sh := compute_abs_rounding_error(poly_sh,x_max,n_double_double_sh);
+sprintf("In bits : \n");
+-log2(horner_error_sh);</Text-field></Input><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 12, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 10, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 8, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 6, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 4, consider decreasing xmax
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 2, consider decreasing xmax
+WARNING Add22 cannot be used at step 2, use Add22Cond
+    coeff=0.00000000000000000000e+00,  xmax*Smax=5.81101594628725919816e-02</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Warning! in compute_abs_rounding_error, Smin&lt;=0 at iteration 0, consider decreasing xmax
+WARNING Add22 cannot be used at step 0, use Add22Cond
+    coeff=0.00000000000000000000e+00,  xmax*Smax=3.53553390593273762123e-01</Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+STBob3JuZXJfZXJyb3Jfc2hHNiI2JSQiYXQ5aycqWyg0ZmRePjRhYGZqWlYpR0BbYmp0YCl5RDssdE5rNiJbTipvcUlSOipmZnpULlF3Q2pRbEUhKls9XGRxdTcmKXljMyFvdDciKSlSSixoPSEkcCIkIWF0RjtcYjNRMCJIeXUoRy4lUWE5MHNfbCIqZiYpKXkuJikqKXopeTlaV0ZrRFFEYVx0YHlaak9qPT9QeCtdbkpwa0ZiYSo9cSZSQkB3dEtmIVJgTk4hJF0iJCJhdHdcInllNFNYKCp5TSJSaS5CPzMtJCplVk5GJXlhczQkW0w8K3UmSG50VyNHJW9hYSRvLHpTOV0qb3khZVs2W08mMzhnKj1xJlJCQHd0S2YhUmBOTkYs</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRLElufmJpdHN+On58KzYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0XExiNnUqbzZTSDFUbXgxcCMpR2N4MTFdJCl5K29DJFE/RCZIW0ZYR0cjem9Wa1hNK0hwbjxjcidIIlE2NVY9eF4yOVZwXHpiXTdnbHRDYWwhJFsi</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">approx_error_ch := infnorm((cosh(x)-poly_ch)/cosh(x),x= -x_max..x_max):
+-log2(approx_error_ch);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0S3EnRygqKno3amdKLVQzKHAteHZoX1IlKSozdSQ+MnB4cG8xJSlISk8sRkopM2c3Z0hCPW4leXhgZ1pwI0dCJlxvXjQ3dSQpKnkzZW9XSmQpeiV6byEkWyI=</Equation></Text-field></Output></Group><Group><Output><Text-field layout="Maple Output" style="2D Output"/></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">approx_error_sh := infnorm((sinh(x)-poly_sh)/sinh(x),x= -x_max..x_max):
+-log2(approx_error_sh);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkImF0Ql4kUlInKmZfNnE2JCk0UFJ6PGIjPXIhenE2cltQVyIzaEN2UzRpOG4wJGZtdnRPcCRwNyYzW2wuIylvWThkL0FoR3V1TCc0O3VdZ3IqKSkqNG9oISRbIg==</Equation></Text-field></Output></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Output</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text"><Font executable="false">Some little routines to convert numbers to string with a good format, for inserting them into .h header file</Font></Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">IEEE2db_number_BE := proc(ieee_number)
+local hex1, hex2, hexcat;
+hexcat=ieeehexa(ieee_number);
+hex1:= op(1, ieeehexa(ieee_number)):
+hex2:= op(2, ieeehexa(ieee_number)):
+cat(cat("{{0x"||hex1||",0x"||hex2||"}};     /*",sprintf("%.10e",ieee_number)),"*/  \n");
+end:
+IEEE2db_number_LE := proc(ieee_number)
+local hex1, hex2, hexcat;
+hexcat=ieeehexa(ieee_number);
+hex1:= op(2, ieeehexa(ieee_number)):
+hex2:= op(1, ieeehexa(ieee_number)):
+cat(cat("{{0x"||hex1||",0x"||hex2||"}};     /*",sprintf("%.10e",ieee_number)),"*/  \n");
+end:
+IEEE2db_number := proc(ieee_number, big_little)
+if (big_little = 1) then
+IEEE2db_number_BE(ieee_number):
+else 
+IEEE2db_number_LE(ieee_number):
+fi;
+end:
+lo_part := proc(ieee_number)
+ieee_number - hexa2ieee(ieeehexa(ieee_number));
+end:</Text-field></Input><Input><Text-field prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">IEEE2db_number(12., 1);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiNRV3xmcnxmcjB4NDAyODAwMDAsMHgwMDAwMDAwMHxocnxocjt+fn5+fi8qMS4yMDAwMDAwMDAwZSswMSovfn58KzYi</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">filename := "TEMPLOG/csh_fast.h":
+fd := fopen(filename, WRITE, TEXT):
+fprintf(fd, "\n /* File generated by maple/csh_fast.mw */ \n"):
+fprintf(fd, "\n"):
+fprintf(fd, "/* some constants for the hyperbolic sine and the hyperbolic cosine */ \n"):
+fprintf(fd, "#ifdef WORDS_BIGENDIAN  \n"):
+
+for big_little from 1 to 2 do
+	if (big_little = 2) then
+		fprintf(fd,                "#else  \n"):
+	fi:
+	fprintf(fd, cat(  "  db_number const max_inf_input_ch = ",IEEE2db_number(max_inf_input_ch,big_little))):
+	fprintf(fd, cat(  "  db_number const max_input_ch = ",IEEE2db_number(max_input_ch,big_little))):
+	fprintf(fd, cat(  "  db_number const min_inf_input_ch = ",IEEE2db_number(min_inf_input_ch,big_little))):
+	fprintf(fd, cat(  "  db_number const min_input_ch = ",IEEE2db_number(min_inf_input_ch,big_little))):
+	fprintf(fd, cat(  "  db_number const min_absolute_input_ch = ",IEEE2db_number(min_absolute_input_ch,big_little))):
+	fprintf(fd, cat(  "  db_number const max_inf_input_exp = ",IEEE2db_number(max_inf_input_exp,big_little))):
+	
+	fprintf(fd, cat(  "  db_number const max_inf_input_sh = ",IEEE2db_number(max_inf_input_sh,big_little))):
+	fprintf(fd, cat(  "  db_number const max_input_sh = ",IEEE2db_number(max_input_sh,big_little))):
+	fprintf(fd, cat(  "  db_number const min_inf_input_sh = ",IEEE2db_number(min_inf_input_sh,big_little))):
+	fprintf(fd, cat(  "  db_number const min_input_sh = ",IEEE2db_number(min_input_sh,big_little))):
+	fprintf(fd, cat(  "  db_number const min_absolute_input_sh = ",IEEE2db_number(min_absolute_input_sh,big_little))):
+	
+	fprintf(fd, cat(  "  db_number const inv_ln_2 =   ",IEEE2db_number(inv_ln_2,big_little))):
+	fprintf(fd, cat(  "  db_number const ln2_hi = ",IEEE2db_number(ln2_hi,big_little))):
+	fprintf(fd, cat(  "  db_number const ln2_lo = ",IEEE2db_number(ln2_lo,big_little))):
+
+	fprintf(fd,"/* the coefficients for the cosh-approximations */ \n"):
+	for i from 1 to ((n_double_double_ch+1)/2) do
+		fprintf(fd, cat(cat(cat(  "  db_number const c",convert(i-1,string)),"_hi =   "),IEEE2db_number(coeff(poly_ch,x,2*(i-1)),big_little))):
+		fprintf(fd, cat(cat(cat(  "  db_number const c",convert(i-1,string)),"_lo =   "),IEEE2db_number(lo_part(coeff(poly_ch,x,2*(i-1))),big_little))):
+	od:
+	for i from 1 to (n_double_ch/2) do
+		fprintf(fd, cat(cat(cat(  "  db_number const c",convert(i-1,string))," =   "),IEEE2db_number(coeff(poly_ch,x,2*(i-1)),big_little))):
+	od:
+
+	fprintf(fd,"/* the coefficients for the sinh-approximations */\n"):
+	for i from 1 to ((n_double_double_sh+1)/2) do
+		fprintf(fd, cat(cat(cat(  "  db_number const s",convert(i-1,string)),"_hi =   "),IEEE2db_number(coeff(poly_sh,x,2*i-1),big_little))):
+		fprintf(fd, cat(cat(cat(  "  db_number const s",convert(i-1,string)),"_lo =   "),IEEE2db_number(lo_part(coeff(poly_sh,x,2*i-1)),big_little))):
+	od:
+	for i from 1 to (n_double_sh/2) do
+		fprintf(fd, cat(cat(cat(  "  db_number const s",convert(i-1,string))," =   "),IEEE2db_number(coeff(poly_sh,x,2*i-1),big_little))):
+	od:
+od:
+
+
+fprintf(fd, "#endif  \n"):
+
+fclose(fd):
+</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">Scratch</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Text-field/></Section><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/><Text-field/></Worksheet>

@@ -15,7 +15,8 @@ libcrlibm_a_SOURCES =  \
 	sine.h sine.c sine_fast.c sine_fast.h\
 	cosine.h cosine.c\
 	tan.h tan.c cotan.c\
-	atan.h atan.c 
+	atan.h atan.c \
+	csh_fast.h csh_fast.c
 
 # add all the scs_lib useful functions
 libcrlibm_a_LIBADD = scs_lib/addition_scs.o \

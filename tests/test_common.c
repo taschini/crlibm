@@ -14,6 +14,10 @@
 #include <MathLib.h>
 #endif
 
+#ifndef CHANGED_FL
+#define CHANGED_FL
+#endif
+
 /* A variable equal to zero, stored here so that the compiler doesn't
    know its value in the other functions, which allows to prevent some
    optimizations  */
@@ -102,6 +106,12 @@ double rand_for_exp(){
   result.i[HI_ENDIAN] += (1023 + e -10)<<20;
   return result.d;
 }
+
+#if CHANGED_FL
+#define rand_for_cosh rand_for_exp
+#define rand_for_sinh rand_for_exp
+#endif
+
 
 /* For log we only test the positive numbers*/
 double rand_for_log(){
@@ -209,7 +219,54 @@ void test_init(/* pointers to returned value */
 #endif
     }
 
+#if CHANGED_FL
+  else if (strcmp (func_name, "cosh") == 0)
+    {
+      *randfun        = rand_for_cosh;
+      *worst_case= .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
+      *testfun_libm   = cosh;
+      switch(crlibm_rnd_mode){
+      case 2:
+	*testfun_crlibm = exp_ru;	break;
+      case 3:
+	*testfun_crlibm = exp_rd;	break;
+      case 4:
+	*testfun_crlibm = exp_rz;	break;
+      default:
+	*testfun_crlibm = cosh_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = ucosh;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_cosh;
+#endif
+    }
 
+  else if (strcmp (func_name, "sinh") == 0)
+    {
+      *randfun        = rand_for_sinh;
+      *worst_case= .75417527749959590085206221024712557043923055744016892276704311370849609375e-9;
+      *testfun_libm   = sinh;
+      switch(crlibm_rnd_mode){
+      case 2:
+	*testfun_crlibm = exp_ru;	break;
+      case 3:
+	*testfun_crlibm = exp_rd;	break;
+      case 4:
+	*testfun_crlibm = exp_rz;	break;
+      default:
+	*testfun_crlibm = sinh_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_ibm    = usinh;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_sinh;
+#endif
+    }
+
+#endif  /* CHANGED_FL */
   else  if (strcmp (func_name, "log") == 0)
     {
       *randfun        = rand_for_log;
