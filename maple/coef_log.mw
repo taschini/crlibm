@@ -1,36 +1,415 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout leftmargin="0.0" name="_pstyle49" rightmargin="0.0"/><Layout alignment="left" bullet="none" name="Heading 2" spaceabove="8.0" spacebelow="2.0"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="_pstyle47" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle45" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle42" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle41" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle82" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle81" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle80" rightmargin="0.0"/><Layout leftmargin="0.0" name="Normal" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle39" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle38" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle36" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle35" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle33" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle32" rightmargin="0.0"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle16" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle14" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle13" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle504" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle10" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="ParagraphStyle8" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 2" opaque="false" size="16"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_pstyle42" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle80" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle496" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle39" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="Page Number" readonly="false" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_cstyle494" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle492" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_pstyle33" readonly="false"/></Styles><Page-Numbers enabled="false" first-number="1" first-numbered-page="1" horizontal-location="right" style="Page Number" vertical-location="bottom"/><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">restart:
-Digits := 200:</Text-field></Input><Input><Text-field layout="_pstyle33" prompt="&gt; " style="_pstyle33">with (numapprox):<Font italic="false" size="12" underline="false">with(orthopoly):</Font></Text-field></Input><Input><Text-field layout="_pstyle33" prompt="&gt; " style="_pstyle33">read "Common_maple_procedures.m";
-mkdir("TEMPLOG");</Text-field></Input></Group><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Second, accurate phase in SCS</Text-field></Title><Group><Input><Text-field layout="_pstyle41" style="_cstyle494">Approach for the scs function:</Text-field><Text-field layout="_pstyle42" style="_pstyle42"/><Text-field layout="_pstyle41" style="_cstyle494"> x=2^e (1+f)
- log(x) = e.log(2) + log(1+f)
-
-  log(1+f) = log(w) + log(1+(1+f-w)/w)
-</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">W := 2^5:</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Poly_P := series((ln(1+x)/ln(2.))/x, x=0, 45):
-Poly_Q := convert(Poly_P,polynom):</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Poly_cheb := chebpade(Poly_Q, x=-1/W..1/W, [19,0]):</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Poly_Res  := sort(expand(x * Poly_cheb)):</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">log2(infnorm((1-(expand(Poly_Res))/(ln(1+x)/ln(2.))), x=-1/W..1/W));</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle41" style="_cstyle494">This procedure gives under a polynom form value needed by tabular range reduction for the logarithm.
-DON'T forget the zero !!!!
-</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Digits       := 50:  
-table_ti     := 0:
-table_inv_wi := 0:
-N            := -4:   
-break_point  := sqrt(2.):
-start_nb     := round((break_point/2) * 2.^(-N))*2.^(N):
-nb_turn      := round((break_point/2) * 2.^(-N)): 
-
-for i from 0 to nb_turn do
-   table_ti := table_ti * x + log(start_nb):
-   table_inv_wi := table_inv_wi *x + 1./ start_nb:
-   start_nb := start_nb + 2.^(N):
-od:</Text-field></Input></Group></Section><Section><Title><Text-field layout="Heading 1" style="Heading 1">First, quick phase</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" style="Text">Approach for the first function:</Text-field><Text-field layout="Normal" style="Text">log(x) = E*log(2) + P(R)
+<Worksheet><Version major="6" minor="0"/><View-Properties><Zoom percentage="100"/></View-Properties><Styles><Layout alignment="left" bullet="none" name="Warning"/><Layout alignment="left" bullet="none" name="Heading 2" spaceabove="8.0" spacebelow="2.0"/><Layout alignment="centred" bullet="none" linespacing="0.5" name="Maple Output"/><Layout alignment="left" bullet="none" name="Heading 1" spaceabove="8.0" spacebelow="4.0"/><Layout leftmargin="0.0" name="_pstyle47" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle45" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle42" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle41" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle82" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle81" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle80" rightmargin="0.0"/><Layout alignment="left" bullet="none" name="Error"/><Layout leftmargin="0.0" name="Normal" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle39" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle38" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle36" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle35" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle33" rightmargin="0.0"/><Layout leftmargin="0.0" name="_pstyle32" rightmargin="0.0"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle16" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="Maple Input" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle14" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle13" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle504" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="_cstyle10" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="Text" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[0,0,255]" name="Warning" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" italic="false" name="ParagraphStyle8" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[0,0,255]" name="Line Printed Output" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 2" opaque="false" size="16"/><Font background="[0,0,0]" bold="true" family="Serif" name="Heading 1" opaque="false" size="18"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_pstyle42" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle80" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" family="Monospaced" foreground="[255,0,255]" name="Error" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" family="Lucida Bright" foreground="[0,0,255]" name="2D Output" opaque="false" readonly="true" size="12"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle496" readonly="false"/><Font background="[0,0,0]" bold="false" executable="false" family="Lucida Bright" foreground="[0,0,0]" italic="false" name="_pstyle39" readonly="false" size="12" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="Page Number" readonly="false" underline="false"/><Font background="[0,0,0]" executable="false" family="Lucida Bright" name="_cstyle494" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_cstyle492" readonly="false"/><Font background="[0,0,0]" bold="true" executable="true" family="Monospaced" foreground="[255,0,0]" name="_pstyle33" readonly="false"/></Styles><Page-Numbers enabled="false" first-number="1" first-numbered-page="1" horizontal-location="right" style="Page Number" vertical-location="bottom"/><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">restart:
+Digits := 100:</Text-field></Input><Input><Text-field layout="_pstyle33" prompt="&gt; " style="_pstyle33">with (numapprox):<Font italic="false" size="12" underline="false">with(orthopoly):</Font></Text-field></Input><Input><Text-field layout="_pstyle33" prompt="&gt; " style="_pstyle33">read "Common_maple_procedures.m";
+mkdir("TEMPLOG");
+deg:=12;</Text-field></Input><Output><Text-field layout="Error" style="Error">Error, (in mkdir) directory exists and is not empty
+</Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSRkZWdHNiIiIzc=</Equation></Text-field></Output></Group><Section><Title><Text-field layout="Heading 1" style="Heading 1">First, quick phase</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" style="Text">Approach for the first function:</Text-field><Text-field layout="Normal" style="Text">log(x) = E*log(2) + P(R)
 where P(R) is defined over such an interval [11/16; 12/16] ... [21/16; 23/16]
-At all, there is 8 intervals, corresponding to 8 polynomials.</Text-field><Text-field layout="Normal" style="Text"/></Input></Group><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Polynomials</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">In the following, Polyn is the n-th polynomial in infinite precision,
-and Pn is the corresponding truncated polynomial
+At all, there is 8 intervals, corresponding to 8 polynomials.</Text-field></Input><Input><Text-field layout="Normal" style="Text"/></Input></Group><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Interval parameters</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">Xmax:=[2**(-5), 2**(-5), 2**(-5), 2**(-5), 2**(-4), 2**(-4), 2**(-4), 2**(-4)]:
+Ilist:=[[11/16,12/16],[12/16,13/16],[13/16,14/16],[14/16,15/16],[15/16,17/16],[17/16,19/16],[19/16,21/16],[21/16,23/16]]:
+midI:=[23/32,25/32,27/32,29/32,1,18/16,20/16,22/16]:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save Xmax, Ilist, midI, "TEMPLOG/parameterlog.m";</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Computation of the polynomials</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">This is the function we use on all the intervals except i=5 (the one around 1)</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">poly_log_2 := proc(i,deg) 
+ local p, e, pt, rel_approx_error, abs_rounding_error, maxptr, maxpt, delta;
+  p:=poly_trunc_f2d_2( log(x+midI[i]) ,  deg, Xmax[i]):
+  pt:=p[1]: 
+  rel_approx_error:=p[2]:
+  maxpt := p[3]:
+  e:=compute_rounding_error(pt, Xmax[i], 2):
+  abs_rounding_error:=e[1]:
+  maxptr := e[2]:
+  delta := (rel_approx_error*maxptr + abs_rounding_error)/maxptr * (1+2^(-100)):
+  printf("Interval %d  : maxp=(%3.2f,%3.2f),  rel. approx err. = %3.2f bits, abs_round. err. = %3.2f    delta=%3.2f\n",
+	i, maxpt, maxptr,  -log2(rel_approx_error), -log2(abs_rounding_error), -log2(delta));
+  [pt, max(maxpt,maxptr), delta]
+end proc:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Special case around one</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"><Font opaque="false">i:=5:
+xmax5:=Xmax[i]:
+pe5:=minimax(  (log(1+x)/x),  x=-xmax5..xmax5,  [deg-1,0], 1 ,  'err'):
+pe5:=pe5*x:</Font>
+pt5 := poly_exact2( pe5, 2):
+rept5 := <Font opaque="false">infnorm( 1-pt5/log(1+x), x=-xmax5..xmax5):</Font>
+maxpt5:= <Font opaque="false">infnorm( pt5, x=-xmax5..xmax5):</Font>
+log2(rept5);<Font opaque="false">
+e5:=compute_rounding_error(pt5, xmax5, 2):
+abs_rounding_error5:=e5[1]:
+maxptr5 := e5[2]:
+delta5 := (rept5*maxptr5 + abs_rounding_error5)/maxptr5 * (1+2^(-100)):
+printf("Interval %d  : maxp=(%3.2f,%3.2f),  rel. approx err. = %3.2f bits, abs_round. err. = %3.2f    delta=%3.2f\n",
+	i, maxpt5, maxptr5,  -log2(rept5), -log2(abs_rounding_error5), -log2(delta5));</Font></Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIV9xOz00V2Y2LDkiKSpmJ3l4TyQpeSF6Q2YkZTh4SjwqeiZvQi4nNF0oPi9WIkg2RSwhUUQ/JD0oPSI9PCchIykq</Equation></Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">WARNING Add22 cannot be used at step 0, use Add22Cond
+    coeff=0.00000000000000000000e+00,  xmax*Smax=6.45385211375711716688e-02</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Interval 5  : maxp=(0.06,0.06),  rel. approx err. = 61.72 bits, abs_round. err. = 61.82    delta=57.77
+</Text-field></Output></Group><Group><Input><Text-field layout="Normal" style="Text">The warning above is OK, because the Add22 in question adds zero, which is an exact operation even with the unconditional version.</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">PolyList:=[ 
+  poly_log_2(1,deg),
+  poly_log_2(2,deg),
+  poly_log_2(3,deg),
+  poly_log_2(4,deg),
+  [pt5,max(maxptr5,maxpt5),delta5],
+  poly_log_2(6,deg),
+  poly_log_2(7,deg),
+  poly_log_2(8,deg)
+]:  </Text-field></Input><Output><Text-field layout="Normal" style="Line Printed Output">Interval 1  : maxp=(0.37,0.37),  rel. approx err. = 68.38 bits, abs_round. err. = 62.92    delta=61.49
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Interval 2  : maxp=(0.29,0.29),  rel. approx err. = 70.79 bits, abs_round. err. = 63.17    delta=61.37
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Interval 3  : maxp=(0.21,0.21),  rel. approx err. = 67.49 bits, abs_round. err. = 63.40    delta=61.12
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Interval 4  : maxp=(0.13,0.13),  rel. approx err. = 66.47 bits, abs_round. err. = 63.62    delta=60.68
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Interval 6  : maxp=(0.17,0.17),  rel. approx err. = 64.54 bits, abs_round. err. = 62.18    delta=59.59
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Interval 7  : maxp=(0.27,0.27),  rel. approx err. = 65.77 bits, abs_round. err. = 62.50    delta=60.58
+</Text-field></Output><Output><Text-field layout="Normal" style="Line Printed Output">Interval 8  : maxp=(0.36,0.36),  rel. approx err. = 70.51 bits, abs_round. err. = 62.79    delta=61.32
+</Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save PolyList, "TEMPLOG/PolyList.m";</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2">Computation of constants for RN test</Text-field></Title><Group><Input><Text-field layout="Normal" style="Text">We have in PolyList delta the total error for polynomial approximation, build tabrndcst[] the table of "e" needed for round to nearest</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"><Font opaque="false">read "TEMPLOG/PolyList.m";</Font> read "TEMPLOG/parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">tabrndcst:=[]:
+tabdelta:=[]:
+for i from 1 to 8 do
+  delta:=PolyList[i][3];
+  tabdelta:=[op(tabdelta), delta];
+  tabrndcst:=[op(tabrndcst), evalf(compute_rn_constant(delta))]:
+od:
+save tabrndcst, tabdelta, "TEMPLOG/rndcstlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">map(evalf,tabrndcst);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM3KiQiX3ErKysrKysrKysrKysrKysrKysrKysrKyt2VikqZWFNNVhKNykqWz10JltSZU5UbCVSdWQwNSEjKiokIl9xKysrKysrKysrKysrKysrKysrKysrKytdN2BwNyFRZTpVUiZRUTJ5THojemYnZVhgQzExNUYmJCJfcSsrKysrKysrKysrKysrKysrKysrKysrXWkhUisvVGtlWlhFJHlhKlxFcy8zXGEoW1ZCMjVGJiQiX3ErKysrKysrKysrKysrKysrKysrKysrKysrXTd5RFItKCkpUVM8ZFYrYikpeUk9VV1SKno0NUYmJCJfcSsrKysrKysrKysrKysrKysrKysrKysrXVBmJD1qKHAhKSpSQXIibyVccDh5TGYiW21oWFB5NUYmJCJfcSsrKysrKysrKysrKysrKysrKysrKysrK11QZiRvXSVcQS5NQCQ+NzI5biopSFJVXnExNi0iRiYkIl9xKysrKysrKysrKysrKysrKysrKysrKytdKD0jXGEzXSIqcFFOR04oUSFwUUMxJ1wyITNDYTU1RiYkIl9xKysrKysrKysrKysrKysrKysrKysrKytdUE1fT1xWT19xMWAnZTdweD5AMiMqKXlNcUYxNUYm</Equation></Text-field></Output></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Coefficient output</Text-field></Title><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">read "TEMPLOG/PolyList.m"; read "TEMPLOG/parameterlog.m";read "TEMPLOG/rndcstlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">filename:="TEMPLOG/log_fast.h":
+fd:=fopen(filename, WRITE, TEXT):
 
-Sorry, it's not a loop because there is a little bit of hand-tuning in P3</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 0</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Pser:=series((log(x)/log(2))/(x),x=23/32,100):
+fprintf(fd, "#include \"crlibm.h\"\n#include \"crlibm_private.h\"\n");
+
+fprintf(fd, "\n/*File generated by maple/coef_log.mw*/\n");
+
+fprintf(fd, "\n\#define SQRT_2 1.4142135623730950489e0 \n\n");
+fprintf(fd, "\n#ifdef WORDS_BIGENDIAN\n");
+fprintf(fd, "\db_number const ln2hi = {{0x3FE62E42, 0xFEFA39EF}};\n");
+fprintf(fd, "db_number const ln2lo = {{0x3C7ABC9E, 0x3B39803F}};\n"):
+fprintf(fd, "db_number const two52 = {{0x43300000, 0x00000000}};\n"):
+fprintf(fd, "#else\ndb_number const ln2hi = {{0xFEFA39EF, 0x3FE62E42}};\n");
+fprintf(fd, "db_number const ln2lo = {{0x3B39803F, 0x3C7ABC9E}};\n"):
+fprintf(fd, "db_number const two52 = {{0x00000000, 0x43300000}};\n"):
+fprintf(fd, "#endif\n\n"):
+
+fprintf(fd, "#define DEGREE %d\n\n", deg):
+# THE POLYNOMIALS
+
+npol:=8: 
+n:=2:  # the degree from which we want two doubles
+
+fprintf(fd,"#ifdef WORDS_BIGENDIAN\n"):
+for isbig from 1 to 0 by -1 do
+
+  if(isbig=0) then
+    fprintf(fd,"#else\n"):
+  fi;
+
+  # Write middle table
+
+  fprintf(fd, "db_number const middle[%d] =\n{\n",npol);
+  for i from 1 to 7 do
+    printendian(fd,midI[i],isbig);
+    fprintf(fd," ,\n"):
+  od:
+  printendian(fd,midI[8],isbig):
+  fprintf(fd, "\n};\n\n"):
+
+  #Write poly_log_fast_h
+
+  fprintf(fd,"db_number const poly_log_fast_h[%d][%d] =\n{\n", npol, deg+1):
+  for k from 1 to 8 do<Font italic="false" size="12" underline="false">
+    fprintf(fd," /* polynomial %d */\n",k);</Font>
+    fprintf(fd,"{\n");
+    P:=PolyList[k][1]:
+    for j from 0 to deg do<Font italic="false" opaque="false" size="12" underline="false">
+      coef:=hi_lo(coeff(P,x,j)):</Font><Font opaque="false">
+      printendian(fd, coef[1], isbig):</Font>
+      if j&lt;deg then fprintf(fd," ,\n") fi:
+    od:
+    fprintf(fd, "\n}"):
+    if k&lt;8 then fprintf(fd, ",\n") fi:
+  od: <Font italic="false" size="12" underline="false">
+</Font>
+  fprintf(fd, "\n};\n\n"):
+
+  #Write poly_log_fast_l
+
+  fprintf(fd,"db_number const poly_log_fast_l[%d][%d] =\n{\n",8,n):
+  for k from 1 to 8 do
+    fprintf(fd," /* polynomial %d */\n",k);
+    fprintf(fd,"{\n");
+    P:=PolyList[k][1]:
+    for j from 0 to n-1 do
+      coef:=hi_lo(coeff(P,x,j)):
+      printendian(fd, coef[2], isbig):
+      if j&lt;deg then fprintf(fd," ,\n") fi:
+    od:
+    fprintf(fd, "\n}"):
+    if k&lt;8 then fprintf(fd, ",\n") fi:
+  od:
+  fprintf(fd,"\n};\n\n"):
+
+od:
+fprintf(fd,"#endif\n\n\n"):
+
+
+ 
+fprintf(fd,"/* Constants for rounding  */\n"):
+fprintf(fd,"double const delta[%d] =\n{\n",npol):
+for k from 1 to 7 do
+   fprintf(fd,"%1.50e, \n",tabdelta[k]):
+od:
+fprintf(fd,"%1.50e\n};\n\n",tabdelta[8]):
+
+fprintf(fd,"double const rncst[%d] =\n{\n",npol):
+for k from 1 to 7 do
+  fprintf(fd,"%1.50f, \n",tabrndcst[k]):
+od:
+fprintf(fd,"%1.50f\n};\n\n",tabrndcst[8]):
+fclose(fd):
+</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI1s=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI1Q=</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI1U=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI0M=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI18=</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMiI2U=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2"><Font encoding="ISO8859-1" executable="false" foreground="[0,0,0]" italic="false" underline="false">DEBUG, CALCUL du polyn\364me, coeff apres coeff</Font></Text-field></Title><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">read "parameterlog.m";
+</Text-field></Input><Output><Text-field layout="Error" style="Error">Error, could not open `parameterlog.m` for reading
+</Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "procedures.m";
+read "Polylog.m";</Text-field></Input><Output><Text-field layout="Error" style="Error">Error, could not open `procedures.m` for reading
+</Text-field></Output><Output><Text-field layout="Error" style="Error">Error, could not open `Polylog.m` for reading
+</Text-field></Output></Group><Group><Input><Text-field layout="_pstyle35" style="Text">Valeurs du debuggueur</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">debug1:=hexa2ieee(["3ff1078f","1da3ee1b"]):
+debug2:=hexa2ieee(["3ff11adb","35a43279"]):
+debug3:=hexa2ieee(["3ff2f3dd","5f33e4ad"]):
+debug4:=hexa2ieee(["3ff2fa98","c7deeb8e"]):
+debug5:=hexa2ieee(["4002fe57","89bc59a6"]):</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle80" style="_pstyle80"><Font encoding="ISO8859-1">R\351alise le calcul du polynome tel qu'il est calcul\351 sur ordinateur : param\350tres d'entr\351e, variable enter et entier i.. </Font>
+</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle81" prompt="&gt; " style="ParagraphStyle8"><Font style="_cstyle14">compaccuracy:=proc(enter, i)
+local pol, Expo, nb, nb2, res, Ph, Pl, reshi, reslo, resfinal:
+global midI, Plist:
+
+pol:=Plist[i+1]:
+Expo:=trunc(log(enter)/log(2.));
+nb:=enter/(2**(Expo)):
+if(nb&gt;evalf(sqrt(2))) then 
+  Expo:= Expo +1;
+  nb:= nb/2. ;
+fi;
+nb2:= nb - midI[i+1]:
+print(nb2);
+
+res:=coeff(pol,x,13):
+for j from 12 to 2 by -1 do
+  res := nearest(res*nb2):
+  res :=nearest(res+coeff(pol,x,j)):
+od:
+
+Ph,Pl:=hi_lo(res*nb2):
+print(ieee2hexa(Ph));
+
+reshi,reslo:=hi_lo(Ph+Pl + coeff(pol,x,1)):
+print(ieee2hexa(reshi));
+
+Ph,Pl:=hi_lo((reshi+reslo)*nb2):
+print(ieee2hexa(Ph));
+
+reshi,reslo:=hi_lo(Ph+Pl + coeff(pol,x,0)):
+print(ieee2hexa(reshi));</Font><Font italic="false" size="12" style="_cstyle13" underline="false">
+
+resfinal:=evalf(hi_lo(reshi+reslo+Expo*log(2.)));
+ieee2hexa(resfinal);</Font>
+end proc;</Text-field></Input><Output><Text-field layout="Warning" style="Warning">Warning, `j` is implicitly declared local to procedure `compaccuracy`
+</Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SS1jb21wYWNjdXJhY3lHNiJmKjYkSSZlbnRlckdGJUkiaUdGJTYtSSRwb2xHRiVJJUV4cG9HRiVJI25iR0YlSSRuYjJHRiVJJHJlc0dGJUkjUGhHRiVJI1BsR0YlSSZyZXNoaUdGJUkmcmVzbG9HRiVJKXJlc2ZpbmFsR0YlSSJqR0YlRiVGJUM0PjgkJkkmUGxpc3RHRiU2IywmOSUiIiJGPkY+PjglLUkmdHJ1bmNHSSpwcm90ZWN0ZWRHRkM2IyomLUkkbG9nRzYkRkNJKF9zeXNsaWJHRiU2IzkkRj4tRkc2IyQiIiMiIiEhIiI+OCYqJkZLRj4pRk9GQEZRQCQyLUkmZXZhbGZHRkM2Iy1JJXNxcnRHRkg2I0ZPRlNDJD5GQCwmRkBGPkY+Rj4+RlMqJkZTRj5GTkZRPjgnLCZGU0Y+JkklbWlkSUdGJUY7RlEtSSZwcmludEdGQzYjRl5vPjgoLUkmY29lZmZHRkM2JUY4SSJ4R0YlIiM4Pyg4LiIjN0ZRRk9JJXRydWVHRkNDJD5GZm8tSShuZWFyZXN0R0YlNiMqJkZmb0Y+Rl5vRj4+RmZvLUZjcDYjLCZGZm9GPi1GaG82JUY4RmpvRl1wRj4+NiQ4KTgqLUkmaGlfbG9HRiVGZHAtRmNvNiMtSSppZWVlMmhleGFHRiU2I0ZecT42JDgrOCwtRmFxNiMsKEZecUY+Rl9xRj4tRmhvNiVGOEZqb0Y+Rj4tRmNvNiMtRmVxNiNGaXE+Rl1xLUZhcTYjKiYsJkZpcUY+RmpxRj5GPkZeb0Y+RmJxPkZocS1GYXE2IywoRl5xRj5GX3FGPi1GaG82JUY4RmpvRlBGPkZgcj44LS1GWTYjLUZhcTYjLChGaXFGPkZqcUY+KiZGQEY+RkxGPkY+LUZlcTYjRmBzRiU2JEZhb0Y6RiU=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compaccuracy(debug2,4);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIl1xKysrKysrKysrKysrKysrKysrKysrKytdaTomeUghb2MqW18jM0tRYCVRLUI+MWIycmMhcCEjKio=</Equation></Text-field><Text-field layout="Error" style="Error">Error, (in compaccuracy) cannot split rhs for multiple assignment
+</Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="_pstyle80" style="_pstyle80"><Font encoding="ISO8859-1">Proc\351dure qui calcule le r\351sultat du polyn\364me en pr\351cision infinie avec arrondi IEEE \340 la fin:</Font>
+</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle82" prompt="&gt; " style="_cstyle14">infaccuracy:=proc(enter, i)
+local pol, Expo, nb, nb2, res, resfinal:
+global midI, Plist:
+
+pol:=Plist[i+1]:
+Expo:=trunc(log(enter)/log(2.)):
+nb:=enter/(2**Expo):
+if(nb &gt; evalf(sqrt(2))) then 
+  Expo:= Expo +1;
+  nb:= nb/2. ;
+fi;
+nb2:= nb - midI[i+1];
+ieee2hexa(nb2);
+
+res:=coeff(pol,x,14):
+
+for j from 13 to 0 by -1 do
+  res := res*nb2:
+  res := res + coeff(pol,x,j):
+od:
+res;
+print(ieee2hexa(res));
+
+resfinal:= evalf(Expo*log(2.)+res);
+print(ieee2hexa(resfinal));
+end proc;</Text-field></Input><Output><Text-field layout="Warning" style="Warning">Warning, `j` is implicitly declared local to procedure `infaccuracy`
+</Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSxpbmZhY2N1cmFjeUc2ImYqNiRJJmVudGVyR0YlSSJpR0YlNilJJHBvbEdGJUklRXhwb0dGJUkjbmJHRiVJJG5iMkdGJUkkcmVzR0YlSSlyZXNmaW5hbEdGJUkiakdGJUYlRiVDLj44JCZJJlBsaXN0R0YlNiMsJjklIiIiRjpGOj44JS1JJnRydW5jR0kqcHJvdGVjdGVkR0Y/NiMqJi1JJGxvZ0c2JEY/SShfc3lzbGliR0YlNiM5JEY6LUZDNiMkIiIjIiIhISIiPjgmKiZGR0Y6KUZLRjxGTUAkMi1JJmV2YWxmR0Y/NiMtSSVzcXJ0R0ZENiNGS0ZPQyQ+RjwsJkY8RjpGOkY6PkZPKiZGT0Y6RkpGTT44JywmRk9GOiZJJW1pZElHRiVGN0ZNLUkqaWVlZTJoZXhhR0YlNiNGam4+OCgtSSZjb2VmZkdGPzYlRjRJInhHRiUiIzk/KDgqIiM4Rk1GTEkldHJ1ZUdGP0MkPkZibyomRmJvRjpGam5GOj5GYm8sJkZib0Y6LUZkbzYlRjRGZm9GaW9GOkZiby1JJnByaW50R0Y/NiMtRl9vNiNGYm8+OCktRlU2IywmKiZGPEY6RkhGOkY6RmJvRjotRmRwNiMtRl9vNiNGaXBGJTYkRl1vRjZGJQ==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">infaccuracy(debug2, 4);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMtSSppZWVlMmhleGFHNiI2IyZJJlBsaXN0R0YlNiMiIiY=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMtSSppZWVlMmhleGFHNiI2IyZJJlBsaXN0R0YlNiMiIiY=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="_pstyle35" style="Text">Calcul de la fonction log de maple:</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">ieee2hexa(evalf(log(debug2)));
+</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMtSSppZWVlMmhleGFHNiI2IyQiX3EudEYkPixCQV8ob2RQImVKPUk5T2pvV0tQcV5BOGpjayJmLSdvZXpUJD0iKilmX0c7QDRvd24nISQsIg==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Output><Text-field layout="Maple Output" style="2D Output"/></Output></Group><Group><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMsJC1JI2xuRzYkSSpwcm90ZWN0ZWRHRidJKF9zeXNsaWJHNiI2I0klcmVwdEdGKSQiY3dWKlFgOj9gandRLDJqJFw9WikpcHRgdWlMek1BZUBtP0ZrZiRvcm8sSmZiVWFfJzQkPXYqcFxXal0kKkdpRWIpKXpdPSI9PiM0NiRwU1xhOE1mKUg6YWZrRXU4Iyo9KyJvQypmdFNqKikpMy8mcFU5ISQqPg==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 1</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=2:
+ab:=hi_lo(log(midI[i])):
+a:=ab[1]: b:=ab[2]:
+
+pe:=minimax(  (log(x+midI[i])) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+repe := infnorm( 1-pe/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+log2(err);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIV9xaTomUWdpMSVbenl4QElxOV41aCJwLCUzKjRDVipmZDtTPlw9KHpuKEdrRHJyQkFgek47UUlxISMpKg==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" style="Maple Input">
+pt := poly_exact2(pe,2):
+c0:=coeff(pt,x,0):
+c1:=coeff(pt,x,1):
+c2:=coeff(pt,x,2):
+
+ppe:=minimax(  (log(x+midI[i]) - c0 - c1 * x - c2*x*x) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+
+ppe:=ppe - coeff(ppe,x,0) - coeff(ppe,x,1)*x- coeff(ppe,x,1)*x*x:
+
+pt := poly_exact2(ppe,2) + c0 + c1*x + c2*x*x:
+rept := infnorm( 1-pt/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+
+pe3 := pe: repe3:=repe: pt3:=pt: rept3:=rept:
+
+log2(rept);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIV9xSykqZkYjW205QyRSKnAlKXpuZyhwJ3pFcSlSSiUqKlFabjckKik0TXY4ZmdUMzJYOjYmSC4kPXJ1LG4hIykq</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 2</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=3:
+ab:=hi_lo(log(midI[i])):
+a:=ab[1]: b:=ab[2]:
+
+pe:=minimax(  (log(x+midI[i])) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+repe := infnorm( 1-pe/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+log2(err);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIV9xamorb1hEMW5ZUWYnXHhDNUhlbEdwWEpJJT5sISpcKG8mcEZxJmYhPSN6UygpZTB3Mz8iUV5zanIhIykq</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" style="Maple Input">
+pt := poly_exact2(pe,2):
+c0:=coeff(pt,x,0):
+c1:=coeff(pt,x,1):
+c2:=coeff(pt,x,2):
+
+ppe:=minimax(  (log(x+midI[i]) - c0 - c1 * x - c2*x*x) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+
+ppe:=ppe - coeff(ppe,x,0) - coeff(ppe,x,1)*x- coeff(ppe,x,1)*x*x:
+
+pt := poly_exact2(ppe,2) + c0 + c1*x + c2*x*x:
+rept := infnorm( 1-pt/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+
+pe3 := pe: repe3:=repe: pt3:=pt: rept3:=rept:
+
+log2(rept);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIV9xVikqNFRxcjJMNShIMGR1THBPd29ARD5DQyFwXGcxOSVbaVBzN0MiXDomZU9RcG9XLl8nSF5uISMpKg==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 3</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=4:
+ab:=hi_lo(log(midI[i])):
+a:=ab[1]: b:=ab[2]:
+
+pe:=minimax(  (log(x+midI[i])) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err');
+repe := infnorm( 1-pe/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+log2(err);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiM+SSNwZUc2IiwmJCFfcWUncFkyUzB6JnkpW0x3L3YtWCVIN3NmVEhyUyMpUkJ4JSlbKW9UIypINyIqPXRGISo+REQ4RzJTJSkqISQsIiIiIiomLCYkIl9xKVsoXE09RSMqZkNkNzghbzx0TCVRJSlvKVtTeHpLPzUkeUsyJDR0eiRbUS4kZV5sKm8/J2VGW001IiEjKipGKiomLCYkIV9xOkx1PiteIj5Gd1w6YjEwRCRveidlXiIqKT16JylvIT5eQ3cnW3ApKW9EYlEmKiozVkwnW14oWyEqejMnISQrIkYqKiYsJiQiX3FiLyZbd0EoZVxxaylSTF5cUU5jIj1VPEdSJEdhWVVmVTkuXUNlai1QKXl3X3NvPiV6dEAmeVdGNEYqKiYsJiQhX3FpTWo3KFtVZUJULSUpcCNmZzNTKXBUZ0MieTIiKXB3diR5QFZqPS9XMztfdm9VLDgxdyJHTzFQRjRGKiomLCYkIl9xPFZZbHRxKyg9N3JGJXldWCF6JXpQXFB4SnV0R3ElUWEnUiRSUzU5V3IjcFJ2SWFQa0dQIz1GJEY0RioqJiwmJCFfcSdSOWFmRHlyLilmSShSYDZMbS1rekdCMFF2aywzamMwVDwnNGgjSG1HPit4P05AIVtOZDNJRjRGKiomLCYkIl9xMiIpKilSS25RYGNdRCo+Rk1TWUY8RCJwbz83VDFwa1ZqKXA6XSZ6KT5jbUtSJ2VGOjAqUlpiJUdGNEYqKiYsJiQhX3EoND5uOSR6ZUBabUlMISk0diU+XzVaSEtXSCI0IUhTXW1BclFtLVYpW1JPT1ZMXSkqWy9qVFpGRjRGKiomLCYkIl9xQSN5UiopKXpCOnZ4NGhRTipRKW8hNGJuQkl6JnpITlMuMnBRZ2cneVY3KXA2XShHJClIbCQpelpwI0Y0RioqJiwmJCFfcVhvJ1w+QWo8LXN1NSU0R3d3c3AtZidvOz0sKXA+WikzUnBZI0gtV3loY01QJSkpXDZ1WHlUbyNGNEYqSSJ4R0YlJCJfcXcsV1JkWkRZWFU+QioqZTFrLnFYImY4NkhsUyhHIjRqLyZHQkc4TnpEJCoqUit1KzZyc3JTcCNGNEYqRlVGKkYqRipGVUYqRipGKkZVRipGKkYqRlVGKkYqRipGVUYqRipGKkZVRipGKkYqRlVGKkYqRipGVUYqRipGKkZVRipGKkYqRlVGKkYq</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIV9xRENzQlshKTMmZU5DeC9URFVQeHYiNHd1P14hW1dJaEhNJ0gsakZaOUojM25bIlt5dSM0QXZHKCEjKSo=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" style="Maple Input">
+pt := poly_exact2(pe,2):
+c0:=coeff(pt,x,0):
+c1:=coeff(pt,x,1):
+c2:=coeff(pt,x,2):
+
+ppe:=minimax(  (log(x+midI[i]) - c0 - c1 * x - c2*x*x) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+log2(err);
+
+ppe:=ppe - coeff(ppe,x,0) - coeff(ppe,x,1)*x- coeff(ppe,x,1)*x*x:
+
+pt := poly_exact2(ppe,2) + c0 + c1*x + c2*x*x:
+rept := infnorm( 1-pt/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+
+pe3 := pe: repe3:=repe: pt3:=pt: rept3:=rept:
+
+log2(rept);</Text-field></Input><Output><Text-field layout="Warning" style="Warning">Warning,  computation interrupted</Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIV9xRENzQlshKTMmZU5DeC9URFVQeHYiNHd1P14hW1dJaEhNJ0gsakZaOUojM25bIlt5dSM0QXZHKCEjKSo=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation>NiMkIV9xNygzbzNfYi5DeHNCc2BxJWUpWztvbXUheikqMz9KQS1MPyxWLEloYVAmPXU4MFpUSXpKP1YiISMpKg==</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">?coeff</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 4, the difficult one (centered on 1)</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=5:
+
+pe:=minimax(log(x+midI[i]),  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+repe := infnorm( 1-pe/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+pt := poly_exact2(pe,2):
+rept := infnorm( 1-pt/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+
+pe4 := pe: repe4:=repe: pt4:=pt: rept4:=rept:
+
+log2(rept);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 5</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=6:
+ab:=hi_lo(log(midI[i])):
+a:=ab[1]: b:=ab[2]:
+
+pe:=minimax(  (log(x+midI[i])) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+repe := infnorm( 1-pe/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+log2(err);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Maple Input">
+pt := poly_exact2(pe,2):
+c0:=coeff(pt,x,0):
+c1:=coeff(pt,x,1):
+c2:=coeff(pt,x,2):
+
+ppe:=minimax(  (log(x+midI[i]) - c0 - c1 * x - c2*x*x) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+
+ppe:=ppe - coeff(ppe,x,0) - coeff(ppe,x,1)*x- coeff(ppe,x,1)*x*x:
+
+pt := poly_exact2(ppe,2) + c0 + c1*x + c2*x*x:
+rept := infnorm( 1-pt/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+
+pe3 := pe: repe3:=repe: pt3:=pt: rept3:=rept:
+
+log2(rept);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">
+
+err5;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 6</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=7:
+pe:=minimax(log(x+midI[i]),  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+repe := infnorm( 1-pe/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+pt := poly_exact2(pe,2):
+rept := infnorm( 1-pt/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+
+pe6 := pe: repe6:=repe: pt6:=pt: rept6:=rept:
+
+log2(rept);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">err6;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 6</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=7:
+ab:=hi_lo(log(midI[i])):
+a:=ab[1]: b:=ab[2]:
+
+pe:=minimax(  (log(x+midI[i])) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+repe := infnorm( 1-pe/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+log2(err);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Maple Input">
+pt := poly_exact2(pe,2):
+c0:=coeff(pt,x,0):
+c1:=coeff(pt,x,1):
+c2:=coeff(pt,x,2):
+
+ppe:=minimax(  (log(x+midI[i]) - c0 - c1 * x - c2*x*x) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+
+ppe:=ppe - coeff(ppe,x,0) - coeff(ppe,x,1)*x- coeff(ppe,x,1)*x*x:
+
+pt := poly_exact2(ppe,2) + c0 + c1*x + c2*x*x:
+rept := infnorm( 1-pt/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+
+pe3 := pe: repe3:=repe: pt3:=pt: rept3:=rept:
+
+log2(rept);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 7</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=8:
+ab:=hi_lo(log(midI[i])):
+a:=ab[1]: b:=ab[2]:
+
+pe:=minimax(  (log(x+midI[i])) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+repe := infnorm( 1-pe/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+log2(err);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Maple Input">
+pt := poly_exact2(pe,2):
+c0:=coeff(pt,x,0):
+c1:=coeff(pt,x,1):
+c2:=coeff(pt,x,2):
+
+ppe:=minimax(  (log(x+midI[i]) - c0 - c1 * x - c2*x*x) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+
+ppe:=ppe - coeff(ppe,x,0) - coeff(ppe,x,1)*x- coeff(ppe,x,1)*x*x:
+
+pt := poly_exact2(ppe,2) + c0 + c1*x + c2*x*x:
+rept := infnorm( 1-pt/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+
+pe3 := pe: repe3:=repe: pt3:=pt: rept3:=rept:
+
+log2(rept);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">exact_poly:=[]:
+exact_abs_err:=[]:
+exact_rel_err:=[]:
+</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">i:=4;
+P:=minimax(log(x+midI[i]),  x=-Xmax[i]..+Xmax[i],  [10,0],  1,  'err'):
+err;
+</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">infnorm( 1-P/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log2(%);P;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log2(infnorm((1-(expand(Poly0))/(ln(x+23/32))*ln(2.)), x=-1/32..1/32));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">pp:=poly_exact2(P,2);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">In the following we use Plist</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">Plist:=[rept0, rept1, rept2, rept3, rept4, rept5, rept6, rept7];
+save P0, P1, P2, P3, P4, P5, P6, P7, Plist, "TEMPLOG/Polylog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">err:=[err0, err1, err2, err3, err4, err5, err6, err7]:
+errapprox:=[]:
+for i from 1 to 8 do
+  errapprox:=[op(errapprox),2**(err[i])]:
+od:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save err0, err1, err2, err3, err4, err5, err6, err7, err, errapprox, "TEMPLOG/errapproxlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 0, Old version</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=1:
+pe:=minimax(log(x+midI[i]),  x=-Xmax[i]..+Xmax[i],  [11,0],  1,  'err'):
+repe := infnorm( 1-pe/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+pt := poly_exact2(pe,2):
+rept := infnorm( 1-pt/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+
+pe0 := pe: repe0:=repe: pt0:=pt: rept0:=rept:
+
+log2(rept);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 6</Text-field><Text-field layout="Normal" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">i:=7:
+ab:=hi_lo(log(midI[i])):
+a:=ab[1]; b:=ab[2];
+
+pe:=minimax(  (log(x+midI[i]) - a-b) ,  x=-Xmax[i]..+Xmax[i],  [11,0],  1 ,  'err');
+repe := infnorm( 1-pe/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+pt := poly_exact2(pe,2) - coeff(pe,x,0) + a + b :
+# to zero out the first coeff, there must be a cleaner way to do it 
+rept := infnorm( 1-pt/log(x+midI[i]), x=-Xmax[i]..+Xmax[i]) :
+
+pe5 := pe: repe5:=repe: pt5:=pt: rept5:=rept:
+
+log2(rept);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 0</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Pser:=series((log(x)/log(2))/(x),x=23/32,100):
 Pse:=convert(Pser,polynom):
 Poly_cheb := chebpade(Pse, x=11/16..12/16, [12,0]):
 Poly0:= sort(expand(x * Poly_cheb)):
-Poly0:=sort(expand(subs(x=x+23/32,Poly0))):</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">log(infnorm((1-(expand(Poly0))/(ln(23/32+x)/log(2.))), x=-1/32..1/32))/log(2.);</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle38" prompt="&gt; " style="_cstyle496">P0:=poly_exact2(Poly0*ln(2.),2):
-err0:=log(infnorm((1-(expand(P0))/(ln(23/32+x))), x=-1/32..1/32))/log(2.);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 1</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Pser:=series((log(x)/ln(2.))/x,x=25/32,100):
+Poly0:=sort(expand(subs(x=x+23/32,Poly0))):</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">(infnorm((1-(expand(Poly0))/(ln(x+23/32))*ln(2.)), x=-1/32..1/32));</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle38" prompt="&gt; " style="_cstyle496">P0:=poly_exact2(Poly0*ln(2.),2):
+relerr0:=infnorm(   ( 1 - expand(P0)/log(23/32+x) ), x=-1/32..1/32);
+abserr0:=infnorm( expand(P0) - log(23/32+x), x=-1/32..1/32);
+maxy0:=infnorm( expand(P0), x=-1/32..1/32);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 1</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Pser:=series((log(x)/ln(2.))/x,x=25/32,100):
 Pse:=convert(Pser,polynom):
 Poly_cheb := chebpade(Pse, x=12/16.. 13/16, [12,0]):
 Poly1:= sort(expand(x * Poly_cheb)):
@@ -62,15 +441,26 @@ Poly6:=sort(expand(subs(x=x+20/16,Poly6))):</Text-field></Input></Group><Group><
 err6:=log(infnorm((1-(expand(P6))/(ln(x+20/16))), x=-1/16..1/16))/log(2.);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Polynom 7</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle38" prompt="&gt; " style="_cstyle496">Pser:=series((log(22/16+x)/log(2)),x=0,100):
 Pse:=convert(Pser,polynom):
 Poly7 := chebpade(Pse, x=-1/16..1/16, [13,0]):</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle38" prompt="&gt; " style="_cstyle496">log(infnorm((1-(expand(Poly7))/(ln(22/16+x)/ln(2.))), x=-1/16..1/16))/log(2.);</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle45" prompt="&gt; " style="_cstyle504">P7:=poly_exact2(Poly7*log(2.),2):
-err7:=log(infnorm((1-(expand(P7))/(ln(x+22/16))), x=-1/16..1/16))/log(2.);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">In the following we use Plist</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">Plist:=[P0, P1, P2, P3, P4, P5, P6, P7]:
-save P0, P1, P2, P3, P4, P5, P6, P7, Plist, "TEMPLOG/Polylog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">err:=[err0, err1, err2, err3, err4, err5, err6, err7]:
-errapprox:=[]:
-for i from 1 to 8 do
-  errapprox:=[op(errapprox),2**(err[i])]:
-od:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save err0, err1, err2, err3, err4, err5, err6, err7, err, errapprox, "TEMPLOG/errapproxlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text"/></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Interval parameters</Text-field></Title><Text-field layout="Normal" style="Text"/><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m";
-Xmax:=[2**(-5), 2**(-5), 2**(-5), 2**(-5), 2**(-4), 2**(-4), 2**(-4), 2**(-4)]:
-Ilist:=[[11/16,12/16],[12/16,13/16],[13/16,14/16],[14/16,15/16],[15/16,17/16],[17/16,19/16],[19/16,21/16],[21/16,23/16]]:
-midI:=[23/32,25/32,27/32,29/32,1,18/16,20/16,22/16]:</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">save Xmax, Ilist, midI, Plist, errapprox, "TEMPLOG/parameterlog.m";</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2"><Font executable="false" foreground="[0,0,0]" italic="false" underline="false">Degugging aid</Font></Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">P:=P1:
+err7:=log(infnorm((1-(expand(P7))/(ln(x+22/16))), x=-1/16..1/16))/log(2.);</Text-field></Input></Group></Section></Section><Section collapsed="true"><Title><Text-field layout="Heading 1" style="Heading 1">Second, accurate phase in SCS</Text-field></Title><Group><Input><Text-field layout="_pstyle41" style="_cstyle494">Approach for the scs function:</Text-field><Text-field layout="_pstyle42" style="_pstyle42"/><Text-field layout="_pstyle41" style="_cstyle494"> x=2^e (1+f)
+ log(x) = e.log(2) + log(1+f)
+
+  log(1+f) = log(w) + log(1+(1+f-w)/w)
+</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">W := 2^5:</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Poly_P := series((ln(1+x)/ln(2.))/x, x=0, 45):
+Poly_Q := convert(Poly_P,polynom):</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Poly_cheb := chebpade(Poly_Q, x=-1/W..1/W, [19,0]):</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Poly_Res  := sort(expand(x * Poly_cheb)):</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">log2(infnorm((1-(expand(Poly_Res))/(ln(1+x)/ln(2.))), x=-1/W..1/W));</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle41" style="_cstyle494">This procedure gives under a polynom form value needed by tabular range reduction for the logarithm.
+DON'T forget the zero !!!!
+</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle32" prompt="&gt; " style="_cstyle492">Digits       := 50:  
+table_ti     := 0:
+table_inv_wi := 0:
+N            := -4:   
+break_point  := sqrt(2.):
+start_nb     := round((break_point/2) * 2.^(-N))*2.^(N):
+nb_turn      := round((break_point/2) * 2.^(-N)): 
+
+for i from 0 to nb_turn do
+   table_ti := table_ti * x + log(start_nb):
+   table_inv_wi := table_inv_wi *x + 1./ start_nb:
+   start_nb := start_nb + 2.^(N):
+od:</Text-field></Input></Group></Section><Text-field/><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 1" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 1">Tests and scratch</Text-field></Title><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/errroundinglog0.m"; errrounding0:=errrounding;read "TEMPLOG/errroundinglog0.m";errrounding;</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SS1lcnJyb3VuZGluZzBHNiI3KiQiYXRVYipmK0I6ZyR5eU1GQCR6X1lrVC0oM1xdYTtfMHZCISo+TmFmaSJ6dy5zZm5kamVaQ3pbOTBQZil5JD5FMnQiekZnU2A+QGFdZ011Sy1lSSEkbyIkImF0TihlN1l6ZDNMUVg8S1hWVSczJWZedSYpR1hDJWY7bi1yYGBBTSgpcDVQTil5TmVQMngocFtbKClSIWUvZnUmZWJKLGkzVyQ+YT8iM2txZnRGWkxGKSQiYXRcTHYnKVFvOkEicCgqSHVlVSwjUS8pSCJwaFlgTz9uJCp6c19zWi40JjQ9cywhXEgrRUcnPiJmUykqb1QiUjYoKnAkPSRldWgieSVHMkReLmZVUlM/JlJGKSQiYXQnPShwOTZwPkNBI2VjIls6cSYpNHZLMiZ6IjMoKnkuXnQob1ZNISk+MDpRJW94W11bOmhKVTg8SjVtUW8jPnpnMnMkKSk+MSUpSDk6PEUnZihwWUkqSCZGKSQiYXR2JWVnJ1x0WSFwMUtIa0AtJz16JG8keT5ldmM+MWNlK0ZHZywzblRwMy55JFw3InBwPVdNRis2cSFlPVc+WmwzL25PblhAL0AyU1JtOl4iUSEkbiIkImF0R0QsVmI8Ql9IUWs1PDBKNER1OXY7aSNbKVF1bCVbJFJLLzRSPkF2KFtnLVh0QiRcPTU/byQpWypwRTRnJkdPJFt6UWZZcyxyZWZaXmZgZjYiRjIkImF0O2U7PCp5OlVDXjFsZnhdLDJOVzFuYypcIilSaW94Nkg7OSIpPXk6cCY0XG9qSTJOUCtndlFpPz9GPUNmaChSajIlSF1lRjdxPDFfIT5cWmNGKSQiYXRUYiopKWVMISlvRUFuMTsqKSlIKkdRLCVSNDFHNDxOJSlmbSlHSHl3Xkl2bFdkRXlQckVjJnopKltpMG1yJj5TVVN2Qyk+QE1JU1cyJSpmOWM3IVxZJEYp</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM3KiQiYXRVYipmK0I6ZyR5eU1GQCR6X1lrVC0oM1xdYTtfMHZCISo+TmFmaSJ6dy5zZm5kamVaQ3pbOTBQZil5JD5FMnQiekZnU2A+QGFdZ011Sy1lSSEkbyIkImF0TihlN1l6ZDNMUVg8S1hWVSczJWZedSYpR1hDJWY7bi1yYGBBTSgpcDVQTil5TmVQMngocFtbKClSIWUvZnUmZWJKLGkzVyQ+YT8iM2txZnRGWkxGJiQiYXRcTHYnKVFvOkEicCgqSHVlVSwjUS8pSCJwaFlgTz9uJCp6c19zWi40JjQ9cywhXEgrRUcnPiJmUykqb1QiUjYoKnAkPSRldWgieSVHMkReLmZVUlM/JlJGJiQiYXQnPShwOTZwPkNBI2VjIls6cSYpNHZLMiZ6IjMoKnkuXnQob1ZNISk+MDpRJW94W11bOmhKVTg8SjVtUW8jPnpnMnMkKSk+MSUpSDk6PEUnZihwWUkqSCZGJiQiYXR2JWVnJ1x0WSFwMUtIa0AtJz16JG8keT5ldmM+MWNlK0ZHZywzblRwMy55JFw3InBwPVdNRis2cSFlPVc+WmwzL25PblhAL0AyU1JtOl4iUSEkbiIkImF0R0QsVmI8Ql9IUWs1PDBKNER1OXY7aSNbKVF1bCVbJFJLLzRSPkF2KFtnLVh0QiRcPTU/byQpWypwRTRnJkdPJFt6UWZZcyxyZWZaXmZgZjYiRi8kImF0O2U7PCp5OlVDXjFsZnhdLDJOVzFuYypcIilSaW94Nkg7OSIpPXk6cCY0XG9qSTJOUCtndlFpPz9GPUNmaChSajIlSF1lRjdxPDFfIT5cWmNGJiQiYXRUYiopKWVMISlvRUFuMTsqKSlIKkdRLCVSNDFHNDxOJSlmbSlHSHl3Xkl2bFdkRXlQckVjJnopKltpMG1yJj5TVVN2Qyk+QE1JU1cyJSpmOWM3IVxZJEYm</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">P:=P1:
 c0:= coeff(P,x,0):
 c0hi:=evalf(IEEEdouble(c0)[2]*2**(IEEEdouble(c0)[1]));
 c0hie:=IEEEdouble(c0hi):
@@ -118,11 +508,11 @@ c:= coeff(P,x,12);
 c12:=IEEEdouble(c);
 
 c:= coeff(P,x,13);
-c13:=IEEEdouble(c);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">evalf(2**(-4));</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">for i from 1 to 8 do
+c13:=IEEEdouble(c);</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSVjMGhpRzYiKiYmLUkrSUVFRWRvdWJsZUdGJTYjIyFBNFZKViUpPmlzOiR6SVckUSw1IkFLP2QtWCp5JTNNLnQ/PltjUzYjIiIjIiIiKSRGLyIiISZGKDYjRjBGMA==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSVjMGxvRzYiKiYmLUkrSUVFRWRvdWJsZUdGJTYjLCYjIUE0VkpWJSk+aXM6JHpJVyRRLDUiQUs/ZC1YKnklM00udD8+W2NTIiIiKiYmLUYpNiNGLDYjIiIjRi8pJEY1IiIhJkYyNiNGL0YvISIiRjRGLylGNyZGKEY6Ri8=</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSVjMWhpRzYiKiYmLUkrSUVFRWRvdWJsZUdGJTYjIyJCXit5ImYpNC5eNSRSVFYoPXAyIyJCRyIpRzUheTpSakxASG9GZkE7NiMiIiMiIiIpJEYvIiIhJkYoNiNGMEYw</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSZjMWhpZUc2Ii1JK0lFRUVkb3VibGVHRiU2IyomJi1GJzYjIyFBNFZKViUpPmlzOiR6SVckUSw1IkFLP2QtWCp5JTNNLnQ/PltjUzYjIiIjIiIiKSRGMSIiISZGKzYjRjJGMg==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSVjMWxvRzYiKiYmLUkrSUVFRWRvdWJsZUdGJTYjLCYjIkJeK3kiZik0Ll41JFJUVig9cDIjIkJHIilHNSF5OlJqTEBIb0ZmQTsiIiIqJiYtRik2I0YsNiMiIiNGLykkRjUiIiEmRjI2I0YvRi8hIiJGNEYvKUY3JkYoRjpGLw==</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSZjMWxpZUc2Ii1JK0lFRUVkb3VibGVHRiU2IyomJi1GJzYjLCYjIkJeK3kiZik0Ll41JFJUVig9cDIjIkJHIilHNSF5OlJqTEBIb0ZmQTsiIiIqJiYtRic2I0YuNiMiIiNGMSkkRjciIiEmRjQ2I0YxRjEhIiJGNkYxKUY5JkYrRjxGMQ==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyExQFFbSHdweXQiMSMqNHVhIyo+MiEq</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSNjMkc2Ii1JK0lFRUVkb3VibGVHRiU2IyMhMUBRW0h3cHl0IjEjKjR1YSMqPjIhKg==</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyIxRkoiPktXI1tKIjEnXHF0aSpmLlg=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSNjM0c2Ii1JK0lFRUVkb3VibGVHRiU2IyMiMUZKIj5LVyNbSiIxJ1xxdGkqZi5Y</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyExUksyKTRIWS8nIjEjKjR1YSMqPjIhKg==</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSNjNEc2Ii1JK0lFRUVkb3VibGVHRiU2IyMhMVJLMik0SFkvJyIxIyo0dWEjKj4yISo=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyIxbEMpKltdVVo6IjFbX284KSp6XkE=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSNjNUc2Ii1JK0lFRUVkb3VibGVHRiU2IyMiMWxDKSpbXVVaOiIxW19vOCkqel5B</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyExMnkpeVZ0NkkkIjEnXHF0aSpmLlg=</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSNjNkc2Ii1JK0lFRUVkb3VibGVHRiU2IyMhMTJ5KXlWdDZJJCIxJ1xxdGkqZi5Y</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyIxaiM+MVk+UEMoIjEjKjR1YSMqPjIhKg==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSNjN0c2Ii1JK0lFRUVkb3VibGVHRiU2IyMiMWojPjFZPlBDKCIxIyo0dWEjKj4yISo=</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyExLER5UUJbY1MiMSdccXRpKmYuWA==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSNjOEc2Ii1JK0lFRUVkb3VibGVHRiU2IyMhMSxEeVFCW2NTIjEnXHF0aSpmLlg=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyIwPENtTVI9VyIiMEdgTilbUDI5</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSNjOUc2Ii1JK0lFRUVkb3VibGVHRiU2IyMiMDxDbU1SPVciIjBHYE4pW1AyOQ==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyEwcCcqUUBUY2snIjA3OFVgKlxIYw==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSRjMTBHNiItSStJRUVFZG91YmxlR0YlNiMjITBwJypRQFRjayciMDc4VWAqXEhj</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyIxIj5BbiN5eDF1IjEnXHF0aSpmLlg=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSRjMTFHNiItSStJRUVFZG91YmxlR0YlNiMjIjEiPkFuI3l4MXUiMSdccXRpKmYuWA==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyExTl49IjM8TyY9IjFDRSVvISoqKmU3Ig==</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSRjMTJHNiItSStJRUVFZG91YmxlR0YlNiMjITFOXj0iMzxPJj0iMUNFJW8hKioqZTci</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSJjRzYiIyExel80Jz1EeFkiIi87Vy8nPSNmPA==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiM+SSRjMTNHNiItSStJRUVFZG91YmxlR0YlNiMjITF6XzQnPUR4WSIiLztXLyc9I2Y8</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">evalf(2**(-4));</Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIl9xKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrXWkhJCwi</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">for i from 1 to 8 do
  P:=op(i, Plist):
  print(evalf(coeff(P,x,0))):
  print(evalf(coeff(P,x,1)));
-od: </Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="_pstyle39" style="_pstyle39"/><Text-field layout="_pstyle35" style="Text">Ecrit dans un fichier en "latex" le resultat de la procedure IEEEdouble</Text-field><Text-field layout="_pstyle39" style="_pstyle39"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">affiche:=proc(cieee,ffd)
+od: </Text-field></Input><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIlMhSCFSbCkqZicqNGwpKilvKFxGXjtpKilcMnN5PSs3ISNw</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIiIhRiQ=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiNJJnJlcHQxRzYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIiIhRiQ=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiNJJnJlcHQyRzYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIiIhRiQ=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIlMpKSkzIm9kbHF4alt5cld2PCRcK0hyXkEocCVwJyEjcQ==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIiIhRiQ=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIkIhPVokKTQ4KilwZlE6IVs/WnohbyEjXg==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIiIhRiQ=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIlNaUyNHVykpPiQqNEF4MmRJTSo+eitlVmV1NCJlIyEjbw==</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIiIhRiQ=</Equation></Text-field></Output><Output><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiNJJnJlcHQ2RzYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIiIhRiQ=</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiNJJnJlcHQ3RzYi</Equation></Text-field><Text-field layout="Maple Output" style="2D Output"><Equation style="2D Output">NiMkIiIhRiQ=</Equation></Text-field></Output></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="_pstyle39" style="_pstyle39"/><Text-field layout="_pstyle35" style="Text">Ecrit dans un fichier en "latex" le resultat de la procedure IEEEdouble</Text-field><Text-field layout="_pstyle39" style="_pstyle39"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">affiche:=proc(cieee,ffd)
 local a,bup,bdown,c:
  
   a:=convert(cieee[1],string);
@@ -135,199 +525,4 @@ local a,bup,bdown,c:
     c:=convert(cieee[3], string):
     fprintf(ffd,"$ %s, \\frac{%s}{%s}, %s$ ys \n",a,bup,bdown,c);
   fi;
-end proc:</Text-field></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2">Rounding errors</Text-field></Title><Group><Input><Text-field layout="_pstyle35" style="Text"><Font encoding="ISO8859-1">Calcule l'erreur commise a chaque op\351ration du calcul du polyn\364me:</Font>
-si la taille de l'intervalle est 2**(-4), alors marge = 5, si c'est 2**(-3)n, alors, marge vaut 4.</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle49" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">Compute a table containing the rounding polynomial evaluation error
-ErrTruncPoly returns [relative error, log2(relative error), log2(relative error+53)]</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">errrounding:=[]:
-for i from 1 to 8 do
-  err:=(ErrTruncPoly(Plist[i], Xmax[i], 2))[1]:
-  errrounding:=[op(errrounding), err]:
-od:
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"><Font opaque="false">save errrounding, "TEMPLOG/errroundinglog.m";</Font></Text-field></Input></Group><Group><Input><Text-field layout="Normal" style="Text">compute delta[], a table of total error,  and tabrndcst[] the table of "e" needed for round to nearest</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";read "TEMPLOG/errroundinglog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">tabrndcst:=[]:
-tabk:=[]:
-tabdelta:=[]:
-for i from 1 to 8 do
-  k := abs(trunc( log2(errrounding[i]) + 53) ):
-  tabk:=[op(tabk),k]:
-  delta:= <Font opaque="false"> errapprox[i] + </Font>errrounding[i] + 2**(-100):
-  tabdelta:=[op(tabdelta), delta]:
-  e:= 1+ 2**(-51) + (2**(54+k)*delta)   /   ( (2**k-1) * (1-2**(-53)) ):
-  tabrndcst:=[op(tabrndcst),evalf(e)]:
-od:
-save tabrndcst, tabdelta, "TEMPLOG/rndcstlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">log2(1); tabrndcst;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">
-Xmax:=[2**(-5), 2**(-5), 2**(-5), 2**(-5), 2**(-4), 2**(-4), 2**(-4), 2**(-4)]:
-tabed:=[]:
-for i from 1 to 8 do
-  e:=1+2**(55)*(errrounding[i,1] + 2**(-100)):
-  Digits:=10:
-  tabed:=[op(tabed),evalf(e)]:
-  Digits:=150:
-od:
-tabed;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Title><Text-field layout="Heading 2" style="Heading 2">Coefficient output</Text-field></Title><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">read "TEMPLOG/Polylog.m"; read "TEMPLOG/errapproxlog.m"; read "TEMPLOG/parameterlog.m";read "TEMPLOG/rndcstlog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text"/></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">filename:="TEMPLOG/log_fast.h":<Font opaque="false">
-fd:=fopen(filename, WRITE, TEXT):
-
-fprintf(fd, "#include \"crlibm.h\"\n#include \"crlibm_private.h\"\n");
-
-fprintf(fd, "\n/*File generated by maple/coef_log.mw*/\n");
-
-fprintf(fd, "\n\#define SQRT_2 1.4142135623730950489e0 \n\n");
-fprintf(fd, "\n#ifdef WORDS_BIGENDIAN\n");
-fprintf(fd, "\db_number const ln2hi = {{0x3FE62E42, 0xFEFA39EF}};\n");
-fprintf(fd, "db_number const ln2lo = {{0x3C7ABC9E, 0x3B39803F}};\n"):
-fprintf(fd, "db_number const two52 = {{0x43300000, 0x00000000}};\n"):
-fprintf(fd, "#else\ndb_number const ln2hi = {{0xFEFA39EF, 0x3FE62E42}};\n");
-fprintf(fd, "db_number const ln2lo = {{0x3B39803F, 0x3C7ABC9E}};\n"):
-fprintf(fd, "db_number const two52 = {{0x00000000, 0x43300000}};\n"):
-fprintf(fd, "#endif\n\n"):</Font>
-
-# THE POLYNOMIALS
-
-npol:=nops(Plist):
-n:=2:  # the degree from which we want two doubles
-
-fprintf(fd,"#ifdef WORDS_BIGENDIAN\n"):
-for isbig from 1 to 0 by -1 do
-
-  if(isbig=0) then
-    fprintf(fd,"#else\n"):
-  fi;
-
-  # Write middle table
-
-  fprintf(fd, "db_number const middle[%d] =\n{\n",npol);
-  for i from 1 to 7 do
-    printendian(fd,midI[i],isbig);
-    fprintf(fd," ,\n"):
-  od:
-  printendian(fd,midI[8],isbig):
-  fprintf(fd, "\n};\n\n"):
-
-  #Write poly_log_fast_h
-
-  deg:=degree(Plist[1]):
-  fprintf(fd,"db_number const poly_log_fast_h[%d][%d] =\n{\n", npol, deg+1):
-  for k from 1 to 7 do<Font italic="false" size="12" underline="false">
-    fprintf(fd," /* polynomial %d */\n{\n",k);</Font>
-    for j from 0 to 12 do
-      coef:=coeff(Plist[k],x,j):
-      printendian(fd,coef,isbig):
-      fprintf(fd," ,\n"):
-    od:
-    coef:=coeff(Plist[k],x,13):
-    printendian(fd,coef,isbig):
-    fprintf(fd, "\n},\n");
-  od: <Font italic="false" size="12" underline="false">
-  fprintf(fd," /* polynomial %d */\n{\n",8):</Font>
-  for j from 0 to 12 do
-    coef:=coeff(Plist[8],x,j):
-    printendian(fd,coef,isbig):
-    fprintf(fd," ,\n"):
-  od:
-  coef:=coeff(Plist[8],x,13):
-  printendian(fd,coef,isbig):
-  fprintf(fd, "\n}\n};\n\n"):
-
-  #Write poly_log_fast_l
-
-  fprintf(fd,"db_number const poly_log_fast_l[%d][%d] =\n{\n",npol,n):
-  for k from 1 to 8 do
-    <Font italic="false" size="12" underline="false">fprintf(fd," /* polynomial %d */\n{\n",k):
-
-    coef:=hi_lo(coeff(Plist[k],x,0)):</Font>
-    printendian(fd, coef[2], isbig):
-    fprintf(fd," ,\n"):<Font italic="false" size="12" underline="false">
-    coef:=hi_lo(coeff(Plist[k],x,1)):</Font>
-    printendian(fd, coef[2], isbig):
-    if(k&lt;8) then
-      fprintf(fd, "\n},\n"):
-    fi:
-  od:
-  fprintf(fd,"\n}\n};\n\n"):
-
-od:<Font opaque="false">
-fprintf(fd,"#endif\n\n\n"):
-
-
- 
-fprintf(fd,"/* Constants for rounding  */\n"):
-fprintf(fd,"double const delta[%d] =\n{\n",npol):
-for k from 1 to 7 do
-   fprintf(fd,"%1.20e, \n",tabdelta[k]):
-od:
-fprintf(fd,"%1.20e\n};\n\n",tabdelta[k]):
-
-fprintf(fd,"double const rncst[%d] =\n{\n",npol):
-for k from 1 to 7 do
-  fprintf(fd,"%1.20f, \n",tabrndcst[k]):
-od:
-fprintf(fd,"%1.20f\n};\n\n",tabrndcst[k]):</Font>
-fclose(fd):
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section><Section collapsed="true"><Title><Text-field firstindent="0.0" layout="Heading 2" leftmargin="0.0" linespacing="0.0" rightmargin="0.0" style="Heading 2"><Font encoding="ISO8859-1" executable="false" foreground="[0,0,0]" italic="false" underline="false">DEBUG, CALCUL du polyn\364me, coeff apres coeff</Font></Text-field></Title><Group><Input><Text-field layout="_pstyle36" prompt="&gt; " style="_cstyle10">read "parameterlog.m";
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">read "procedures.m";
-read "Polylog.m";</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text">Valeurs du debuggueur</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">debug1:=Hexa2ieee(["3ff1078f","1da3ee1b"]):
-debug2:=Hexa2ieee(["3ff11adb","35a43279"]):
-debug3:=Hexa2ieee(["3ff2f3dd","5f33e4ad"]):
-debug4:=Hexa2ieee(["3ff2fa98","c7deeb8e"]):
-debug5:=Hexa2ieee(["4002fe57","89bc59a6"]):</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle80" style="_pstyle80"><Font encoding="ISO8859-1">R\351alise le calcul du polynome tel qu'il est calcul\351 sur ordinateur : param\350tres d'entr\351e, variable enter et entier i.. </Font>
-</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle81" prompt="&gt; " style="ParagraphStyle8"><Font style="_cstyle14">compaccuracy:=proc(enter, i)
-local pol, Expo, nb, nb2, res, Ph, Pl, reshi, reslo, resfinal:
-global midI, Plist:
-
-pol:=Plist[i+1]:
-Expo:=trunc(log(enter)/log(2.));
-nb:=enter/(2**(Expo)):
-if(nb&gt;evalf(sqrt(2))) then 
-  Expo:= Expo +1;
-  nb:= nb/2. ;
-fi;
-nb2:= nb - midI[i+1]:
-print(nb2);
-
-res:=coeff(pol,x,13):
-for j from 12 to 2 by -1 do
-  res := nearest(res*nb2):
-  res :=nearest(res+coeff(pol,x,j)):
-od:
-
-Ph,Pl:=hi_lo(res*nb2):
-print(ieee2Hexa(Ph));
-
-reshi,reslo:=hi_lo(Ph+Pl + coeff(pol,x,1)):
-print(ieee2Hexa(reshi));
-
-Ph,Pl:=hi_lo((reshi+reslo)*nb2):
-print(ieee2Hexa(Ph));
-
-reshi,reslo:=hi_lo(Ph+Pl + coeff(pol,x,0)):
-print(ieee2Hexa(reshi));</Font><Font italic="false" size="12" style="_cstyle13" underline="false">
-
-resfinal:=evalf(hi_lo(reshi+reslo+Expo*log(2.)));
-ieee2Hexa(resfinal);</Font>
-end proc;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">compaccuracy(debug2,4);</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group><Group><Input><Text-field layout="_pstyle80" style="_pstyle80"><Font encoding="ISO8859-1">Proc\351dure qui calcule le r\351sultat du polyn\364me en pr\351cision infinie avec arrondi IEEE \340 la fin:</Font>
-</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle82" prompt="&gt; " style="_cstyle14">infaccuracy:=proc(enter, i)
-local pol, Expo, nb, nb2, res, resfinal:
-global midI, Plist:
-
-pol:=Plist[i+1]:
-Expo:=trunc(log(enter)/log(2.)):
-nb:=enter/(2**Expo):
-if(nb &gt; evalf(sqrt(2))) then 
-  Expo:= Expo +1;
-  nb:= nb/2. ;
-fi;
-nb2:= nb - midI[i+1];
-ieee2Hexa(nb2);
-
-res:=coeff(pol,x,14):
-
-for j from 13 to 0 by -1 do
-  res := res*nb2:
-  res := res + coeff(pol,x,j):
-od:
-res;
-print(ieee2Hexa(res));
-
-resfinal:= evalf(Expo*log(2.)+res);
-print(ieee2Hexa(resfinal));
-end proc;</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input">infaccuracy(debug2, 4);</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle35" style="Text">Calcul de la fonction log de maple:</Text-field></Input></Group><Group><Input><Text-field layout="_pstyle47" prompt="&gt; " style="_cstyle16">ieee2Hexa(evalf(log(debug2)));
-</Text-field></Input></Group><Group><Input><Text-field layout="Normal" prompt="&gt; " style="Maple Input"/></Input></Group></Section></Section><Text-field layout="Normal" style="Text"/><Text-field/></Worksheet>
+end proc:</Text-field></Input></Group></Section><Text-field/><Text-field/><Text-field/></Worksheet>

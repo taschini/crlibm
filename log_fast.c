@@ -73,7 +73,7 @@ is optimal, but if we improve the speed of the second step in the
 future, we may want to try 8 or 7, which will trade off speed for the
 first step and % of taking second step
 */
-#define CONST_FASTPATH 8
+#define CONST_FASTPATH 9
 
 /* constant for directed rounding, do not edit */
 #define DRCST_FASTPATH (1. / ((double)(2<<CONST_FASTPATH)) )
@@ -113,8 +113,8 @@ static void log_quick(double *pres_hi, double *pres_lo, double * proundcst, db_n
      * Polynomial evaluation of log(1 + R) 
      */
 
-    res = (poly_log_fast_h[i][13]).d;
-    for(k=12; k>1; k--){
+    res = (poly_log_fast_h[i][DEGREE]).d;
+    for(k=DEGREE-1; k>1; k--){
       res *= z.d;
       res += (poly_log_fast_h[i][k]).d;
     }
