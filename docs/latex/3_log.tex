@@ -9,10 +9,10 @@ correctly rounded result in double precision. The worst-case accuracy
 required for this purpose is $118$ bits according to Lefèvre and
 Muller \cite{LefMul2004}.
 
-We therefore proceed in two steps as suggested by Ziv \cite{Ziv91}.
-The first step (program \texttt{log\_fast.c}) is fast but accurate
-only to $59-63$ bits.  If this is not enough to decide correct rounding,
-a second step accurate to $120$ bits is lauched (program
+We therefore proceed in two phases \cite{Ziv91}.  The first, quick phase
+(program \texttt{log\_fast.c}) is  accurate only to $59-63$
+bits.  If this is not enough to decide correct rounding, a second step
+accurate to $120$ bits using the SCS library is lauched (program
 \texttt{log.c}).
 
 
@@ -21,9 +21,11 @@ a second step accurate to $120$ bits is lauched (program
 The natural logarithm is defined over positive floating point numbers.  
 
 \begin{itemize}
-\item If $x < 0$ , then $\log(x)$ should return $NaN$
+\item If $x \le 0$ , then $\log(x)$ should return $NaN$
 \item If $x = +\infty$ , then $\log(x)$ should return $+\infty$. 
 \end{itemize}
+
+This is true in all rounding modes.
 
 \subsubsection*{Avoiding denormals} 
 
@@ -74,16 +76,18 @@ size $2^{-3}$.  The value of $i$, the index of the interval $X[i]$ to
 which $y$ belongs, will be computed out of a few bits of $y$.
 
 Noting $\middlei$ the middle of the $i$-th interval, the final range
-reduction consists in computing $z = y - \middlei$. On each iterval, a
+reduction consists in computing $z = y - \middlei$. On each interval, a
 polynomial $P[i](z)$ approximates $\log(y)$. In the following $P[i]$
 will be noted $P$ when no ambiguity arises.
+
+
 
 \begin{table}[htdp]\caption{polynomial precision\label{table:TablePolysLog1}}
 \renewcommand{\arraystretch}{1.3}
 \begin{center}
-\begin{tabular}{|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|c|}
 \hline
-polynomial &   definition interval     &   $\middlei$   & $\maxz$ (max value of $|z|$)\\
+polynomial &   definition interval     &   $\middlei$   & max value of $|z|$ & relative approx. error\\
 \hline  
 P[0] & $[\frac{11}{16},\frac{12}{16}]$ &  $\frac{23}{32}$ & $2^{-5}$  \\ 
 \hline 
@@ -93,7 +97,7 @@ P[2] & $[\frac{13}{16},\frac{14}{16}]$ &  $\frac{27}{32}$ & $2^{-5}$  \\
 \hline 
 P[3] & $[\frac{14}{16},\frac{15}{16}]$ &  $\frac{29}{32}$ & $2^{-5}$  \\ 
 \hline
-P[4] & $[\frac{15}{16},\frac{17}{16}]$ &  $\frac{31}{32}$ & $2^{-4}$  \\ 
+P[4] & $[\frac{15}{16},\frac{17}{16}]$ &  $\frac{31}{32}$ & $2^{-4}$  & 61.72 \\ 
 \hline 
 P[5] & $[\frac{17}{16},\frac{19}{16}]$ &  $\frac{18}{16}$ & $2^{-4}$  \\ 
 \hline 
@@ -110,14 +114,8 @@ approximates $\log(y)$ with an error less than $2^{-60}$.  Each
 polynomial has coefficients which are exactly representable as IEEE
 doubles, with the two first coefficients being exactly representable
 as the sum of two doubles: $c_0 = c_0^{hi} + c_0^{lo}$ and $c1 =
-c_1^{hi} + c_1^{lo}$. The polynomials are evaluated thanks to a Horner scheme:
+c_1^{hi} + c_1^{lo}$. 
 
-$$P(z) = c_0^{hi}+c_0^{lo} + z .(c_1^{hi} +c_1^{lo} + z .(c_2 + z
-  .(c_3 + ...
-+ z .(c_{11} + z . (c_{11} + (c_{12} . z)))))))))))) \quad .
-$$
-
-The two last iterations of this Horner scheme use double-double arithmetic functions.
 
 The polynomials are produced by a program in
 \texttt{maple/coef\_log.mw}, which directly produces the file
@@ -137,27 +135,52 @@ computation uses double-double arithmetic.
 
 \subsubsection{Error analysis}
 
-The  program in
-\texttt{maple/coef\_log.mw} also computes, on each interval,  the maximum
-approximation error $\deltapprox$ (this is a relative error), the
-accumulated rounding error of the Horner scheme $\deltaround$ (this is
-an absolute error) and the maximum value of the polynomial on the interval $\maxp$.  This data is given in
-Table~\ref{table:TablePolysLog2}.
+
+The polynomials are evaluated thanks to a Horner scheme:
+
+$$P(z) = c_0^{hi}+c_0^{lo} + z .(c_1^{hi} +c_1^{lo} + z .(c_2 + z
+  .(c_3 + ...
++ z .(c_{11} + z . (c_{11} + (c_{12} . z))))))))))))
+$$
+where the two last iterations may use double-double arithmetic if
+required by the overall target accuracy, as detailed below.
 
 
-The reconstruction adds another small error.  As $|E|<1024$, we have
-$|E|\log(2)<710$, and the maximum absolute error of storing $\log(2)$
+The reconstruction adds another small error.  As $|E|<1024+52$, we have
+$|E|\log(2)<746$, and the maximum absolute error of storing $\log(2)$
 as two doubles and multiplying by $E$ is smaller than $2^{-90}$.
 
-The total relative error of this approximation scheme is therefore:
-\begin{equation}
-\delta =   \frac{ \maxp\times \deltapprox + \deltaround + 2^{-90}}{\minp} \quad . \label{eq:logerror}
-\end{equation}
+
+The  program in
+\texttt{maple/coef\_log.mw} computes, on each interval,  the maximum
+approximation error $\deltapprox$ (this is a relative error), the
+accumulated rounding error of the Horner scheme $\deltaround$ (this is
+an absolute error) and the maximum value of the polynomial on the interval $\maxp$. 
+
+Error analysis distinguishes four cases, corresponding to four
+execution paths in the program.
+
+\subsubsubsection{If $|E\log(2)| > \mathtt{MIN\_FASTPATH}=128.5$} then
+the whole polynomial evaluation may be performed in double-precision,
+with a total (approximation and rounding) absolute error smaller than
+$2^{-55.7}$. This is sufficiently small to get a relative error on
+$E\log(2)+P(x)$ smaller than $2^{-62.8}$. 
+
+\subsubsubsection{If $|E\log(2)|>16$} then the last two additions and
+the last multiplication of the Horner polynomial evaluation are
+performed in double-double-precision. The total relative error in this
+case is smaller than  $2^{-64.8}$.
+
+\subsection{If 0<|E\log(2)| < 16}
+then we use double-double arithmetic as in the previous case, and the
+bound on the relative error is $2^{-60.15}$.
+
+\subsection{If E=0} then the last two additions and
+the last two multiplications of the Horner polynomial evaluation are
+performed in double-double-precision. The total relative error in this
+case is smaller than  $2^{-57.68}$.
 
 
-\begin{table}[htdp]\caption{polynomial precision\label{table:TablePolysLog2}}\begin{center}
-\begin{tabular}{|c|c|c|c|c|}
-\end{tabular}\end{center}\end{table}
 
 
 \subsection{Two-path optimization}

@@ -119,7 +119,10 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
       } 
       else
 	{
-	  if((*pE)>=24) *prndcstindex = 2; else *prndcstindex =1;
+	  if((ln2_times_E_HI*ln2_times_E_HI < 16.5*16.5))
+	    *prndcstindex = 2; 
+	  else 
+	    *prndcstindex =1;
 	  P_hi=res*z;  P_lo=0.; 
 	  Add22(&res_hi, &res_lo, (poly_log_fast_h[i][1]).d,  (poly_log_fast_l[i][1]).d, P_hi, P_lo);
 	  Mul22(&P_hi, &P_lo, res_hi, res_lo, z, 0.); 
@@ -161,7 +164,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
  /* Filter cases */
    if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
      if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
-       return 1.0/0.0;     
+       return -1.0/0.0;     
      }                    		   /* log(+/-0) = -Inf */
      if (y.i[HI_ENDIAN] < 0){ 
        return (x-x)/0;                      /* log(-x) = Nan    */
@@ -223,7 +226,7 @@ static void log_quick(double *pres_hi, double *pres_lo, int* prndcstindex, db_nu
  /* Filter cases */
    if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
      if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
-       return 1.0/0.0;     
+       return -1.0/0.0;     
      }                    		   /* log(+/-0) = -Inf */
      if (y.i[HI_ENDIAN] < 0){ 
       return (x-x)/0;                      /* log(-x) = Nan    */
@@ -288,7 +291,7 @@ double log_ru(double x){
  /* Filter cases */
    if (y.i[HI_ENDIAN] < 0x00100000){        /* x < 2^(-1022)    */
      if (((y.i[HI_ENDIAN] & 0x7fffffff)|y.i[LO_ENDIAN])==0){
-       return 1.0/0.0;     
+       return -1.0/0.0;     
      }                    		   /* log(+/-0) = -Inf */
      if (y.i[HI_ENDIAN] < 0){ 
       return (x-x)/0;                      /* log(-x) = Nan    */
