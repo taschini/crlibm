@@ -34,14 +34,13 @@ processor/compiler/OS.  As #define has to be used with more care (not
 type-safe), the two following variables should  be set to 1 in the
 development/debugging phase, until no type warning remains.  */
 
-/* only a small speedup for the log on x86, but it allows to beat Ziv :) */
 #define ADD22_AS_FUNCTIONS 0
-#define DEKKER_AS_FUNCTIONS 1
+#define DEKKER_AS_FUNCTIONS 0
 
 
 /* setting the following variable adds variables and code for
    monitoring the performance.
-   Note that only round to nearest is instrumented */
+   Note that sometimes only round to nearest is instrumented */
 #define EVAL_PERF  1
 
 
@@ -201,6 +200,7 @@ s = (ABS(xh) > ABS(yh))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);\
 }
 
 
+
 /*
  * computes double-double addition: zh+zl = xh+xl + yh+yl
  * knowing that xh>yh
@@ -287,21 +287,6 @@ extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, doubl
                                                           \
   if (_a.i[HI_ENDIAN]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
   if (_b.i[HI_ENDIAN]>0x7C900000) {*rh *= two_e53; *rl *= two_e53;} \
-}
-
-
-/*
- * computes double-double addition: zh+zl = xh+xl + yh+yl
- * relative error is smaller than 2^-103 
- */
-  
-#define  Add22(zh, zl, xh, xl, yh, yl)                            \
-{                                                                 \
-double r,s;                                                       \
-r = xh+yh;                                                        \
-s = (ABS(xh) > ABS(yh))? (xh-r+yh+yl+xl) : (yh-r+xh+xl+yl);       \
-*zh = r+s;                                                        \
-*zl = r - (*zh) + s;                                              \
 }
 
 
