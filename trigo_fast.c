@@ -115,34 +115,46 @@ static void do_cos(double* ch, double* cl, double yh, double yl) {
 }
 
 
-static void do_sin_ffast(double* sh, double* sl, double rx, double sx, double cx) {
+static void do_sin_ffast(double* sh, double* sl, double rxh, double rxl, double sx, double cx) {
   double ts;
 
-  ts = (((sal + cah*sx) + sah*cx) + cah*rx);
+#if DEBUG
+  printf("do_sin_ffast\n");
+#endif
+  ts = (((((cal*rxh + cah*rxl) + sal) + cah*sx) + sah*cx) + cah*rxh);
   Add12(*sh, *sl, sah, ts);
 }
 
-static void do_sin_fast(double* sh, double* sl, double rx, double sx, double cx) {
+static void do_sin_fast(double* sh, double* sl, double rxh, double rxl, double sx, double cx) {
   double th, tl, ts, gh, gl;
 
-  Mul12(&gh, &gl, cah, rx);
-  ts = (((gl + cal*rx) + sal) + cah*sx) + sah*cx; 
+#if DEBUG
+  printf("do_sin_fast\n");
+#endif
+  Mul12(&gh, &gl, cah, rxh);
+  ts = ((((gl + cah*rxl) + cal*rxh) + sal) + cah*sx) + sah*cx; 
   Add12(th, tl, gh, ts);
   Add22(sh, sl, sah, 0, th, tl);
 }
 
-static void do_cos_ffast(double* sh, double* sl, double rx, double sx, double cx) {
+static void do_cos_ffast(double* sh, double* sl, double rxh, double rxl, double sx, double cx) {
   double ts;
 
-  ts = ((((- sal*rx + cal) - sah*sx) + cah*cx) - sah*rx);
+#if DEBUG
+  printf("do_cos_ffast\n");
+#endif
+  ts = (((((-sah*rxl - sal*rxh) + cal) - sah*sx) + cah*cx) - sah*rxh);
   Add12(*sh, *sl, cah, ts);
 }
 
-static void do_cos_fast(double* sh, double* sl, double rx, double sx, double cx) {
+static void do_cos_fast(double* sh, double* sl, double rxh, double rxl, double sx, double cx) {
   double th, tl, ts, gh, gl;
 
-  Mul12(&gh, &gl, sah, rx);
-  ts = (((((- gl - sal*rx) + cal) - sah*sx) + cah*cx) - sah*rx);
+#if DEBUG
+  printf("do_cos_fast\n");
+#endif
+  Mul12(&gh, &gl, sah, rxh);
+  ts = (((((- gl - sah*rxl) - sal*rxh) + cal) - sah*sx) + cah*cx);
   Add12(th, tl, -gh, ts);
   Add22(sh, sl, cah, 0, th, tl);
 }
@@ -249,7 +261,7 @@ double sin_rn(double x){
   int k;
   int absxhi;
   db_number x_split;
-  double rx, sx, cx, ts; 
+  double rxh, rxl, sx, cx, ts; 
 
   x_split.d=x;
   absxhi = x_split.i[HI_ENDIAN] & 0x7fffffff;
@@ -280,29 +292,44 @@ double sin_rn(double x){
        + table look-up 
        + fast polynomial evaluation */
 
-    /* Cody and Wayte range reduction */
+    /* Cody and Waite range reduction */
     DOUBLE2INT(k, x * INV_PIO256);
-    rx = (x - k*RR_CW2_CH) + k*RR_CW2_MCL;
-    
+    Add12(rxh, rxl, (x - k*RR_CW2_CH), (k*RR_CW2_MCL));
+
+#if DEBUG
+    printf("k   : %d \n",k);
+#endif
+
     LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal);    
-    if (quadrant >=2){
-      cah =-cah;      cal =-cal;      sah =-sah;      sal =-sal;
-    }
 
-    xx = rx*rx;
-    sx = rx * xx * (s3.d + xx*(s5.d + xx*s7.d )); // rx is missing to get sin
-    cx = xx * (c2.d + xx*(c4.d + xx*c6.d));       //  1 is missing to have cos
+    
+    xx = rxh*rxh;
+    sx = rxh * xx * (s3.d + xx*(s5.d + xx*s7.d )); // rx is missing to get sin
+    cx = xx * (c2.d + xx*(c4.d + xx*c6.d));        //  1 is missing to have cos
 
-    if (quadrant&1)  do_cos_ffast(&sh, &sl, rx, sx, cx);
-    else             do_sin_ffast(&sh, &sl, rx, sx, cx);
+#if DEBUG
+    printf("rxh : %.25e \n",rxh);
+    printf("sah : %.25e \n",sah);
+    printf("sal : %.25e \n",sal);
+    printf("cah : %.25e \n",cah);
+    printf("cal : %.25e \n",cal);
+    printf("sx  : %.25e \n",sx);
+    printf("cx  : %.25e \n",cx);
+#endif
+
+    if (quadrant&1)  do_cos_ffast(&sh, &sl, rxh, rxl, sx, cx);
+    else             do_sin_ffast(&sh, &sl, rxh, rxl, sx, cx);
     if (sh == (sh + (sl * RN_CST_SINFAST2))){	
-      return sh; 
+      return (quadrant>=2)? -sh : sh;
     }else{  
-      if (quadrant&1)  do_cos_fast(&sh, &sl, rx, sx, cx);
-      else             do_sin_fast(&sh, &sl, rx, sx, cx);
+#if DEBUG
+      printf("CASE 3bis\n");
+#endif
+      if (quadrant&1)  do_cos_fast(&sh, &sl, rxh, rxl, sx, cx);
+      else             do_sin_fast(&sh, &sl, rxh, rxl, sx, cx);
 
       if (sh == (sh + (sl * RN_CST_SINFAST3)))	
-	return sh; 
+	return (quadrant>=2)? -sh : sh;
       else
 	return scs_sin_rn(x); 
     }
@@ -316,9 +343,6 @@ double sin_rn(double x){
      int such that x = yh+yl + kPi/256 */
 
   LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal);
-  if (quadrant >=2){
-    cah =-cah;      cal =-cal;      sah =-sah;      sal =-sal;
-  }
   
 #if DEBUG
 	printf("sah=%1.30e sal=%1.30e  \n", sah,sal);
@@ -332,7 +356,7 @@ double sin_rn(double x){
 
   
   if(sh == (sh + (sl * 1.0004))){	
-     return sh;
+    return (quadrant>=2)? -sh : sh;
   }else{
     return scs_sin_rn(x); 
   } 
@@ -365,7 +389,7 @@ double cos_rn(double x){
   int k;
   int absxhi;
   db_number x_split;
-  double rx, sx, cx, ts; 
+  double rxh, rxl, sx, cx, ts; 
 
 
 
@@ -399,29 +423,26 @@ double cos_rn(double x){
 
     /* Cody and Wayte range reduction */
     DOUBLE2INT(k, x * INV_PIO256);
-    rx = (x - k*RR_CW2_CH) + k*RR_CW2_MCL;
+    Add12(rxh, rxl, (x - k*RR_CW2_CH), (k*RR_CW2_MCL));
 
     LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal);
-    if ((quadrant==1)||(quadrant==2)){
-      cah =-cah;      cal =-cal;      sah =-sah;      sal =-sal;
-    }
 
-    xx = rx*rx;
-    sx = rx * xx * (s3.d + xx*(s5.d + xx*s7.d )); // rx is missing to get sin
+    xx = rxh*rxh;
+    sx = rxh * xx * (s3.d + xx*(s5.d + xx*s7.d )); // rx is missing to get sin
     cx = xx * (c2.d + xx*(c4.d + xx*c6.d));       //  1 is missing to have cos
   
-    if (quadrant&1)  do_sin_ffast(&ch, &cl, rx, sx, cx);
-    else             do_cos_ffast(&ch, &cl, rx, sx, cx);
+    if (quadrant&1)  do_sin_ffast(&ch, &cl, rxh, rxl, sx, cx);
+    else             do_cos_ffast(&ch, &cl, rxh, rxl, sx, cx);
     
     if (ch == (ch + (cl * RN_CST_COSFAST2))){	
-      return ch; 
+      return ((quadrant==1)||(quadrant==2))? -ch: ch; 
     }else{  
 
-      if (quadrant&1)  do_sin_fast(&ch, &cl, rx, sx, cx);
-      else             do_cos_fast(&ch, &cl, rx, sx, cx);
+      if (quadrant&1)  do_sin_fast(&ch, &cl, rxh, rxl, sx, cx);
+      else             do_cos_fast(&ch, &cl, rxh, rxl, sx, cx);
 
       if (ch == (ch + (cl * RN_CST_COSFAST3)))	
-	return ch; 
+	return ((quadrant==1)||(quadrant==2))? -ch: ch; 
       else
 	return scs_cos_rn(x); 
     }
@@ -435,9 +456,6 @@ double cos_rn(double x){
      int such that x = yh+yl + kPi/256 */
   
   LOAD_TABLE_SINCOS(quadrant, k, sah, sal, cah, cal);
-  if ((quadrant==1)||(quadrant==2)){
-    cah =-cah;      cal =-cal;      sah =-sah;      sal =-sal;
-  }
 
   if (quadrant&1)   /* compute the cos  */
     do_sin(&ch, &cl,  yh, yl);
@@ -445,7 +463,7 @@ double cos_rn(double x){
     do_cos(&ch, &cl,  yh, yl);
     
   if(ch == (ch + (cl * 1.0004))){	
-     return ch;
+    return ((quadrant==1)||(quadrant==2))? -ch: ch; 
   }else{
     return scs_cos_rn(x); 
   } 
