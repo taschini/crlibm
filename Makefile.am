@@ -28,7 +28,7 @@ SUBDIRS = scs_lib . tests
 
 # Add your compiler here. Default is assumed to be gcc.
 if COMPILER_ICC
-AM_CFLAGS = -std=c99 -Wall -D__ICC__ -mp
+AM_CFLAGS = -std=c99 -Wall  -mp
 else
 AM_CFLAGS = -std=c99 -fPIC -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
 endif

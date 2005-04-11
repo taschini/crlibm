@@ -1,3 +1,26 @@
+/*
+ * Correctly rounded trigonometric functions
+ *
+ * Author : Catherine Daramy, Florent de Dinechin, David Defour
+ *
+ * This file is part of the crlibm library developed by the Arenaire
+ * project at Ecole Normale Superieure de Lyon
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or 
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "crlibm.h"
@@ -121,7 +144,7 @@ but different polynomials (which compute sin(2Pi*y) and cos(2Pi*y).
 
 
 static int rem_pio256_scs(scs_ptr result, const scs_ptr x){
-  unsigned long long int r[SCS_NB_WORDS+3], tmp;
+  uint64_t r[SCS_NB_WORDS+3], tmp;
   unsigned int N;
 
   /* result r[0],...,r[10] could store till 300 bits of precision */
@@ -138,77 +161,77 @@ static int rem_pio256_scs(scs_ptr result, const scs_ptr x){
   /* Compute the product |x| * 256/Pi */
   if ((X_IND == -2)){
     r[0] =  0;    r[1] =  0;
-    r[2] =  (unsigned long long int)(digits_256_over_pi[0]) * X_HW[0];
-    r[3] = ((unsigned long long int)(digits_256_over_pi[0]) * X_HW[1]
-	   +(unsigned long long int)(digits_256_over_pi[1]) * X_HW[0]);
+    r[2] =  (uint64_t)(digits_256_over_pi[0]) * X_HW[0];
+    r[3] = ((uint64_t)(digits_256_over_pi[0]) * X_HW[1]
+	   +(uint64_t)(digits_256_over_pi[1]) * X_HW[0]);
     if(X_HW[2] == 0){
       for(i=4; i<(SCS_NB_WORDS+3); i++){   
-	r[i] = ((unsigned long long int)(digits_256_over_pi[i-3]) * X_HW[1]
-	       +(unsigned long long int)(digits_256_over_pi[i-2]) * X_HW[0]);
+	r[i] = ((uint64_t)(digits_256_over_pi[i-3]) * X_HW[1]
+	       +(uint64_t)(digits_256_over_pi[i-2]) * X_HW[0]);
       }}else {
 	for(i=4; i<(SCS_NB_WORDS+3); i++){   
-	  r[i] = ((unsigned long long int)(digits_256_over_pi[i-4]) * X_HW[2]
-		 +(unsigned long long int)(digits_256_over_pi[i-3]) * X_HW[1]
-		 +(unsigned long long int)(digits_256_over_pi[i-2]) * X_HW[0]);
+	  r[i] = ((uint64_t)(digits_256_over_pi[i-4]) * X_HW[2]
+		 +(uint64_t)(digits_256_over_pi[i-3]) * X_HW[1]
+		 +(uint64_t)(digits_256_over_pi[i-2]) * X_HW[0]);
 	}
       }
   }else {
     if (X_IND == -1){
       r[0] =  0;
-      r[1] =  (unsigned long long int)(digits_256_over_pi[0]) * X_HW[0];
-      r[2] = ((unsigned long long int)(digits_256_over_pi[0]) * X_HW[1]
-	     +(unsigned long long int)(digits_256_over_pi[1]) * X_HW[0]);
+      r[1] =  (uint64_t)(digits_256_over_pi[0]) * X_HW[0];
+      r[2] = ((uint64_t)(digits_256_over_pi[0]) * X_HW[1]
+	     +(uint64_t)(digits_256_over_pi[1]) * X_HW[0]);
       if(X_HW[2] == 0){
 	for(i=3; i<(SCS_NB_WORDS+3); i++){   
-	  r[i] = ((unsigned long long int)(digits_256_over_pi[i-2]) * X_HW[1]
-		 +(unsigned long long int)(digits_256_over_pi[i-1]) * X_HW[0]);
+	  r[i] = ((uint64_t)(digits_256_over_pi[i-2]) * X_HW[1]
+		 +(uint64_t)(digits_256_over_pi[i-1]) * X_HW[0]);
 	}}else {
 	  for(i=3; i<(SCS_NB_WORDS+3); i++){   
-	    r[i] = ((unsigned long long int)(digits_256_over_pi[i-3]) * X_HW[2]
-		   +(unsigned long long int)(digits_256_over_pi[i-2]) * X_HW[1]
-		   +(unsigned long long int)(digits_256_over_pi[i-1]) * X_HW[0]);
+	    r[i] = ((uint64_t)(digits_256_over_pi[i-3]) * X_HW[2]
+		   +(uint64_t)(digits_256_over_pi[i-2]) * X_HW[1]
+		   +(uint64_t)(digits_256_over_pi[i-1]) * X_HW[0]);
 	  }}
     }else {
       if (X_IND == 0){
-	r[0] =  (unsigned long long int)(digits_256_over_pi[0]) * X_HW[0];
-	r[1] = ((unsigned long long int)(digits_256_over_pi[0]) * X_HW[1]
-	       +(unsigned long long int)(digits_256_over_pi[1]) * X_HW[0]);
+	r[0] =  (uint64_t)(digits_256_over_pi[0]) * X_HW[0];
+	r[1] = ((uint64_t)(digits_256_over_pi[0]) * X_HW[1]
+	       +(uint64_t)(digits_256_over_pi[1]) * X_HW[0]);
 	if(X_HW[2] == 0){
 	  for(i=2; i<(SCS_NB_WORDS+3); i++){   
-	    r[i] = ((unsigned long long int)(digits_256_over_pi[i-1]) * X_HW[1]
-		   +(unsigned long long int)(digits_256_over_pi[ i ]) * X_HW[0]);
+	    r[i] = ((uint64_t)(digits_256_over_pi[i-1]) * X_HW[1]
+		   +(uint64_t)(digits_256_over_pi[ i ]) * X_HW[0]);
 	  }}else {
 	    for(i=2; i<(SCS_NB_WORDS+3); i++){   
-	      r[i] = ((unsigned long long int)(digits_256_over_pi[i-2]) * X_HW[2]
-		     +(unsigned long long int)(digits_256_over_pi[i-1]) * X_HW[1]
-		     +(unsigned long long int)(digits_256_over_pi[ i ]) * X_HW[0]);
+	      r[i] = ((uint64_t)(digits_256_over_pi[i-2]) * X_HW[2]
+		     +(uint64_t)(digits_256_over_pi[i-1]) * X_HW[1]
+		     +(uint64_t)(digits_256_over_pi[ i ]) * X_HW[0]);
 	    }}
       }else {
 	if (X_IND == 1){
-  	  r[0] = ((unsigned long long int)(digits_256_over_pi[0]) * X_HW[1]
-		 +(unsigned long long int)(digits_256_over_pi[1]) * X_HW[0]);
+  	  r[0] = ((uint64_t)(digits_256_over_pi[0]) * X_HW[1]
+		 +(uint64_t)(digits_256_over_pi[1]) * X_HW[0]);
 	  if(X_HW[2] == 0){
 	    for(i=1; i<(SCS_NB_WORDS+3); i++){   
-	      r[i] = ((unsigned long long int)(digits_256_over_pi[ i ]) * X_HW[1]
-		     +(unsigned long long int)(digits_256_over_pi[i+1]) * X_HW[0]);
+	      r[i] = ((uint64_t)(digits_256_over_pi[ i ]) * X_HW[1]
+		     +(uint64_t)(digits_256_over_pi[i+1]) * X_HW[0]);
 	    }}else {
 	      for(i=1; i<(SCS_NB_WORDS+3); i++){   
-		r[i] = ((unsigned long long int)(digits_256_over_pi[i-1]) * X_HW[2]
-		       +(unsigned long long int)(digits_256_over_pi[ i ]) * X_HW[1]
-		       +(unsigned long long int)(digits_256_over_pi[i+1]) * X_HW[0]);
+		r[i] = ((uint64_t)(digits_256_over_pi[i-1]) * X_HW[2]
+		       +(uint64_t)(digits_256_over_pi[ i ]) * X_HW[1]
+		       +(uint64_t)(digits_256_over_pi[i+1]) * X_HW[0]);
 	      }}
 	}else {
 	  ind = (X_IND - 2);
 	  digits_256_over_pi_pt = (int*)&(digits_256_over_pi[ind]);
 	  if(X_HW[2] == 0){
 	    for(i=0; i<(SCS_NB_WORDS+3); i++){   
-	      r[i] = ((unsigned long long int)(digits_256_over_pi_pt[i+1]) * X_HW[1]
-		     +(unsigned long long int)(digits_256_over_pi_pt[i+2]) * X_HW[0]);
+	      r[i] = ((uint64_t)(digits_256_over_pi_pt[i+1]) * X_HW[1]
+		     +(uint64_t)(digits_256_over_pi_pt[i+2]) * X_HW[0]);
 	    }}else {
 	      for(i=0; i<(SCS_NB_WORDS+3); i++){   
-		r[i] = ((unsigned long long int)(digits_256_over_pi_pt[ i ]) * X_HW[2]
-		       +(unsigned long long int)(digits_256_over_pi_pt[i+1]) * X_HW[1]
-		       +(unsigned long long int)(digits_256_over_pi_pt[i+2]) * X_HW[0]);
+		r[i] = ((uint64_t)(digits_256_over_pi_pt[ i ]) * X_HW[2]
+		       +(uint64_t)(digits_256_over_pi_pt[i+1]) * X_HW[1]
+		       +(uint64_t)(digits_256_over_pi_pt[i+2]) * X_HW[0]);
 	      }
 	    }
 	}
@@ -353,7 +376,7 @@ static void ComputeTrigWithArgred(rrinfo *rri){
   double sah,sal,cah,cal, yh, yl, yh2, ts,tc, kd; 
   double kch_h,kch_l, kcm_h,kcm_l, th, tl,sh,sl,ch,cl;
   int k, quadrant, index;
-  long long int kl;
+  int64_t kl;
 
   if  (rri->absxhi < XMAX_CODY_WAITE_3) {
     /* Compute k, deduce the table index and the quadrant */

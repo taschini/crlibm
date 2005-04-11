@@ -24,6 +24,7 @@ nor restoring.
 #include <crlibm_private.h>
 #include "double-extended.h"
 
+#define debug 1 /*Warning : turning debugging on seems to change the final result */
 #define DEBUG 0
 #define NICOLASTEST 0
 
@@ -143,11 +144,7 @@ extern double atan_rn(double x) {
       atan = q*x + x;
     
     }
-#if 1 /* To time the first step alone */ 
-  BACK_TO_DOUBLE_MODE;
-  return sign*atan;
-#endif
-
+  
   TEST_AND_RETURN_RN2(atan, sign*atan, 0x7fe);
   /* or : 
   TEST_AND_RETURN_RN_ZIV(sign*atan, 1.003);
@@ -231,6 +228,10 @@ extern double atan_rn(double x) {
 		     (coef_poly[8][0]))));
       
       Add12_ext(qhi,qlo, coef_poly[4][0],q);
+#if debug
+  printf(" xred2   =   %1.50Le + %1.50Le\n", Xred2hi, Xred2lo);
+  printf(" qhi+qlo0=   %1.50Le + %1.50Le\n",qhi, qlo);
+#endif
       Mul22_ext(&qhi,&qlo, qhi,qlo, Xred2hi,Xred2lo);
       
       for(j=3;j>=0;j--)
@@ -240,13 +241,17 @@ extern double atan_rn(double x) {
         }
       
       Mul22_ext (&qhi,&qlo, x,0, qhi,qlo);
+
+#if debug
+  printf(" qhi+qlo =   %1.50Le + %1.50Le\n",qhi, qlo);
+#endif
+
+      /* The sequence in the TOMS paper */
       Add12_ext (atanhi,atanlo,x,qhi);
       atanlo += qlo;
     }
-#define debug 0
 #if debug
   printf("             %1.50Le + %1.50Le\n",atanhi, atanlo);
-  printf("             %1.50e + %1.50e\n",(double)atanhi,(double) atanlo);
   printf("             %1.50Le\n",atanhi + atanlo);
 #endif
   

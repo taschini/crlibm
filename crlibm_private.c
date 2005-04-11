@@ -1,11 +1,22 @@
 /**
  * Variables and common functions shared by many functions
-
- * Author : Defour David  (David.Defour@ens-lyon.fr)
- *	    Daramy Catherine (Catherine.Daramy@ens-lyon.fr)
- *          Florent de Dinechin (Florent.de.Dinechin@ens-lyon.fr)
- * Date of creation : 14/03/2002   
- * Last Modified    : 28/02/2003
+ *
+ * This file is part of the crlibm library developed by the Arenaire
+ * project at Ecole Normale Superieure de Lyon
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or 
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,23 +30,30 @@
 #include <fenv.h>
 #endif
 
+/* Tell the compiler that we're going to mess with FP status register */
 #ifdef FENV_H
 #pragma STDC FENV_ACCESS ON
 #endif
 
-#ifdef CRLIBM_TYPECPU_X86
-#include <fpu_control.h>
-#endif
 
 
 
 
+/* TODO proper init and exit functions 
+
+- for Itanium (set sf2 and/or sf3, one should be kept for saving the
+ fpsr when speculating, study operating systems)
+
+- for PowerPC: nothing to do usually, however if for some reason the
+  CPU was not in the default state then crlibm won't work
+
+ */
 
 
 
 /* An init function which sets FPU flags when needed */
-unsigned short crlibm_init() {
-#if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) 
+unsigned long long crlibm_init() {
+#if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
   unsigned short oldcw, cw;
   /* save old state */
   _FPU_GETCW(oldcw);
@@ -43,23 +61,45 @@ unsigned short crlibm_init() {
      with rounding to nearest */  
   cw = (_FPU_DEFAULT & ~_FPU_EXTENDED)|_FPU_DOUBLE;
   _FPU_SETCW(cw);
-  return oldcw;
+  return (unsigned long long) oldcw;
+
+#elif defined(CRLIBM_TYPECPU_ITANIUM) 
+  /* On Itanium we assume that SF2 is used fo speculation, and use only SF3 */
+
+  unsigned long long int  old_fpsr;
+
+#if defined(__INTEL_COMPILER)
+  _Asm_fsetc( 0x00, 0x28, 3 /*_SF3*/ ); /* sf3 = round up, double-precision */
+
+  //  _Asm_mov_to_ar(40, 
+  //	 (old_fpsr & 0xfd000000FFFFFFFFULL) || ((0x18ULL<<32) + (0x28ULL<<45)) );
+#elif defined(__GNUC__)
+  __asm__ ("fsetc.s3 0, 40\n");
+#endif /* defined(__INTEL_COMPILER) */
+  old_fpsr = 0 ; /* TODO */
+  return old_fpsr;
+
+
+  
+
+
+
 #else
+
   return 0;
-#endif /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
+#endif
 }
 
-
-
 /* An exit function which sets FPU flags to initial value */
-void crlibm_exit(unsigned short oldcw) {
-#if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) 
+void crlibm_exit(unsigned long long int oldcw) {
+#if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
   /* Set FPU flags to use double, not double extended, 
      with rounding to nearest */
-  _FPU_SETCW(oldcw);
+  unsigned short t = (unsigned short)oldcw;
+  _FPU_SETCW(t);
 #else
 
-#endif /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
+#endif
 }
 
 

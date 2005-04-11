@@ -10,19 +10,6 @@
 
 #include "scs_lib/scs.h"
 #include "scs_lib/scs_private.h"
-
-
-#ifdef CRLIBM_TYPECPU_X86
-#include <fpu_control.h>
-/* don't remember why it's here, but it doesn't hurt to keep it (2004) */
-#ifndef _FPU_SETCW
-#define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
-#endif
-#ifndef _FPU_GETCW
-#define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
-#endif 
-#endif
-
  /* undef all the variables that might have been defined in
     scs_lib/scs_private.h */
 #undef VERSION 
@@ -32,6 +19,35 @@
 #undef HAVE_MATHLIB_H
 /* then include the proper definitions  */
 #include "crlibm_config.h"
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
+
+
+#if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
+#include <fpu_control.h>
+#ifndef _FPU_SETCW
+#define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
+#endif
+#ifndef _FPU_GETCW
+#define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
+#endif 
+#endif
+
+
+/* 64 bit arithmetic may be standardised, but people still do want they want */
+#ifdef HAVE_STDINT_H
+#define ULL(bits) 0x##bits##uLL
+#elif defined(WIN32) 
+/* TODO insert Windows garbage there */
+/* Default, hoping it works, hopefully less and less relevant */
+#else
+typedef int64_t long long int ;
+typedef uint64_t unsigned long long int ;
+#define ULL(bits) 0x##bits##uLL
+#endif
 
 
 
@@ -89,7 +105,6 @@ extern double scs_tan_rz(double);
 
 extern int rem_pio2_scs(scs_ptr, scs_ptr);
 
-
 /*
  * i = d in rounding to nearest
   The constant added is 2^52 + 2^51 
@@ -101,14 +116,14 @@ extern int rem_pio2_scs(scs_ptr, scs_ptr);
 
 
 /* Same idea but beware: works only for |_i| < 2^51 -1 */
-#define DOUBLE2LONGINT(_i, _d)                                      \
-  {                                                                 \
-    db_number _t;                                                   \
-    _t.d = (_d+6755399441055744.0);                                 \
-    if (_d >= 0) /* sign extend */                                  \
-      _i = _t.l & 0x0007FFFFFFFFFFFFLL;                             \
-    else                                                            \
-      _i = (_t.l & 0x0007FFFFFFFFFFFFLL) |  (0xFFF8000000000000LL); \
+#define DOUBLE2LONGINT(_i, _d)                                        \
+  {                                                                   \
+    db_number _t;                                                     \
+    _t.d = (_d+6755399441055744.0);                                   \
+    if (_d >= 0) /* sign extend */                                    \
+      _i = _t.l & ULL(0007FFFFFFFFFFFF);                              \
+    else                                                              \
+      _i = (_t.l & ULL(0007FFFFFFFFFFFF)) |  (ULL(FFF8000000000000)); \
   }
 
 
@@ -134,7 +149,7 @@ double. See the chapter about the log for an example
   yl_neg = (yl.i[HI] & 0x80000000);                                    \
   yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
   yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  u53.l     = (yh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;   \
+  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
   if(yl.d > __eps__ * u53.d){                                          \
     if(!yl_neg) {  /* The case yl==0 is filtered by the above test*/   \
       /* return next up */                                             \
@@ -155,7 +170,7 @@ double. See the chapter about the log for an example
   yl_neg = (yl.i[HI] & 0x80000000);                                    \
   yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
   yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  u53.l     = (yh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;   \
+  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
   if(yl.d > __eps__ * u53.d){                                          \
     if(yl_neg) {   /* The case yl==0 is filtered by the above test*/   \
       /* return next down */                                           \
@@ -175,9 +190,9 @@ double. See the chapter about the log for an example
   yh.d = __yh__;    yl.d = __yl__;                                     \
   yh_neg = (yh.i[HI] & 0x80000000);                                    \
   yl_neg = (yl.i[HI] & 0x80000000);                                    \
-  yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  u53.l     = (yh.l & 0x7ff0000000000000LL) +  0x0010000000000000LL;   \
+  yh.l = yh.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
+  yl.l = yl.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
+  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
   if(yl.d > __eps__ * u53.d){                                          \
     if(yl_neg!=yh_neg) {                                               \
       yh.d = __yh__;                                                   \
@@ -194,7 +209,7 @@ double. See the chapter about the log for an example
 /* All this probably works only with gcc. 
    See Markstein book for the case of HP's compiler */
 
-#if defined(CRLIBM_TYPECPU_POWERPC) && defined(__GCC__)
+#if defined(CRLIBM_TYPECPU_POWERPC) && defined(__GNUC__)
 #define PROCESSOR_HAS_FMA 1
 #define FMA(a,b,c)  /* r = a*b + c*/                   \
 ({                                                     \
@@ -229,9 +244,7 @@ double. See the chapter about the log for an example
    To test again with higher gcc versions
 */ 
 
-/* __ICC__ is set by Makefile.am, there must be a cleaner way to detect icc compiler.
-   Beware icc sets __GCC__*/
-#if defined(CRLIBM_TYPECPU_ITANIUM) && defined(__GCC__)  && !defined(__ICC__) 
+#if defined(CRLIBM_TYPECPU_ITANIUM) && defined(__GNUC__)  && !defined(__INTEL_COMPILER) && 0
 #define PROCESSOR_HAS_FMA 1
 #define FMA(a,b,c)  /* r = a*b + c*/                 \
 ({                                                   \
@@ -255,15 +268,17 @@ double. See the chapter about the log for an example
 		       );                            \
   _r;                                                \
   })
-#endif /* defined(CRLIBM_TYPECPU_ITANIUM) && defined(__GCC__) && !defined(__ICC) */
+#endif /* defined(CRLIBM_TYPECPU_ITANIUM) && defined(__GCC__) && !defined(__INTEL_COMPILER) */
 
 
-/* __ICC__ is set by Makefile.am, there must be a cleaner way to detect icc compiler.*/
-#if defined(CRLIBM_TYPECPU_ITANIUM) && defined(__ICC__) 
+
+
+#if defined(CRLIBM_TYPECPU_ITANIUM) && defined(__INTEL_COMPILER) 
 #define PROCESSOR_HAS_FMA 1
-
-#if 0 /* Commented out because it shouldn't be there (some day I'll
-	 find the #include that shall replace it). Leave it as documentation, though
+#if 0 /* Commented out because it shouldn't be there: There should be
+	 a standard #include doing all this, but as of april 2005
+	 it doesn't exist, say intel people). Leave
+	 it as documentation, though, until it is replaced by #include
 */
 /* Table 1-17: legal floating-point precision completers (.pc) */
 typedef enum {
@@ -296,7 +311,7 @@ typedef enum {
 #define FMS(a,b,c)  /* r = a*b - c*/                 \
    _Asm_fms( 2/*_PC_D*/, a, b, c, 0/*_SF0*/);              
 
-#endif /*defined(CRLIBM_TYPECPU_ITANIUM) && defined(__ICC)*/
+#endif /*defined(CRLIBM_TYPECPU_ITANIUM) && defined(__INTEL_COMPILER)*/
 
 
 
@@ -324,31 +339,6 @@ extern const scs scs_zer, scs_half, scs_one, scs_two, scs_sixinv;
 #define SCS_ONE     (scs_ptr)(&scs_one)
 #define SCS_TWO     (scs_ptr)(&scs_two)
 #define SCS_SIXINV  (scs_ptr)(&scs_sixinv)
-
-/*
- * Define rounding mode
- */
-#define RNDN 0  /* to nearest  */
-#define RNDD 1  /* toward -inf */
-#define RNDU 2  /* toward +inf */
-
-
-
-
-
-
-
-/* This sets round to the nearest and disables extended precision on
-   the x86s. For the Itanii on Linux there is nothing to do.
-
-   This probably doesn't work on all unix systems...
- */
-#ifdef SCS_TYPECPU_X86
-#include <fpu_control.h>
-#ifndef __setfpucw
-#define __setfpucw(cw) __asm__ ("fldcw %0" : : "m" (cw))
-#endif 
-#endif /*SCS_TYPECPU_X86*/
 
 
 
@@ -573,14 +563,7 @@ extern void Div22(double *z, double *zz, double x, double xx, double y, double y
 }
 #endif /* DEKKER_AS_FUNCTIONS */
 
-/* A few prototypes that are not worth being in crlibm.h */
 
-/*
- * Make a trigonometric range reduction with a relative
- * error less than 2^(-150) 
- */
-
-extern int rem_pio2_scs(scs_ptr,  scs_ptr);
 
 
 

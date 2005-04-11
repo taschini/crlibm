@@ -348,7 +348,7 @@ static void latex_output(const char *name,
 		  int n){
     if(testfun!=NULL) { /* some functions are missing in libultim (cosh, ...  */
       if (lib_dtwc > lib_dtmax) lib_dtmax=lib_dtwc;
-      printf(" \\texttt{%s}  \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
+      printf(" %s  \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
 	     name, lib_dtmin, ((double)lib_dtsum) / ((double) n), lib_dtmax);
     }
 }
@@ -518,18 +518,18 @@ int main (int argc, char *argv[]){
 
   /******************* Latex output ****************/
   printf("\\multicolumn{4}{|c|}{Processor / system / compiler}   \\\\ \n \\hline");
-  printf("\n                   \t& min time \t & avg time \t& max time \t  \\\\ \n \\hline\n");
-  latex_output("LIBM", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, n);
+  printf("\n                             & min time \t & avg time \t& max time \t  \\\\ \n \\hline\n");
+  latex_output("default \\texttt{libm}  ", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, n);
 #ifdef   HAVE_MPFR_H
-  latex_output("MPFR", testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
+  latex_output("GNU MPFR               ", testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
 #endif /*HAVE_MPFR_H*/
 #ifdef   HAVE_MATHLIB_H
-  latex_output("IBM ", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);
+  latex_output("IBM's \\texttt{libultim}", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);
 #endif /*HAVE_MATHLIB_H*/
 #ifdef   HAVE_LIBMCR_H
-  latex_output("SUN ", testfun_libmcr, libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, n);
+  latex_output("Sun's \\texttt{libmcr}  ", testfun_libmcr, libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, n);
 #endif /*HAVE_LIBMCR_H*/
-  latex_output("CRLIBM", testfun_crlibm, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, n);
+  latex_output("\\texttt{crlibm}        ", testfun_crlibm, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, n);
 
   return 0;
 }

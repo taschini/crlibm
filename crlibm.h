@@ -1,5 +1,5 @@
 /*
- * Author  : Defour David, Catherine Daramy
+ * Author  : David Defour, Catherine Daramy, Florent de Dinechin
  * Contact : David.Defour@ens-lyon.fr, catherine_daramy@ens-lyon.fr
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,13 +24,14 @@
 extern "C" {
 #endif
 
-/* An init function which sets FPU flags when needed (mostly on Intel
-   architectures with default double extended) */
-extern unsigned short crlibm_init(void);
 
 /* An init function which sets FPU flags when needed (mostly on Intel
    architectures with default double extended) */
-extern  void crlibm_exit(unsigned short);
+extern unsigned long long crlibm_init(void);
+
+/* An exit function which restores FPU flags when needed (mostly on Intel
+   architectures with default double extended) */
+extern  void crlibm_exit(unsigned long long);
 
 
 /* Finished functions */

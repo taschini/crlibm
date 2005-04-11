@@ -1,3 +1,26 @@
+/*
+ * rem_pio2, used in correctly rounded trigonometric functions
+ *
+ * Author : Catherine Daramy, David Defour, Florent de Dinechin
+ *
+ * This file is part of the crlibm library developed by the Arenaire
+ * project at Ecole Normale Superieure de Lyon
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or 
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  
+*/
+
 /**
  * This file include functions to compute y=x-N*pi/2 and return the last two bits of N
  * in order to know which quadrant we are considering.
@@ -7,7 +30,6 @@
  * "Argument reduction for huge argument: Good to the last bit" (July 13, 1992)
  *
  */
-#include "stdio.h"
 #include "rem_pio2_accurate.h"
 
 
@@ -53,7 +75,7 @@
    better 64-bit multiplication, see in scs_mult */
 
 int rem_pio2_scs(scs_ptr result, const scs_ptr x){
-  unsigned long long int r[SCS_NB_WORDS+3], tmp;
+  uint64_t r[SCS_NB_WORDS+3], tmp;
   unsigned int N;
   /* result r[0],...,r[10] could store till 300 bits of precision */
   /* that is really enough for computing the reduced argument */
@@ -72,77 +94,77 @@ int rem_pio2_scs(scs_ptr result, const scs_ptr x){
     /* In this case we consider number between ]-1,+1[    */
     /* we may use simpler algorithm such as Cody And Waite */
     r[0] =  0;    r[1] =  0;
-    r[2] =  (unsigned long long int)(two_over_pi[0]) * X_HW[0];
-    r[3] = ((unsigned long long int)(two_over_pi[0]) * X_HW[1]
-	   +(unsigned long long int)(two_over_pi[1]) * X_HW[0]);
+    r[2] =  (uint64_t)(two_over_pi[0]) * X_HW[0];
+    r[3] = ((uint64_t)(two_over_pi[0]) * X_HW[1]
+	   +(uint64_t)(two_over_pi[1]) * X_HW[0]);
     if(X_HW[2] == 0){
       for(i=4; i<(SCS_NB_WORDS+3); i++){   
-	r[i] = ((unsigned long long int)(two_over_pi[i-3]) * X_HW[1]
-	       +(unsigned long long int)(two_over_pi[i-2]) * X_HW[0]);
+	r[i] = ((uint64_t)(two_over_pi[i-3]) * X_HW[1]
+	       +(uint64_t)(two_over_pi[i-2]) * X_HW[0]);
       }}else {
 	for(i=4; i<(SCS_NB_WORDS+3); i++){   
-	  r[i] = ((unsigned long long int)(two_over_pi[i-4]) * X_HW[2]
-		 +(unsigned long long int)(two_over_pi[i-3]) * X_HW[1]
-		 +(unsigned long long int)(two_over_pi[i-2]) * X_HW[0]);
+	  r[i] = ((uint64_t)(two_over_pi[i-4]) * X_HW[2]
+		 +(uint64_t)(two_over_pi[i-3]) * X_HW[1]
+		 +(uint64_t)(two_over_pi[i-2]) * X_HW[0]);
 	}
       }
   }else {
     if (X_IND == 0){
       r[0] =  0;
-      r[1] =  (unsigned long long int)(two_over_pi[0]) * X_HW[0];
-      r[2] = ((unsigned long long int)(two_over_pi[0]) * X_HW[1]
-	     +(unsigned long long int)(two_over_pi[1]) * X_HW[0]);
+      r[1] =  (uint64_t)(two_over_pi[0]) * X_HW[0];
+      r[2] = ((uint64_t)(two_over_pi[0]) * X_HW[1]
+	     +(uint64_t)(two_over_pi[1]) * X_HW[0]);
       if(X_HW[2] == 0){
 	for(i=3; i<(SCS_NB_WORDS+3); i++){   
-	  r[i] = ((unsigned long long int)(two_over_pi[i-2]) * X_HW[1]
-		 +(unsigned long long int)(two_over_pi[i-1]) * X_HW[0]);
+	  r[i] = ((uint64_t)(two_over_pi[i-2]) * X_HW[1]
+		 +(uint64_t)(two_over_pi[i-1]) * X_HW[0]);
 	}}else {
 	  for(i=3; i<(SCS_NB_WORDS+3); i++){   
-	    r[i] = ((unsigned long long int)(two_over_pi[i-3]) * X_HW[2]
-		   +(unsigned long long int)(two_over_pi[i-2]) * X_HW[1]
-		   +(unsigned long long int)(two_over_pi[i-1]) * X_HW[0]);
+	    r[i] = ((uint64_t)(two_over_pi[i-3]) * X_HW[2]
+		   +(uint64_t)(two_over_pi[i-2]) * X_HW[1]
+		   +(uint64_t)(two_over_pi[i-1]) * X_HW[0]);
 	  }}
     }else {
       if (X_IND == 1){
-	r[0] =  (unsigned long long int)(two_over_pi[0]) * X_HW[0];
-	r[1] = ((unsigned long long int)(two_over_pi[0]) * X_HW[1]
-	       +(unsigned long long int)(two_over_pi[1]) * X_HW[0]);
+	r[0] =  (uint64_t)(two_over_pi[0]) * X_HW[0];
+	r[1] = ((uint64_t)(two_over_pi[0]) * X_HW[1]
+	       +(uint64_t)(two_over_pi[1]) * X_HW[0]);
 	if(X_HW[2] == 0){
 	  for(i=2; i<(SCS_NB_WORDS+3); i++){   
-	    r[i] = ((unsigned long long int)(two_over_pi[i-1]) * X_HW[1]
-		   +(unsigned long long int)(two_over_pi[ i ]) * X_HW[0]);
+	    r[i] = ((uint64_t)(two_over_pi[i-1]) * X_HW[1]
+		   +(uint64_t)(two_over_pi[ i ]) * X_HW[0]);
 	  }}else {
 	    for(i=2; i<(SCS_NB_WORDS+3); i++){   
-	      r[i] = ((unsigned long long int)(two_over_pi[i-2]) * X_HW[2]
-		     +(unsigned long long int)(two_over_pi[i-1]) * X_HW[1]
-		     +(unsigned long long int)(two_over_pi[ i ]) * X_HW[0]);
+	      r[i] = ((uint64_t)(two_over_pi[i-2]) * X_HW[2]
+		     +(uint64_t)(two_over_pi[i-1]) * X_HW[1]
+		     +(uint64_t)(two_over_pi[ i ]) * X_HW[0]);
 	    }}
       }else {
 	if (X_IND == 2){
-  	  r[0] = ((unsigned long long int)(two_over_pi[0]) * X_HW[1]
-		 +(unsigned long long int)(two_over_pi[1]) * X_HW[0]);
+  	  r[0] = ((uint64_t)(two_over_pi[0]) * X_HW[1]
+		 +(uint64_t)(two_over_pi[1]) * X_HW[0]);
 	  if(X_HW[2] == 0){
 	    for(i=1; i<(SCS_NB_WORDS+3); i++){   
-	      r[i] = ((unsigned long long int)(two_over_pi[ i ]) * X_HW[1]
-		     +(unsigned long long int)(two_over_pi[i+1]) * X_HW[0]);
+	      r[i] = ((uint64_t)(two_over_pi[ i ]) * X_HW[1]
+		     +(uint64_t)(two_over_pi[i+1]) * X_HW[0]);
 	    }}else {
 	      for(i=1; i<(SCS_NB_WORDS+3); i++){   
-		r[i] = ((unsigned long long int)(two_over_pi[i-1]) * X_HW[2]
-		       +(unsigned long long int)(two_over_pi[ i ]) * X_HW[1]
-		       +(unsigned long long int)(two_over_pi[i+1]) * X_HW[0]);
+		r[i] = ((uint64_t)(two_over_pi[i-1]) * X_HW[2]
+		       +(uint64_t)(two_over_pi[ i ]) * X_HW[1]
+		       +(uint64_t)(two_over_pi[i+1]) * X_HW[0]);
 	      }}
 	}else {
 	  ind = (X_IND - 3);
 	  two_over_pi_pt = (int*)&(two_over_pi[ind]);
 	  if(X_HW[2] == 0){
 	    for(i=0; i<(SCS_NB_WORDS+3); i++){   
-	      r[i] = ((unsigned long long int)(two_over_pi_pt[i+1]) * X_HW[1]
-		     +(unsigned long long int)(two_over_pi_pt[i+2]) * X_HW[0]);
+	      r[i] = ((uint64_t)(two_over_pi_pt[i+1]) * X_HW[1]
+		     +(uint64_t)(two_over_pi_pt[i+2]) * X_HW[0]);
 	    }}else {
 	      for(i=0; i<(SCS_NB_WORDS+3); i++){   
-		r[i] = ((unsigned long long int)(two_over_pi_pt[ i ]) * X_HW[2]
-		       +(unsigned long long int)(two_over_pi_pt[i+1]) * X_HW[1]
-		       +(unsigned long long int)(two_over_pi_pt[i+2]) * X_HW[0]);
+		r[i] = ((uint64_t)(two_over_pi_pt[ i ]) * X_HW[2]
+		       +(uint64_t)(two_over_pi_pt[i+1]) * X_HW[1]
+		       +(uint64_t)(two_over_pi_pt[i+2]) * X_HW[0]);
 	      }
 	    }
 	}
@@ -162,7 +184,7 @@ int rem_pio2_scs(scs_ptr result, const scs_ptr x){
 
 
   /* test if the reduced part is bigger than Pi/4 */
-  if (r[1] > (unsigned long long int)(SCS_RADIX)/2){
+  if (r[1] > (uint64_t)(SCS_RADIX)/2){
     N += 1;
     sign = -1;
     for(i=1; i<(SCS_NB_WORDS+3); i++) { r[i]=((~(unsigned int)(r[i])) & 0x3fffffff);}
