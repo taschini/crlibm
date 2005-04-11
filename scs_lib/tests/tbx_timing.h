@@ -3,7 +3,7 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
-#if defined(SCS_TYPECPU_ITANIUM) && defined(__ICC__)
+#if defined(SCS_TYPECPU_ITANIUM) && defined(__INTEL_COMPILER)
 #include<ia64intrin.h>
 #endif
 
@@ -27,7 +27,7 @@ typedef union u_tbx_tick
 } tbx_tick_t, *p_tbx_tick_t;
 
 
-#if defined(SCS_TYPECPU_ITANIUM) && defined(__GNUC__) && !defined(__ICC__)
+#if defined(SCS_TYPECPU_ITANIUM) && defined(__GNUC__) && !defined(__INTEL_COMPILER)
  
 #define TBX_GET_TICK(t) \
    __asm__ __volatile__("mov %0=ar.itc" : "=r"((t).tick) :: "memory")
@@ -43,13 +43,13 @@ typedef union u_tbx_tick
 #define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick )
 
 
-#elif defined(SCS_TYPECPU_ITANIUM) && defined(__ICC__)
+#elif defined(SCS_TYPECPU_ITANIUM) && defined(__INTEL_COMPILER)
 #define TBX_GET_TICK(t)    t.tick=__getReg(_IA64_REG_AR_ITC)   
 #define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick)
 
 
 /* Hum hum... Here we suppose that X86ARCH => Pentium! */
-#elif defined(SCS_TYPECPU_X86) && defined(__GNUC__)  && !defined(__ICC__)
+#elif defined(SCS_TYPECPU_X86) && defined(__GNUC__)  && !defined(__INTEL_COMPILER)
 #define TBX_GET_TICK(t) \
    __asm__ volatile("xorl %%eax, %%eax ; cpuid; rdtsc" : "=a" ((t).sub.low), "=d" ((t).sub.high))
 #define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick)

@@ -34,9 +34,27 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS /* because it is not very clean */
 
-#include <limits.h> 
-
 #include "scs_config.h"
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
+
+
+/* 64 bit arithmetic may be standardised, but people still do want they want */
+#ifdef _STDINT_H
+#define ULL(bits) 0x##bits##uLL
+#elif defined(WIN32) 
+/* TODO insert Windows garbage there */
+/* Default, hoping it works, hopefully less and less relevant */
+#else
+typedef int64_t long long int ;
+typedef uint64_t unsigned long long int ;
+#define ULL(bits) 0x##bits##uLL
+#endif
+
+
+
 
 #ifdef HAVE_GMP_H
  #include <gmp.h>
@@ -54,10 +72,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
     internal purpose only */
 
 typedef union {
-  int i[2];                 
-  unsigned long long int l; 
+  int32_t i[2]; /* Signed (may be useful) */                
+  int64_t l;    /* Signed (may be useful) */
   double d;
 } db_number;
+
 
 
 
@@ -99,7 +118,7 @@ The real number represented by a scs structure is equal to:
 
 struct scs {
   /** the digits, as 32 bits words */ 
-  unsigned int h_word[SCS_NB_WORDS]; 
+  uint32_t h_word[SCS_NB_WORDS]; 
   /** Used to store Nan,+/-0, Inf, etc and then let the hardware handle them */
   db_number exception;   
   /** This corresponds to the exponent in an FP format, but here we are

@@ -25,8 +25,8 @@
  */
 /* z->sign = X_SGN . Y_SGN */
 void scs_fma(scs_ptr result,  scs_ptr x,  scs_ptr y,  scs_ptr z){
-  unsigned long long int RES[2*SCS_NB_WORDS];
-  unsigned long long int val, tmp;
+  uint64_t RES[2*SCS_NB_WORDS];
+  uint64_t val, tmp;
   int i, j, ind, Diff;    
 
   ind = X_IND + Y_IND; 
@@ -36,7 +36,7 @@ void scs_fma(scs_ptr result,  scs_ptr x,  scs_ptr y,  scs_ptr z){
   
   for(i=0 ; i<SCS_NB_WORDS; i++){
     for(j=0; j<(SCS_NB_WORDS-i); j++){
-      RES[i+j] += (unsigned long long int)X_HW[i] * Y_HW[j];
+      RES[i+j] += (uint64_t)X_HW[i] * Y_HW[j];
     }}
 
   /* if we can perform an add */

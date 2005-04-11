@@ -111,7 +111,7 @@ Copyright (C) 2002  David Defour and Florent de Dinechin
 
 
 /* A few additional defines for the case when we use floating-point
-   multiplier */
+   multiplier  (OBSOLETE, NEVER USED ANYMORE but who knows, some day) */
 
 #ifdef SCS_USE_FLT_MULT
 /* There is a "53" below, which means that these constants won't do

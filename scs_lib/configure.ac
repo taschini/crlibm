@@ -38,8 +38,8 @@ AC_PROG_MAKE_SET
 
 dnl Check for compiler
 
-AC_PROG_CC(gcc-3.5 gcc-3.4 gcc-3.3 gcc-3.2 gcc icc cc)
 
+AC_PROG_CC(gcc-3.3 gcc-3.2 gcc icc cc)
 
 dnl send this information to automake
 AM_CONDITIONAL(COMPILER_ICC, test x$CC = xicc)
@@ -80,14 +80,6 @@ AC_ARG_ENABLE(digitsize,
 	      *) AC_MSG_ERROR([bad value $enableval for --enable-digitsize, number expected]) ;;
 	 esac],
 	[AC_DEFINE_UNQUOTED(SCS_NB_BITS, 30, [Size of an SCS digit])]
-)
-
-dnl Optional compile-time arguments to use floating-point
-dnl  multiplication instead of integer.
-
-AC_ARG_ENABLE(usefpmul,
-	[ --enable-usefpmul      use floating-point multiplier instead of integer multiplier. Warning, in this case use --enable-digitsize=N with N smaller than 26. ],
-	[ AC_DEFINE_UNQUOTED(SCS_USE_FLT_MULT,, [Number of digits in the SCS structure]) ]
 )
 
 

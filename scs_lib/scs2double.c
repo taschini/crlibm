@@ -49,7 +49,7 @@ Copyright (C) 2002  David Defour and Florent de Dinechin
 
 void scs_get_d(double *result, scs_ptr x){ 
   db_number nb, rndcorr;
-  unsigned long long int lowpart, t1;
+  uint64_t lowpart, t1;
   int expo, expofinal;
   double res;
   
@@ -90,7 +90,7 @@ void scs_get_d(double *result, scs_ptr x){
     /* align the rest of the mantissa to nb : shift by (2*SCS_NB_BITS)-53-exp */
     lowpart = lowpart >> (expo+(2*SCS_NB_BITS)-53);     
     /* Look at the last bit to decide rounding */
-    if (lowpart & 0x0000000000000001ULL){
+    if (lowpart & ULL(0000000000000001)){
       /* need to add an half-ulp */
       rndcorr.i[LO] = 0; 
       rndcorr.i[HI] = (expo-52+1023)<<20;    /* 2^(exp-52) */ 
@@ -138,7 +138,7 @@ void scs_get_d(double *result, scs_ptr x){
 
       /* this is still a normal number. 
 	 Now remove its exponent and add back the implicit one */
-      nb.l = (nb.l & 0x000FFFFFFFFFFFFFULL) | 0x0010000000000000ULL;
+      nb.l = (nb.l & ULL(000FFFFFFFFFFFFF)) | ULL(0010000000000000);
       
       /* keep only the significant bits */
       nb.l = nb.l >> (-1023 - expofinal);
@@ -177,7 +177,7 @@ the nearest. Plus handle the infinities and denormals.
 
 static void get_d_directed(double *result, scs_ptr x, int rndMantissaUp){ 
   db_number nb, rndcorr;
-  unsigned long long int lowpart, t1;
+  uint64_t lowpart, t1;
   int expo,expofinal,i, not_null;
   double res;
   
@@ -268,7 +268,7 @@ static void get_d_directed(double *result, scs_ptr x, int rndMantissaUp){
 
       /* this is still a normal number. 
 	 Now remove its exponent and add back the implicit one */
-      nb.l = (nb.l & 0x000FFFFFFFFFFFFFULL) | 0x0010000000000000ULL;
+      nb.l = (nb.l & ULL(000FFFFFFFFFFFFF)) | ULL(0010000000000000);
       
       if (rndMantissaUp && (not_null)){
 	nb.l = nb.l >> (-1022 - expofinal);
@@ -294,7 +294,7 @@ static void get_d_directed(double *result, scs_ptr x, int rndMantissaUp){
 #if 0
 void get_d_directed0(double *result, scs_ptr x,int rndMantissaUp)                                 
 {                                                                     
-  unsigned long long int lowpart, t1;                                 
+  uint64_t lowpart, t1;                                 
   db_number nb, rndcorr;                                          
   int i, expo, not_null;                                               
   double res;                                                         

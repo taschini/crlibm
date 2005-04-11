@@ -83,7 +83,7 @@ void scs_set_d(scs_ptr result, double x){
     R_IND += ind;
 
     /* now get the mantissa and add the implicit 1 in fp. format*/
-    mantissa.l = (nb.l & 0x000fffffffffffffULL) | 0x0010000000000000ULL;
+    mantissa.l = (nb.l & ULL(000fffffffffffff)) | ULL(0010000000000000);
 
 
     /* and spread it over the structure

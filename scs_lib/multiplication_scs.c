@@ -45,29 +45,10 @@ void pr(char* s,double d) {
 #endif
 
 
-/***************************************************************/
-/* First a few #defines selecting between architectures where integer
-   multiplication is faster than FP multiplication (the normal case)
-   and those where it is the opposite (some Sparcs). The latter
-   doesn't work but might at some point, so the code remains */
-
-#ifdef SCS_USE_FLT_MULT
-/* Compute the carry of r1, remove it from r1, and add it to r0. This
- doesn't work: how to get a value truncated using only
- round-to-nearest FP ? Besides it doesn't work on x86 for at least two
- reasons : extended precision FP arithmetic, and a #define below. */
-#define SCS_CARRY_PROPAGATE(r1,r0,tmp) \
-     {tmp=((r1-SCS_FLT_TRUNC_CST)+SCS_FLT_SHIFT_CST)-SCS_FLT_SHIFT_CST; r1-= tmp; r0+=tmp*SCS_RADIX_MONE_DOUBLE;}      
-
-typedef double SCS_CONVERSION_MUL;
- 
-#else /* SCS_USE_FLT_MULT*/
 
 /*  Compute the carry of r1, remove it from r1, and add it to r0 */
 #define SCS_CARRY_PROPAGATE(r1,r0,tmp) \
       {tmp = r1>>SCS_NB_BITS; r0 += tmp; r1 -= (tmp<<SCS_NB_BITS);}     
-typedef unsigned long long int SCS_CONVERSION_MUL;
-#endif  /* SCS_USE_FLT_MULT */
 
 
 
@@ -89,9 +70,9 @@ typedef unsigned long long int SCS_CONVERSION_MUL;
 #if (SCS_NB_WORDS==4)
 /***************************/
 void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
-  SCS_CONVERSION_MUL     val, tmp;
-  SCS_CONVERSION_MUL     r0,r1,r2,r3,r4;
-  SCS_CONVERSION_MUL     x0,x1,x2,x3;
+  uint64_t     val, tmp;
+  uint64_t     r0,r1,r2,r3,r4;
+  uint64_t     x0,x1,x2,x3;
   int                    y0,y1,y2,y3;
     
   R_EXP = X_EXP * Y_EXP;
@@ -129,9 +110,9 @@ void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
 
 
 void scs_square(scs_ptr result, scs_ptr x){
-  SCS_CONVERSION_MUL  r0,r1,r2,r3,r4;
-  SCS_CONVERSION_MUL  x0,x1,x2,x3;
-  SCS_CONVERSION_MUL  val, tmp;
+  uint64_t  r0,r1,r2,r3,r4;
+  uint64_t  x0,x1,x2,x3;
+  uint64_t  val, tmp;
 
 
   R_EXP = X_EXP * X_EXP;
@@ -178,9 +159,9 @@ void scs_square(scs_ptr result, scs_ptr x){
 #elif (SCS_NB_WORDS==8)
 /***************************/
 void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
-  SCS_CONVERSION_MUL     val, tmp;
-  SCS_CONVERSION_MUL     r0,r1,r2,r3,r4,r5,r6,r7,r8;
-  SCS_CONVERSION_MUL     x0,x1,x2,x3,x4,x5,x6,x7;
+  uint64_t     val, tmp;
+  uint64_t     r0,r1,r2,r3,r4,r5,r6,r7,r8;
+  uint64_t     x0,x1,x2,x3,x4,x5,x6,x7;
   int                    y0,y1,y2,y3,y4,y5,y6,y7;
     
   R_EXP = X_EXP * Y_EXP;
@@ -230,9 +211,9 @@ void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
 
 
 void scs_square(scs_ptr result, scs_ptr x){
-  SCS_CONVERSION_MUL  r0,r1,r2,r3,r4,r5,r6,r7,r8;
-  SCS_CONVERSION_MUL  x0,x1,x2,x3,x4,x5,x6,x7;
-  SCS_CONVERSION_MUL  val, tmp;
+  uint64_t  r0,r1,r2,r3,r4,r5,r6,r7,r8;
+  uint64_t  x0,x1,x2,x3,x4,x5,x6,x7;
+  uint64_t  val, tmp;
 
 
   R_EXP = X_EXP * X_EXP;
@@ -289,8 +270,8 @@ void scs_square(scs_ptr result, scs_ptr x){
 
 
 void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
-  SCS_CONVERSION_MUL RES[SCS_NB_WORDS+1];
-  SCS_CONVERSION_MUL val, tmp;
+  uint64_t RES[SCS_NB_WORDS+1];
+  uint64_t val, tmp;
   int i, j;    
 
   R_EXP = X_EXP * Y_EXP;
@@ -376,8 +357,8 @@ void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
 
 
 void scs_square(scs_ptr result, scs_ptr x){
-  SCS_CONVERSION_MUL RES[SCS_NB_WORDS+1];
-  SCS_CONVERSION_MUL val, tmp;
+  uint64_t RES[SCS_NB_WORDS+1];
+  uint64_t val, tmp;
   int i, j;
   
 
@@ -390,11 +371,11 @@ void scs_square(scs_ptr result, scs_ptr x){
     RES[i] = 0;
 
   /* Compute all the double partial products: 2 x_i * x_j, i!=j */
-  tmp = (SCS_CONVERSION_MUL)X_HW[0];
+  tmp = (uint64_t)X_HW[0];
   for(j=1; j<SCS_NB_WORDS; j++)
     RES[j] += tmp * X_HW[j];
   for(i=1 ; i<(SCS_NB_WORDS+1)/2; i++){
-    tmp = (SCS_CONVERSION_MUL)X_HW[i];
+    tmp = (uint64_t)X_HW[i];
     for(j=i+1; j<(SCS_NB_WORDS-i); j++)
       RES[i+j] += tmp * X_HW[j];
     RES[SCS_NB_WORDS] += tmp * X_HW[SCS_NB_WORDS-i];
@@ -406,7 +387,7 @@ void scs_square(scs_ptr result, scs_ptr x){
 
   /* Add partial product of the form x_i^2 */
   for(i=0, j=0; i<=SCS_NB_WORDS; i+=2, j++){
-    RES[i]  += (SCS_CONVERSION_MUL)X_HW[j] * X_HW[j];
+    RES[i]  += (uint64_t)X_HW[j] * X_HW[j];
   }  
 
   val = 0;
@@ -443,7 +424,7 @@ void scs_square(scs_ptr result, scs_ptr x){
  Multiply x by an integer val; result is returned in x.
  */
  void scs_mul_ui(scs_ptr x, unsigned int val_int){
-  SCS_CONVERSION_MUL val, tmp, vald, rr;
+  uint64_t val, tmp, vald, rr;
   int i;
 
   if (val_int == 0)
