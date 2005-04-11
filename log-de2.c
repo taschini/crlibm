@@ -18,7 +18,7 @@ on pentium,
  gcc -DHAVE_CONFIG_H -I.  -fPIC  -O2 -c log-de2.c;   mv log-de2.o log_fast.o; make 
 
 on itanium,
-icc  -D__ICC__ -I/users/fdedinex/local/IA64/include -mcpu=itanium2\
+icc  -I/users/fdedinex/local/IA64/include -mcpu=itanium2\
  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c log-de2.c;\
  mv log-de2.o log_fast.o; make
 
@@ -36,8 +36,8 @@ icc  -D__ICC__ -I/users/fdedinex/local/IA64/include -mcpu=itanium2\
 
 double log_rn(double x) {
   double wi;
-  db_number y;
 #if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64)
+  db_number y;
   int E, i, index, roundtestmask;
   long double r, logirh, logirl, z, z2, z4, t,evenp,oddp, th, tl, eh,el,p1,p2,p3;
 #else
@@ -63,6 +63,7 @@ double log_rn(double x) {
 
    /* Filter special cases */
    if (y.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
+
      if (((y.i[HI] & 0x7fffffff)|y.i[LO])==0){
        return -1.0/0.0;     
      }                    		   /* log(+/-0) = -Inf */
@@ -91,6 +92,7 @@ double log_rn(double x) {
    i =  _Asm_getf(2/*_FR_D*/, xe);
 
    /* Filter special cases */
+   //if (__builtin_expect( (i<0x0010000000000000ULL), (1+1==3))){        /* x < 2^(-1022)    */
    if (i<0x0010000000000000LL){        /* x < 2^(-1022)    */
      if ((i & 0x7fffffffffffffffULL)==0){
        return -1.0/0.0;     
@@ -104,10 +106,11 @@ double log_rn(double x) {
      i =  _Asm_getf(2/*_FR_D*/, xe); /* and update i */ 
    }
     
+   //if (__builtin_expect(  (i >= 0x7ff0000000000000ULL), (1+1==3) )){
    if (i >= 0x7ff0000000000000ULL){
      return  x+x;				 /* Inf or Nan       */
    }
-#define X_NEAR_1 __builtin_expect((i>(((unsigned long long int) MINYFAST)<<32)) && (i<(((unsigned long long int) MAXYFAST)<<32)), (1+1==3))
+#define X_NEAR_1 __builtin_expect((i>(((uint64_t) MINYFAST)<<32)) && (i<(((uint64_t) MAXYFAST)<<32)), (1+1==3))
 
 
 #endif
@@ -116,14 +119,17 @@ double log_rn(double x) {
    if(X_NEAR_1) {
      roundtestmask=0x7fc;
      z = x - 1 ; /* Sterbenz exact */
+     z2 = z*z;
+     evenp = c6;                  /* c6 */
+     oddp  = c5;                  /* c5 */
+     evenp = c4  +  z2 * evenp;   /* c4 */
+     oddp  = c3  +  z2 * oddp;    /* c3 */
+     evenp = c2  +  z2 * evenp;   /* c2 */
 
-     p1 = c5 + z*c6;         z2 = z*z;
-     p2 = c3 + z*c4;         p3 = c1+z*c2;
-     
-     t = p2 + z2*p1;     
-     t = p3 + z2*t;
-
+     t  = c1 + (z * evenp + z2 * oddp);
      t = z*t;
+
+     //printf("z= %1.20e,  t=%1.20e  \n  ", (double)z, (double)t);
      
    }    
 
@@ -141,27 +147,7 @@ double log_rn(double x) {
      r = (long double) (argredtable[index].r); /* approx to 1/y.d */
      z = r*(long double)y.d - 1. ; /* even without an FMA, all exact */
 
-#else /* Itanium here*/
-   /* Extract exponent and mantissa */
-     E += (i>>52)-1023;
-     //printf("\nE    = %llx\n", E);
-     i = i & 0x000fffffffffffffULL;  /* keep only mantissa */
-     ye = _Asm_setf(2/*_FR_D*/, i | 0x3ff0000000000000ULL ); /* exponent = 0*/
-     index = i >> (52-L);
-     /* now ye holds 1+f, and E is the exponent */
-     
-     logirh = argredtable[index].h;
-
-     _Asm_frcpa(&r, 1.0L, ye, 1/*_SF1*/);
-     z = r*ye - 1. ; /* even without an FMA, all exact */
-
-
-
-#endif
-     
-     
-     if(E>12 || E<-12) { 
-       /* do a faster and less accurate polynomial evaluation */
+     if(E>12 || E<-12) { /* faster and less accurate polynomial evaluation */
        roundtestmask=0x7fe;
        p1 = logirh + z*c1;   p2 = c2 + z*c3;   p3 = c4 + z*c5;   z2 = z*z;
        p1 = p1 + z2*p2;      p3 = p3 + z2*c6;  z4=z2*z2;
@@ -178,6 +164,64 @@ double log_rn(double x) {
        t = logirh + z*t;
        t = t + E*ln2h;
      }
+
+#if 0
+     if(E>12 || E<-12)
+       roundtestmask=0x7fe;
+     else
+       roundtestmask=0x7f0;
+     
+     p1 = c5 + z*c6;         z2 = z*z;
+     p2 = c3 + z*c4;         p3 = c1+z*c2;
+     
+     t = p2 + z2*p1;     
+     t = p3 + z2*t;
+     t = logirh + z*t;
+#endif
+
+#else /* Itanium here*/
+   /* Extract exponent and mantissa */
+     E += (i>>52)-1023;
+     //printf("\nE    = %llx\n", E);
+     i = i & 0x000fffffffffffffULL;  /* keep only mantissa */
+     ye = _Asm_setf(2/*_FR_D*/, i | 0x3ff0000000000000ULL ); /* exponent = 0*/
+     index = i >> (52-L);
+     //printf("\nindex= %lld\n", index);
+     //printf("\n  ye = %1.20Le\n",(long double)ye);
+     /* now ye holds 1+f, and E is the exponent */
+     
+     logirh = argredtable[index].h;
+
+     _Asm_frcpa(&r, 1.0L, ye, 1/*_SF1*/);
+     z = r*ye - 1. ; /* even without an FMA, all exact */
+
+     if(E>12 || E<-12) { /* faster and less accurate polynomial evaluation */
+       roundtestmask=0x7fe;
+       p1 = logirh + z*c1;   p2 = c2 + z*c3;   p3 = c4 + z*c5;   z2 = z*z;
+       p1 = p1 + z2*p2;      p3 = p3 + z2*c6;  z4=z2*z2;
+       t =  p1 + z4*p3;
+       t = t + E*ln2h;
+     }
+     else {
+       roundtestmask=0x7f0;
+       p1 = c5 + z*c6;         z2 = z*z;
+       p2 = c3 + z*c4;         p3 = c1+z*c2;
+       
+       t = p2 + z2*p1;     
+       t = p3 + z2*t;
+       t = logirh + z*t;
+       t = t + E*ln2h;
+     }
+
+
+#endif
+
+     //printf("  x=%1.20Le\n  r=%1.20Le\n z=%1.20Le\n  logirh=%1.20Le\n  ",(long double)xe, (long double)r,(long double)z, (long double)logirh);
+     /* Polynomial evaluation, unrolled to go through Gappa */
+
+     //printf("t=%1.20e  \n  ", (double)t);
+     
+     
    }
 
 
@@ -190,7 +234,7 @@ double log_rn(double x) {
 
 
    /* To test the second step only, comment out the following line */
-   TEST_AND_RETURN_RN(t, roundtestmask);
+   DE_TEST_AND_RETURN_RN(t, roundtestmask);
 
 
    /* Accurate phase */ 
