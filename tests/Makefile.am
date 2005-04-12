@@ -4,7 +4,7 @@ bin_PROGRAMS =  crlibm_testval crlibm_soaktest crlibm_testperf crlibm_blindtest 
 
 LDADD= $(top_builddir)/libcrlibm.a
 INCLUDES=-I$(top_srcdir)
-CFLAGS = -g -O0
+AM_CFLAGS = -g -O0
 ../libcrlibm.a:
 	cd $(top_srcdir); make libcrlibm.a 
 
