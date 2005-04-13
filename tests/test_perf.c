@@ -156,7 +156,10 @@ static void test_without_cache(const char *name,
   double result;
   unsigned long long dt, dtmin;
   tbx_tick_t   t1, t2; 
-  int j, k;
+  int j;
+#ifdef TIMING_USES_GETTIMEOFDAY
+  int k;
+#endif 
 #ifdef HAVE_MPFR_H  
   mpfr_t mp_res, mp_inpt;
   mpfr_t mp_inpt2; /* For the pow function */
@@ -251,7 +254,10 @@ static void test_worst_case(double (*testfun)(),
   double res;
   tbx_tick_t   t1, t2; 
   unsigned long long dtmin, dt;
-  int j, k;
+  int j;
+#ifdef TIMING_USES_GETTIMEOFDAY
+  int k;
+#endif 
 #ifdef HAVE_MPFR_H  
   mpfr_t mp_res, mp_inpt;
   mpfr_t mp_inpt2; /* For the pow function */
@@ -356,8 +362,7 @@ static void latex_output(const char *name,
 
 
 int main (int argc, char *argv[]){ 
-  int i, j, k, n;
-  int counter;
+  int i, j, n;
   double i1, i2;
   char* rounding_mode;
   char* function_name;
@@ -369,13 +374,11 @@ int main (int argc, char *argv[]){
     crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc,
     mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc,
     libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, 
-    libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, 
-    dtsum, min_dtsum;
-  unsigned long seed = 42;
-  int output_latex=0;
+    libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc; 
+  /*  dtsum, min_dtsum;
+    unsigned long seed = 42;
+    int output_latex=0;*/
   short Original_Mode;
-
-
 
   if ((argc !=4)) usage(argv[0]);
 
@@ -429,7 +432,7 @@ int main (int argc, char *argv[]){
     dt = TBX_TICK_RAW_DIFF(t1, t2);
     if(dt<tbx_time) tbx_time = dt;
   }
-  printf("tbx_time=%lu\n", tbx_time);
+  printf("tbx_time=%llu\n", tbx_time);
 
 #if TEST_CACHE
   /************  TESTS WITH CACHES  *********************/

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include "crlibm.h"
 #include "crlibm_private.h"
@@ -156,7 +157,6 @@ double rand_for_exp_normal(){
 /* For log we only test the positive numbers*/
 double rand_for_log(){
   db_number result;
-  int e;
 
   /*first the low bits of the mantissa*/
   result.i[LO]=rand_int();

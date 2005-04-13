@@ -4,6 +4,7 @@
 #include <math.h>
 #include "crlibm.h"
 #include "crlibm_private.h"
+#include "test_common.h"
 
 #ifdef HAVE_MATHLIB_H
 #include <MathLib.h>
@@ -39,12 +40,18 @@ int main (int argc, char *argv[])
   double worstcase;
   int nbarg;
   
-  db_number input, input2, res_crlibm, res_mpfr, res_ibm, res_libmcr, res_libm;
+  db_number input, input2, res_crlibm, res_libm;
 #ifdef HAVE_MPFR_H
+  db_number res_mpfr;
   mp_rnd_t mpfr_rnd_mode;
   mpfr_t mp_res, mp_input,mp_input2; 
 #endif
-
+#ifdef HAVE_MATHLIB_H
+  db_number res_ibm;
+#endif
+#ifdef HAVE_LIBMCR_H
+  db_number res_libmcr;
+#endif
 
   /* The random number generator (unused here) */
   double (*randfun)       () = NULL;

@@ -20,34 +20,47 @@
 /* then include the proper definitions  */
 #include "crlibm_config.h"
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
 #endif
 
 
 
 #if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
-#include <fpu_control.h>
-#ifndef _FPU_SETCW
-#define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
+# ifndef CRLIBM_TYPEOS_BSD
+#  include <fpu_control.h>
+#  ifndef _FPU_SETCW
+#   define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
+#  endif
+#  ifndef _FPU_GETCW
+#   define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
+#  endif
+# endif
 #endif
-#ifndef _FPU_GETCW
-#define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
-#endif 
-#endif
-
 
 /* 64 bit arithmetic may be standardised, but people still do want they want */
-#ifdef HAVE_STDINT_H
+#ifdef HAVE_INTTYPES_H
 #define ULL(bits) 0x##bits##uLL
 #elif defined(WIN32) 
 /* TODO insert Windows garbage there */
 /* Default, hoping it works, hopefully less and less relevant */
 #else
-typedef int64_t long long int ;
-typedef uint64_t unsigned long long int ;
+typedef long long int int64_t;
+typedef unsigned long long int uint64_t;
 #define ULL(bits) 0x##bits##uLL
 #endif
+
+#ifndef SCS_DEF_INT64
+#define SCS_DEF_INT64
+#ifdef CRLIBM_TYPEOS_HPUX
+#ifndef __LP64__ /* To solve the problem with 64 bits integer on HPPA */
+typedef long long int64_t;
+typedef unsigned long long uint64_t;
+#define ULL(bits) 0x##bits##uLL
+#endif
+#endif
+#endif
+
 
 
 

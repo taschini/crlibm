@@ -35,25 +35,34 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifndef DOXYGEN_SHOULD_SKIP_THIS /* because it is not very clean */
 
 #include "scs_config.h"
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
 #endif
 
 
 
 /* 64 bit arithmetic may be standardised, but people still do want they want */
-#ifdef _STDINT_H
+#ifdef HAVE_INTTYPES_H
 #define ULL(bits) 0x##bits##uLL
 #elif defined(WIN32) 
 /* TODO insert Windows garbage there */
 /* Default, hoping it works, hopefully less and less relevant */
 #else
-typedef int64_t long long int ;
-typedef uint64_t unsigned long long int ;
+typedef long long int64_t;
+typedef unsigned long long uint64_t; 
 #define ULL(bits) 0x##bits##uLL
 #endif
 
-
+#ifndef SCS_DEF_INT64 
+#define SCS_DEF_INT64
+#ifdef SCS_TYPEOS_HPUX
+#ifndef __LP64__ /* To solve the problem with 64 bits integer */
+typedef long long int64_t;
+typedef unsigned long long uint64_t;
+#define ULL(bits) 0x##bits##uLL
+#endif
+#endif
+#endif
 
 
 #ifdef HAVE_GMP_H

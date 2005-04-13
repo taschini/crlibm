@@ -327,5 +327,6 @@ int main (int argc, char *argv[])
 int main (int argc, char *argv[]) 
 { 
   printf("Sorry, I need to be compiled against MPFR\n  (get it from www.mpfr.org, then:   configure --enable-mpfr)\n");
+  return 0;
 }
 #endif

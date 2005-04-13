@@ -15,6 +15,15 @@ AC_SUBST(ISODATE)
 
 dnl Check for system information
 AC_CANONICAL_HOST
+case $host_os in
+hpux*)
+	AC_DEFINE_UNQUOTED(CRLIBM_TYPEOS_HPUX,1,[OS type]);;
+*cygwin* | *mingw* | *uwin* | *djgpp | *emx*)
+	AC_DEFINE_UNQUOTED(CRLIBM_TYPEOS_CYGWIN,1,[OS type]);;
+freebsd*|netbsd*)
+	AC_DEFINE_UNQUOTED(CRLIBM_TYPEOS_BSD,1,[OS type]);;
+esac;
+
 
 case $host_cpu in
 alpha)     
@@ -38,6 +47,56 @@ AC_PROG_MAKE_SET
 dnl Check for compiler
 
 AC_PROG_CC(gcc-3.3 gcc-3.2 gcc icc cc)
+
+# Try to set compiler flags to get floating point arithmetics 
+# to work
+#
+if test "${GCC}" != "yes" ; then
+    case "${build}" in
+        *-*-hpux* )
+	    CFLAGS="${CFLAGS} -Wp,-H30000"
+            ;;
+        *-dec-osf* )
+            CFLAGS="${CFLAGS} -ieee"
+            ;;
+	*-apple-darwin* )
+	    CFLAGS="${CFLAGS} -fno-common"
+	    ;;
+	*-sgi-irix* )
+	    ;;
+    esac
+else
+    case "${CC}" in
+	*icc* )
+	    # -Wall causes relocation errors with icc
+	    CFLAGS="${CFLAGS} -wd269"
+	    ;;
+        * )
+            case "${build}" in
+	        *-dec-osf* )
+	            CFLAGS="${CFLAGS} -mieee -Wall"
+	            ;;
+                *alpha*-*-linux* )
+                    CFLAGS="${CFLAGS} -mieee -Wall"
+                    ;;
+                *alpha*-*-freebsd* )
+                    CFLAGS="${CFLAGS} -mieee -Wall"
+                    ;;
+	        *-apple-darwin* )
+	            CFLAGS="${CFLAGS} -fno-common -Wall"
+	            ;;
+	        * )
+	            CFLAGS="${CFLAGS} -Wall"
+	            ;;
+            esac
+	    ;;
+    esac
+fi
+
+
+
+
+
 
 dnl send this information to automake to set up compilation flags
 dnl (add your compiler here)
