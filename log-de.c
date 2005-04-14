@@ -159,21 +159,19 @@ double log_rn(double x) {
  
    /* All the previous argument reduction was exact */
    /* now y holds 1+f, and E is the exponent */
+   index = index & INDEXMASK;
 
      logirh = argredtable[index].logirh;
      r = (double_ext) (argredtable[index].r); /* approx to 1/y.d */
      z = y*r - 1. ; /* even without an FMA, all exact */
 
-#if 0
-    printf("\nE   = %d\n", E);
-    printf("index = %d\n", index);
-    printf("y     = %1.20Le\n",(long double)y);
-    printf("z     = %1.20Le\n",(long double)z);
-#endif
-     roundtestmask=ACCURATE_TO_62_BITS;
-
-     /* Estrin polynomial evaluation REM we don't exploit the fact that c1=1 */
-     z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z*c1;
+    if(E==0)
+      roundtestmask=ACCURATE_TO_61_BITS;
+    else
+      roundtestmask=ACCURATE_TO_62_BITS;
+      
+     /* Estrin polynomial evaluation  */
+     z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
      z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
      p07 = p03 + z4*p47;
      log = p07 + E*log2h;
@@ -275,24 +273,22 @@ double log_rd(double x) {
  
    /* All the previous argument reduction was exact */
    /* now y holds 1+f, and E is the exponent */
+   index = index & INDEXMASK;
 
-     logirh = argredtable[index].logirh;
-     r = (double_ext) (argredtable[index].r); /* approx to 1/y.d */
-     z = y*r - 1. ; /* even without an FMA, all exact */
-
-#if 0
-    printf("\nE   = %d\n", E);
-    printf("index = %d\n", index);
-    printf("y     = %1.20Le\n",(long double)y);
-    printf("z     = %1.20Le\n",(long double)z);
-#endif
+   logirh = argredtable[index].logirh;
+   r = (double_ext) (argredtable[index].r); /* approx to 1/y.d */
+   z = y*r - 1. ; /* even without an FMA, all exact */
+   
+   if(E==0)
+     roundtestmask=ACCURATE_TO_61_BITS;
+   else
      roundtestmask=ACCURATE_TO_62_BITS;
 
-     /* Estrin polynomial evaluation REM we don't exploit the fact that c1=1 */
-     z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z*c1;
-     z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
-     p07 = p03 + z4*p47;
-     log = p07 + E*log2h;
+   /* Estrin polynomial evaluation  */
+   z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
+   z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
+   p07 = p03 + z4*p47;
+   log = p07 + E*log2h;
 #if 0 /* to time the first step only */
    BACK_TO_DOUBLE_MODE; return (double)t;
 #endif
@@ -389,29 +385,27 @@ double log_ru(double x) {
  
    /* All the previous argument reduction was exact */
    /* now y holds 1+f, and E is the exponent */
-
-     logirh = argredtable[index].logirh;
-     r = (double_ext) (argredtable[index].r); /* approx to 1/y.d */
-     z = y*r - 1. ; /* even without an FMA, all exact */
-
-#if 0
-    printf("\nE   = %d\n", E);
-    printf("index = %d\n", index);
-    printf("y     = %1.20Le\n",(long double)y);
-    printf("z     = %1.20Le\n",(long double)z);
-#endif
+   index = index & INDEXMASK;
+   
+   logirh = argredtable[index].logirh;
+   r = (double_ext) (argredtable[index].r); /* approx to 1/y.d */
+   z = y*r - 1. ; /* even without an FMA, all exact */
+   
+   if(E==0)
+     roundtestmask=ACCURATE_TO_61_BITS;
+   else
      roundtestmask=ACCURATE_TO_62_BITS;
-
-     /* Estrin polynomial evaluation REM we don't exploit the fact that c1=1 */
-     z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z*c1;
-     z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
-     p07 = p03 + z4*p47;
-     log = p07 + E*log2h;
+   
+   /* Estrin polynomial evaluation  */
+   z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
+   z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
+   p07 = p03 + z4*p47;
+   log = p07 + E*log2h;
 #if 0 /* to time the first step only */
    BACK_TO_DOUBLE_MODE; return (double)t;
 #endif
 
-
+   
    /* To test the second step only, comment out the following line */
    DE_TEST_AND_RETURN_RU(log, roundtestmask);
 
