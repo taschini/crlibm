@@ -1,5 +1,7 @@
-Summary of changes between version 0.8 and version 0.8beta3
+Summary of changes between version 0.8 and version 0.8beta4
 ==========================================================
+<David Defour>
+	Cleaning up and fixes to improve portability
 <Florent de Dinechin>
 	Finished proofs of trigonometric functions
 	Some cleaning up and documentation improvement
@@ -11,7 +13,8 @@ Summary of changes between version 0.8beta4 and version 0.8beta3
        
 <Florent de Dinechin>
         Added crlibm_generate_test_vectors
-	Added test vectors to all functions, including some of Lefevre/Muller worst cases
+	Added test vectors to all functions, including some 
+	  of Lefevre/Muller worst cases
 	Cleant up the accurate trig functions, now in trigo.c
 	Cleant up cosh and sinh
 	Added Gappa input file to assist the proof of the trig functions

@@ -37,9 +37,8 @@ int main (int argc, char *argv[])
   int seed;
   double worstcase;
   char* rounding_mode="RN" ; /* needed by init function, otherwise unused */
-  db_number input, res_crlibm, res_mpfr, res_libultim, res_libmcr, res_libm;
+  db_number input, res_mpfr;
   mpfr_t mp_res, mp_res53, mp_res54, mp_res_ru, mp_res_rd, mp_inpt; 
-  int comp;
   
   /* The random number generator*/
   double (*randfun)       () = NULL;
@@ -131,6 +130,7 @@ int main (int argc, char *argv[])
       }
     }
   }
+  return 0;
 }
 
 
@@ -250,6 +250,7 @@ main (int argc, char *argv[])
 int main (int argc, char *argv[]) 
 { 
   printf("Sorry, I need to be compiled against MPFR\n");
+  return 0;
 }
 #endif
 

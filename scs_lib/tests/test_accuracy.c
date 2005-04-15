@@ -122,7 +122,7 @@ void test_square(int bcl){
 void test_one_arg(int bcl){
   scs_t sc1, scex;
   mpfr_t mpf1, mpfex;
-  double scsd, mpfrd, scsdmax, mpfrdmax;
+  double scsd, mpfrd, scsdmax;
   int j, nberr;
 
 
@@ -323,7 +323,8 @@ int main(int argc, char *argv[]){
   return 0;
 }
 #else
-main(){
-    fprintf(stderr,"No MPFR detected on your system.\n Please install MPFR, and compile scslib with MPFR support\n (see ./configure --help) \n");
+int main(){
+  fprintf(stderr,"No MPFR detected on your system.\n Please install MPFR, and compile scslib with MPFR support\n (see ./configure --help) \n");
+  return 0;
 }
 #endif /*HAVE_LIBMPFR*/

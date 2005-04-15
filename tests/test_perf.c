@@ -74,9 +74,12 @@ double (*testfun_libmcr)   () = NULL;
 
 
 /* TESTSIZE doubles should be enough to flush the cache */
-#define TESTSIZE 200000 
+#define TESTSIZE 200000
+ 
+#if TEST_CACHE
 static double inputs[TESTSIZE];
 static double inputs2[TESTSIZE];
+#endif /* TEST_CACHE */
 
 
 /* indicate the number of argument taken by the function */
@@ -84,15 +87,6 @@ static int nbarg;
 
 
 
-
-static void fill_and_flush(int seed) {
-  int i;
-  srandom(seed);
-  for (i=0; i<TESTSIZE; i++){
-    inputs[i] = randfun();
-    inputs2[i] = randfun();
-  }
-}
 
 
 
@@ -106,6 +100,16 @@ static void usage(char *fct_name){
 }
 
 
+#if TEST_CACHE
+
+static void fill_and_flush(int seed) {
+  int i;
+  srandom(seed);
+  for (i=0; i<TESTSIZE; i++){
+    inputs[i] = randfun();
+    inputs2[i] = randfun();
+  }
+}
 
 static void test_with_cache(const char *name, double (*testfun)(), int n){
   int i, j, k;
@@ -143,7 +147,7 @@ static void test_with_cache(const char *name, double (*testfun)(), int n){
     }
   }
 }
-
+#endif /* TEST_CACHE */
 
 static void test_without_cache(const char *name, 
 			double (*testfun)(), 
@@ -373,12 +377,12 @@ int main (int argc, char *argv[]){
     libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc,
     crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc,
     mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc,
-    libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, 
-    libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc; 
-  /*  dtsum, min_dtsum;
-    unsigned long seed = 42;
-    int output_latex=0;*/
+    libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc,
+    libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc;
+#ifdef   HAVE_MATHLIB_H
   short Original_Mode;
+#endif
+
 
   if ((argc !=4)) usage(argv[0]);
 
@@ -417,11 +421,11 @@ int main (int argc, char *argv[]){
   
 
 
-  crlibm_dtmin=1<<30; crlibm_dtmax=0; crlibm_dtsum=0;
-  libm_dtmin=1<<30;   libm_dtmax=0;   libm_dtsum=0;
-  libultim_dtmin=1<<30;    libultim_dtmax=0;    libultim_dtsum=0;
-  libmcr_dtmin=1<<30;    libmcr_dtmax=0;    libmcr_dtsum=0;
-  mpfr_dtmin=1<<30;   mpfr_dtmax=0;   mpfr_dtsum=0;
+  crlibm_dtmin=1<<30; crlibm_dtmax=0; crlibm_dtsum=0; crlibm_dtwc=0;
+  libm_dtmin=1<<30;   libm_dtmax=0;   libm_dtsum=0; libm_dtwc=0;
+  libultim_dtmin=1<<30;    libultim_dtmax=0;    libultim_dtsum=0; libultim_dtwc=0;
+  libmcr_dtmin=1<<30;    libmcr_dtmax=0;    libmcr_dtsum=0; libmcr_dtwc=0;
+  mpfr_dtmin=1<<30;   mpfr_dtmax=0;   mpfr_dtsum=0; mpfr_dtwc=0;
 
   
   /* take the min of N1 consecutive calls */
@@ -477,7 +481,7 @@ int main (int argc, char *argv[]){
     test_without_cache("libmcr", testfun_libmcr, i1, i2, &libmcr_dtmin, &libmcr_dtmax, &libmcr_dtsum, 0);
 #endif /*HAVE_LIBMCR_H*/
 #ifdef   HAVE_MPFR_H
-    test_without_cache("mpfr", testfun_mpfr, i1, i2, &mpfr_dtmin, &mpfr_dtmax, &mpfr_dtsum, 1);
+    test_without_cache("mpfr", (double(*)()) testfun_mpfr, i1, i2, &mpfr_dtmin, &mpfr_dtmax, &mpfr_dtsum, 1);
 #endif /*HAVE_MPFR_H*/
   } 
 
@@ -490,11 +494,12 @@ int main (int argc, char *argv[]){
   /************  WORST CASE TESTS   *********************/
   /* worst case test */
   i1 = worstcase;
+  i2 = 0 ; /* TODO when we have worst cases for power...*/
 
   test_worst_case(testfun_libm, i1, i2, &libm_dtwc, 0);
   test_worst_case(testfun_crlibm, i1, i2, &crlibm_dtwc, 0);
 #ifdef   HAVE_MPFR_H
-  test_worst_case(testfun_mpfr, i1, i2, &mpfr_dtwc, 1);
+  test_worst_case((double(*)())testfun_mpfr, i1, i2, &mpfr_dtwc, 1);
 #endif /*HAVE_MPFR_H*/
 #ifdef   HAVE_MATHLIB_H
   Original_Mode = Init_Lib(); 
@@ -508,7 +513,7 @@ int main (int argc, char *argv[]){
     /*************Normal output*************************/
   normal_output("LIBM", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, n);
 #ifdef   HAVE_MPFR_H
-  normal_output("MPFR", testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
+  normal_output("MPFR", (double(*)())testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
 #endif /*HAVE_MPFR_H*/
 #ifdef   HAVE_MATHLIB_H
   normal_output("IBM", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);
@@ -524,7 +529,7 @@ int main (int argc, char *argv[]){
   printf("\n                             & min time \t & avg time \t& max time \t  \\\\ \n \\hline\n");
   latex_output("default \\texttt{libm}  ", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, n);
 #ifdef   HAVE_MPFR_H
-  latex_output("GNU MPFR               ", testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
+  latex_output("GNU MPFR               ", (double(*)())testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
 #endif /*HAVE_MPFR_H*/
 #ifdef   HAVE_MATHLIB_H
   latex_output("IBM's \\texttt{libultim}", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);

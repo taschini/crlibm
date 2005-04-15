@@ -80,12 +80,15 @@ if (nbarg==2){\
  */
 
 void test_all() {
-  int counter=0;
   long long int 
-    failures_crlibm=0,
     failures_libm=0,
+#ifdef HAVE_MATHLIB_H
     failures_libultim=0,
-    failures_libmcr=0;
+#endif
+#ifdef HAVE_LIBMCR_H
+    failures_libmcr=0,
+#endif
+    failures_crlibm=0;
   long long int i;
   double worst_err, global_worst_err=-200;
   db_number global_worst_inpt, global_worst_inpt2;
@@ -317,9 +320,8 @@ int main (int argc, char *argv[])
   srand(seed);
 
   test_all();
-
-  return 0;
   }
+  return 0;
 }
 
 

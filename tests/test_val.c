@@ -68,6 +68,9 @@ int main (int argc, char *argv[])
 
   nbarg=1;
 
+  function_name = NULL;
+  rounding_mode = NULL;
+
   if (argc != 4 && argc!=5 && argc!=6) usage(argv[0]);
   if(argc == 4) {
     function_name = argv[1];

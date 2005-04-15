@@ -3,7 +3,7 @@
 #include <string.h>
 #include "crlibm.h"
 #include "crlibm_private.h"
-
+#include "test_common.h"
 
 void usage(char *fct_name){
   fprintf (stderr, "\nUsage: %s [-v] file\n", fct_name);
@@ -44,6 +44,7 @@ int main (int argc, char *argv[])
   db_number input, output, expected;
   double (*testfun_crlibm)() = NULL;
   double (*unused)() = NULL;
+  int (*mpfr_fun_unused)() = NULL;
 
   FILE* f;
 
@@ -84,7 +85,7 @@ int main (int argc, char *argv[])
     test_init(
 	      &unused, &unused, 
 	      &testfun_crlibm, 
-	      &unused, &unused, &unused, &unused, &worstcase,
+	      &mpfr_fun_unused, &unused, &unused, &unused, &worstcase,
 	      function_name,
 	      rounding_mode ) ;
     
