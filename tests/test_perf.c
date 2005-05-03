@@ -486,8 +486,14 @@ int main (int argc, char *argv[]){
   } 
 
 #if EVAL_PERF==1  
-  printf("\nCRLIBM : Second step taken %d times out of %d\n",
-	 crlibm_second_step_taken/N1, n );
+#ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
+	 printf("\nCRLIBM : Second step taken %d times out of %d\n",
+		crlibm_second_step_taken/(N1 * 50), n );
+#else
+	 printf("\nCRLIBM : Second step taken %d times out of %d\n",
+		crlibm_second_step_taken/N1, n );
+#endif
+
 #endif
 
 
