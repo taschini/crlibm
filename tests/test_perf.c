@@ -30,6 +30,8 @@ Beware to compile without optimizations
 
 #define N1 6
 
+#define TIMING_ITER 200
+
 #define DETAILED_REPORT 0
 
 /* If set, the behaviour of the function with respect to cache memory
@@ -182,14 +184,14 @@ static void test_without_cache(const char *name,
 	if (nbarg==1){
 	  TBX_GET_TICK(t1);
 #ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
-	  for(k=0; k<50;k++)
+	  for(k=0; k<TIMING_ITER;k++)
 #endif
 	    result = testfun(i1);
 	  TBX_GET_TICK(t2);
 	}else{
 	  TBX_GET_TICK(t1);
 #ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
-	  for(k=0; k<50;k++)
+	  for(k=0; k<TIMING_ITER;k++)
 #endif
 	    result = testfun(i1,i2);
 	  TBX_GET_TICK(t2);	  
@@ -199,7 +201,7 @@ static void test_without_cache(const char *name,
 	if (nbarg==1){
 	  TBX_GET_TICK(t1);
 #ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
-	  for(k=0; k<50;k++){
+	  for(k=0; k<TIMING_ITER;k++){
 #endif    
 	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
 	    testfun(mp_res, mp_inpt, GMP_RNDN);
@@ -211,7 +213,7 @@ static void test_without_cache(const char *name,
 	}else{
 	  TBX_GET_TICK(t1);
 #ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
-	  for(k=0; k<50;k++){
+	  for(k=0; k<TIMING_ITER;k++){
 #endif    
 	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
 	    mpfr_set_d(mp_inpt2, i2, GMP_RNDN);
@@ -278,14 +280,14 @@ static void test_worst_case(double (*testfun)(),
 	if (nbarg==1){
 	  TBX_GET_TICK(t1);
 #ifdef TIMING_USES_GETTIMEOFDAY
-	  for(k=0; k<50;k++)
+	  for(k=0; k<TIMING_ITER;k++)
 #endif
 	    res = testfun(i1);
 	  TBX_GET_TICK(t2);
 	}else{
 	  TBX_GET_TICK(t1);
 #ifdef TIMING_USES_GETTIMEOFDAY
-	  for(k=0; k<50;k++)
+	  for(k=0; k<TIMING_ITER;k++)
 #endif
 	    res = testfun(i1,i2);
 	  TBX_GET_TICK(t2);
@@ -295,7 +297,7 @@ static void test_worst_case(double (*testfun)(),
 	if (nbarg==1){
 	  TBX_GET_TICK(t1);
 #ifdef TIMING_USES_GETTIMEOFDAY
-	  for(k=0; k<50;k++){
+	  for(k=0; k<TIMING_ITER;k++){
 #endif
 	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
 	    testfun(mp_res, mp_inpt, GMP_RNDN);
@@ -307,7 +309,7 @@ static void test_worst_case(double (*testfun)(),
 	}else{
 	  TBX_GET_TICK(t1);
 #ifdef TIMING_USES_GETTIMEOFDAY
-	  for(k=0; k<50;k++){
+	  for(k=0; k<TIMING_ITER;k++){
 #endif
 	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
 	    mpfr_set_d(mp_inpt2, i2, GMP_RNDN);
@@ -488,7 +490,7 @@ int main (int argc, char *argv[]){
 #if EVAL_PERF==1  
 #ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
 	 printf("\nCRLIBM : Second step taken %d times out of %d\n",
-		crlibm_second_step_taken/(N1 * 50), n );
+		crlibm_second_step_taken/(N1 * TIMING_ITER), n );
 #else
 	 printf("\nCRLIBM : Second step taken %d times out of %d\n",
 		crlibm_second_step_taken/N1, n );
