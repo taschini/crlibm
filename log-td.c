@@ -1,6 +1,6 @@
 /* 
- *this function computes log, correctly rounded, 
- using experimental techniques based on  triple double arithmetics
+ * This function computes log, correctly rounded, 
+ * using experimental techniques based on triple double arithmetics
 
  THIS IS EXPERIMENTAL SOFTWARE
  
@@ -11,7 +11,7 @@
 
  To have it replace the crlibm log, do:
 
- gcc -DHAVE_CONFIG_H -I.  -fPIC  -O2 -c log-td.c;   mv log-de.o log_fast.o; make 
+ gcc -DHAVE_CONFIG_H -I.  -fPIC  -O2 -c log-td.c;   mv log-td.o log_fast.o; make 
  
 */
 
@@ -26,11 +26,13 @@
 #define AVOID_FMA 0
 
 
+
 void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed, int index, double zh, double zl, double logih, double logim) {
   double highPoly, t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l, t7h, t7l, t8h, t8l, t9h, t9l, t10h, t10l, t11h, t11l;
   double t12h, t12l, t13h, t13l, t14h, t14l, zSquareh, zSquarem, zSquarel, zCubeh, zCubem, zCubel, higherPolyMultZh, higherPolyMultZm;
   double higherPolyMultZl, zSquareHalfh, zSquareHalfm, zSquareHalfl, polyWithSquareh, polyWithSquarem, polyWithSquarel;
-  double polyh, polym, polyl, logil, logyh, logym, logyl;
+  double polyh, polym, polyl, logil, logyh, logym, logyl, loghover, logmover, loglover, log2edhover, log2edmover, log2edlover;
+  double log2edh, log2edm, log2edl;
 
 
 #if EVAL_PERF
@@ -51,7 +53,6 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
   */
 
-
   /* Start of the horner scheme */
 
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
@@ -68,12 +69,6 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
      with all additions and multiplications in double double arithmetics
      but we will produce intermediate results labelled t1h/t1l thru t14h/t14l
   */
-
-  /* A VERIFIER: est-ce qu'on aurait besoin de Mul22 et Add22 conditionnelles? 
-             et: Ne vaut il pas la peine d ecrire un Mul212 pour multiplier un double double par un double? 
-	         Entre temps on prend on compte quand meme zl puisque ca ne coute rien (sauf au premier z**9)
-  */
-
 
   Mul12(&t1h, &t1l, zh, highPoly);
   Add22(&t2h, &t2l, accPolyC9h, accPolyC9l, t1h, t1l);
@@ -92,8 +87,8 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
   /* We must now prepare (zh + zl)^2 and (zh + zl)^3 as triple doubles */
 
-  Mul23(&zSquareh, &zSquarem, &zSquarel, zh, zl, zh, zl); // A VERIFIER: c est sous optimal puisqu on calcule deux fois zh*zl 
-  Mul233(&zCubeh, &zCubem, &zCubel, zh, zl, zSquareh, zSquarem, zSquarel); // A VERIFIER: Ici aussi on recalule des choses
+  Mul23(&zSquareh, &zSquarem, &zSquarel, zh, zl, zh, zl); 
+  Mul233(&zCubeh, &zCubem, &zCubel, zh, zl, zSquareh, zSquarem, zSquarel); 
   
   /* We can now multiplicate the middle and higher polynomial by z^3 */
 
@@ -118,7 +113,8 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
   */
 
   logil =  argredtable[index].logil;
-  Add33(&logyh, &logym, &logyl, polyh, polym, polyl, logih, logim, logil);
+
+  Add33(&logyh, &logym, &logyl, logih, logim, logil, polyh, polym, polyl);
 
   /* Multiply log2 with E, i.e. log2h, log2m, log2l by ed 
      ed is always less than 2^(12) and log2h and log2m are stored with at least 12 trailing zeros 
@@ -127,7 +123,32 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
      The final result is thus obtained by adding log2 * E to log(y)
   */
 
-  Add33(logh, logm, logl, log2h * ed, log2m * ed, log2l * ed, logyh, logym, logyl);
+  log2edhover = log2h * ed;
+  log2edmover = log2m * ed;
+  log2edlover = log2l * ed;
+
+  /* It may be necessary to renormalize the tabulated value (multiplied by ed) before adding
+     the to the log(y)-result 
+
+     If needed, uncomment the following Renormalize-Statement and comment out the copies 
+     following it.
+  */
+
+  /* Renormalize(&log2edh, &log2edm, &log2edl, log2edhover, log2edmover, log2edlover); */
+
+  log2edh = log2edhover;
+  log2edm = log2edmover;
+  log2edl = log2edlover;
+
+  Add33(&loghover, &logmover, &loglover, log2edh, log2edm, log2edl, logyh, logym, logyl);
+
+  /* Since we can not guarantee in each addition and multiplication procedure that 
+     the results are not overlapping, we must renormalize the result before handing
+     it over to the final rounding
+  */
+
+  Renormalize(logh,logm,logl,loghover,logmover,loglover);
+
 }
 
 
@@ -183,10 +204,11 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    }
    y = xdb.d;
    index = index & INDEXMASK;
-   // Cast integer E into double ed for multiplication later
+   /* Cast integer E into double ed for multiplication later */
    ed = (double) E;
 
-   /* Read tables:
+   /* 
+      Read tables:
       Read one float for ri
       Read the first two doubles for -log(r_i) (out of three)
 
@@ -198,10 +220,12 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    
 
    ri = argredtable[index].ri;
-   // Actually we don't need the logarithm entries now
-   // Move the following two lines to the eventual reconstruction
-   // As long as we don't have any if in the following code, we can overlap 
-   // memory access with calculations (static const?)
+   /* 
+      Actually we don't need the logarithm entries now
+      Move the following two lines to the eventual reconstruction
+      As long as we don't have any if in the following code, we can overlap 
+      memory access with calculations 
+   */
    logih = argredtable[index].logih;
    logim = argredtable[index].logim;
 
@@ -216,10 +240,11 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    */
 
    Mul12(&yrih, &yril, y, ri);
-   th = yrih - 1.0; // Should be exact (Sterbenz) A VERIFIER !!!
-   Add12Cond(zh, zl, th, yril); // Works perhaps without the condition A VERIFIER !!!
+   th = yrih - 1.0; 
+   Add12Cond(zh, zl, th, yril); 
 
-   /* Polynomial evaluation
+   /* 
+      Polynomial evaluation
 
       Use a 7 degree polynomial
       Evaluate the higher 5 terms in double precision (-7 * 3 = -21) using Horner's scheme
@@ -255,12 +280,17 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
    */
    
-   /* We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
+   /* 
+      We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
       Multiplication of ed (double E) and log2h is thus correct
       The overall accuracy of log2h + log2m + log2l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
-      The accuracy suffices also for the qucik phase: 53 * 2 - 24 = 82
-      Condition is verified as log2m is smaller than log2h and both are scaled by ed
+      The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
+      Nevertheless the storage with trailing zeros implies an overlap of the tabulated
+      triple double values. We have to take it into account for the accurate phase 
+      basic procedures for addition and multiplication
+      The condition on the next Add12 is verified as log2m is smaller than log2h 
+      and both are scaled by ed
    */
 
    Add12(log2edh, log2edl, log2h * ed, log2m * ed);
@@ -268,12 +298,6 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    /* Add logih and logim to ph and pl 
 
       We must use conditioned Add22 as logih can move over ph
-
-      A VERIFIER: on peut quand meme se passer de la condition
-                  puisque le polynome reste par definition plus 
-		  petit que la valeur tabluee sauf en 0 et la, 
-		  le Add22 sans conditions passe peut etre quand meme
-
    */
 
    Add22Cond(&logTabPolyh, &logTabPolyl, logih, logim, ph, pl);
@@ -282,15 +306,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
    Add22Cond(&logh, &logm, log2edh, log2edl, logTabPolyh, logTabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function 
-
-      Question: pourquoi les tests d arrondi des modes diriges sont factorises 
-      mais pas celui du RN?
-
-      Et: ne perd-on pas plein de cycles si on appelle une fonction pour la
-      phase exacte au lieu de la recopier ou de la mettre en DEFINE?
-
-   */
+   /* Rounding test and eventual return or call to the accurate function */
 
    if(E==0)
       roundcst = ROUNDCST1;
@@ -310,31 +326,57 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
        log_td_accurate(&logh, &logm, &logl, E, ed, index, zh, zl, logih, logim); 
 
        /*
-	 Our renormalization procedure does not guarantee that logh = round(logh + logm + logl)
-	 Further we have worst cases that are worser than 106 bits, so we can be in a 
-	 situation where logm = +/- mi-ulp(logh) and we can not guarantee that logl and logm do
-	 not overlap, so we have to take logl into account in these cases.
+	 Our renormalization procedure does not guarantee that logh = round-to-nearest(logh + logm + logl)
+	 We don't even have the property that logh = round-to-nearest(logh + logm) but we do
+	 know that neither logh and logm nor logm and logl overlap.
 	 
-	 We start by generating a mi-ulp of logh. We will not know its sign.
+	 We have the following 5 cases (modular signs which we are omitting here):
+	 (i)   logm > mi-ulp(logh): we have to return logh + 1ulp, i.e. logh + logm
+	 (ii)  logm = mi-ulp(logh): we have to adjust logh depending on whether logl positive or negative
+	 (iii) 0.25 * ulp(logh) \leq logm < mi-ulp(logh): 
+	       If logh is not exactly a power of 2, logh is already the correct result but adding logh does not change anything
+	       If logh is exactly a power of 2, and logm is not exactly 0.25 * ulp(logh) or if it has the opposite sign 
+	       of logh, we are sure that the infinite precision value is far enough from logh - 0.25 * ulp(logh) so that 
+	       logl needs not to be taken into account because it is at most at a mi-ulp(logm) 
+	       So adding logm corrects logh accordingly
+	 (iv)  logm = 0.25 * ulp(logh) and logm has the opposite sign of logh which is an exact power of 2:
+	       logl decides whether we have to substract (or add if logh is positive) 1/2 ulp from logm
+	 (v)  0 < logm < 0.25 * ulp(logh): logh is already the correct result but adding 
+	 So cases (i), (iii) and (v) can be merged. We can merge cases (ii) and (iv) if we can 
+	 assure that we test logm == (logh == power of two ? 0.25*ulp(logh) : mi-ulp(logh))
+	 
+	 We start by generating a mi-ulp respectively a quarter of an ulp of logh if logh is an exact power of 2.
        */
        
        loghdb.d = logh;
-       loghdb.l++;
-       miulp = (loghdb.d - logh) / 2.0;
+       loghdb.l--; 
+
+       /* Now we know that loghdb.d is the predecessor resp. the successor of logh (if logh < 0.0) 
+	  The difference between a positive IEEE 754 number and its predecessor is exactly 1 ulp of the number but in the
+	  case where the number is an exact power of 2 in which case the difference is 1/2 ulp of the number.
+	  For negative numbers the same is true for the successor instead of the predecessor. 
+	  The difference will always be an exact power of 2 and therefore the following IEEE subtract will be exact.
+       */
+
+       miulp = (logh - loghdb.d) / 2.0;
+
+       /* miulp is known to be positive if logh is positive and negative if logh is negative. It is
+	  half an ulp of logh if logh is not an exact power of 2 and a quarter of an ulp of logh if it is. */
        
-       /* We determine now if we are in a case worser than 106 bits, i.e. if logm = mi-ulp(logh) */
+       /* We determine now if we are in case (ii) or (iv). If not, we return (logh + logm) for (i), (iii) and (iv) */
        
-       if (((logm + miulp) != 0.0) && ((logm - miulp) != 0.0)) return logh;
+       if (((logm + miulp) != 0.0) && ((logm - miulp) != 0.0)) return (logh + logm);
        
-       /* If we are here, we are in a case worser than 106 bits or in which logm and logl do overlap. */
+       /* If we are here, we are in case (ii) or (iv)*/
        
        if (logh > 0.0) {
 	 if (logm > 0.0) {
 	   if (logl > 0.0) {
 	     /* + + +
 		We should have rounded up as we are greater than the middle and coming upwards.
-		We have miulp positive as logh is greater than 0.
+		We have loghdb.d being the predecessor of logh since logh is positive.
 	     */
+	     loghdb.l += 2;
 	     return loghdb.d;
 	   } else {
 	     /* + + -
@@ -351,9 +393,8 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 	   } else {
 	     /* + - -
 		We should have rounded down as we are lesser than the middle and coming downwards.
-		We had miulp positive as logh is greater than 0.
+	        We have loghdb.d being the predecessor of logh since logh is positive.
 	     */
-	     loghdb.l = loghdb.l - 2;
 	     return loghdb.d;
 	   }
 	 }
@@ -362,9 +403,8 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 	   if (logl > 0.0) {
 	     /* - + + 
 		We should have rounded up as we are greater than the middle and coming upwards.
-		We had milup negative as logh is lesser than 0.
+		We have loghdb.d being the successor of logh since logh is negative.
 	     */
-	     loghdb.l = loghdb.l - 2;
 	     return loghdb.d;
 	   } else {
 	     /* - + -
@@ -381,13 +421,14 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 	   } else {
 	     /* - - -
 		We should have rounded down as we are lesser than the middle and coming downwards.
-		We have miulp negative as logh is lesser than 0.
+		We have loghdb.d being the successor of logh since logh is negative.
 	     */ 
+	     loghdb.l += 2;
 	     return loghdb.d;
 	   }
 	 }
        }
-     } // Accurate phase launched
+     } /* Accurate phase launched */
  }
 
 
@@ -400,14 +441,14 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    db_number xdb, loghdb;
    double res_hi,res_lo, y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
    double polyHorner, zhSquareh, zhSquarel, polyUpper, zhSquareHalfh, zhSquareHalfl;
-   double t1h, t1l, t2h, t2l, ph, pl, log2edh, log2edl, logTabPolyh, logTabPolyl, logh, logm, logl;
-   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, roundcst;
+   double t1h, t1l, t2h, t2l, ph, pl, log2edh, log2edl, logTabPolyh, logTabPolyl, logh, logm, logl, roundcst;
+   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, loghprime, logmprime, tprime;
    int E, index;
+
+   if (x == 1.0) return 0.0; /* This the only case in which the image under log of a double is a double. */
 
    E=0;
    xdb.d=x;
-
-   if (x == 1.0) return 0.0; // This the only case in which the image under log of a double is a double. 
 
    /* Filter cases */
    if (xdb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
@@ -426,6 +467,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
      return  x+x;				 /* Inf or Nan       */
    }
    
+   
    /* Extract exponent and mantissa 
       Do range reduction,
       yielding to E holding the exponent and
@@ -443,10 +485,11 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    }
    y = xdb.d;
    index = index & INDEXMASK;
-   // Cast integer E into double ed for multiplication later
+   /* Cast integer E into double ed for multiplication later */
    ed = (double) E;
 
-   /* Read tables:
+   /* 
+      Read tables:
       Read one float for ri
       Read the first two doubles for -log(r_i) (out of three)
 
@@ -458,10 +501,12 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    
 
    ri = argredtable[index].ri;
-   // Actually we don't need the logarithm entries now
-   // Move the following two lines to the eventual reconstruction
-   // As long as we don't have any if in the following code, we can overlap 
-   // memory access with calculations (static const?)
+   /* 
+      Actually we don't need the logarithm entries now
+      Move the following two lines to the eventual reconstruction
+      As long as we don't have any if in the following code, we can overlap 
+      memory access with calculations 
+   */
    logih = argredtable[index].logih;
    logim = argredtable[index].logim;
 
@@ -476,10 +521,11 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    */
 
    Mul12(&yrih, &yril, y, ri);
-   th = yrih - 1.0; // Should be exact (Sterbenz) A VERIFIER !!!
-   Add12Cond(zh, zl, th, yril); // Works perhaps without the condition A VERIFIER !!!
+   th = yrih - 1.0; 
+   Add12Cond(zh, zl, th, yril); 
 
-   /* Polynomial evaluation
+   /* 
+      Polynomial evaluation
 
       Use a 7 degree polynomial
       Evaluate the higher 5 terms in double precision (-7 * 3 = -21) using Horner's scheme
@@ -487,6 +533,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
       using an ad hoc method
 
    */
+
 
 
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
@@ -514,12 +561,17 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
    */
    
-   /* We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
+   /* 
+      We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
       Multiplication of ed (double E) and log2h is thus correct
       The overall accuracy of log2h + log2m + log2l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
-      The accuracy suffices also for the qucik phase: 53 * 2 - 24 = 82
-      Condition is verified as log2m is smaller than log2h and both are scaled by ed
+      The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
+      Nevertheless the storage with trailing zeros implies an overlap of the tabulated
+      triple double values. We have to take it into account for the accurate phase 
+      basic procedures for addition and multiplication
+      The condition on the next Add12 is verified as log2m is smaller than log2h 
+      and both are scaled by ed
    */
 
    Add12(log2edh, log2edl, log2h * ed, log2m * ed);
@@ -527,12 +579,6 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    /* Add logih and logim to ph and pl 
 
       We must use conditioned Add22 as logih can move over ph
-
-      A VERIFIER: on peut quand meme se passer de la condition
-                  puisque le polynome reste par definition plus 
-		  petit que la valeur tabluee sauf en 0 et la, 
-		  le Add22 sans conditions passe peut etre quand meme
-
    */
 
    Add22Cond(&logTabPolyh, &logTabPolyl, logih, logim, ph, pl);
@@ -541,15 +587,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
    Add22Cond(&logh, &logm, log2edh, log2edl, logTabPolyh, logTabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function 
-
-      Question: pourquoi les tests d arrondi des modes diriges sont factorises 
-      mais pas celui du RN?
-
-      Et: ne perd-on pas plein de cycles si on appelle une fonction pour la
-      phase exacte au lieu de la recopier ou de la mettre en DEFINE?
-
-   */
+   /* Rounding test and eventual return or call to the accurate function */
 
    if(E==0)
       roundcst = RDROUNDCST1;
@@ -565,30 +603,25 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
     log_td_accurate(&logh, &logm, &logl, E, ed, index, zh, zl, logih, logim); 
 
     /* 
-       We will suppose the following:
-       - logh and logm do not overlap in any case
-       - logm and logl may overlap but logl will not "overtake" logm for overlapping with logh
-       - logh may be different from round-to-nearest(logh + logm + logl) 
-       - logm may be equal to 0 while logl is not; 
-         either one of them is supposed to be different from 0 assured by Lindemann and Lefevre
-       - in no case, logh is equal to zero; in particular, the argument of log is not 1.0
+        Our renormalization procedure does not guarantee that logh = round-to-nearest(logh + logm + logl)
+	We don't even have the property that logh = round-to-nearest(logh + logm) but we do
+	know that neither logh and logm nor logm and logl overlap.
 
-       In order to overcome the fact that overlapping of logm and logl is possible or that logm is equal
-       to 0, we will first add logl to logm by a double precision add. This operation will only affect the
-       sign of logm if it is equal to 0 prior to the addition; it will change the value of logm only
-       if there is overlapping. It will not generate an overlapping of logm and logh.
-       We will now know that logm = round-to-nearest(logm + logl)
+	TO DO: WRITE EXPLANATION
+
+
     */
 
-    logm = logm + logl;
+    Add12(loghprime, tprime, logh, logm);
+    logmprime = tprime + logl;
 
-    /* We can now simply test the sign of logh and logm */
+    /* We can now simply test the sign of loghprime and logmprime */
 
-    if (logm < 0.0) {
-      return logh;
+    if (logmprime < 0.0) {
+      return loghprime;
     } else {
-      loghdb.d = logh;
-      if (logh > 0.0) {
+      loghdb.d = loghprime;
+      if (loghprime > 0.0) {
 	loghdb.l++;
 	return loghdb.d;
       } else {
@@ -608,14 +641,14 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    db_number xdb, loghdb;
    double res_hi,res_lo, y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
    double polyHorner, zhSquareh, zhSquarel, polyUpper, zhSquareHalfh, zhSquareHalfl;
-   double t1h, t1l, t2h, t2l, ph, pl, log2edh, log2edl, logTabPolyh, logTabPolyl, logh, logm, logl;
-   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, roundcst;
+   double t1h, t1l, t2h, t2l, ph, pl, log2edh, log2edl, logTabPolyh, logTabPolyl, logh, logm, logl, roundcst;
+   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, loghprime, logmprime, tprime;
    int E, index;
+
+   if (x == 1.0) return 0.0; /* This the only case in which the image under log of a double is a double. */
 
    E=0;
    xdb.d=x;
-
-   if (x == 1.0) return 0.0; // This the only case in which the image under log of a double is a double. 
 
    /* Filter cases */
    if (xdb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
@@ -634,6 +667,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
      return  x+x;				 /* Inf or Nan       */
    }
    
+   
    /* Extract exponent and mantissa 
       Do range reduction,
       yielding to E holding the exponent and
@@ -651,10 +685,11 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    }
    y = xdb.d;
    index = index & INDEXMASK;
-   // Cast integer E into double ed for multiplication later
+   /* Cast integer E into double ed for multiplication later */
    ed = (double) E;
 
-   /* Read tables:
+   /* 
+      Read tables:
       Read one float for ri
       Read the first two doubles for -log(r_i) (out of three)
 
@@ -666,10 +701,12 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    
 
    ri = argredtable[index].ri;
-   // Actually we don't need the logarithm entries now
-   // Move the following two lines to the eventual reconstruction
-   // As long as we don't have any if in the following code, we can overlap 
-   // memory access with calculations (static const?)
+   /* 
+      Actually we don't need the logarithm entries now
+      Move the following two lines to the eventual reconstruction
+      As long as we don't have any if in the following code, we can overlap 
+      memory access with calculations 
+   */
    logih = argredtable[index].logih;
    logim = argredtable[index].logim;
 
@@ -684,10 +721,11 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    */
 
    Mul12(&yrih, &yril, y, ri);
-   th = yrih - 1.0; // Should be exact (Sterbenz) A VERIFIER !!!
-   Add12Cond(zh, zl, th, yril); // Works perhaps without the condition A VERIFIER !!!
+   th = yrih - 1.0; 
+   Add12Cond(zh, zl, th, yril); 
 
-   /* Polynomial evaluation
+   /* 
+      Polynomial evaluation
 
       Use a 7 degree polynomial
       Evaluate the higher 5 terms in double precision (-7 * 3 = -21) using Horner's scheme
@@ -695,6 +733,8 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
       using an ad hoc method
 
    */
+
+
 
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
    polyHorner = FMA(FMA(FMA(FMA(c7,zh,c6),zh,c5),zh,c4),zh,c3);
@@ -721,12 +761,17 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
    */
    
-   /* We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
+   /* 
+      We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
       Multiplication of ed (double E) and log2h is thus correct
       The overall accuracy of log2h + log2m + log2l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
-      The accuracy suffices also for the qucik phase: 53 * 2 - 24 = 82
-      Condition is verified as log2m is smaller than log2h and both are scaled by ed
+      The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
+      Nevertheless the storage with trailing zeros implies an overlap of the tabulated
+      triple double values. We have to take it into account for the accurate phase 
+      basic procedures for addition and multiplication
+      The condition on the next Add12 is verified as log2m is smaller than log2h 
+      and both are scaled by ed
    */
 
    Add12(log2edh, log2edl, log2h * ed, log2m * ed);
@@ -734,12 +779,6 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    /* Add logih and logim to ph and pl 
 
       We must use conditioned Add22 as logih can move over ph
-
-      A VERIFIER: on peut quand meme se passer de la condition
-                  puisque le polynome reste par definition plus 
-		  petit que la valeur tabluee sauf en 0 et la, 
-		  le Add22 sans conditions passe peut etre quand meme
-
    */
 
    Add22Cond(&logTabPolyh, &logTabPolyl, logih, logim, ph, pl);
@@ -748,15 +787,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
    Add22Cond(&logh, &logm, log2edh, log2edl, logTabPolyh, logTabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function 
-
-      Question: pourquoi les tests d arrondi des modes diriges sont factorises 
-      mais pas celui du RN?
-
-      Et: ne perd-on pas plein de cycles si on appelle une fonction pour la
-      phase exacte au lieu de la recopier ou de la mettre en DEFINE?
-
-   */
+   /* Rounding test and eventual return or call to the accurate function */
 
    if(E==0)
       roundcst = RDROUNDCST1;
@@ -772,29 +803,24 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
     log_td_accurate(&logh, &logm, &logl, E, ed, index, zh, zl, logih, logim); 
 
     /* 
-       We will suppose the following:
-       - logh and logm do not overlap in any case
-       - logm and logl may overlap but logl will not "overtake" logm for overlapping with logh
-       - logh may be different from round-to-nearest(logh + logm + logl) 
-       - logm may be equal to 0 while logl is not; 
-         either one of them is supposed to be different from 0 assured by Lindemann and Lefevre
-       - in no case, logh is equal to zero; in particular, the argument of log is not 1.0
+        Our renormalization procedure does not guarantee that logh = round-to-nearest(logh + logm + logl)
+	We don't even have the property that logh = round-to-nearest(logh + logm) but we do
+	know that neither logh and logm nor logm and logl overlap.
 
-       In order to overcome the fact that overlapping of logm and logl is possible or that logm is equal
-       to 0, we will first add logl to logm by a double precision add. This operation will only affect the
-       sign of logm if it is equal to 0 prior to the addition; it will change the value of logm only
-       if there is overlapping. It will not generate an overlapping of logm and logh.
-       We will now know that logm = round-to-nearest(logm + logl)
+	TO DO: WRITE EXPLANATION
+
+
     */
 
-    logm = logm + logl;
+    Add12(loghprime, tprime, logh, logm);
+    logmprime = tprime + logl;
 
-    /* We can now simply test the sign of logh and logm */
+    /* We can now simply test the sign of loghprime and logmprime */
 
-    if (logm > 0.0) {
-      return logh;
+    if (logmprime > 0.0) {
+      return loghprime;
     } else {
-      loghdb.d = logh;
+      loghdb.d = loghprime;
       if (logh > 0.0) {
 	loghdb.l--;
 	return loghdb.d;
@@ -814,14 +840,14 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    db_number xdb, loghdb;
    double res_hi,res_lo, y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
    double polyHorner, zhSquareh, zhSquarel, polyUpper, zhSquareHalfh, zhSquareHalfl;
-   double t1h, t1l, t2h, t2l, ph, pl, log2edh, log2edl, logTabPolyh, logTabPolyl, logh, logm, logl;
-   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, roundcst;
+   double t1h, t1l, t2h, t2l, ph, pl, log2edh, log2edl, logTabPolyh, logTabPolyl, logh, logm, logl, roundcst;
+   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, loghprime, logmprime, tprime;
    int E, index;
+
+   if (x == 1.0) return 0.0; /* This the only case in which the image under log of a double is a double. */
 
    E=0;
    xdb.d=x;
-
-   if (x == 1.0) return 0.0; // This the only case in which the image under log of a double is a double. 
 
    /* Filter cases */
    if (xdb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
@@ -840,6 +866,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
      return  x+x;				 /* Inf or Nan       */
    }
    
+   
    /* Extract exponent and mantissa 
       Do range reduction,
       yielding to E holding the exponent and
@@ -857,10 +884,11 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    }
    y = xdb.d;
    index = index & INDEXMASK;
-   // Cast integer E into double ed for multiplication later
+   /* Cast integer E into double ed for multiplication later */
    ed = (double) E;
 
-   /* Read tables:
+   /* 
+      Read tables:
       Read one float for ri
       Read the first two doubles for -log(r_i) (out of three)
 
@@ -872,10 +900,12 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    
 
    ri = argredtable[index].ri;
-   // Actually we don't need the logarithm entries now
-   // Move the following two lines to the eventual reconstruction
-   // As long as we don't have any if in the following code, we can overlap 
-   // memory access with calculations (static const?)
+   /* 
+      Actually we don't need the logarithm entries now
+      Move the following two lines to the eventual reconstruction
+      As long as we don't have any if in the following code, we can overlap 
+      memory access with calculations 
+   */
    logih = argredtable[index].logih;
    logim = argredtable[index].logim;
 
@@ -890,10 +920,11 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    */
 
    Mul12(&yrih, &yril, y, ri);
-   th = yrih - 1.0; // Should be exact (Sterbenz) A VERIFIER !!!
-   Add12Cond(zh, zl, th, yril); // Works perhaps without the condition A VERIFIER !!!
+   th = yrih - 1.0; 
+   Add12Cond(zh, zl, th, yril); 
 
-   /* Polynomial evaluation
+   /* 
+      Polynomial evaluation
 
       Use a 7 degree polynomial
       Evaluate the higher 5 terms in double precision (-7 * 3 = -21) using Horner's scheme
@@ -901,6 +932,8 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
       using an ad hoc method
 
    */
+
+
 
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
    polyHorner = FMA(FMA(FMA(FMA(c7,zh,c6),zh,c5),zh,c4),zh,c3);
@@ -927,12 +960,17 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
    */
    
-   /* We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
+   /* 
+      We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
       Multiplication of ed (double E) and log2h is thus correct
       The overall accuracy of log2h + log2m + log2l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
-      The accuracy suffices also for the qucik phase: 53 * 2 - 24 = 82
-      Condition is verified as log2m is smaller than log2h and both are scaled by ed
+      The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
+      Nevertheless the storage with trailing zeros implies an overlap of the tabulated
+      triple double values. We have to take it into account for the accurate phase 
+      basic procedures for addition and multiplication
+      The condition on the next Add12 is verified as log2m is smaller than log2h 
+      and both are scaled by ed
    */
 
    Add12(log2edh, log2edl, log2h * ed, log2m * ed);
@@ -940,12 +978,6 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    /* Add logih and logim to ph and pl 
 
       We must use conditioned Add22 as logih can move over ph
-
-      A VERIFIER: on peut quand meme se passer de la condition
-                  puisque le polynome reste par definition plus 
-		  petit que la valeur tabluee sauf en 0 et la, 
-		  le Add22 sans conditions passe peut etre quand meme
-
    */
 
    Add22Cond(&logTabPolyh, &logTabPolyl, logih, logim, ph, pl);
@@ -954,15 +986,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
    Add22Cond(&logh, &logm, log2edh, log2edl, logTabPolyh, logTabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function 
-
-      Question: pourquoi les tests d arrondi des modes diriges sont factorises 
-      mais pas celui du RN?
-
-      Et: ne perd-on pas plein de cycles si on appelle une fonction pour la
-      phase exacte au lieu de la recopier ou de la mettre en DEFINE?
-
-   */
+   /* Rounding test and eventual return or call to the accurate function */
 
    if(E==0)
       roundcst = RDROUNDCST1;
@@ -978,40 +1002,35 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
     log_td_accurate(&logh, &logm, &logl, E, ed, index, zh, zl, logih, logim); 
 
     /* 
-       We will suppose the following:
-       - logh and logm do not overlap in any case
-       - logm and logl may overlap but logl will not "overtake" logm for overlapping with logh
-       - logh may be different from round-to-nearest(logh + logm + logl) 
-       - logm may be equal to 0 while logl is not; 
-         either one of them is supposed to be different from 0 assured by Lindemann and Lefevre
-       - in no case, logh is equal to 0; in particular, the argument of log is not 1.0
+        Our renormalization procedure does not guarantee that logh = round-to-nearest(logh + logm + logl)
+	We don't even have the property that logh = round-to-nearest(logh + logm) but we do
+	know that neither logh and logm nor logm and logl overlap.
 
-       In order to overcome the fact that overlapping of logm and logl is possible or that logm is equal
-       to 0, we will first add logl to logm by a double precision add. This operation will only affect the
-       sign of logm if it is equal to 0 prior to the addition; it will change the value of logm only
-       if there is overlapping. It will not generate an overlapping of logm and logh.
-       We will now know that logm = round-to-nearest(logm + logl)
+	TO DO: WRITE EXPLANATION
+
+
     */
 
-    logm = logm + logl;
+    Add12(loghprime, tprime, logh, logm);
+    logmprime = tprime + logl;
 
-    /* We can now simply test the sign of logh and logm dependingly on rounding up or down */
+    /* We can now simply test the sign of loghprime and logmprime */
 
-    if (logh > 0.0) {
-      // round down
-      if (logm > 0) {
-	return logh;
+    if (loghprime > 0.0) {
+      /* round down */
+      if (logmprime > 0) {
+	return loghprime;
       } else {
-	loghdb.d = logh;
+	loghdb.d = loghprime;
 	loghdb.l--;
 	return loghdb.d;
       }
     } else {
-      // round up
-      if (logm < 0) {
+      /* round up */
+      if (logmprime < 0) {
 	return logh;
       } else {
-	loghdb.d = logh;
+	loghdb.d = loghprime;
 	loghdb.l--;
 	return loghdb.d;
       }
