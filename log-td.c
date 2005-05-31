@@ -341,7 +341,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 	       So adding logm corrects logh accordingly
 	 (iv)  logm = 0.25 * ulp(logh) and logm has the opposite sign of logh which is an exact power of 2:
 	       logl decides whether we have to substract (or add if logh is positive) 1/2 ulp from logm
-	 (v)  0 < logm < 0.25 * ulp(logh): logh is already the correct result but adding 
+	 (v)  0 < logm < 0.25 * ulp(logh): logh is already the correct result but adding logm changes nothing
 	 So cases (i), (iii) and (v) can be merged. We can merge cases (ii) and (iv) if we can 
 	 assure that we test logm == (logh == power of two ? 0.25*ulp(logh) : mi-ulp(logh))
 	 
@@ -358,7 +358,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 	  The difference will always be an exact power of 2 and therefore the following IEEE subtract will be exact.
        */
 
-       miulp = (logh - loghdb.d) / 2.0;
+       miulp = (logh - loghdb.d) * 0.5;
 
        /* miulp is known to be positive if logh is positive and negative if logh is negative. It is
 	  half an ulp of logh if logh is not an exact power of 2 and a quarter of an ulp of logh if it is. */
