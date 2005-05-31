@@ -389,7 +389,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 	     /* + - + 
 		We have already rounded correctly as we are greater than the middle and coming downwards.
 	     */
-	     return logl;
+	     return logh;
 	   } else {
 	     /* + - -
 		We should have rounded down as we are lesser than the middle and coming downwards.
