@@ -159,11 +159,11 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
  *************************************************************
  *************************************************************/
  double log_rn(double x){ 
-   db_number xdb, loghdb;
+   db_number xdb, loghdb, loghdb2;
    double res_hi,res_lo, y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
    double polyHorner, zhSquareh, zhSquarel, polyUpper, zhSquareHalfh, zhSquareHalfl;
    double t1h, t1l, t2h, t2l, ph, pl, log2edh, log2edl, logTabPolyh, logTabPolyl, logh, logm, logl, roundcst;
-   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, miulp;
+   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, miulp, miquaulp;
    int E, index;
 
    E=0;
@@ -345,11 +345,14 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 	 So cases (i), (iii) and (v) can be merged. We can merge cases (ii) and (iv) if we can 
 	 assure that we test logm == (logh == power of two ? 0.25*ulp(logh) : mi-ulp(logh))
 	 
-	 We start by generating a mi-ulp respectively a quarter of an ulp of logh if logh is an exact power of 2.
+	 We start by generating a mi-ulp respectively a quarter of an ulp of logh if logh is an exact power of 2 and
+	 a mi-ulp of logh in both cases
        */
        
        loghdb.d = logh;
+       loghdb2.d = logh;
        loghdb.l--; 
+       loghdb2.l++;
 
        /* Now we know that loghdb.d is the predecessor resp. the successor of logh (if logh < 0.0) 
 	  The difference between a positive IEEE 754 number and its predecessor is exactly 1 ulp of the number but in the
@@ -358,14 +361,17 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 	  The difference will always be an exact power of 2 and therefore the following IEEE subtract will be exact.
        */
 
-       miulp = (logh - loghdb.d) * 0.5;
+       miquaulp = (logh - loghdb.d) * 0.5;
+       miulp = (logh - loghdb2.d) * 0.5;
 
-       /* miulp is known to be positive if logh is positive and negative if logh is negative. It is
-	  half an ulp of logh if logh is not an exact power of 2 and a quarter of an ulp of logh if it is. */
+       /* miquaulp is known to be positive if logh is positive and negative if logh is negative. It is
+	  half an ulp of logh if logh is not an exact power of 2 and a quarter of an ulp of logh if it is. 
+	  miulp is of the same sign as miquaulp and always exactly half an ulp of logh.
+       */
        
        /* We determine now if we are in case (ii) or (iv). If not, we return (logh + logm) for (i), (iii) and (iv) */
        
-       if (((logm + miulp) != 0.0) && ((logm - miulp) != 0.0)) return (logh + logm);
+       if (((logm + miquaulp) != 0.0) && ((logm - miulp) != 0.0)) return (logh + logm);
        
        /* If we are here, we are in case (ii) or (iv)*/
        
@@ -376,8 +382,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 		We should have rounded up as we are greater than the middle and coming upwards.
 		We have loghdb.d being the predecessor of logh since logh is positive.
 	     */
-	     loghdb.l += 2;
-	     return loghdb.d;
+	     return loghdb2.d;
 	   } else {
 	     /* + + -
 		We have already rounded correctly as we are lesser than the middle and coming upwards.
@@ -423,8 +428,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 		We should have rounded down as we are lesser than the middle and coming downwards.
 		We have loghdb.d being the successor of logh since logh is negative.
 	     */ 
-	     loghdb.l += 2;
-	     return loghdb.d;
+	     return loghdb2.d;
 	   }
 	 }
        }
