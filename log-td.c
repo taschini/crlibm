@@ -371,7 +371,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
        
        /* We determine now if we are in case (ii) or (iv). If not, we return (logh + logm) for (i), (iii) and (iv) */
        
-       if (((logm + miquaulp) != 0.0) && ((logm - miulp) != 0.0)) return (logh + logm);
+       if ((logm != -miquaulp) && (logm != miulp)) return (logh + logm);
        
        /* If we are here, we are in case (ii) or (iv)*/
        
