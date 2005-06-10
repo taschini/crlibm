@@ -1,4 +1,31 @@
-/* Renormalize 
+/*
+ *  triple_double.h
+ *  
+ * This file contains useful tools and data for triple double data representation.
+ *
+ */
+
+#ifndef TRIPLE_DOUBLE_H
+#define TRIPLE_DOUBLE_H 1
+
+#include "scs_lib/scs.h"
+#include "scs_lib/scs_private.h"
+ /* undef all the variables that might have been defined in
+    scs_lib/scs_private.h */
+#undef VERSION 
+#undef PACKAGE 
+#undef HAVE_GMP_H
+#undef HAVE_MPFR_H
+#undef HAVE_MATHLIB_H
+/* then include the proper definitions  */
+#include "crlibm_config.h"
+
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
+
+/* Renormalize3
 
    Procedure for renormalizing a triple double number, i.e.
    computing exactly an equivalent sum of three non-overlapping
@@ -21,7 +48,7 @@
    Details:         resh, resm and resl are considered to be pointers
 
 */
-#define Renormalize(resh, resm, resl, ah, am, al)      \
+#define Renormalize3(resh, resm, resl, ah, am, al)     \
 {                                                      \
     double _t1h, _t1l, _t2l;                           \
                                                        \
@@ -219,3 +246,175 @@
     Add12Cond((*(resm)),(*(resl)),_t4,_t7);                     \
 }
 
+/* ReturnRoundToNearest3
+
+   Procedure for rounding a triple to a double number
+   in round-to-nearest-ties-to-even mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   xh, xm and xl are non-overlapping
+                    xm = RN(xm +math xl)
+		    xh != 0, xm != 0
+		    xl = 0 iff xm != +/- 0.5 * ulp(xh) (0.25 if xh = 2^e)
+		    		    
+   Guarantees:      xprime = RN(xh + xm + xl)
+
+   Sideeffects:     returns, i.e. leaves the function
+
+*/
+#define ReturnRoundToNearest3(xh,xm,xl)                       \
+{                                                             \
+    double _t1, _t2, _t3, _t4, _t5, _t6;                      \
+    db_number _xp, _xn;                                       \
+                                                              \
+    _xp.d = (xh);                                             \
+    _xn.i[HI] = _xp.i[HI];                                    \
+    _xn.i[LO] = _xp.i[LO];                                    \
+    _xn.l--;                                                  \
+    _t1 = _xn.d;                                              \
+    _xp.l++;                                                  \
+    _t4 = _xp.d;                                              \
+    _t2 = (xh) - _t1;                                         \
+    _t3 = _t2 * -0.5;                                         \
+    _t5 = _t4 - (xh);                                         \
+    _t6 = _t5 * 0.5;                                          \
+    if (((xm) != _t3) && ((xm) != _t6)) return ((xh) + (xm)); \
+    if ((xm) * (xl) > 0.0) {                                  \
+      if ((xh) * (xl) > 0.0)                                  \
+        return _t4;                                           \
+      else                                                    \
+        return _t1;                                           \
+    } else return (xh);                                       \
+}
+
+/* ReturnRoundUpwards3
+
+   Procedure for rounding a triple to a double number
+   in round-upwards mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   xh, xm and xl are non-overlapping
+                    xm = RN(xm +math xl)
+		    xh != 0, xm != 0
+		    		    
+   Guarantees:      xprime = RU(xh + xm + xl)
+
+   Sideeffects:     returns, i.e. leaves the function
+
+*/
+#define ReturnRoundUpwards3(xh,xm,xl)                         \
+{                                                             \
+    double _t1, _t2, _t3;                                     \
+    db_number _tdb;                                           \
+                                                              \
+    Add12(_t1,_t2,(xh),(xm));                                 \
+    _t3 = _t2 + (xl);                                         \
+    if (_t3 > 0.0) {                                          \
+      if (_t1 > 0.0) {                                        \
+         _tdb.d = _t1;                                        \
+         _tdb.l++;                                            \
+         return _tdb.d;                                       \
+      } else {                                                \
+         _tdb.d = _t1;                                        \
+         _tdb.l--;                                            \
+         return _tdb.d;                                       \
+      }                                                       \
+    } else return _t1;                                        \
+}
+
+
+/* ReturnRoundDownwards3
+
+   Procedure for rounding a triple to a double number
+   in round-downwards mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   xh, xm and xl are non-overlapping
+                    xm = RN(xm +math xl)
+		    xh != 0, xm != 0
+		    		    
+   Guarantees:      xprime = RD(xh + xm + xl)
+
+   Sideeffects:     returns, i.e. leaves the function
+
+*/
+#define ReturnRoundDownwards3(xh,xm,xl)                       \
+{                                                             \
+    double _t1, _t2, _t3;                                     \
+    db_number _tdb;                                           \
+                                                              \
+    Add12(_t1,_t2,(xh),(xm));                                 \
+    _t3 = _t2 + (xl);                                         \
+    if (_t3 < 0.0) {                                          \
+      if (_t1 > 0.0) {                                        \
+         _tdb.d = _t1;                                        \
+         _tdb.l--;                                            \
+         return _tdb.d;                                       \
+      } else {                                                \
+         _tdb.d = _t1;                                        \
+         _tdb.l++;                                            \
+         return _tdb.d;                                       \
+      }                                                       \
+    } else return _t1;                                        \
+}
+
+
+/* ReturnRoundTowardsZero3
+
+   Procedure for rounding a triple to a double number
+   in round-towards-zero mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   xh, xm and xl are non-overlapping
+                    xm = RN(xm +math xl)
+		    xh != 0, xm != 0
+		    		    
+   Guarantees:      xprime = RZ(xh + xm + xl)
+
+   Sideeffects:     returns, i.e. leaves the function
+
+*/
+#define ReturnRoundTowardsZero3(xh,xm,xl)                     \
+{                                                             \
+    double _t1, _t2, _t3;                                     \
+    db_number _tdb;                                           \
+                                                              \
+    Add12(_t1,_t2,(xh),(xm));                                 \
+    _t3 = _t2 + (xl);                                         \
+    if (_t1 > 0.0) {                                          \
+       if (_t3 < 0.0) {                                       \
+         _tdb.d = _t1;                                        \
+         _tdb.l--;                                            \
+         return _tdb.d;                                       \
+       } else return _t1;                                     \
+    } else {                                                  \
+       if (_t3 > 0.0) {                                       \
+         _tdb.d = _t1;                                        \
+         _tdb.l--;                                            \
+         return _tdb.d;                                       \
+       } else return _t1;                                     \
+    }                                                         \
+}
+
+
+#endif /*TRIPLE_DOUBLE_H*/

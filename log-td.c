@@ -130,11 +130,11 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
   /* It may be necessary to renormalize the tabulated value (multiplied by ed) before adding
      the to the log(y)-result 
 
-     If needed, uncomment the following Renormalize-Statement and comment out the copies 
+     If needed, uncomment the following Renormalize3-Statement and comment out the copies 
      following it.
   */
 
-  /* Renormalize(&log2edh, &log2edm, &log2edl, log2edhover, log2edmover, log2edlover); */
+  /* Renormalize3(&log2edh, &log2edm, &log2edl, log2edhover, log2edmover, log2edlover); */
 
   log2edh = log2edhover;
   log2edm = log2edmover;
@@ -147,7 +147,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
      it over to the final rounding
   */
 
-  Renormalize(logh,logm,logl,loghover,logmover,loglover);
+  Renormalize3(logh,logm,logl,loghover,logmover,loglover);
 
 }
 
@@ -159,11 +159,10 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
  *************************************************************
  *************************************************************/
  double log_rn(double x){ 
-   db_number xdb, loghdb, loghdb2;
-   double res_hi,res_lo, y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
+   db_number xdb;
+   double y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
    double polyHorner, zhSquareh, zhSquarel, polyUpper, zhSquareHalfh, zhSquareHalfl;
    double t1h, t1l, t2h, t2l, ph, pl, log2edh, log2edl, logTabPolyh, logTabPolyl, logh, logm, logl, roundcst;
-   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, miulp, miquaulp;
    int E, index;
 
    E=0;
@@ -324,114 +323,9 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 #endif
 
        log_td_accurate(&logh, &logm, &logl, E, ed, index, zh, zl, logih, logim); 
+       
+       ReturnRoundToNearest3(logh, logm, logl);
 
-       /*
-	 Our renormalization procedure does not guarantee that logh = round-to-nearest(logh + logm + logl)
-	 We don't even have the property that logh = round-to-nearest(logh + logm) but we do
-	 know that neither logh and logm nor logm and logl overlap.
-	 
-	 We have the following 5 cases (modular signs which we are omitting here):
-	 (i)   logm > mi-ulp(logh): we have to return logh + 1ulp, i.e. logh + logm
-	 (ii)  logm = mi-ulp(logh): we have to adjust logh depending on whether logl positive or negative
-	 (iii) 0.25 * ulp(logh) \leq logm < mi-ulp(logh): 
-	       If logh is not exactly a power of 2, logh is already the correct result but adding logh does not change anything
-	       If logh is exactly a power of 2, and logm is not exactly 0.25 * ulp(logh) or if it has the opposite sign 
-	       of logh, we are sure that the infinite precision value is far enough from logh - 0.25 * ulp(logh) so that 
-	       logl needs not to be taken into account because it is at most at a mi-ulp(logm) 
-	       So adding logm corrects logh accordingly
-	 (iv)  logm = 0.25 * ulp(logh) and logm has the opposite sign of logh which is an exact power of 2:
-	       logl decides whether we have to substract (or add if logh is positive) 1/2 ulp from logm
-	 (v)  0 < logm < 0.25 * ulp(logh): logh is already the correct result but adding logm changes nothing
-	 So cases (i), (iii) and (v) can be merged. We can merge cases (ii) and (iv) if we can 
-	 assure that we test logm == (logh == power of two ? 0.25*ulp(logh) : mi-ulp(logh))
-	 
-	 We start by generating a mi-ulp respectively a quarter of an ulp of logh if logh is an exact power of 2 and
-	 a mi-ulp of logh in both cases
-       */
-       
-       loghdb.d = logh;
-       loghdb2.d = logh;
-       loghdb.l--; 
-       loghdb2.l++;
-
-       /* Now we know that loghdb.d is the predecessor resp. the successor of logh (if logh < 0.0) 
-	  The difference between a positive IEEE 754 number and its predecessor is exactly 1 ulp of the number but in the
-	  case where the number is an exact power of 2 in which case the difference is 1/2 ulp of the number.
-	  For negative numbers the same is true for the successor instead of the predecessor. 
-	  The difference will always be an exact power of 2 and therefore the following IEEE subtract will be exact.
-       */
-
-       miquaulp = (logh - loghdb.d) * 0.5;
-       miulp = (logh - loghdb2.d) * 0.5;
-
-       /* miquaulp is known to be positive if logh is positive and negative if logh is negative. It is
-	  half an ulp of logh if logh is not an exact power of 2 and a quarter of an ulp of logh if it is. 
-	  miulp is of the same sign as miquaulp and always exactly half an ulp of logh.
-       */
-       
-       /* We determine now if we are in case (ii) or (iv). If not, we return (logh + logm) for (i), (iii) and (iv) */
-       
-       if ((logm != -miquaulp) && (logm != miulp)) return (logh + logm);
-       
-       /* If we are here, we are in case (ii) or (iv)*/
-       
-       if (logh > 0.0) {
-	 if (logm > 0.0) {
-	   if (logl > 0.0) {
-	     /* + + +
-		We should have rounded up as we are greater than the middle and coming upwards.
-		We have loghdb.d being the predecessor of logh since logh is positive.
-	     */
-	     return loghdb2.d;
-	   } else {
-	     /* + + -
-		We have already rounded correctly as we are lesser than the middle and coming upwards.
-	     */
-	     return logh;
-	   }
-	 } else {
-	   if (logl > 0.0) {
-	     /* + - + 
-		We have already rounded correctly as we are greater than the middle and coming downwards.
-	     */
-	     return logh;
-	   } else {
-	     /* + - -
-		We should have rounded down as we are lesser than the middle and coming downwards.
-	        We have loghdb.d being the predecessor of logh since logh is positive.
-	     */
-	     return loghdb.d;
-	   }
-	 }
-       } else {
-	 if (logm > 0.0) {
-	   if (logl > 0.0) {
-	     /* - + + 
-		We should have rounded up as we are greater than the middle and coming upwards.
-		We have loghdb.d being the successor of logh since logh is negative.
-	     */
-	     return loghdb.d;
-	   } else {
-	     /* - + -
-		We have already rounded correctly as we are lesser than the middle and coming upwards.
-	     */
-	     return logh;
-	   }
-	 } else {
-	   if (logl > 0.0) {
-	     /* - - +
-		We have already rounded correctly as we are greater than the middle and coming downwards.
-	     */
-	     return logh;
-	   } else {
-	     /* - - -
-		We should have rounded down as we are lesser than the middle and coming downwards.
-		We have loghdb.d being the successor of logh since logh is negative.
-	     */ 
-	     return loghdb2.d;
-	   }
-	 }
-       }
      } /* Accurate phase launched */
  }
 
@@ -442,11 +336,10 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
  *************************************************************
  *************************************************************/
  double log_ru(double x) { 
-   db_number xdb, loghdb;
-   double res_hi,res_lo, y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
+   db_number xdb;
+   double y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
    double polyHorner, zhSquareh, zhSquarel, polyUpper, zhSquareHalfh, zhSquareHalfl;
    double t1h, t1l, t2h, t2l, ph, pl, log2edh, log2edl, logTabPolyh, logTabPolyl, logh, logm, logl, roundcst;
-   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, loghprime, logmprime, tprime;
    int E, index;
 
    if (x == 1.0) return 0.0; /* This the only case in which the image under log of a double is a double. */
@@ -606,33 +499,8 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
     log_td_accurate(&logh, &logm, &logl, E, ed, index, zh, zl, logih, logim); 
 
-    /* 
-        Our renormalization procedure does not guarantee that logh = round-to-nearest(logh + logm + logl)
-	We don't even have the property that logh = round-to-nearest(logh + logm) but we do
-	know that neither logh and logm nor logm and logl overlap.
+    ReturnRoundUpwards3(logh, logm, logl);
 
-	TO DO: WRITE EXPLANATION
-
-
-    */
-
-    Add12(loghprime, tprime, logh, logm);
-    logmprime = tprime + logl;
-
-    /* We can now simply test the sign of loghprime and logmprime */
-
-    if (logmprime < 0.0) {
-      return loghprime;
-    } else {
-      loghdb.d = loghprime;
-      if (loghprime > 0.0) {
-	loghdb.l++;
-	return loghdb.d;
-      } else {
-	loghdb.l--;
-	return loghdb.d;
-      }
-    }
  } 
 
 
@@ -642,11 +510,10 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
  *************************************************************
  *************************************************************/
  double log_rd(double x) { 
-   db_number xdb, loghdb;
-   double res_hi,res_lo, y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
+   db_number xdb;
+   double y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
    double polyHorner, zhSquareh, zhSquarel, polyUpper, zhSquareHalfh, zhSquareHalfl;
    double t1h, t1l, t2h, t2l, ph, pl, log2edh, log2edl, logTabPolyh, logTabPolyl, logh, logm, logl, roundcst;
-   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, loghprime, logmprime, tprime;
    int E, index;
 
    if (x == 1.0) return 0.0; /* This the only case in which the image under log of a double is a double. */
@@ -806,33 +673,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
     log_td_accurate(&logh, &logm, &logl, E, ed, index, zh, zl, logih, logim); 
 
-    /* 
-        Our renormalization procedure does not guarantee that logh = round-to-nearest(logh + logm + logl)
-	We don't even have the property that logh = round-to-nearest(logh + logm) but we do
-	know that neither logh and logm nor logm and logl overlap.
-
-	TO DO: WRITE EXPLANATION
-
-
-    */
-
-    Add12(loghprime, tprime, logh, logm);
-    logmprime = tprime + logl;
-
-    /* We can now simply test the sign of loghprime and logmprime */
-
-    if (logmprime > 0.0) {
-      return loghprime;
-    } else {
-      loghdb.d = loghprime;
-      if (logh > 0.0) {
-	loghdb.l--;
-	return loghdb.d;
-      } else {
-	loghdb.l++;
-	return loghdb.d;
-      }
-    }
+    ReturnRoundDownwards3(logh, logm, logl);
  } 
 
 /*************************************************************
@@ -841,11 +682,10 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
  *************************************************************
  *************************************************************/
  double log_rz(double x) { 
-   db_number xdb, loghdb;
-   double res_hi,res_lo, y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
+   db_number xdb;
+   double y, ed, ri, logih, logim, yrih, yril, th, zh, zl;
    double polyHorner, zhSquareh, zhSquarel, polyUpper, zhSquareHalfh, zhSquareHalfl;
    double t1h, t1l, t2h, t2l, ph, pl, log2edh, log2edl, logTabPolyh, logTabPolyl, logh, logm, logl, roundcst;
-   double zlPlusZhSquareHalflPlusZhZl, polyUpperPluszlh, loghprime, logmprime, tprime;
    int E, index;
 
    if (x == 1.0) return 0.0; /* This the only case in which the image under log of a double is a double. */
@@ -1005,40 +845,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
     log_td_accurate(&logh, &logm, &logl, E, ed, index, zh, zl, logih, logim); 
 
-    /* 
-        Our renormalization procedure does not guarantee that logh = round-to-nearest(logh + logm + logl)
-	We don't even have the property that logh = round-to-nearest(logh + logm) but we do
-	know that neither logh and logm nor logm and logl overlap.
-
-	TO DO: WRITE EXPLANATION
-
-
-    */
-
-    Add12(loghprime, tprime, logh, logm);
-    logmprime = tprime + logl;
-
-    /* We can now simply test the sign of loghprime and logmprime */
-
-    if (loghprime > 0.0) {
-      /* round down */
-      if (logmprime > 0) {
-	return loghprime;
-      } else {
-	loghdb.d = loghprime;
-	loghdb.l--;
-	return loghdb.d;
-      }
-    } else {
-      /* round up */
-      if (logmprime < 0) {
-	return logh;
-      } else {
-	loghdb.d = loghprime;
-	loghdb.l--;
-	return loghdb.d;
-      }
-    }
+    ReturnRoundTowardsZero3(logh, logm, logl);
  } 
 
 
