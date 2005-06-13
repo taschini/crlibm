@@ -9,15 +9,15 @@
 # Otherwise avoid underscores as they are painful to carry on to LaTeX :)
 
 # polynomial coefficients, computed by Maple
-c1 = _c1;
-c2 = _c2;
-c3 = _c3;
-c4 = _c4;
-c5 = _c5;
-c6 = _c6;
-c7 = _c7;
-log2h  = _log2h;
-log2l  = _log2l;
+c1 = <float64ne>(_c1);
+c2 = <float64ne>(_c2);
+c3 = <float64ne>(_c3);
+c4 = <float64ne>(_c4);
+c5 = <float64ne>(_c5);
+c6 = <float64ne>(_c6);
+c7 = <float64ne>(_c7);
+log2h  = <float64ne>(_log2h);
+log2l  = <float64ne>(_log2l);
 
 # Transcription of the code, NOT using FMA
 z2  <float80ne>= z*z;    

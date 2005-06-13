@@ -12,12 +12,12 @@
 
 
 # Definition of the polynomial constants:
-t11 = _t11;
-t9  = _t9;
-t7  = _t7;
-t5  = _t5;
-t3h = _t3h;
-t3l = _t3l;
+t11 = <float64ne>(_t11);
+t9  = <float64ne>(_t9);
+t7  = <float64ne>(_t7);
+t5  = <float64ne>(_t5);
+t3h = <float64ne>(_t3h);
+t3l = <float64ne>(_t3l);
 
 #######################################################################
 

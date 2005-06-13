@@ -8,18 +8,18 @@
 # Otherwise avoid underscores as they are painful to carry on to LaTeX :)
 
 # polynomial coefficients, computed by Maple
-c1 = _c1;
-c2 = _c2;
-c3 = _c3;
-c4 = _c4;
-c5 = _c5;
-c6 = _c6;
-c7 = _c7;
-log2h  = _log2h;
-log2l  = _log2l;
-r     = _r;
-logirh = _logirh;
-logirl = _logirl;
+c1 = <float64ne>(_c1);
+c2 = <float64ne>(_c2);
+c3 = <float64ne>(_c3);
+c4 = <float64ne>(_c4);
+c5 = <float64ne>(_c5);
+c6 = <float64ne>(_c6);
+c7 = <float64ne>(_c7);
+log2h = <float64ne>(_log2h);
+log2  = <float64ne>(_log2l);
+r     = <float64ne>(_r);
+logirh = <float64ne>(_logirh);
+logirl = <float64ne>(_logirl);
 
 E=1;  # TODO paper proof that E=1 is the worst case
 
@@ -63,7 +63,9 @@ PolyLog1pz = z*c1 + Z2*(c2+z*c3) + Z4*( (c4+z*c5) + Z2*(c6+z*c7)  );
 #/\  (PolyLog1pz - Log1pz)/Log1pz in [-_epsilonApproxQuick, _epsilonApproxQuick]
 /\  (PolyLog1pz - Log1pz) in [-_deltaApproxQuick, _deltaApproxQuick]
 ->
-(log - Log)/Log in [-1b-62, 1b-62]
+(log - Log)/Log in ? # [-1b-62, 1b-62]
+/\ log-Log in ?
+/\ log in ?
 }
 
 

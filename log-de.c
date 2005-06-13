@@ -91,35 +91,37 @@ double log_rn(double x) {
   double_ext logirh, r, y, z, z2,z4, th, tl, p01, p23, p45, p67, p03, p47, p07, log;
 #if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64)
   db_number xdb;
-  int E, i, index, roundtestmask;
+  int E, i, index, index0, center, roundtestmask;
 #else
   int64_t  E, i;
   uint64_t index, roundtestmask;
   double_ext c1,c2,c3,c4,c5,c6,c7;
 #endif
 
-   E=0;
 
 #if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64)
    xdb.d=x;
+
+   index0 = (xdb.i[HI] & 0x000fffff);
+   index = (index0 + (1<<(20-L-1))) >> (20-L); 
+   E = (xdb.i[HI]>>20)-1023;             /* extract the exponent */
 
    /* Filter cases */
    if (xdb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
      if (((xdb.i[HI] & 0x7fffffff)|xdb.i[LO])==0)    return -1.0/0.0;  /* log(+/-0) = -Inf */
      if (xdb.i[HI] < 0)                              return (x-x)/0;   /* log(-x) = Nan    */
      /* Else subnormal number */
-     E = -64; 		
      xdb.d *= two64; 	  /* make x a normal number    */ 
+     E = -64 + (xdb.i[HI]>>20)-1023;             /* extract the exponent */
+     index0 = (xdb.i[HI] & 0x000fffff);
+     index = (index0 + (1<<(20-L-1))) >> (20-L); 
    }
    if (xdb.i[HI] >= 0x7ff00000)                      return  x+x;      /* Inf or Nan       */
    
    DOUBLE_EXTENDED_MODE;  /* This one should be overlapped with following integer computation */
 
    /* Extract exponent and mantissa */
-   E += (xdb.i[HI]>>20)-1023;             /* extract the exponent */
-   index = (xdb.i[HI] & 0x000fffff);
-   xdb.i[HI] =  index | 0x3ff00000;	/* do exponent = 0 */
-   index = (index + (1<<(20-L-1))) >> (20-L); 
+   xdb.i[HI] =  index0 | 0x3ff00000;	/* do exponent = 0 */
    /* reduce  such that sqrt(2)/2 < xdb.d < sqrt(2) */
    if (index >= MAXINDEX){ /* corresponds to y>sqrt(2)*/
      xdb.i[HI] -= 0x00100000; 
@@ -129,6 +131,7 @@ double log_rn(double x) {
 
 #else /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
   /*  Here come the code specific to Itanium processor */
+   E=0;
    PREFETCH_POLY_QUICK; /* defined in log-de.h */
    y=x;
    i =  _Asm_getf(2/*_FR_D*/, y);  /* Cast y to a 64-bit integer */
@@ -161,8 +164,8 @@ double log_rn(double x) {
    /* now y holds 1+f, and E is the exponent */
    index = index & INDEXMASK;
 
-     logirh = argredtable[index].logirh;
      r = (double_ext) (argredtable[index].r); /* approx to 1/y.d */
+     logirh = argredtable[index].logirh;
      z = y*r - 1. ; /* even without an FMA, all exact */
 
     if(E==0)

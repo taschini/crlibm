@@ -9,18 +9,18 @@
 # Otherwise avoid underscores as they are painful to carry on to LaTeX :)
 
 # polynomial coefficients, computed by Maple
-s3 = _s3;
-s5 = _s5;
-s7 = _s7;
-c2 = _c2;
-c4 = _c4;
-c6 = _c6;
+s3 = <float64ne>(_s3);
+s5 = <float64ne>(_s5);
+s7 = <float64ne>(_s7);
+c2 = <float64ne>(_c2);
+c4 = <float64ne>(_c4);
+c6 = <float64ne>(_c6);
 
 # Table values, computed by Maple
-cah = _cah;
-cal = _cal;
-sah = _sah;
-sal = _sal;
+cah = <float64ne>(_cah);
+cal = <float64ne>(_cal);
+sah = <float64ne>(_sah);
+sal = <float64ne>(_sal);
 
 # The variables used here:
 # x input
