@@ -41,7 +41,7 @@ M fff80000 00000000 fff80000 00000000 # NaN
 Z fff80000 00000000 fff80000 00000000 # NaN
 
 # Some boundary cases specific to the exp
-
+# TODO add a few denormals
 N 40862E42 FEFA39EF 7fefffff ffffff2a   # the last value before the exp gets infinite 
 N 40862E42 FEFA39F0 7ff00000 00000000   # the first value that gives infinite exp
 P 40862E42 FEFA39EF 7fefffff ffffff2b   # the last value before the exp gets infinite 
@@ -50,9 +50,16 @@ M 40862E42 FEFA39EF 7fefffff ffffff2a   # the last value before the exp gets inf
 M 40862E42 FEFA39F0 7fefffff ffffffff   # the first value that gives infinite exp, rounded down
 Z 40862E42 FEFA39EF 7fefffff ffffff2a   # the last value before the exp gets infinite 
 Z 40862E42 FEFA39F0 7fefffff ffffffff   # the first value that gives infinite exp, rounded down
-
-N C0874910 D52D3051 00000000 00000001   # The last value before the exp flushes to zero
+N C0874910 D52D3051 00000000 00000001   #  The last value before the exp flushes to zero
 N C0874910 D52D3052 00000000 00000000   # The first value at which the exp flushes to zero
+
+P C086232B DD7ABCD2 00100000 0000007c   # The last value before the exp flushes to subnormal
+M C086232B DD7ABCD2 00100000 0000007b
+N C086232B DD7ABCD2 00100000 0000007c
+P C086232B DD7ABCD3 000fffff fffffe7c   # The first value for which exp flushes to subnormal
+M C086232B DD7ABCD3 000fffff fffffe7b
+N C086232B DD7ABCD3 000fffff fffffe7c
+
 
 # In rounding up  we get non-zero results all the way to -infty
 P C0874910 D52D3051 00000000 00000001   
