@@ -161,6 +161,30 @@ fi
 
 dnl Command-line arguments to ./configure:
 
+
+dnl If at some point we wish to include SPARC optimization back,
+dnl  the default should take the value 10 and 25 in this case 
+dnl  for around 200 bits of precision
+
+AC_ARG_ENABLE(nbdigits,
+	[  --enable-nbdigits=N      set the number of digits in the SCS structure to N [[default=8]] ],
+	[case $enableval in
+	      *[[0-9]])  AC_DEFINE_UNQUOTED(SCS_NB_WORDS, $enableval, [Number of digits in the SCS structure]);;
+	      *) AC_MSG_ERROR([bad value $enableval for --enable-nbdigits, number expected]) ;;
+	 esac],
+	[AC_DEFINE_UNQUOTED(SCS_NB_WORDS, 8, [Number of digits in the SCS structure])]
+)
+
+AC_ARG_ENABLE(digitsize,
+	[ --enable-digitsize=N      set the size of a digit to N bits [[default=30]] ],
+	[case $enableval in
+	      *[[0-9]])  AC_DEFINE_UNQUOTED(SCS_NB_BITS, $enableval, [Size of an SCS digit]);;
+	      *) AC_MSG_ERROR([bad value $enableval for --enable-digitsize, number expected]) ;;
+	 esac],
+	[AC_DEFINE_UNQUOTED(SCS_NB_BITS, 30, [Size of an SCS digit])]
+)
+
+
 dnl  ... for  MPFR
 AC_ARG_ENABLE(mpfr,       [  --enable-mpfr           enable MPFR function [[default=no]]],
 [case $enableval in
@@ -314,10 +338,10 @@ dnl end of test for IBM libultim
 fi
 
 
-AC_CONFIG_SUBDIRS([scs_lib])
+#AC_CONFIG_SUBDIRS([scs_lib])
 
 
 
-AC_OUTPUT(Makefile tests/Makefile)
+AC_OUTPUT(Makefile tests/Makefile scs_lib/Makefile)
 
 

@@ -3,7 +3,7 @@
 # This script is inspired by the prepare script distributed with with
 #   mpfr, which is inspired by the prepare script distributed with Mutt.
 
-if cd scs_lib && aclocal && autoheader &&autoconf && automake --add-missing -c && cd .. && aclocal && autoheader && autoconf&& automake --add-missing -c && autoconf && ./configure $@
+if aclocal && autoheader && autoconf&& automake --add-missing -c && autoconf && ./configure $@
 then
   echo
   echo "The crlibm source code was successfully prepared."

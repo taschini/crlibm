@@ -10,15 +10,11 @@
 
 #include "scs_lib/scs.h"
 #include "scs_lib/scs_private.h"
- /* undef all the variables that might have been defined in
-    scs_lib/scs_private.h */
-#undef VERSION 
-#undef PACKAGE 
-#undef HAVE_GMP_H
-#undef HAVE_MPFR_H
-#undef HAVE_MATHLIB_H
-/* then include the proper definitions  */
+
+#ifdef HAVE_CONFIG_H
 #include "crlibm_config.h"
+#endif
+/* otherwise CMake is used, and defines all the useful variables using -D switch */
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
@@ -41,8 +37,11 @@
 /* 64 bit arithmetic may be standardised, but people still do want they want */
 #ifdef HAVE_INTTYPES_H
 #define ULL(bits) 0x##bits##uLL
-#elif defined(WIN32) 
-/* TODO insert Windows garbage there */
+#elif defined(_WIN32) 
+/*  Windows garbage there */
+typedef long long int int64_t;
+typedef unsigned long long int uint64_t;
+#define ULL(bits) 0x##bits##i64
 /* Default, hoping it works, hopefully less and less relevant */
 #else
 typedef long long int int64_t;

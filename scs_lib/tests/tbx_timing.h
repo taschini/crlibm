@@ -3,7 +3,7 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
-#if defined(SCS_TYPECPU_ITANIUM) && defined(__INTEL_COMPILER)
+#if defined(CRLIBM_TYPECPU_ITANIUM) && defined(__INTEL_COMPILER)
 #include<ia64intrin.h>
 #endif
 
@@ -27,14 +27,14 @@ typedef union u_tbx_tick
 } tbx_tick_t, *p_tbx_tick_t;
 
 
-#if defined(SCS_TYPECPU_ITANIUM) && defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#if defined(CRLIBM_TYPECPU_ITANIUM) && defined(__GNUC__) && !defined(__INTEL_COMPILER)
  
 #define TBX_GET_TICK(t) \
    __asm__ __volatile__("mov %0=ar.itc" : "=r"((t).tick) :: "memory")
 #define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick)
 
 
-#elif defined(SCS_TYPECPU_ITANIUM) && defined(__HPCC__)
+#elif defined(CRLIBM_TYPECPU_ITANIUM) && defined(__HPCC__)
 /* Never tested, currently nobody defines __HPCC__.
   It should work on HPUX machines using HP compiler */
 #include<machine/sys/inline.h>/* to move up of course */
@@ -43,13 +43,13 @@ typedef union u_tbx_tick
 #define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick )
 
 
-#elif defined(SCS_TYPECPU_ITANIUM) && defined(__INTEL_COMPILER)
+#elif defined(CRLIBM_TYPECPU_ITANIUM) && defined(__INTEL_COMPILER)
 #define TBX_GET_TICK(t)    t.tick=__getReg(_IA64_REG_AR_ITC)   
 #define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick)
 
 
 
-#elif (defined(SCS_TYPECPU_AMD64) || defined(SCS_TYPECPU_X86)) \
+#elif (defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86)) \
     && defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #define TBX_GET_TICK(time)                \
         __asm__ __volatile__(             \
@@ -66,14 +66,14 @@ typedef union u_tbx_tick
 #define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick)
 
 
-#elif defined(SCS_TYPECPU_ALPHA)  && defined(__GNUC__)
+#elif defined(CRLIBM_TYPECPU_ALPHA)  && defined(__GNUC__)
 #define TBX_GET_TICK(t) \
    __asm__ volatile("rpcc %0\n\t" : "=r"((t).tick))
 #define TBX_TICK_RAW_DIFF(t1, t2) \
    (((t2).tick & 0xFFFFFFFF) - ((t1).tick & 0xFFFFFFFF))
 
 
-#elif defined(SCS_TYPECPU_SPARC)  && defined(__GNUC__)
+#elif defined(CRLIBM_TYPECPU_SPARC)  && defined(__GNUC__)
 #define TBX_GET_TICK(t) \
     (t).tick = gethrtime()
 #define TBX_TICK_RAW_DIFF(t1, t2) \

@@ -2,6 +2,7 @@
 
 
 lib_LIBRARIES = libscs.a
+INCLUDES=-I$(top_srcdir)
 
 
 # shared libraries need libtool. We'll do it later.
@@ -16,15 +17,5 @@ libscs_a_SOURCES = scs.h scs_private.h scs_private.c \
 	wrapper_scs.h
 
 
-include_HEADERS = scs.h scs_config.h
+include_HEADERS = scs.h ../crlibm_config.h
 
-SUBDIRS = . tests 
-
-# Add your compiler here. Default is assumed to be gcc.
-if COMPILER_ICC
-AM_CFLAGS = -std=c99 -Wall -mp
-else
-AM_CFLAGS = -std=c99 -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
-endif
-
-EXTRA_DIST = VERSION  Doxyfile.user Doxyfile.dev 

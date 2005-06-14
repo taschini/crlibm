@@ -284,7 +284,7 @@ void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
   /* Compute only the first half of the partial product. See the
      unrolled code for an example of what we compute */
 
-#ifdef SCS_TYPECPU_X86
+#ifdef CRLIBM_TYPECPU_X86
   /* This is the only place where there is assembly code to force 64-bit
      arithmetic. Someday gcc will catch up here, too.
   */
