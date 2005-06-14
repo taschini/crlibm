@@ -48,17 +48,22 @@ typedef union u_tbx_tick
 #define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick)
 
 
-/* Hum hum... Here we suppose that X86ARCH => Pentium! */
-#elif defined(SCS_TYPECPU_X86) && defined(__GNUC__)  && !defined(__INTEL_COMPILER)
-#define TBX_GET_TICK(t) \
-   __asm__ volatile("xorl %%eax, %%eax ; cpuid; rdtsc" : "=a" ((t).sub.low), "=d" ((t).sub.high))
+
+#elif (defined(SCS_TYPECPU_AMD64) || defined(SCS_TYPECPU_X86)) \
+    && defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#define TBX_GET_TICK(time)                \
+        __asm__ __volatile__(             \
+                "xorl %%eax,%%eax\n\t"    \
+                "cpuid\n\t"               \
+                "rdtsc\n\t"               \
+                "movl %%eax,(%0)\n\t"     \
+                "movl %%edx,4(%0)\n\t"    \
+                "xorl %%eax,%%eax\n\t"    \
+                "cpuid\n\t"               \
+                : /* no output */         \
+                : "S"(&time.tick)         \
+                : "eax", "ebx", "ecx", "edx", "memory")
 #define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick)
-
-
-#elif defined(SCS_TYPECPU_AMD64)  && defined(__GNUC__)
-#define TBX_GET_TICK(t) \
-  __asm__ volatile("xorq %%rax, %%rax ; cpuid; rdtsc" : "=a" ((t).sub.low), "=d"  ((t).sub.high))
-#define TBX_TICK_RAW_DIFF(t1, t2)    ((t2).tick - (t1).tick) 
 
 
 #elif defined(SCS_TYPECPU_ALPHA)  && defined(__GNUC__)
