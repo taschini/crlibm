@@ -125,8 +125,9 @@ double log_rn(double x) {
    /* reduce  such that sqrt(2)/2 < xdb.d < sqrt(2) */
    if (index >= MAXINDEX){ /* corresponds to y>sqrt(2)*/
      xdb.i[HI] -= 0x00100000; 
+     index = index & INDEXMASK;
      E++;
-   }
+}
    y = xdb.d;
 
 #else /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
@@ -154,30 +155,32 @@ double log_rn(double x) {
    /* reduce  such that sqrt(2)/2 < xdb.d < sqrt(2) */
    if (index >= MAXINDEX){    /* corresponds to y>sqrt(2)*/
      y = _Asm_setf(2/*_FR_D*/, (i | ULL(3ff0000000000000)) - ULL(0010000000000000) ); /* exponent = -1 */
+     index = index & INDEXMASK;
      E++;
    }
    else 
      y = _Asm_setf(2/*_FR_D*/, i | ULL(3ff0000000000000) ); /* exponent = 0*/   
 #endif  /* defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64) */
  
+
+
    /* All the previous argument reduction was exact */
    /* now y holds 1+f, and E is the exponent */
-   index = index & INDEXMASK;
 
      r = (double_ext) (argredtable[index].r); /* approx to 1/y.d */
      logirh = argredtable[index].logirh;
      z = y*r - 1. ; /* even without an FMA, all exact */
 
-    if(E==0)
-      roundtestmask=ACCURATE_TO_61_BITS;
+   if(E==0)
+     roundtestmask=ACCURATE_TO_61_BITS;
     else
       roundtestmask=ACCURATE_TO_62_BITS;
       
-     /* Estrin polynomial evaluation  */
-     z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
-     z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
-     p07 = p03 + z4*p47;
-     log = p07 + E*log2h;
+   /* Estrin polynomial evaluation  */
+   z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
+   z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
+   p07 = p03 + z4*p47;
+   log = p07 + E*log2h;
 #if 0 /* to time the first step only */
    BACK_TO_DOUBLE_MODE; return (double)t;
 #endif
@@ -185,12 +188,12 @@ double log_rn(double x) {
 
    /* To test the second step only, comment out the following line */
    DE_TEST_AND_RETURN_RN(log, roundtestmask);
-
+   
 
    log_accurate(&th, &tl, z, E, index);
-
+   
    BACK_TO_DOUBLE_MODE;
-
+   
    return (double) (th+tl); /* The exact sum of these double-extended is rounded to the nearest */
 }
 
@@ -349,8 +352,10 @@ double log_ru(double x) {
    index = (xdb.i[HI] & 0x000fffff);
    xdb.i[HI] =  index | 0x3ff00000;	/* do exponent = 0 */
    index = (index + (1<<(20-L-1))) >> (20-L); 
+
    /* reduce  such that sqrt(2)/2 < xdb.d < sqrt(2) */
    if (index >= MAXINDEX){ /* corresponds to y>sqrt(2)*/
+     index = index & INDEXMASK;
      xdb.i[HI] -= 0x00100000; 
      E++;
    }
@@ -380,6 +385,7 @@ double log_ru(double x) {
    /* reduce  such that sqrt(2)/2 < xdb.d < sqrt(2) */
    if (index >= MAXINDEX){    /* corresponds to y>sqrt(2)*/
      y = _Asm_setf(2/*_FR_D*/, (i | ULL(3ff0000000000000)) - ULL(0010000000000000) ); /* exponent = -1 */
+     index = index & INDEXMASK;
      E++;
    }
    else 
@@ -388,7 +394,6 @@ double log_ru(double x) {
  
    /* All the previous argument reduction was exact */
    /* now y holds 1+f, and E is the exponent */
-   index = index & INDEXMASK;
    
    logirh = argredtable[index].logirh;
    r = (double_ext) (argredtable[index].r); /* approx to 1/y.d */
