@@ -28,7 +28,7 @@ Beware to compile without optimizations
 #endif
 
 
-#define N1 6
+#define N1 20
 
 #define TIMING_ITER 200
 
@@ -432,7 +432,7 @@ int main (int argc, char *argv[]){
   
   /* take the min of N1 consecutive calls */
   tbx_time=1<<30;
-  for(j=0; j<N1; j++) {
+  for(j=0; j<1000*N1; j++) {
     TBX_GET_TICK(t1);
     TBX_GET_TICK(t2);
     dt = TBX_TICK_RAW_DIFF(t1, t2);
