@@ -23,8 +23,15 @@ Beware to compile without optimizations
 #endif
 
 #ifdef HAVE_MPFR_H
-#include <gmp.h>
-#include <mpfr.h>
+# include <gmp.h>
+# include <mpfr.h>
+# ifdef MPFR_VERSION
+#  if MPFR_VERSION < MPFR_VERSION_NUM(2,2,0)
+#   define mpfr_subnormalize(mp_res, inexact, mpfr_rnd_mode) 
+#  endif
+# else
+#  define mpfr_get_version() "<2.1.0"
+# endif
 #endif
 
 
@@ -169,6 +176,7 @@ static void test_without_cache(const char *name,
 #ifdef HAVE_MPFR_H  
   mpfr_t mp_res, mp_inpt;
   mpfr_t mp_inpt2; /* For the pow function */
+  int inexact;
 
   mpfr_init2(mp_res,  53);
   mpfr_init2(mp_inpt, 53);
@@ -204,8 +212,9 @@ static void test_without_cache(const char *name,
 	  for(k=0; k<TIMING_ITER;k++){
 #endif    
 	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
-	    testfun(mp_res, mp_inpt, GMP_RNDN);
-	    result = mpfr_get_d(mp_res, mpfr_rnd_mode);
+	    inexact = testfun(mp_res, mp_inpt, mpfr_rnd_mode);
+            mpfr_subnormalize (mp_res, inexact, mpfr_rnd_mode);
+	    result = mpfr_get_d(mp_res, GMP_RNDN);
 #ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
 	  }
 #endif
@@ -217,8 +226,9 @@ static void test_without_cache(const char *name,
 #endif    
 	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
 	    mpfr_set_d(mp_inpt2, i2, GMP_RNDN);
-	    testfun(mp_res, mp_inpt, mp_inpt2, GMP_RNDN);
-	    result = mpfr_get_d(mp_res, mpfr_rnd_mode);
+	    inexact = testfun(mp_res, mp_inpt, mp_inpt2, mpfr_rnd_mode);
+            mpfr_subnormalize (mp_res, inexact, mpfr_rnd_mode);
+	    result = mpfr_get_d(mp_res, GMP_RNDN);
 #ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
 	  }
 #endif 
@@ -267,6 +277,7 @@ static void test_worst_case(double (*testfun)(),
 #ifdef HAVE_MPFR_H  
   mpfr_t mp_res, mp_inpt;
   mpfr_t mp_inpt2; /* For the pow function */
+  int inexact;
 
   mpfr_init2(mp_res,  53);
   mpfr_init2(mp_inpt, 53);
@@ -299,9 +310,10 @@ static void test_worst_case(double (*testfun)(),
 #ifdef TIMING_USES_GETTIMEOFDAY
 	  for(k=0; k<TIMING_ITER;k++){
 #endif
-	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
-	    testfun(mp_res, mp_inpt, GMP_RNDN);
-	    res = mpfr_get_d1(mp_res);
+	    mpfr_set_d (mp_inpt, i1, GMP_RNDN);
+	    inexact = testfun (mp_res, mp_inpt, mpfr_rnd_mode);
+            mpfr_subnormalize (mp_res, inexact, mpfr_rnd_mode);
+	    res = mpfr_get_d (mp_res, GMP_RNDN);
 #ifdef TIMING_USES_GETTIMEOFDAY
 	  }
 #endif
@@ -311,10 +323,11 @@ static void test_worst_case(double (*testfun)(),
 #ifdef TIMING_USES_GETTIMEOFDAY
 	  for(k=0; k<TIMING_ITER;k++){
 #endif
-	    mpfr_set_d(mp_inpt, i1, GMP_RNDN);
-	    mpfr_set_d(mp_inpt2, i2, GMP_RNDN);
-	    testfun(mp_res, mp_inpt, mp_inpt2, GMP_RNDN);
-	    res = mpfr_get_d1(mp_res);
+	    mpfr_set_d (mp_inpt, i1, GMP_RNDN);
+	    mpfr_set_d (mp_inpt2, i2, GMP_RNDN);
+	    inexact = testfun (mp_res, mp_inpt, mp_inpt2, mpfr_rnd_mode);
+            mpfr_subnormalize (mp_res, inexact, mpfr_rnd_mode);
+	    res = mpfr_get_d (mp_res, GMP_RNDN);
 #ifdef TIMING_USES_GETTIMEOFDAY
 	  }
 #endif
@@ -438,6 +451,10 @@ int main (int argc, char *argv[]){
     dt = TBX_TICK_RAW_DIFF(t1, t2);
     if(dt<tbx_time) tbx_time = dt;
   }
+#if HAVE_MPFR_H
+  printf ("GMP version %s MPFR version %s ",
+          gmp_version, mpfr_get_version ());
+#endif
   printf("tbx_time=%llu\n", tbx_time);
 
 #if TEST_CACHE
@@ -537,7 +554,7 @@ int main (int argc, char *argv[]){
   printf("\n                             & min time \t & avg time \t& max time \t  \\\\ \n \\hline\n");
   latex_output("default \\texttt{libm}  ", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, n);
 #ifdef   HAVE_MPFR_H
-  latex_output("GNU MPFR               ", (double(*)())testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
+  latex_output("MPFR                   ", (double(*)())testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
 #endif /*HAVE_MPFR_H*/
 #ifdef   HAVE_MATHLIB_H
   latex_output("IBM's \\texttt{libultim}", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);
