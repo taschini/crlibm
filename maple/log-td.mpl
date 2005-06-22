@@ -250,6 +250,29 @@ for j from 0 to 2^L-1 do
     fclose(fd):
   od:
 
+for j from 0 to 2^L-1 do
+    filename:=cat("TEMPLOG/log-td-accurate_",j,".sed"):
+    fd:=fopen(filename, WRITE, TEXT):
+    fprintf(fd, " s/_log2h/%1.50e/g\n", log2h):
+    fprintf(fd, " s/_log2m/%1.50e/g\n", log2m):
+    fprintf(fd, " s/_log2l/%1.50e/g\n", log2l):
+    fprintf(fd, " s/_logih/%1.50e/g\n", logih[j]):
+    fprintf(fd, " s/_logim/%1.50e/g\n", logim[j]):
+    fprintf(fd, " s/_logil/%1.50e/g\n", logil[j]):
+    fprintf(fd, " s/_zmin/%1.50e/g\n", zmin[j]):
+    fprintf(fd, " s/_zmax/%1.50e/g\n", zmax[j]):
+    for i from 3 to (DDNumberAccu + TDNumberAccu -1) do
+	(hi,lo) := hi_lo(coeff(polyAccurate,x,i)):
+        fprintf(fd, " s/_accPolyC%dh/%1.50e/g\n", i, hi):
+        fprintf(fd, " s/_accPolyC%dl/%1.50e/g\n", i, lo):
+    od:
+    for i from (DDNumberAccu + TDNumberAccu) to PolyDegreeAccurate do
+        fprintf(fd, " s/_accPolyC%d/%1.50e/g\n", i, coeff(polyAccurate,x,i)):
+    od:
+    fprintf(fd, " s/_epsilonApproxAccurate/%1.50e/g\n", epsilonApproxAccurate):
+    fclose(fd):
+  od:
+
 # A shell script to use them
 filename:="TEMPLOG/run-log-td-proof.sh":
 fd:=fopen(filename, WRITE, TEXT):
@@ -269,6 +292,12 @@ fprintf(fd, "# then the other cases where logirh <> 0\n"):
 fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo $num, E=0:\n"):
 fprintf(fd, "  sed -f log-td_$num.sed log-td-E0.gappa | $GAPPA > /dev/null\n"):
+fprintf(fd, "  echo\n"):
+fprintf(fd, "done\n"):
+fprintf(fd, "# Accurate phase: Test all the possible table value for E=1\n"):
+fprintf(fd, "for num in `seq 0 %d`; do\n", 2^L-1):
+fprintf(fd, "  echo Accurate phase: $num, E=1:\n"):
+fprintf(fd, "  sed -f log-td-accurate_$num.sed log-td-accurate.gappa | $GAPPA > /dev/null\n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fclose(fd):
