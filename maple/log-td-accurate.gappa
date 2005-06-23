@@ -68,7 +68,7 @@ ZSquare = Z * Z;
 ZCube = Z * ZSquarehml;
 HigherPolyMultZ = T14hl * ZCubehml;
 ZSquareHalfhml = -0.5 * ZSquarehml;
-PolyWithSquare = ZSquarehml + HigherPolyMultZhml;
+PolyWithSquare = ZSquareHalfhml + HigherPolyMultZhml;
 Poly = Z + PolyWithSquarehml;
 Logy = Logihml + Polyhml;
 Log2edhml = E * Log2hml;
@@ -96,7 +96,7 @@ MZSquare = Z * Z;
 MZCube = Z * MZSquare;
 MHigherPolyMultZ = MT14 * MZCube;
 MZSquareHalf = -0.5 * MZSquare;
-MPolyWithSquare = MZSquare + MHigherPolyMultZ;
+MPolyWithSquare = MZSquareHalf + MHigherPolyMultZ;
 MPoly = Z + MPolyWithSquare;
 MLogy = MLogi + MLog1pZ;
 MLog2E = E * MLog2;
@@ -162,7 +162,7 @@ delta26 = Polyhml - MLog1pZ;
 /\ Z in [_zmin,_zmax]
 /\ ((logh + logm + logl) - Loghml) / Loghml in [-1b-159,1b-159]
 ->
-((logh + logm + logl) - MLog) / MLog in [-1b-120,1b-120]
+((logh + logm + logl) - MLog) / MLog in [-5735b-132,5735b-132]
 }
 
 MLog1pZ -> MPoly * (1 / (((MPoly - MLog1pZ) / MLog1pZ) + 1));
@@ -207,7 +207,7 @@ delta15 -> delta14 + (T14 * ((T14hl - T14) / T14));
 delta16 -> Z*Z*((ZSquarehml - ZSquare) / ZSquare);
 delta17 -> Z * delta16 + ZCube * ((ZCubehml - ZCube) / ZCube);
 delta18 -> Z*Z*Z*delta15 + HigherPolyMultZ * ((HigherPolyMultZhml - HigherPolyMultZ) / HigherPolyMultZ);
-delta20 -> delta16 + delta18 + PolyWithSquare * ((PolyWithSquarehml - PolyWithSquare) / PolyWithSquare);
+delta20 -> delta19 + delta18 + PolyWithSquare * ((PolyWithSquarehml - PolyWithSquare) / PolyWithSquare);
 delta21 -> delta20 + Poly * ((Polyhml - Poly) / Poly);
 delta22 -> delta25 + delta26 + Logy * ((Logyhml - Logy) / Logy);
 delta26 -> delta20 + Poly * ((Polyhml - Poly) / Poly) + MPoly * ((MPoly - MLog1pZ) / MLog1pZ);
