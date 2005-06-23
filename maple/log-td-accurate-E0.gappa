@@ -1,0 +1,212 @@
+
+logih = <float64ne> (_logih);
+logim = <float64ne> (_logim);
+logil = <float64ne> (_logil);
+
+Logihml = logih + logim + logil;
+
+
+accPolyC14 = <float64ne> (_accPolyC14);
+accPolyC13 = <float64ne> (_accPolyC13);
+accPolyC12 = <float64ne> (_accPolyC12);
+accPolyC11 = <float64ne> (_accPolyC11);
+accPolyC10 = <float64ne> (_accPolyC10);
+
+accPolyC9h = <float64ne> (_accPolyC9h);
+accPolyC9l = <float64ne> (_accPolyC9l);
+AccPolyC9hl = accPolyC9h + accPolyC9l;
+accPolyC8h = <float64ne> (_accPolyC8h);
+accPolyC8l = <float64ne> (_accPolyC8l);
+AccPolyC8hl = accPolyC8h + accPolyC8l;
+accPolyC7h = <float64ne> (_accPolyC7h);
+accPolyC7l = <float64ne> (_accPolyC7l);
+AccPolyC7hl = accPolyC7h + accPolyC7l;
+accPolyC6h = <float64ne> (_accPolyC6h);
+accPolyC6l = <float64ne> (_accPolyC6l);
+AccPolyC6hl = accPolyC6h + accPolyC6l;
+accPolyC5h = <float64ne> (_accPolyC5h);
+accPolyC5l = <float64ne> (_accPolyC5l);
+AccPolyC5hl = accPolyC5h + accPolyC5l;
+accPolyC4h = <float64ne> (_accPolyC4h);
+accPolyC4l = <float64ne> (_accPolyC4l);
+AccPolyC4hl = accPolyC4h + accPolyC4l;
+accPolyC3h = <float64ne> (_accPolyC3h);
+accPolyC3l = <float64ne> (_accPolyC3l);
+AccPolyC3hl = accPolyC3h + accPolyC3l;
+
+E = 0;
+
+zh = <float64ne> (Z);
+zl = Z - zh;
+
+highPoly <float64ne> = accPolyC10 + zh * (accPolyC11 + zh * (accPolyC12 + zh * (accPolyC13 + zh * accPolyC14)));
+
+T1hl = zh * highPoly;
+
+T2 = AccPolyC9hl + T1hl;
+T3 = Z * T2hl;
+T4 = AccPolyC8hl + T3hl;
+T5 = Z * T4hl;
+T6 = AccPolyC7hl + T5hl;
+T7 = Z * T6hl;
+T8 = AccPolyC6hl + T7hl;
+T9 = Z * T8hl;
+T10 = AccPolyC5hl + T9hl;
+T11 = Z * T10hl;
+T12 = AccPolyC4hl + T11hl;
+T13 = Z * T12hl;
+T14 = AccPolyC3hl + T13;
+
+
+ZSquare = Z * Z;
+ZCube = Z * ZSquarehml;
+HigherPolyMultZ = T14hl * ZCubehml;
+ZSquareHalfhml = -0.5 * ZSquarehml;
+PolyWithSquare = ZSquareHalfhml + HigherPolyMultZhml;
+Poly = Z + PolyWithSquarehml;
+Logy = Logihml + Polyhml;
+
+#We can simplify the proof in this case since we know that adding a triple double which is 
+#equal to 0 exactly is exact.
+
+Loghml = Logyhml;
+
+
+#Mathematical definition of the logarithm
+
+MHighPoly = accPolyC10 + Z * (accPolyC11 + Z * (accPolyC12 + Z * (accPolyC13 + Z * accPolyC14)));
+MT1 = Z * MHighPoly;
+MT2 = AccPolyC9hl + MT1;
+MT3 = Z * MT2;
+MT4 = AccPolyC8hl + MT3;
+MT5 = Z * MT4;
+MT6 = AccPolyC7hl + MT5;
+MT7 = Z * MT6;
+MT8 = AccPolyC6hl + MT7;
+MT9 = Z * MT8;
+MT10 = AccPolyC5hl + MT9;
+MT11 = Z * MT10;
+MT12 = AccPolyC4hl + MT11;
+MT13 = Z * MT12;
+MT14 = AccPolyC3hl + MT13;
+MZSquare = Z * Z;
+MZCube = Z * MZSquare;
+MHigherPolyMultZ = MT14 * MZCube;
+MZSquareHalf = -0.5 * MZSquare;
+MPolyWithSquare = MZSquareHalf + MHigherPolyMultZ;
+MPoly = Z + MPolyWithSquare;
+MLogy = MLogi + MLog1pZ;
+
+#We apply the same simplification here
+
+MLog = MLogy;
+
+
+#Useful additional definitions
+
+delta1 = highPoly - MHighPoly;
+delta2 = T1hl - MT1;
+delta3 = T2hl - MT2; 
+delta4 = T3hl - MT3; 
+delta5 = T4hl - MT4; 
+delta6 = T5hl - MT5; 
+delta7 = T6hl - MT6; 
+delta8 = T7hl - MT7; 
+delta9 = T8hl - MT8; 
+delta10 = T9hl - MT9; 
+delta11 = T10hl - MT10;
+delta12 = T11hl - MT11; 
+delta13 = T12hl - MT12; 
+delta14 = T13hl - MT13; 
+delta15 = T14hl - MT14; 
+delta16 = ZSquarehml - MZSquare;
+delta17 = ZCubehml - MZCube; 
+delta18 = HigherPolyMultZhml - MHigherPolyMultZ;
+delta19 = ZSquareHalfhml - MZSquareHalf; 
+delta20 = PolyWithSquarehml - MPolyWithSquare;
+delta21 = Polyhml - MPoly; 
+delta22 = Logyhml - MLogy; 
+delta24 = Loghml - MLog;
+delta25 = Logihml - MLogi;
+delta26 = Polyhml - MLog1pZ;
+
+
+#End additional definitions
+
+{
+(T2hl - T2) / T2 in [-1b-103,1b-103]
+/\ (T3hl - T3) / T3 in [-1b-102,1b-102]
+/\ (T4hl - T4) / T4 in [-1b-103,1b-103]
+/\ (T5hl - T5) / T5 in [-1b-102,1b-102]
+/\ (T6hl - T6) / T6 in [-1b-103,1b-103]
+/\ (T7hl - T7) / T7 in [-1b-102,1b-102]
+/\ (T8hl - T8) / T8 in [-1b-103,1b-103]
+/\ (T9hl - T9) / T9 in [-1b-102,1b-102]
+/\ (T10hl - T10) / T10 in [-1b-103,1b-103]
+/\ (T11hl - T11) / T11 in [-1b-102,1b-102]
+/\ (T12hl - T12) / T12 in [-1b-103,1b-103]
+/\ (T13hl - T13) / T13 in [-1b-102,1b-102]
+/\ (T14hl - T14) / T14 in [-1b-103,1b-103]
+/\ (ZSquarehml - ZSquare) / ZSquare in [-1b-149,1b-149]
+/\ (ZCubehml - ZCube) / ZCube in [-1b-144,1b-144]
+/\ (HigherPolyMultZhml - HigherPolyMultZ) / HigherPolyMultZ in [-1b-141,1b-141]
+/\ (PolyWithSquarehml - PolyWithSquare) / PolyWithSquare in [-1b-137,1b-137]
+/\ (Polyhml - Poly) / Poly in [-1b-134,1b-134]
+/\ (Logyhml - Logy) / Logy in [-1b-128,1b-128]
+/\ (Logihml - MLogi) / MLogi in [-1b-159,1b-159]
+/\ (MPoly - MLog1pZ) / MLog1pZ in [-_epsilonApproxAccurate,_epsilonApproxAccurate]
+/\ Z in [_zmin,_zmax]
+/\ ((logh + logm + logl) - Loghml) / Loghml in [-1b-159,1b-159]
+->
+((logh + logm + logl) - MLog) / MLog in [-5735b-132,5735b-132]
+}
+
+MLog1pZ -> MPoly * (1 / (((MPoly - MLog1pZ) / MLog1pZ) + 1));
+MLog2 -> Log2hml * (1 / (((Log2hml - MLog2) / MLog2) + 1));
+MLogi -> Logihml * (1 / (((Logihml - MLogi) / MLogi) + 1));
+
+T2hl -> (T2 * ((T2hl - T2) / T2)) + T2;
+T3hl -> (T3 * ((T3hl - T3) / T3)) + T3;
+T4hl -> (T4 * ((T4hl - T4) / T4)) + T4;
+T5hl -> (T5 * ((T5hl - T5) / T5)) + T5;
+T6hl -> (T6 * ((T6hl - T6) / T6)) + T6;
+T7hl -> (T7 * ((T7hl - T7) / T7)) + T7;
+T8hl -> (T8 * ((T8hl - T8) / T8)) + T8;
+T9hl -> (T9 * ((T9hl - T9) / T9)) + T9;
+T10hl -> (T10 * ((T10hl - T10) / T10)) + T10;
+T11hl -> (T11 * ((T11hl - T11) / T11)) + T11;
+T12hl -> (T12 * ((T12hl - T12) / T12)) + T12;
+T13hl -> (T13 * ((T13hl - T13) / T13)) + T13;
+T14hl -> (T14 * ((T14hl - T14) / T14)) + T14;
+
+ZSquarehml -> (ZSquare * ((ZSquarehml - ZSquare) / ZSquare)) + ZSquare;
+ZCubehml -> (ZCube * ((ZCubehml - ZCube) / ZCube)) + ZCube;
+HigherPolyMultZhml -> (HigherPolyMultZ * ((HigherPolyMultZhml - HigherPolyMultZ) / HigherPolyMultZ)) + HigherPolyMultZ;
+PolyWithSquarehml -> (PolyWithSquare * ((PolyWithSquarehml - PolyWithSquare) / PolyWithSquare)) + PolyWithSquare;
+Polyhml -> (Poly * ((Polyhml - Poly) / Poly)) + Poly;
+Logyhml -> (Logy * ((Logyhml - Logy) / Logy)) + Logy;
+
+
+delta3 -> delta2 + (T2 * ((T2hl - T2) / T2));
+delta4 -> Z * delta3 + T3 * ((T3hl - T3) / T3);
+delta5 -> delta4 + (T4 * ((T4hl - T4) / T4));
+delta6 -> Z * delta5 + T5 * ((T5hl - T5) / T5);
+delta7 -> delta6 + (T6 * ((T6hl - T6) / T6));
+delta8 -> Z * delta7 + T7 * ((T7hl - T7) / T7);
+delta9 -> delta8 + (T8 * ((T8hl - T8) / T8));
+delta10 -> Z * delta9 + T9 * ((T9hl - T9) / T9);
+delta11 -> delta10 + (T10 * ((T10hl - T10) / T10));
+delta12 -> Z * delta11 + T11 * ((T11hl - T11) / T11);
+delta13 -> delta12 + (T12 * ((T12hl - T12) / T12));
+delta14 -> Z * delta13 + T13 * ((T13hl - T13) / T13);
+delta15 -> delta14 + (T14 * ((T14hl - T14) / T14));
+delta16 -> Z*Z*((ZSquarehml - ZSquare) / ZSquare);
+delta17 -> Z * delta16 + ZCube * ((ZCubehml - ZCube) / ZCube);
+delta18 -> Z*Z*Z*delta15 + HigherPolyMultZ * ((HigherPolyMultZhml - HigherPolyMultZ) / HigherPolyMultZ);
+delta20 -> delta19 + delta18 + PolyWithSquare * ((PolyWithSquarehml - PolyWithSquare) / PolyWithSquare);
+delta21 -> delta20 + Poly * ((Polyhml - Poly) / Poly);
+delta22 -> delta25 + delta26 + Logy * ((Logyhml - Logy) / Logy);
+delta26 -> delta20 + Poly * ((Polyhml - Poly) / Poly) + MPoly * ((MPoly - MLog1pZ) / MLog1pZ);
+
+
+((logh + logm + logl) - MLog) / MLog -> ((Loghml - MLog) / MLog) + ((((logh + logm + logl) - Loghml) / Loghml) * (((Loghml - MLog) / MLog) + 1));
