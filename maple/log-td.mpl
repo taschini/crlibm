@@ -47,16 +47,16 @@ od:
 
 #Computation of ZMax.
 for i from 0 to MAXINDEX-1 do
-    _x := center[i] + 2^(-L-1) :
-    zmax[i] := (_x*r[i]-1) :
-    _x := center[i] - 2^(-L-1) :
-    zmin[i] := (_x*r[i]-1) :
+    __x := center[i] + 2^(-L-1) :
+    zmax[i] := (__x*r[i]-1) :
+    __x := center[i] - 2^(-L-1) :
+    zmin[i] := (__x*r[i]-1) :
 od:
 for i from MAXINDEX to 2^L do
-    _x := center[i] + 2^(-L-2) :
-    zmax[i] := (_x*r[i]-1) :
-    _x := center[i] - 2^(-L-2) :
-    zmin[i] := (_x*r[i]-1) :
+    __x := center[i] + 2^(-L-2) :
+    zmax[i] := (__x*r[i]-1) :
+    __x := center[i] - 2^(-L-2) :
+    zmin[i] := (__x*r[i]-1) :
 od:
 
 zmaxmax:=0:
@@ -274,7 +274,7 @@ for j from 0 to 2^L-1 do
   od:
 
 # A shell script to use them
-filename:="TEMPLOG/run-log-td-proof.sh":
+filename:="run-log-td-proof.sh":
 fd:=fopen(filename, WRITE, TEXT):
 fprintf(fd, "#!/bin/sh\n"):
 fprintf(fd, "# You probably need to edit the path to the gappa executable\n"):
@@ -282,7 +282,7 @@ fprintf(fd, "GAPPA=~/ble/gappa-0.4.5/src/gappa\n"):
 fprintf(fd, "# Test all the possible table value for E=1\n"):
 fprintf(fd, "for num in `seq 0 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo $num, E=1:\n"):
-fprintf(fd, "  sed -f log-td_$num.sed log-td.gappa | $GAPPA > /dev/null\n"):
+fprintf(fd, "  sed -f ./TEMPLOG/log-td_$num.sed log-td.gappa | $GAPPA > /dev/null\n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fprintf(fd, "# For the case E=0 we first handle the cases 0 and %d using log-td-E0-logir0.gappa\n", 2^L):
@@ -291,13 +291,13 @@ fprintf(fd, "sed -f log-td_0.sed log-td-E0-logir0.gappa | $GAPPA > /dev/null\n")
 fprintf(fd, "# then the other cases where logirh <> 0\n"):
 fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo $num, E=0:\n"):
-fprintf(fd, "  sed -f log-td_$num.sed log-td-E0.gappa | $GAPPA > /dev/null\n"):
+fprintf(fd, "  sed -f ./TEMPLOG/log-td_$num.sed log-td-E0.gappa | $GAPPA > /dev/null\n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fprintf(fd, "# Accurate phase: Test all the possible table value for E=1\n"):
 fprintf(fd, "for num in `seq 0 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo Accurate phase: $num, E=1:\n"):
-fprintf(fd, "  sed -f log-td-accurate_$num.sed log-td-accurate.gappa | $GAPPA > /dev/null\n"):
+fprintf(fd, "  sed -f ./TEMPLOG/log-td-accurate_$num.sed log-td-accurate.gappa | $GAPPA > /dev/null\n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fprintf(fd, "# Accurate phase: For the case E=0 we first handle the cases 0 and %d using log-td-accurate-E0-logir0.gappa\n", 2^L):
@@ -306,7 +306,7 @@ fprintf(fd, "sed -f log-td-accurate_0.sed log-td-accurate-E0-logir0.gappa | $GAP
 fprintf(fd, "# Accurate phase: then the other cases where logirh <> 0\n"):
 fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo $num, E=0:\n"):
-fprintf(fd, "  sed -f log-td-accurate_$num.sed log-td-accurate-E0.gappa | $GAPPA > /dev/null\n"):
+fprintf(fd, "  sed -f ./TEMPLOG/log-td-accurate_$num.sed log-td-accurate-E0.gappa | $GAPPA > /dev/null\n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fclose(fd):
