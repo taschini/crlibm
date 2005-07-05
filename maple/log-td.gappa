@@ -12,7 +12,7 @@ c6 = <float64ne> (_c6);
 c7 = <float64ne> (_c7);
 
 
-E = 1;
+E = 1; #MAPLE
 
 logih = <float64ne> (_logih);
 logim = <float64ne> (_logim);
@@ -20,80 +20,80 @@ logil = <float64ne> (_logil);
 
 
 zh = <float64ne> (Z);
-zl = Z - zh;
+zl = Z - zh; #MAPLE
 
 polyHorner <float64ne>= c3 + zh * (c4 + zh * (c5 + zh * (c6 + zh * c7)));
 
-ZhSquarehl = zh * zh;
+ZhSquarehl = zh * zh; #MAPLE
 zhSquareh = <float64ne> (ZhSquarehl);
 zhSquarel = <float64ne> (ZhSquarehl - zhSquareh);
 
-zhSquareHalfh = zhSquareh * -0.5;
-zhSquareHalfl = zhSquarel * -0.5;
-ZhSquareHalfhl = ZhSquarehl * -0.5;
+zhSquareHalfh = zhSquareh * (-0.5); #MAPLE
+zhSquareHalfl = zhSquarel * (-0.5); #MAPLE
+ZhSquareHalfhl = ZhSquarehl * (-0.5); #MAPLE
 
 polyUpper <float64ne>= polyHorner * (zh * zhSquareh);
 
 
 temp = <float64ne> (zh * zl);
-T1hl = polyUpper - temp;
+T1hl = polyUpper - temp; #MAPLE
 t1h = <float64ne> (T1hl);
 t1l = <float64ne> (T1hl - t1h);
 
-T2 = Z + ZhSquareHalfhl;
+T2 = Z + ZhSquareHalfhl; #MAPLE
 t2h = <float64ne> (T2hl);
 t2l = <float64ne> (T2hl - t2h);
 
-PE = T2hl + T1hl;
+PE = T2hl + T1hl; #MAPLE
 ph = <float64ne> (Phl);
 pl = <float64ne> (Phl - ph);
 
-Log2hed = E * log2h;
-Log2med = E * log2m;
+Log2hed = E * log2h; #MAPLE
+Log2med = E * log2m; #MAPLE
 
-Log2edhm = Log2hed + Log2med;
+Log2edhm = Log2hed + Log2med; #MAPLE
 log2edh = <float64ne> (Log2edhm);
 log2edl = <float64ne> (Log2edhm - log2edh);
 
 #Useful additional definitions
-Log2hm = log2h + log2m;
-Logihm = logih + logim;
+Log2hm = log2h + log2m; #MAPLE
+Logihm = logih + logim; #MAPLE
 #End additional
 
-LogTabPoly = Logihm + Phl;
+LogTabPoly = Logihm + Phl; #MAPLE
 logTabPolyh = <float64ne> (LogTabPolyhl);
 logTabPolyl = <float64ne> (LogTabPolyhl - logTabPolyh);
 
-LogE = Log2edhm + LogTabPolyhl;
+LogE = Log2edhm + LogTabPolyhl; #MAPLE
 logh = <float64ne> (Loghm);
 logm = <float64ne> (Loghm - logh);
 
 #Mathematical definition of the logarithm and the polynomial
 
-Phigher = (c3 + Z * (c4 + Z * (c5 + Z * (c6 + Z * c7))));
-ZZZ = Z*Z*Z;
-ZZZPhigher = ZZZ * Phigher;
-HZZ = (-0.5*Z*Z);
-ZpHZZ = Z + HZZ;
-P = ZpHZZ + ZZZPhigher;
-Log2E = E * Log2;
-Log1pZpTab = Log1pZ + Logir;
-Log = Log2E + Log1pZpTab; 
+Phigher = (c3 + Z * (c4 + Z * (c5 + Z * (c6 + Z * c7)))); #MAPLE
+ZZZ = Z*Z*Z; #MAPLE
+ZZZPhigher = ZZZ * Phigher; #MAPLE
+HZZ = (-0.5*Z*Z); #MAPLE
+ZpHZZ = Z + HZZ; #MAPLE
+P = ZpHZZ + ZZZPhigher; #MAPLE
+Log2E = E * Log2; #MAPLE
+Log1pZpTab = Log1pZ + Logir; #MAPLE
+Log = Log2E + Log1pZpTab; #MAPLE
 
 # Useful additional definitions
 
-HZZsimp = HZZ + (zh * zl);
-ZpHZZsimp = Z + HZZsimp;
-ZZZPhigherPzhzl = ZZZPhigher - zh * zl;
-zhCube = zh * zhSquareh;
+HZZsimp = HZZ + (zh * zl); #MAPLE
+ZpHZZsimp = Z + HZZsimp; #MAPLE
+ZZZPhigherPzhzl = ZZZPhigher - zh * zl; #MAPLE
+zhCube = zh * zhSquareh; #MAPLE
 
-delta1 = T2hl - T2;
-delta2 = polyUpper - (polyHorner * zhCube);
-delta3 = zhCube - ZZZ;
-delta4 = Phl - PE;
-delta5 = Loghm - LogE;
-delta6 = P - Log1pZ;
-delta7 = LogTabPolyhl - LogTabPoly;
+delta1 = T2hl - T2; #MAPLE
+delta2 = polyUpper - (polyHorner * zhCube); #MAPLE
+delta3 = zhCube - ZZZ; #MAPLE
+delta4 = Phl - PE; #MAPLE
+delta5 = Loghm - LogE; #MAPLE
+delta6 = P - Log1pZ; #MAPLE
+delta7 = LogTabPolyhl - LogTabPoly; #MAPLE
 
 # End additional
 

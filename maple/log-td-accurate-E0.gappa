@@ -3,7 +3,7 @@ logih = <float64ne> (_logih);
 logim = <float64ne> (_logim);
 logil = <float64ne> (_logil);
 
-Logihml = logih + logim + logil;
+Logihml = logih + logim + logil; #MAPLE
 
 
 accPolyC14 = <float64ne> (_accPolyC14);
@@ -14,121 +14,121 @@ accPolyC10 = <float64ne> (_accPolyC10);
 
 accPolyC9h = <float64ne> (_accPolyC9h);
 accPolyC9l = <float64ne> (_accPolyC9l);
-AccPolyC9hl = accPolyC9h + accPolyC9l;
+AccPolyC9hl = accPolyC9h + accPolyC9l; #MAPLE
 accPolyC8h = <float64ne> (_accPolyC8h);
 accPolyC8l = <float64ne> (_accPolyC8l);
-AccPolyC8hl = accPolyC8h + accPolyC8l;
+AccPolyC8hl = accPolyC8h + accPolyC8l; #MAPLE
 accPolyC7h = <float64ne> (_accPolyC7h);
 accPolyC7l = <float64ne> (_accPolyC7l);
-AccPolyC7hl = accPolyC7h + accPolyC7l;
+AccPolyC7hl = accPolyC7h + accPolyC7l; #MAPLE
 accPolyC6h = <float64ne> (_accPolyC6h);
 accPolyC6l = <float64ne> (_accPolyC6l);
-AccPolyC6hl = accPolyC6h + accPolyC6l;
+AccPolyC6hl = accPolyC6h + accPolyC6l; #MAPLE
 accPolyC5h = <float64ne> (_accPolyC5h);
 accPolyC5l = <float64ne> (_accPolyC5l);
-AccPolyC5hl = accPolyC5h + accPolyC5l;
+AccPolyC5hl = accPolyC5h + accPolyC5l; #MAPLE
 accPolyC4h = <float64ne> (_accPolyC4h);
 accPolyC4l = <float64ne> (_accPolyC4l);
-AccPolyC4hl = accPolyC4h + accPolyC4l;
+AccPolyC4hl = accPolyC4h + accPolyC4l; #MAPLE
 accPolyC3h = <float64ne> (_accPolyC3h);
 accPolyC3l = <float64ne> (_accPolyC3l);
-AccPolyC3hl = accPolyC3h + accPolyC3l;
+AccPolyC3hl = accPolyC3h + accPolyC3l; #MAPLE
 
-E = 0;
+E = 0; #MAPLE
 
 zh = <float64ne> (Z);
-zl = Z - zh;
+zl = Z - zh; #MAPLE
 
 highPoly <float64ne> = accPolyC10 + zh * (accPolyC11 + zh * (accPolyC12 + zh * (accPolyC13 + zh * accPolyC14)));
 
-T1hl = zh * highPoly;
+T1hl = zh * highPoly; #MAPLE
 
-T2 = AccPolyC9hl + T1hl;
-T3 = Z * T2hl;
-T4 = AccPolyC8hl + T3hl;
-T5 = Z * T4hl;
-T6 = AccPolyC7hl + T5hl;
-T7 = Z * T6hl;
-T8 = AccPolyC6hl + T7hl;
-T9 = Z * T8hl;
-T10 = AccPolyC5hl + T9hl;
-T11 = Z * T10hl;
-T12 = AccPolyC4hl + T11hl;
-T13 = Z * T12hl;
-T14 = AccPolyC3hl + T13hl;
+T2 = AccPolyC9hl + T1hl; #MAPLE
+T3 = Z * T2hl; #MAPLE
+T4 = AccPolyC8hl + T3hl; #MAPLE
+T5 = Z * T4hl; #MAPLE
+T6 = AccPolyC7hl + T5hl; #MAPLE
+T7 = Z * T6hl; #MAPLE
+T8 = AccPolyC6hl + T7hl; #MAPLE
+T9 = Z * T8hl; #MAPLE
+T10 = AccPolyC5hl + T9hl; #MAPLE
+T11 = Z * T10hl; #MAPLE
+T12 = AccPolyC4hl + T11hl; #MAPLE
+T13 = Z * T12hl; #MAPLE
+T14 = AccPolyC3hl + T13hl; #MAPLE
 
 
-ZSquare = Z * Z;
-ZCube = Z * ZSquarehml;
-HigherPolyMultZ = T14hl * ZCubehml;
-ZSquareHalfhml = -0.5 * ZSquarehml;
-PolyWithSquare = ZSquareHalfhml + HigherPolyMultZhml;
-Poly = Z + PolyWithSquarehml;
-Logy = Logihml + Polyhml;
+ZSquare = Z * Z; #MAPLE
+ZCube = Z * ZSquarehml; #MAPLE
+HigherPolyMultZ = T14hl * ZCubehml; #MAPLE
+ZSquareHalfhml = -0.5 * ZSquarehml; #MAPLE
+PolyWithSquare = ZSquareHalfhml + HigherPolyMultZhml; #MAPLE
+Poly = Z + PolyWithSquarehml; #MAPLE
+Logy = Logihml + Polyhml; #MAPLE
 
 #We can simplify the proof in this case since we know that adding a triple double which is 
 #equal to 0 exactly is exact.
 
-Loghml = Logyhml;
+Loghml = Logyhml; #MAPLE
 
 
 #Mathematical definition of the logarithm
 
-MHighPoly = accPolyC10 + Z * (accPolyC11 + Z * (accPolyC12 + Z * (accPolyC13 + Z * accPolyC14)));
-MT1 = Z * MHighPoly;
-MT2 = AccPolyC9hl + MT1;
-MT3 = Z * MT2;
-MT4 = AccPolyC8hl + MT3;
-MT5 = Z * MT4;
-MT6 = AccPolyC7hl + MT5;
-MT7 = Z * MT6;
-MT8 = AccPolyC6hl + MT7;
-MT9 = Z * MT8;
-MT10 = AccPolyC5hl + MT9;
-MT11 = Z * MT10;
-MT12 = AccPolyC4hl + MT11;
-MT13 = Z * MT12;
-MT14 = AccPolyC3hl + MT13;
-MZSquare = Z * Z;
-MZCube = Z * MZSquare;
-MHigherPolyMultZ = MT14 * MZCube;
-MZSquareHalf = -0.5 * MZSquare;
-MPolyWithSquare = MZSquareHalf + MHigherPolyMultZ;
-MPoly = Z + MPolyWithSquare;
-MLogy = MLogi + MLog1pZ;
+MHighPoly = accPolyC10 + Z * (accPolyC11 + Z * (accPolyC12 + Z * (accPolyC13 + Z * accPolyC14))); #MAPLE
+MT1 = Z * MHighPoly; #MAPLE
+MT2 = AccPolyC9hl + MT1; #MAPLE
+MT3 = Z * MT2; #MAPLE
+MT4 = AccPolyC8hl + MT3; #MAPLE
+MT5 = Z * MT4; #MAPLE
+MT6 = AccPolyC7hl + MT5; #MAPLE
+MT7 = Z * MT6; #MAPLE
+MT8 = AccPolyC6hl + MT7; #MAPLE
+MT9 = Z * MT8; #MAPLE
+MT10 = AccPolyC5hl + MT9; #MAPLE
+MT11 = Z * MT10; #MAPLE
+MT12 = AccPolyC4hl + MT11; #MAPLE
+MT13 = Z * MT12; #MAPLE
+MT14 = AccPolyC3hl + MT13; #MAPLE
+MZSquare = Z * Z; #MAPLE
+MZCube = Z * MZSquare; #MAPLE
+MHigherPolyMultZ = MT14 * MZCube; #MAPLE
+MZSquareHalf = -0.5 * MZSquare; #MAPLE
+MPolyWithSquare = MZSquareHalf + MHigherPolyMultZ; #MAPLE
+MPoly = Z + MPolyWithSquare; #MAPLE
+MLogy = MLogi + MLog1pZ; #MAPLE
 
 #We apply the same simplification here
 
-MLog = MLogy;
+MLog = MLogy; #MAPLE
 
 
 #Useful additional definitions
 
-delta1 = highPoly - MHighPoly;
-delta2 = T1hl - MT1;
-delta3 = T2hl - MT2; 
-delta4 = T3hl - MT3; 
-delta5 = T4hl - MT4; 
-delta6 = T5hl - MT5; 
-delta7 = T6hl - MT6; 
-delta8 = T7hl - MT7; 
-delta9 = T8hl - MT8; 
-delta10 = T9hl - MT9; 
-delta11 = T10hl - MT10;
-delta12 = T11hl - MT11; 
-delta13 = T12hl - MT12; 
-delta14 = T13hl - MT13; 
-delta15 = T14hl - MT14; 
-delta16 = ZSquarehml - MZSquare;
-delta17 = ZCubehml - MZCube; 
-delta18 = HigherPolyMultZhml - MHigherPolyMultZ;
-delta19 = ZSquareHalfhml - MZSquareHalf; 
-delta20 = PolyWithSquarehml - MPolyWithSquare;
-delta21 = Polyhml - MPoly; 
-delta22 = Logyhml - MLogy; 
-delta24 = Loghml - MLog;
-delta25 = Logihml - MLogi;
-delta26 = Polyhml - MLog1pZ;
+delta1 = highPoly - MHighPoly; #MAPLE
+delta2 = T1hl - MT1; #MAPLE
+delta3 = T2hl - MT2; #MAPLE
+delta4 = T3hl - MT3; #MAPLE
+delta5 = T4hl - MT4; #MAPLE
+delta6 = T5hl - MT5; #MAPLE
+delta7 = T6hl - MT6; #MAPLE
+delta8 = T7hl - MT7; #MAPLE
+delta9 = T8hl - MT8; #MAPLE
+delta10 = T9hl - MT9; #MAPLE
+delta11 = T10hl - MT10; #MAPLE
+delta12 = T11hl - MT11; #MAPLE
+delta13 = T12hl - MT12; #MAPLE
+delta14 = T13hl - MT13; #MAPLE
+delta15 = T14hl - MT14; #MAPLE
+delta16 = ZSquarehml - MZSquare; #MAPLE
+delta17 = ZCubehml - MZCube; #MAPLE
+delta18 = HigherPolyMultZhml - MHigherPolyMultZ; #MAPLE
+delta19 = ZSquareHalfhml - MZSquareHalf; #MAPLE
+delta20 = PolyWithSquarehml - MPolyWithSquare; #MAPLE
+delta21 = Polyhml - MPoly; #MAPLE
+delta22 = Logyhml - MLogy; #MAPLE
+delta24 = Loghml - MLog; #MAPLE
+delta25 = Logihml - MLogi; #MAPLE
+delta26 = Polyhml - MLog1pZ; #MAPLE
 
 
 #End additional definitions

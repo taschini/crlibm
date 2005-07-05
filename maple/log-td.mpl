@@ -302,7 +302,7 @@ fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fprintf(fd, "# Accurate phase: For the case E=0 we first handle the cases 0 and %d using log-td-accurate-E0-logir0.gappa\n", 2^L):
 fprintf(fd, "echo 0 and %d, E=0:\n", 2^L):
-fprintf(fd, "sed -f log-td-accurate_0.sed log-td-accurate-E0-logir0.gappa | $GAPPA > /dev/null\n"):
+fprintf(fd, "sed -f ./TEMPLOG/log-td-accurate_0.sed log-td-accurate-E0-logir0.gappa | $GAPPA > /dev/null\n"):
 fprintf(fd, "# Accurate phase: then the other cases where logirh <> 0\n"):
 fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo $num, E=0:\n"):
