@@ -49,6 +49,40 @@
 \newcommand{\maxabserr}[1]{\maxv{\delta}_{\mathrm{#1}}}
 \newcommand{\maxrelerr}[1]{\maxv{\epsilon}_{\mathrm{#1}}}
 
+\newcommand{\N}{\ensuremath{\mathbb {N}}}
+\newcommand{\Z}{\ensuremath{\mathbb {Z}}}
+\newcommand{\F}{\ensuremath{\mathbb {F}}}
+\newcommand{\R}{\ensuremath{\mathbb {R}}}
+\newcommand{\hi}{\ensuremath{\mathit{h}}}
+\newcommand{\mi}{\ensuremath{\mathit{m}}}
+\newcommand{\lo}{\ensuremath{\mathit{l}}}
+\newcommand{\E}{\ensuremath{\mathcal{E}}}
+\newcommand{\Add}{{\bf Add12}}
+\newcommand{\AddDD}{{\bf Add22}}
+\newcommand{\AddDTT}{{\bf Add233}}
+\newcommand{\AddTT}{{\bf Add33}}
+\newcommand{\MulDT}{{\bf Mul23}}
+\newcommand{\Mul}{{\bf Mul12}}
+\newcommand{\MulDD}{{\bf Mul22}}
+\newcommand{\MulDTT}{{\bf Mul233}}
+\newcommand{\mAdd}{\ensuremath{\mathbf{Add12}}}
+\newcommand{\mAddDD}{\ensuremath{\mathbf{Add22}}}
+\newcommand{\mAddDTT}{\ensuremath{\mathbf{Add233}}}
+\newcommand{\mAddTT}{\ensuremath{\mathbf{Add33}}}
+\newcommand{\mMul}{\ensuremath{\mathbf{Mul12}}}
+\newcommand{\mMulDD}{\ensuremath{\mathbf{Mul22}}}
+\newcommand{\mMulDT}{\ensuremath{\mathbf{Mul23}}}
+\newcommand{\mMulDTT}{\ensuremath{\mathbf{Mul233}}}
+\newcommand{\mUlp}{\ensuremath{\mathrm{ulp}}}
+\newcommand{\nan}{\ensuremath{\mathrm{NaN}}}
+\newcommand{\sgn}{\ensuremath{\mathrm{sgn}}}
+\renewcommand{\succ}{\ensuremath{\mathrm{succ}}}
+\newcommand{\pred}{\ensuremath{\mathrm{pred}}}
+\newcommand{\xor}{\ensuremath{\mbox{ }\mathrm{XOR}\mbox{ }}}
+
+ 
+
+
 
 %\newcommand{\deltapprox}{\delta_{\mathrm{approx}}}
 %\newcommand{\deltaround}{\delta_{\mathrm{round}}}
@@ -138,10 +172,10 @@ the code.
 \vfill
 \section*{Many thanks to...}
 \begin{itemize}
-\item Vincent Lef\`evre, from \textsc{Inria}-Lorraine, without whom this
+\item Vincent Lefèvre, from \textsc{Inria}-Lorraine, without whom this
   project would't have started, and who has since then lended a helpful hand in
   more than 17 occasions;
-\item The Ar\'enaire project at \'ENS-Lyon, especially Marc Daumas,
+\item The Arénaire project at ÉNS-Lyon, especially Marc Daumas,
   Sylvie Boldo, Guillaume Melquiond, Nathalie Revol and Arnaud
   Tisserand;
 \item Guillaume Melquiond for Gappa and its first-class hotline;
@@ -153,7 +187,7 @@ the code.
   McIntosh from CERN, Patrick Pelissier from \textsc{Inria}.
 \item All the people who have reported bugs, hoping that they continue
   until they have to stop: Evgeny Gvozdev from Intel with special thanks, Christoph Lauter
-  from TUM\"unchen, Eric McIntosh from CERN, Patrick Pelissier and
+  from TUMünchen, Eric McIntosh from CERN, Patrick Pelissier and
   Paul Zimmermann from \textsc{Inria} Lorraine.
 \item William Kahan at UCBerkeley, Peter Markstein at HP, Neil Toda at
   Sun, Shane Story at Intel, and many others for interesting and
@@ -161,7 +195,7 @@ the code.
 \item Serge Torres for LIPForge 
 \end{itemize}
 
-This work was partly funded by the \textsc{Inria}, the \'ENS-Lyon and the Universit\'e de Perpignan.
+This work was partly funded by the \textsc{Inria}, the ÉNS-Lyon and the Université de Perpignan.
 
 \tableofcontents
 
@@ -177,6 +211,10 @@ This work was partly funded by the \textsc{Inria}, the \'ENS-Lyon and the Univer
 
  \chapter{The natural logarithm \label{chap:log}}
  \input{3_log.tex}
+
+\chapter{The portable SCS-free implementation of the natural logarithm \label{chap:log}}
+\input{7_logalt.tex}
+
  \chapter{The exponential \label{chap:exp}}
  \input{2_exp.tex}
  \chapter{The trigonometric functions \label{chap:trigo}}
