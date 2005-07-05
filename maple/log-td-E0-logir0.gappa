@@ -24,7 +24,8 @@ ZhSquareHalfhl = ZhSquarehl * -0.5;
 ZhCube <float64ne>= (zh * zhSquareh);
 polyUpper <float64ne>= polyHorner * ZhCube;
 
-T1hl = polyUpper - <float64ne> (zh * zl);
+temp = <float64ne> (zh * zl);
+T1hl = polyUpper - temp;
 t1h = <float64ne> (T1hl);
 t1l = <float64ne> (T1hl - t1h);
 
@@ -65,7 +66,7 @@ ZZZPhigherPzhzl = ZZZPhigher - zh * zl;
 
 HZ = -0.5*Z;
 
-Flzhzl = <float64ne> (zh * zl);
+Flzhzl = temp;
 
 {
 (T2hl - T2) / T2 in [-1b-103,1b-103]
@@ -110,12 +111,13 @@ polyHorner / Phigher -> ((polyHorner - Phigher) / Phigher) + 1;
 
 (ZhSquareHalfhl - HZZ) / HZZ -> (ZhSquarehl - ZZ) / ZZ;
 
-((T2hl - (zh * zl)) - ZpHZZ) / ZpHZZ -> ((HZ * (((ZhSquareHalfhl - (zh * zl)) - HZZ) / HZZ)) + ((T2hl - T2) / T2) + 
-                                        + (HZ * ((T2hl - T2) / T2)) + 
+((T2hl - (zh * zl)) - ZpHZZ) / ZpHZZ -> ((HZ * (((ZhSquareHalfhl - (zh * zl)) - HZZ) / HZZ)) + ((T2hl - T2) / T2) 
+                                        + (HZ * ((T2hl - T2) / T2)) 
 					+ (HZ * ((ZhSquareHalfhl - HZZ) / HZZ) * ((T2hl - T2) / T2))) / (1 + HZ);
 
-(PE - P) / P -> (((1 + HZ) * (((T2hl - (zh * zl)) - ZpHZZ) / ZpHZZ)) + ((1 - ((zh - Z) / Z)) * (Z * ((zh - Z) / Z)) * ((Flzhzl - (zh * zl)) / (zh * zl))) 
-	        - (ZZ * Phigher * ((polyUpper - ZZZPhigher) / ZZZPhigher))) / (1 + HZ + ZZ * Phigher);
+(PE - P) / P -> (((1 + HZ) * (((T2hl - (zh * zl)) - ZpHZZ) / ZpHZZ)) +
+		((1 + ((zh - Z) / Z)) * (Z * ((zh - Z) / Z)) * ((Flzhzl - (zh * zl)) / (zh * zl))) 
+	        + (ZZ * Phigher * ((polyUpper - ZZZPhigher) / ZZZPhigher))) / (1 + HZ + ZZ * Phigher);
 
 (Phl - P) / P -> ((PE - P) / P) + ((((PE - P) / P) + 1) * ((Phl - PE) / PE));
 

@@ -55,7 +55,7 @@ T10 = AccPolyC5hl + T9hl;
 T11 = Z * T10hl;
 T12 = AccPolyC4hl + T11hl;
 T13 = Z * T12hl;
-T14 = AccPolyC3hl + T13;
+T14 = AccPolyC3hl + T13hl;
 
 
 ZSquare = Z * Z;
@@ -202,11 +202,12 @@ delta14 -> Z * delta13 + T13 * ((T13hl - T13) / T13);
 delta15 -> delta14 + (T14 * ((T14hl - T14) / T14));
 delta16 -> Z*Z*((ZSquarehml - ZSquare) / ZSquare);
 delta17 -> Z * delta16 + ZCube * ((ZCubehml - ZCube) / ZCube);
-delta18 -> Z*Z*Z*delta15 + HigherPolyMultZ * ((HigherPolyMultZhml - HigherPolyMultZ) / HigherPolyMultZ);
+delta18 -> delta15 * delta17 + delta15 * MZCube + delta17 * MT14 + 
+		HigherPolyMultZ * ((HigherPolyMultZhml - HigherPolyMultZ) / HigherPolyMultZ);
 delta20 -> delta19 + delta18 + PolyWithSquare * ((PolyWithSquarehml - PolyWithSquare) / PolyWithSquare);
 delta21 -> delta20 + Poly * ((Polyhml - Poly) / Poly);
 delta22 -> delta25 + delta26 + Logy * ((Logyhml - Logy) / Logy);
-delta26 -> delta20 + Poly * ((Polyhml - Poly) / Poly) + MPoly * ((MPoly - MLog1pZ) / MLog1pZ);
+delta26 -> delta21 + MLog1pZ * ((MPoly - MLog1pZ) / MLog1pZ);
 
 
 ((logh + logm + logl) - MLog) / MLog -> ((Loghml - MLog) / MLog) + ((((logh + logm + logl) - Loghml) / Loghml) * (((Loghml - MLog) / MLog) + 1));

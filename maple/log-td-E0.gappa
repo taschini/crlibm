@@ -27,7 +27,8 @@ ZhSquareHalfhl = ZhSquarehl * -0.5;
 
 polyUpper <float64ne>= polyHorner * (zh * zhSquareh);
 
-T1hl = polyUpper - <float64ne> (zh * zl);
+temp = <float64ne> (zh * zl);
+T1hl = polyUpper - temp;
 t1h = <float64ne> (T1hl);
 t1l = <float64ne> (T1hl - t1h);
 
