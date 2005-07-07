@@ -30,7 +30,7 @@ $m \approx 2$. To overcome this difficulty, a second adjustment is done as follo
 The decision whether $m \leq \sqrt{2}$ or not is performed using integer arithmetics on 
 the high order bits of the mantissa $m$. The test is therefore not completely exact which is no
 disadvantage since, in any case, the bound $\sqrt{2}$ is somewhat arbitrary.\par
-All the previous reduction steps can be implemented exactly as the consist mainly in decompositions
+All the previous reduction steps can be implemented exactly as they consist mainly in decompositions
 of a floating point number, multiplications by powers of $2$ and integer additions on the corresponding exponent value.
 All this leads to the following equation 
 $$\log\left( x \right) = E \cdot \log\left( 2 \right) + \log\left( y \right)$$
@@ -201,7 +201,7 @@ $\left \vert x \right \vert = 0$. As the logarithm of $0$ is not defined but as 
 $-1.0 / 0.0$ is correct.
 \item line 9: Since the integer ordering and the ordering on floating point numbers are compatible, 
 {\tt xdb.i[HI] < 0} implies $x < 0$. The logarithm is not defined for negative numbers, so the result must be $\nan$. 
-$0.0 / 0.0$ leads to a $\nan$, one uses $\left(x - x\right) / 0.0$ in order to overcome the static tests of the compiler.
+$0.0 / 0.0$ leads to a $\nan$; one uses $\left(x - x\right) / 0.0$ in order to overcome the static tests of the compiler.
 \item line 13 and 14: if this code lines are reached, $x$ is a subnormal. Since $E$ equals $0$ at this point, 
 setting it to $-52$ and multipliying {\tt xdb} by $2^{-52}$ means bringing {\tt xdb} to the normal number range and
 rescaling the internal representation $x = 2^E \cdot m = 2^E \cdot${\tt xdb} in consequence.
@@ -706,7 +706,7 @@ Operation & 1st arg. & 2nd arg. & result high & result low \\
 \end{tabular}
 \end{center}
 So let us analyse the following code:
-\begin{lstlisting}[caption={Triple-double computations},firstnumber=90]
+\begin{lstlisting}[caption={Triple-double computations},firstnumber=90,label={list:tripledouble}]
 Mul23(&zSquareh, &zSquarem, &zSquarel, zh, zl, zh, zl); 
 Mul233(&zCubeh, &zCubem, &zCubel, zh, zl, zSquareh, zSquarem, zSquarel); 
 Mul233(&higherPolyMultZh, &higherPolyMultZm, &higherPolyMultZl, t14h, t14l, zCubeh, zCubem, zCubel); 
@@ -753,4 +753,169 @@ $Logoverhml$ & 107 & $21$ & $53$ \\
 \hline
 \end{tabular}
 \end{center}
-So let us verify this bounds 
+So let us verify exemplarily some of these bounds: 
+\begin{itemize}
+\item At line 90, $ZSquarehml$ is computed out of the double-double number $z_\hi + z_\lo$ by use of the \MulDT~ sequence.
+Since the inputs of this function are not triple-double, the overlap bound is just the bound provided by the sequence 
+itself, i.e. $\alpha_o \geq 48$, $\alpha_u \geq 53$. 
+\item $ZCubehml$ is the result of a \MulDTT~ sequence at line 91. Its overlap bound depends therefore on the one
+for $ZSquarehml$, which is the second argument of the function. Since we know the bound for this variable, we easily 
+verify the one for $ZCubehml$ which is $\alpha_o \geq 44$ and $\alpha_u \geq 53$.
+\item $Log2edhml$ is the exact pairwise product of the triple-double constant $Log2hml$ and double $E$. Since $E$ may be
+as small as $0$ in magnitude and further, since the multiplication is pairwise, the overlap bound we dispose of for
+$Log2edhml$ is the same as for $Log2hml$ which is stored with at least $11$ bit trailing zeros. 
+So an appropriate bound is $\alpha_o \geq 52 - 11 \geq 40$ and $\alpha_u \geq 40$. 
+\end{itemize}
+All other bounds can be verified the same way using the theorems given in \cite{Lau05} and indicated above. \par
+Since we have computed the overlap bounds for the different triple-double operands in the code, we can now 
+calculate the accuracy bounds for the operations. Doing this is only possible with the knowledge of the
+overlap of the operations because all accuracy bound theorems given in \cite{Lau05} are parameterized with this 
+overlap expressions. \\
+Let us first give a list of the accuracy of the different basic operations which is not exhaustive with regard to
+its lack of listing almost all preconditions on the sequences required for theorems to hold. We refrain from explicitely 
+verifying each of this preconditions in this document as this is only fastidious work but not of special interest. 
+\begin{center}
+\begin{tabular}{|l|l|l|l|}
+\hline
+Operation & Overlap 1st arg. & Overlap 2nd arg. & Relative error $\epsilon$ \\
+\hline
+\AddDD & - & - & $\left \vert \epsilon \right \vert \leq 2^{-103.5} \leq 2^{-103}$ \\
+\hline
+\MulDD & - & - & $\left \vert \epsilon \right \vert \leq 2^{-102}$\\
+\hline
+\AddTT & $\alpha_o \geq 4$, $\alpha_u \geq 1$ & $\beta_o \geq 4$, $\beta_u \geq 1$ & 
+$\left \vert \epsilon \right \vert \leq 2^{-\min\left( \alpha_o + \alpha_u, \beta_o + \beta_u \right) -47} + 2^{-\min\left( \alpha_o, \beta_o \right) - 98}$
+\\
+\hline
+\AddDTT & - & $\beta_o \geq 2$, $\beta_u \geq 1$ & 
+$\left \vert \epsilon \right \vert \leq 2^{-\beta_o - \beta_u - 52} + 2^{-\beta_o-104} + 2^{-153}$
+\\
+\hline
+\MulDT & - & - &  
+$\left \vert \epsilon \right \vert \leq 2^{-149}$
+\\
+\hline
+\MulDTT & - & $\beta_o \geq 2$, $\beta_u \geq 1$ &  
+$\left \vert \epsilon \right \vert \leq 2^{-97-\beta_o} + 2^{-97-\beta_o-\beta_u} + 2^{-150}$
+\\
+\hline
+\end{tabular}
+\end{center}
+Still analyzing the following double-double computations code and the code 
+given at listing \ref{list:tripledouble}, one can now easily check the bounds for 
+the relative error of the different operations listed in the table below.
+We define here the relative error of an operation $\ast$ and its arithmetical equivalent $\circledast$ as follows:
+$$\epsilon = \frac{\left(a \circledast b \right) - \left(a \ast b\right)}{\left(a \ast b \right)}$$
+\begin{lstlisting}[caption={Double-double computations in accurate phase},firstnumber=73,label={list:doubledouble}]
+  Mul12(&t1h, &t1l, zh, highPoly);
+  Add22(&t2h, &t2l, accPolyC9h, accPolyC9l, t1h, t1l);
+  Mul22(&t3h, &t3l, zh, zl, t2h, t2l);
+  Add22(&t4h, &t4l, accPolyC8h, accPolyC8l, t3h, t3l);
+  Mul22(&t5h, &t5l, zh, zl, t4h, t4l);
+  Add22(&t6h, &t6l, accPolyC7h, accPolyC7l, t5h, t5l);
+  Mul22(&t7h, &t7l, zh, zl, t6h, t6l);
+  Add22(&t8h, &t8l, accPolyC6h, accPolyC6l, t7h, t7l);
+  Mul22(&t9h, &t9l, zh, zl, t8h, t8l);
+  Add22(&t10h, &t10l, accPolyC5h, accPolyC5l, t9h, t9l);
+  Mul22(&t11h, &t11l, zh, zl, t10h, t10l);
+  Add22(&t12h, &t12l, accPolyC4h, accPolyC4l, t11h, t11l);
+  Mul22(&t13h, &t13l, zh, zl, t12h, t12l);
+  Add22(&t14h, &t14l, accPolyC3h, accPolyC3l, t13h, t13l);
+\end{lstlisting}
+\begin{center}
+\begin{tabular}{|l|l|l|l|}
+\hline
+Result & Line(s) & Operation & Relative error $\epsilon$ \\
+\hline
+$T1hl$ through $T14hl$ & 73 - 86 & \AddDD~ / \MulDD & 
+$\left \vert \epsilon \right \vert \leq 2^{-103}$ / $\left \vert \epsilon \right \vert \leq 2^{-102}$ \\
+\hline
+$ZSquarehml$ & 90 & \MulDT & $\left \vert \epsilon \right \vert \leq 2^{-149}$ \\
+\hline
+$ZCubehml$ & 91 & \MulDTT & $\left \vert \epsilon \right \vert \leq 2^{-144}$ \\
+\hline
+$HigherPolyMultZhml$ & 92 & \MulDTT & $\left \vert \epsilon \right \vert \leq 2^{-141}$ \\
+\hline 
+$PolyWithSquarehml$ & 96-98 & \AddTT & $\left \vert \epsilon \right \vert \leq 2^{-137}$ \\
+\hline 
+$Polyhml$ & 99 & \AddDTT & $\left \vert \epsilon \right \vert \leq 2^{-134}$ \\
+\hline
+$Logyhml$ & 100 & \AddTT & $\left \vert \epsilon \right \vert \leq 2^{-128}$ \\
+\hline
+$Logoverhml$ & 107 & \AddTT & $\left \vert \epsilon \right \vert \leq 2^{-123}$ \\
+\hline
+\end{tabular}
+\end{center}
+Let us just explicitely check the bound for one of the operations for sake of an example. Let us take
+therefore the \AddTT~ sequence at lines 96-98 computing $PolyWithSquarehml$ out of $ZSquareHalfhml$ and
+$HigherPolyMultZhml$. We have already obtained to following overlap bounds:
+\begin{eqnarray*}
+\left \vert zSquareHalf_\mi \right \vert & \leq & 2^{-48} \cdot \left \vert zSquareHalf_\hi \right \vert \\
+\left \vert zSquareHalf_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert zSquareHalf_\mi \right \vert \\
+\left \vert higherPolyMultZ_\mi \right \vert & \leq & 2^{-40} \cdot \left \vert higherPolyMultZ_\hi \right \vert \\
+\left \vert higherPolyMultZ_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert higherPolyMultZ_\mi \right \vert
+\end{eqnarray*}
+Feeding now this bounds into the theorem on the accuracy of \AddTT, we get
+$$\left \vert \epsilon \right \vert \leq 2^{-\min\left( 48 + 53, 40 + 53 \right) - 47} + 2^{-\min \left( 48, 40 \right) - 98} \leq 2^{-140} + 2^{-138} \leq 2^{-137}$$
+All other error bounds can be verified in a similar way. They are finally expressed in Gappa syntax as follows:
+\begin{lstlisting}[caption={Relative error bounds in Gappa code},firstnumber=139]
+(T2hl - T2) / T2 in [-1b-103,1b-103]
+/\ (T3hl - T3) / T3 in [-1b-102,1b-102]
+/\ (T4hl - T4) / T4 in [-1b-103,1b-103]
+/\ (T5hl - T5) / T5 in [-1b-102,1b-102]
+/\ (T6hl - T6) / T6 in [-1b-103,1b-103]
+/\ (T7hl - T7) / T7 in [-1b-102,1b-102]
+/\ (T8hl - T8) / T8 in [-1b-103,1b-103]
+/\ (T9hl - T9) / T9 in [-1b-102,1b-102]
+/\ (T10hl - T10) / T10 in [-1b-103,1b-103]
+/\ (T11hl - T11) / T11 in [-1b-102,1b-102]
+/\ (T12hl - T12) / T12 in [-1b-103,1b-103]
+/\ (T13hl - T13) / T13 in [-1b-102,1b-102]
+/\ (T14hl - T14) / T14 in [-1b-103,1b-103]
+/\ (ZSquarehml - ZSquare) / ZSquare in [-1b-149,1b-149]
+/\ (ZCubehml - ZCube) / ZCube in [-1b-144,1b-144]
+/\ (HigherPolyMultZhml - HigherPolyMultZ) / HigherPolyMultZ in [-1b-141,1b-141]
+/\ (PolyWithSquarehml - PolyWithSquare) / PolyWithSquare in [-1b-137,1b-137]
+/\ (Polyhml - Poly) / Poly in [-1b-134,1b-134]
+/\ (Logyhml - Logy) / Logy in [-1b-128,1b-128]
+/\ (Loghml - Logover) / Logover in [-1b-123,1b-123]
+/\ (Log2hml - MLog2) / MLog2 in [-1b-126,1b-126]
+/\ (Logihml - MLogi) / MLogi in [-1b-159,1b-159]
+/\ (MPoly - MLog1pZ) / MLog1pZ in [-_epsilonApproxAccurate,_epsilonApproxAccurate]
+/\ Z in [_zmin,_zmax]
+/\ ((logh + logm + logl) - Loghml) / Loghml in [-1b-159,1b-159]
+\end{lstlisting}
+Concerning the Gappa proofs for accurate phase, in a similar way as for the quick phase, three different proof
+files are used. They reflect once again the three main cases for the argument of the logarithm function:
+\begin{itemize}
+\item For cases where after argument reduction $\left \vert E \right \vert \geq 1$, 
+the file {\tt log-td-accurate.gappa} is used. In this case, absolute error computations are sufficient 
+for the final relative error bound to be calculable because 
+$\left \vert \log\left( x \right) \right \vert \geq \frac{1}{2} \log\left( 2 \right)$ in this case.
+\item For the case where after argument reduction, $E = 0$ and $i \not = 0$, the file 
+{\tt log-td-accurate-E0.gappa} is used. The same way here, we have a preponderant constant term so absolute
+error computations suffice.
+\item For the other case, where $E=0$ and $i=0$ the file {\tt log-td-accurate-E0-logir0.gappa} provides the 
+accuracy bound proof. In contrast to the other cases, we obliged to relative error estimations since the beginning
+since the function $\log\left( x \right)$ has a zero in this intervall.
+\end{itemize}
+Once again, several term rewriting hints are needed in the Gappa proof files for enabling the Gappa tool to 
+generate a proof for the accuracy bounds. In a similar way, the hints which cannot directly be checked for their 
+mathematical correctness by the tool itself are verified by semi-automatic Maple scripts.\par
+By the existence of an accuracy proof for a final relative error of $\left \vert \epsilon_{\mbox{\tiny accurate}} \right \vert \leq 2^{-119.5}$ and
+by the use of the critical accuracy of the double precision natural logarithm function which is 
+$118$ bits\cite{DinDefLau2004LIP}, we can consider the implementation to be correctly rounding under the hypothesis
+that the final rounding sequence used is exact and correct. Since we suppose this -- a correctness proof can be 
+found in \cite{Lau05} -- the correctly rounding property is verified.
+\section{Performance results}
+The given implementation of the natural logarithm function aims at being both portable and more performant than
+other implementations using the SCS libary for the accurate phase (cf. chapter \ref{chap3:log}). 
+This goal is acheived in terms of memory consumption
+(if the code sizes for {\tt scslib} are taken into account) and in terms of speed performance. The reason for this
+is mainly the possibility of reusing all values computed in the argument reduction phase and the tables for the 
+accurate phase directly. 
+\subsection{Memory requirements}
+
+
+
+\subsection{Timings}
