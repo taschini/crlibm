@@ -27,7 +27,6 @@
 #define AVOID_FMA 0
 
 
-
 void log2_td_accurate(double *logb2h, double *logb2m, double *logb2l, int E, double ed, int index, double zh, double zl, double logih, double logim) {
   double highPoly, t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l, t7h, t7l, t8h, t8l, t9h, t9l, t10h, t10l, t11h, t11l;
   double t12h, t12l, t13h, t13l, t14h, t14l, zSquareh, zSquarem, zSquarel, zCubeh, zCubem, zCubel, higherPolyMultZh, higherPolyMultZm;
@@ -329,7 +328,7 @@ void log2_td_accurate(double *logb2h, double *logb2m, double *logb2l, int E, dou
 
 
    if(logb2h == (logb2h + (logb2m * roundcst)))
-     return logh;
+     return logb2h;
    else 
      {
        

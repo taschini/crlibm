@@ -199,7 +199,7 @@ fprintf(fd, "\#define log2h %1.50eL\n", log2h):
 fprintf(fd, "\#define log2m %1.50eL\n", log2m):
 fprintf(fd, "\#define log2l %1.50eL\n", log2l):
 fprintf(fd, "\#define log2invh %1.50eL\n",log2invh):
-fprintf(fd, "\#define log2invl %1.50eL\n",log2invh):
+fprintf(fd, "\#define log2invl %1.50eL\n",log2invl):
 
 epsilon_quick_1 := 2^(-61): # The Gappa proof will show this bound
 epsilon_quick_2 := 2^(-61): # The Gappa proof will show this bound
