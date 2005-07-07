@@ -347,6 +347,32 @@ void test_init(/* pointers to returned value */
 #endif
     }
 
+  else  if (strcmp (func_name, "log2") == 0)
+    {
+      *randfun_perf     = rand_for_log;
+      *randfun_soaktest = rand_for_log;
+      *worst_case=1.23; /* TODO: I dont know the worst case now */
+      *testfun_libm   = log2; 
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = log2_ru;	break;
+      case RD:
+	*testfun_crlibm = log2_rd;	break;
+      case RZ:
+	*testfun_crlibm = log2_rz;	break;  
+      default:
+	*testfun_crlibm = log2_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_libultim    = ulog2;
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = __libmcr_log2;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_log2;
+#endif
+    }
 
   else  if (strcmp (func_name, "sin") == 0)
     {
