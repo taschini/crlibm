@@ -116,6 +116,7 @@ extern double log2_rz(double); /* towards zero */
 extern double log10_rn(double); /* to nearest  */
 extern double log10_rd(double); /* toward -inf */ 
 extern double log10_ru(double); /* toward +inf */ 
+extern double log10_rz(double); /* towards zero */ 
 
 #if defined (__cplusplus)
 }

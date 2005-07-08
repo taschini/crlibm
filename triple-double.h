@@ -179,10 +179,10 @@
 		    
    Guarantees:      resm and resl are non-overlapping
                     resm = round-to-nearest(resm + resl)
-		    abs(resm) <= 2^(-a_o + 5) * abs(resh)
+		    abs(resm) <= 2^(-min(a_o,b_o) + 5) * abs(resh)
 		    resh+resm+resl = (ah+am+al + bh+bm+bl) * (1+eps)
                     where 
-		    abs(eps) <= 2^(-a_o-a_u-47) + 2^(-a_o-98)
+		    abs(eps) <= 2^(-min(a_o+a_u,b_o+b_u)-47) + 2^(-min(a_o,a_u)-98)
 
    Details:         resh, resm and resl are considered to be pointers
 */
@@ -246,6 +246,65 @@
     Add12Cond((*(resm)),(*(resl)),_t4,_t7);                     \
 }
 
+
+/* Mul33
+
+   Procedure for multiplying two triple double numbers resulting
+   in a triple double number
+
+
+   Arguments:       two triple double numbers:
+                    ah, am, al and
+		    bh, bm, bl
+   
+   Results:         a triple double number resh, resm, resl
+
+   Preconditions:   abs(am) <= 2^(-a_o) * abs(ah)
+		    abs(al) <= 2^(-a_u) * abs(am)
+		    abs(bm) <= 2^(-b_o) * abs(bh)
+		    abs(bl) <= 2^(-b_u) * abs(bm)
+		    where
+		    b_o >= a_o >= 4
+		    b_u >= a_u >= 4
+
+		    
+   Guarantees:      resm and resl are non-overlapping
+                    resm = round-to-nearest(resm + resl)
+		    abs(resm) <= 2^(???) * abs(resh)
+		    resh+resm+resl = (ah+am+al + bh+bm+bl) * (1+eps)
+                    where 
+		    abs(eps) <= 2^???
+
+   Details:         resh, resm and resl are considered to be pointers
+*/
+#define Mul33(resh, resm, resl, ah, am, al, bh, bm, bl)      \
+{                                                            \
+    double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9;      \
+    double _t10, _t11, _t12, _t13, _t14, _t15, _t16, _t17;   \
+    double _t18, _t19, _t20, _t21, _t22, _t23, _t24, _t25;   \
+    double _t26, _t27, _t28, _t29, _t30;                     \
+                                                             \
+    Mul12((resh),&_t1,(ah),(bh));                            \
+    Mul12(&_t2, &_t3, (ah), (bm));                           \
+    Mul12(&_t4, &_t5, (am), (bh));                           \
+    Mul12(&_t6, &_t7, (ah), (bl));                           \
+    Mul12(&_t8, &_t9, (al), (bh));                           \
+    Mul12(&_t10, &_t11, (am), (bm));                         \
+    Mul12(&_t12, &_t13, (ah), (bl));                         \
+    Mul12(&_t14, &_t15, (al), (bh));                         \
+    _t16 = al * bl;                                          \
+    Add22Cond(&_t17, &_t18, _t2, _t3, _t4, _t5);             \
+    Add22Cond(&_t19, &_t20, _t6, _t7, _t8, _t9);             \
+    Add22Cond(&_t21, &_t22, _t12, _t13, _t14, _t15);         \
+    Add22Cond(&_t23, &_t24, _t17, _t18, _t19, _t20);         \
+    Add22Cond(&_t25, &_t26, _t10, _t11, _t21, _t22);         \
+    Add12Cond(_t27, _t28, _t1, _t16);                        \
+    Add22Cond(&_t29, &_t30, _t23, _t24, _t25, _t26);         \
+    Add22Cond((resm), (resl), _t27, _t28, _t29, _t30);       \
+}
+
+
+
 /* ReturnRoundToNearest3
 
    Procedure for rounding a triple to a double number
@@ -306,6 +365,9 @@
    Preconditions:   xh, xm and xl are non-overlapping
                     xm = RN(xm +math xl)
 		    xh != 0, xm != 0
+
+		    Exact algebraic images have already
+		    been filtered out.
 		    		    
    Guarantees:      xprime = RU(xh + xm + xl)
 
@@ -347,6 +409,9 @@
    Preconditions:   xh, xm and xl are non-overlapping
                     xm = RN(xm +math xl)
 		    xh != 0, xm != 0
+
+		    Exact algebraic images have already
+		    been filtered out.
 		    		    
    Guarantees:      xprime = RD(xh + xm + xl)
 
@@ -388,6 +453,9 @@
    Preconditions:   xh, xm and xl are non-overlapping
                     xm = RN(xm +math xl)
 		    xh != 0, xm != 0
+
+		    Exact algebraic images have already
+		    been filtered out.
 		    		    
    Guarantees:      xprime = RZ(xh + xm + xl)
 
@@ -415,6 +483,128 @@
        } else return _t1;                                     \
     }                                                         \
 }
+
+
+/* ReturnRoundUpwards3Unfiltered
+
+   Procedure for rounding a triple to a double number
+   in round-upwards mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+                    a double constant wca representing 2^k
+		    where 2^-k is Lefevre's worst case accuracy
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   xh, xm and xl are non-overlapping
+                    xm = RN(xm +math xl)
+		    xh != 0, xm != 0
+		    		    
+   Guarantees:      xprime = RU(xh + xm + xl)
+
+   Sideeffects:     returns, i.e. leaves the function
+
+*/
+#define ReturnRoundUpwards3Unfiltered(xh,xm,xl,wca)               \
+{                                                                 \
+    double _t1, _t2, _t3;                                         \
+    db_number _tdb, _tdb2;                                        \
+                                                                  \
+    Add12(_t1,_t2,(xh),(xm));                                     \
+    _t3 = _t2 + (xl);                                             \
+    if (_t3 > 0.0) {                                              \
+      _tdb2.d = wca * _t3;                                        \
+      _tdb.d = _t1;                                               \
+      if ((_tdb2.i[HI] & 0x7ff00000) < (_tdb.i[HI] & 0x7ff00000)) \
+         return _t1;                                              \
+      if (_t1 > 0.0) {                                            \
+         _tdb.l++;                                                \
+         return _tdb.d;                                           \
+      } else {                                                    \
+         _tdb.l--;                                                \
+         return _tdb.d;                                           \
+      }                                                           \
+    } else return _t1;                                            \
+}
+
+
+
+/* ReturnRoundDownwards3Unfiltered
+
+   Procedure for rounding a triple to a double number
+   in round-downwards mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+                    a double constant wca representing 2^k
+		    where 2^-k is Lefevre's worst case accuracy
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   xh, xm and xl are non-overlapping
+                    xm = RN(xm +math xl)
+		    xh != 0, xm != 0
+		    		    
+   Guarantees:      xprime = RD(xh + xm + xl)
+
+   Sideeffects:     returns, i.e. leaves the function
+
+*/
+#define ReturnRoundDownwards3Unfiltered(xh,xm,xl,wca)             \
+{                                                                 \
+    double _t1, _t2, _t3;                                         \
+    db_number _tdb, _tdb2;                                        \
+                                                                  \
+    Add12(_t1,_t2,(xh),(xm));                                     \
+    _t3 = _t2 + (xl);                                             \
+    if (_t3 < 0.0) {                                              \
+      _tdb2.d = wca * _t3;                                        \
+      _tdb.d = _t1;                                               \
+      if ((_tdb2.i[HI] & 0x7ff00000) < (_tdb.i[HI] & 0x7ff00000)) \
+         return _t1;                                              \
+      if (_t1 > 0.0) {                                            \
+         _tdb.l--;                                                \
+         return _tdb.d;                                           \
+      } else {                                                    \
+         _tdb.l++;                                                \
+         return _tdb.d;                                           \
+      }                                                           \
+    } else return _t1;                                            \
+}
+
+/* ReturnRoundTowardsZero3Unfiltered
+
+   Procedure for rounding a triple to a double number
+   in round-towards-zero mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+                    a double constant wca representing 2^k
+		    where 2^-k is Lefevre's worst case accuracy
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   xh, xm and xl are non-overlapping
+                    xm = RN(xm +math xl)
+		    xh != 0, xm != 0
+		    		    
+   Guarantees:      xprime = RZ(xh + xm + xl)
+
+   Sideeffects:     returns, i.e. leaves the function
+
+*/
+#define ReturnRoundTowardsZero3Unfiltered(xh,xm,xl,wca)       \
+{                                                             \
+    if ((xh) > 0)                                             \
+      ReturnRoundDownwards3Unfiltered((xh),(xm),(xl),(wca))   \
+    else                                                      \
+      ReturnRoundUpwards3Unfiltered((xh),(xm),(xl),(wca))     \
+}
+
 
 
 #endif /*TRIPLE_DOUBLE_H*/
