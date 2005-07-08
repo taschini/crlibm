@@ -41,10 +41,12 @@ int main (int argc, char *argv[])
   char* r;
   int count=0;
   double worstcase;
-  db_number input, output, expected;
+  db_number input, output, expected, res_mpfr;
   double (*testfun_crlibm)() = NULL;
   double (*unused)() = NULL;
-  int (*mpfr_fun_unused)() = NULL;
+  int (*mpfr_fun)() = NULL;
+  mpfr_t mp_res, mp_inpt; 
+  mp_rnd_t mpfr_rnd_mode;
 
   FILE* f;
 
@@ -85,7 +87,7 @@ int main (int argc, char *argv[])
     test_init(
 	      &unused, &unused, 
 	      &testfun_crlibm, 
-	      &mpfr_fun_unused, &unused, &unused, &unused, &worstcase,
+	      &mpfr_fun, &unused, &unused, &unused, &worstcase,
 	      function_name,
 	      rounding_mode ) ;
     
@@ -106,9 +108,27 @@ int main (int argc, char *argv[])
         || ((expected.d == expected.d) && (output.l != expected.l))    ) { /* or expected non-NaN, got something different */
       failures ++;
       printf("ERROR for %s with rounding %s\n", function_name, rounding_mode);
-      printf("    Input: %08x %08x  (%0.50e)\n", input.i[HI], input.i[LO], input.d ); 
-      printf("   Output: %08x %08x  (%0.50e)\n", output.i[HI], output.i[LO], output.d ); 
-      printf(" Expected: %08x %08x  (%0.50e)\n", expected.i[HI], expected.i[LO], expected.d ); 
+      printf("       Input: %08x %08x  (%0.50e)\n", input.i[HI], input.i[LO], input.d ); 
+      printf("      Output: %08x %08x  (%0.50e)\n", output.i[HI], output.i[LO], output.d ); 
+      printf("    Expected: %08x %08x  (%0.50e)\n", expected.i[HI], expected.i[LO], expected.d ); 
+
+      if      ((strcmp(rounding_mode,"RU")==0) || (strcmp(rounding_mode,"P")==0)) mpfr_rnd_mode = GMP_RNDU;
+      else if ((strcmp(rounding_mode,"RD")==0) || (strcmp(rounding_mode,"M")==0)) mpfr_rnd_mode = GMP_RNDD;
+      else if ((strcmp(rounding_mode,"RZ")==0) || (strcmp(rounding_mode,"Z")==0)) mpfr_rnd_mode = GMP_RNDZ;
+      else if ((strcmp(rounding_mode,"RN")==0) || (strcmp(rounding_mode,"N")==0)) mpfr_rnd_mode = GMP_RNDN;
+      else {
+	fprintf(stderr, "Unknown rounding mode: %s, exiting\n", rounding_mode);
+	exit(EXIT_FAILURE);
+      }
+
+      mpfr_init2(mp_res,  160);
+      mpfr_init2(mp_inpt, 53);
+      mpfr_set_d(mp_inpt, input.d, GMP_RNDN);
+      mpfr_fun(mp_res, mp_inpt, mpfr_rnd_mode);
+      res_mpfr.d = mpfr_get_d(mp_res, mpfr_rnd_mode);
+
+      printf(" MPFR result: %08x %08x  (%0.50e)\n", res_mpfr.i[HI], res_mpfr.i[LO], res_mpfr.d ); 
+
     }
     fflush(stdout); /* To help debugging */
     
