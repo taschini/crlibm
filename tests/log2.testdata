@@ -1,0 +1,11 @@
+log2     # Name of the function to test
+
+# The following lines are either comments (beginning with a #)
+# or give 
+#   1/ a rounding mode : RN|RU|RD|RZ (crlibm syntax) or  N|P|M|Z (libmcr syntax)
+#   2/ The high and low hexadecimal halves of an input
+#   3/ The high and low hexadecimal halves of the expected corresponding output
+
+N 0d6cea1f 96f699f5 c089412b 93076276
+N 36e597a1 eba0d538 c0621229 6708397f
+
