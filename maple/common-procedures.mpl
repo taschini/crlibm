@@ -57,6 +57,104 @@ fi;
 sgn,exponent,mantissa;
 end:
 
+#---------------------------------------------------------------------
+# ieeedoubleRU converts a number to IEEE double format rounding upwards.
+# returns sign (-1 or 1), exponent between -1022 and 1023, mantissa as a fraction between 0.5 and 1.
+ieeedoubleRU:=proc(xx)
+local x, sgn, logabsx, exponent, mantissa, infmantissa,powermin,powermax,expmin,expmax,expmiddle,powermiddle;
+Digits := 100;
+x := evalf(xx);
+if (x=0) then sgn, exponent, mantissa := 1, -1022, 0
+else
+  if (x < 0) then sgn := -1
+  else sgn := 1
+  fi:
+  x := abs(x);
+  if x >=  2^(1023)*(2-2^(-53)) then mantissa := infinity; exponent := 1023
+  else if x <= 2^(-1075) then mantissa := 0; exponent := -1022
+      else
+         if x <= 2^(-1022) then exponent := -1022
+         else
+# x is between 2^(-1022) and 2^(1024)
+         powermin := 2^(-1022); expmin := -1022;
+         powermax := 2^1024; expmax := 1024;
+         while (expmax-expmin > 1) do
+            expmiddle := round((expmax+expmin)/2);
+            powermiddle := 2^expmiddle;
+            if x >= powermiddle then
+                powermin := powermiddle;
+                expmin := expmiddle
+            else
+                powermax := powermiddle;
+                expmax := expmiddle
+            fi
+          od;
+# now, expmax - expmin = 1 and powermin <= x < powermax,
+# powermin = 2^expmin and powermax = 2^expmax, so expmin is the exponent of x
+         exponent := expmin;
+         fi;
+         infmantissa := x*2^(52-exponent);
+	 if frac(infmantissa) <> 0 then mantissa := ceil(infmantissa)
+            else
+              mantissa := infmantissa;
+            fi;
+         mantissa := mantissa*2^(-52);
+      fi;
+  fi;
+fi;
+sgn,exponent,mantissa;
+end:
+
+#---------------------------------------------------------------------
+# ieeedoubleRD converts a number to IEEE double format rounding upwards.
+# returns sign (-1 or 1), exponent between -1022 and 1023, mantissa as a fraction between 0.5 and 1.
+ieeedoubleRD:=proc(xx)
+local x, sgn, logabsx, exponent, mantissa, infmantissa,powermin,powermax,expmin,expmax,expmiddle,powermiddle;
+Digits := 100;
+x := evalf(xx);
+if (x=0) then sgn, exponent, mantissa := 1, -1022, 0
+else
+  if (x < 0) then sgn := -1
+  else sgn := 1
+  fi:
+  x := abs(x);
+  if x >=  2^(1023)*(2-2^(-53)) then mantissa := infinity; exponent := 1023
+  else if x <= 2^(-1075) then mantissa := 0; exponent := -1022
+      else
+         if x <= 2^(-1022) then exponent := -1022
+         else
+# x is between 2^(-1022) and 2^(1024)
+         powermin := 2^(-1022); expmin := -1022;
+         powermax := 2^1024; expmax := 1024;
+         while (expmax-expmin > 1) do
+            expmiddle := round((expmax+expmin)/2);
+            powermiddle := 2^expmiddle;
+            if x >= powermiddle then
+                powermin := powermiddle;
+                expmin := expmiddle
+            else
+                powermax := powermiddle;
+                expmax := expmiddle
+            fi
+          od;
+# now, expmax - expmin = 1 and powermin <= x < powermax,
+# powermin = 2^expmin and powermax = 2^expmax, so expmin is the exponent of x
+         exponent := expmin;
+         fi;
+         infmantissa := x*2^(52-exponent);
+	 if frac(infmantissa) <> 0 then mantissa := floor(infmantissa)
+            else
+              mantissa := infmantissa;
+            fi;
+         mantissa := mantissa*2^(-52);
+      fi;
+  fi;
+fi;
+sgn,exponent,mantissa;
+end:
+
+
+
 
 #---------------------------------------------------------------------
 # pulp returns the precision of the ulp of x
@@ -87,6 +185,34 @@ nearest := proc(x)
   sgn*mantissa*2^(exponent):
 
 end:
+
+#---------------------------------------------------------------------
+# Returns RU IEEE double:
+roundUp := proc(x)
+  local sgn, exponent, mantissa:
+
+  sgn,exponent,mantissa := ieeedoubleRU(x):
+  sgn*mantissa*2^(exponent):
+
+end:
+
+#---------------------------------------------------------------------
+# Returns RD IEEE double:
+roundDown := proc(x)
+  local sgn, exponent, mantissa:
+
+  sgn,exponent,mantissa := ieeedoubleRD(x):
+  sgn*mantissa*2^(exponent):
+
+end:
+
+#---------------------------------------------------------------------
+# Returns RZ IEEE double:
+roundToZero := proc(x)
+    if evalf(x) > 0 then roundDown(x) else roundUp(x) fi:
+end:
+
+
 
 
 #---------------------------------------------------------------------
