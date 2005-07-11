@@ -182,7 +182,9 @@ printf("   Log10inv = 1 / ln(10) stored as a triple-double is exact with a relat
 
 #Compute now the constant needed for the unfiltered directed final rounding of the triple-double result
 #This constant is supposed to be the reciprocal of the critical accuracy of the function.
-#We suppose this critical accuracy to be 2^(-122) because the worst case we know of is x = 5ACE12D6 6744FF81
+#We suppose this critical accuracy to be 2^(-120) because the worst case (for RD) we know of is x = 403ce41d 8fa665fa
+#We can easily spend some guard bits since we want simply filter out cases with a theoretical worst case accuracy
+#of -infty (exact floating point images) and as we know that we are exact to at least 122 bits.
 
 wca := 2^(122):
 

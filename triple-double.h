@@ -484,6 +484,18 @@
     }                                                         \
 }
 
+void printHexa(char* s, double x) {
+  db_number xdb;
+
+  xdb.d = x;
+  printf("%s = %08x%08x (%1.8e) exponent = %d exponent of ulp = %d\n",
+	 s,
+	 xdb.i[HI],
+	 xdb.i[LO],
+	 x,
+	 ((xdb.i[HI] & 0x7ff00000) >> 20) - 1023,
+	 ((xdb.i[HI] & 0x7ff00000) >> 20) - 1023 - 52);
+}
 
 
 
