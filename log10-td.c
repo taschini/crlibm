@@ -34,8 +34,6 @@
 
 #define AVOID_FMA 0
 
-/* #define DEBUG 1 */
-
 
 void log10_td_accurate(double *logb10h, double *logb10m, double *logb10l, int E, double ed, int index, double zh, double zl, double logih, double logim) {
   double highPoly, t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l, t7h, t7l, t8h, t8l, t9h, t9l, t10h, t10l, t11h, t11l;
@@ -44,9 +42,6 @@ void log10_td_accurate(double *logb10h, double *logb10m, double *logb10l, int E,
   double polyh, polym, polyl, logil, logyh, logym, logyl, loghover, logmover, loglover, log2edhover, log2edmover, log2edlover;
   double log2edh, log2edm, log2edl, logb10hover, logb10mover, logb10lover;
   double logyhnorm, logymnorm, logylnorm;
-#if DEBUG
-  db_number logb10hdb, logb10mdb, logb10ldb;
-#endif
 
 
 
@@ -182,23 +177,6 @@ void log10_td_accurate(double *logb10h, double *logb10m, double *logb10l, int E,
   */
 
   Renormalize3(logb10h,logb10m,logb10l,logb10hover,logb10mover,logb10lover);
-
-
-#if DEBUG
-  logb10hdb.d = *logb10h;
-  logb10mdb.d = *logb10m;
-  logb10ldb.d = *logb10l;
-
-  printf("logb10h = %08x %08x (exp = %d)\n",
-	 logb10hdb.i[HI], logb10hdb.i[LO],((logb10hdb.i[HI] & 0x7ff00000) >> 20) - 1023);
-  printf("logb10m = %08x %08x (exp = %d)\n",
-	 logb10mdb.i[HI], logb10mdb.i[LO],((logb10mdb.i[HI] & 0x7ff00000) >> 20) - 1023);
-  printf("logb10l = %08x %08x (exp = %d)\n",
-	 logb10ldb.i[HI], logb10ldb.i[LO],((logb10ldb.i[HI] & 0x7ff00000) >> 20) - 1023);
-
-
-#endif
-
 }
 
 
@@ -557,8 +535,8 @@ void log10_td_accurate(double *logb10h, double *logb10m, double *logb10l, int E,
 
    TEST_AND_RETURN_RU(logb10h, logb10m, roundcst);
 
-#if DEBUG
-  printf("Going for Accurate Phase for x=%1.50e\n",x);
+#if DEBUG  
+   printf("Going for Accurate Phase for x=%1.50e\n",x);
 #endif
 
     log10_td_accurate(&logb10h, &logb10m, &logb10l, E, ed, index, zh, zl, logih, logim); 

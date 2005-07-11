@@ -287,20 +287,20 @@
     Mul12((resh),&_t1,(ah),(bh));                            \
     Mul12(&_t2, &_t3, (ah), (bm));                           \
     Mul12(&_t4, &_t5, (am), (bh));                           \
-    Mul12(&_t6, &_t7, (ah), (bl));                           \
-    Mul12(&_t8, &_t9, (al), (bh));                           \
-    Mul12(&_t10, &_t11, (am), (bm));                         \
-    Mul12(&_t12, &_t13, (ah), (bl));                         \
-    Mul12(&_t14, &_t15, (al), (bh));                         \
+    Mul12(&_t6, &_t7, (am), (bm));                           \
+    Mul12(&_t8, &_t9, (ah), (bl));                           \
+    Mul12(&_t10, &_t11, (al), (bh));                         \
+    Mul12(&_t12, &_t13, (am), (bl));                         \
+    Mul12(&_t14, &_t15, (al), (bm));                         \
     _t16 = al * bl;                                          \
-    Add22Cond(&_t17, &_t18, _t2, _t3, _t4, _t5);             \
-    Add22Cond(&_t19, &_t20, _t6, _t7, _t8, _t9);             \
-    Add22Cond(&_t21, &_t22, _t12, _t13, _t14, _t15);         \
-    Add22Cond(&_t23, &_t24, _t17, _t18, _t19, _t20);         \
-    Add22Cond(&_t25, &_t26, _t10, _t11, _t21, _t22);         \
-    Add12Cond(_t27, _t28, _t1, _t16);                        \
-    Add22Cond(&_t29, &_t30, _t23, _t24, _t25, _t26);         \
-    Add22Cond((resm), (resl), _t27, _t28, _t29, _t30);       \
+    Add12Cond(_t27,_t28,_t1,_t16);                           \
+    Add22Cond(&_t17,&_t18,_t2,_t3,_t4,_t5);                  \
+    Add22Cond(&_t19,&_t20,_t8,_t9,_t10,_t11);                \
+    Add22Cond(&_t21,&_t22,_t12,_t13,_t14,_t15);              \
+    Add22Cond(&_t23,&_t24,_t17,_t18,_t6,_t7);                \
+    Add22Cond(&_t25,&_t26,_t19,_t20,_t21,_t22);              \
+    Add22Cond(&_t29,&_t30,_t23,_t24,_t25,_t26);              \
+    Add22Cond((resm),(resl),_t27,_t28,_t29,_t30);            \
 }
 
 
@@ -483,6 +483,9 @@
        } else return _t1;                                     \
     }                                                         \
 }
+
+
+
 
 
 /* ReturnRoundUpwards3Unfiltered
