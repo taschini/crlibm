@@ -292,7 +292,7 @@
     Mul12(&_t10, &_t11, (al), (bh));                         \
     Mul12(&_t12, &_t13, (am), (bl));                         \
     Mul12(&_t14, &_t15, (al), (bm));                         \
-    _t16 = al * bl;                                          \
+    _t16 = (al) * (bl);                                      \
     Add12Cond(_t27,_t28,_t1,_t16);                           \
     Add22Cond(&_t17,&_t18,_t2,_t3,_t4,_t5);                  \
     Add22Cond(&_t19,&_t20,_t8,_t9,_t10,_t11);                \
@@ -303,6 +303,46 @@
     Add22Cond((resm),(resl),_t27,_t28,_t29,_t30);            \
 }
 
+
+/* Mul133
+
+   Procedure for multiplying double by a triple double number resulting
+   in a triple double number
+
+
+   Arguments:       a double a
+		    a triple double bh, bm, bl
+   
+   Results:         a triple double number resh, resm, resl
+
+   Preconditions:   abs(bm) <= 2^(-b_o) * abs(bh)
+		    abs(bl) <= 2^(-b_u) * abs(bm)
+		    where
+		    b_o >= 2
+		    b_u >= 2
+
+		    
+   Guarantees:      resm and resl are non-overlapping
+                    resm = round-to-nearest(resm + resl)
+		    abs(resm) <= 2^(-52) * abs(resh)
+		    resh+resm+resl = (ah+am+al + bh+bm+bl) * (1+eps)
+                    where 
+		    abs(eps) <= 2^(-b_o-b_u-49) + 2^(-b_o-101) + 2^-156
+
+   Details:         resh, resm and resl are considered to be pointers
+*/
+#define Mul133(resh, resm, resl, a, bh, bm, bl)            \
+{                                                          \
+    double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9;    \
+                                                           \
+    Mul12(&_t1,&_t2,(a),(bh));                             \
+    Mul12(&_t3,&_t4,(a),(bm));                             \
+    _t5 = (a) * (bl);                                      \
+    Add12Cond(_t6,_t7,_t2,_t3);                            \
+    _t8 = _t4 + _t5;                                       \
+    _t9 = _t7 + _t8;                                       \
+    Renormalize3((resh),(resm),(resl),_t1,_t6,_t9);        \
+}
 
 
 /* ReturnRoundToNearest3
@@ -483,21 +523,6 @@
        } else return _t1;                                     \
     }                                                         \
 }
-
-void printHexa(char* s, double x) {
-  db_number xdb;
-
-  xdb.d = x;
-  printf("%s = %08x%08x (%1.8e) exponent = %d exponent of ulp = %d\n",
-	 s,
-	 xdb.i[HI],
-	 xdb.i[LO],
-	 x,
-	 ((xdb.i[HI] & 0x7ff00000) >> 20) - 1023,
-	 ((xdb.i[HI] & 0x7ff00000) >> 20) - 1023 - 52);
-}
-
-
 
 
 /* ReturnRoundUpwards3Unfiltered
