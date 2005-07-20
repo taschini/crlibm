@@ -246,6 +246,52 @@
     Add12Cond((*(resm)),(*(resl)),_t4,_t7);                     \
 }
 
+/* Add233Cond
+
+   Procedure for adding a double double number to a triple 
+   double number resulting in a triple double number
+
+
+   Arguments:       a double double number ah, al
+                    a triple double number bh, bm, bl
+   
+   Results:         a triple double number resh, resm, resl
+
+   Preconditions:   abs(ah) > abs(al)
+                    ah and al do not overlap
+		    ah = round-to-nearest(ah + al)
+		    abs(bm) <= 2^(-b_o) * abs(bh)
+		    abs(bl) <= 2^(-b_u) * abs(bm)
+		    where
+		    b_o >= 2
+		    b_u >= 1
+		    
+   Guarantees:      resm and resl are non-overlapping
+                    resm = round-to-nearest(resm + resl)
+		    abs(resm) <= 2^(\gamma) * abs(resh)
+		    where
+		    \gamma >= ????
+		    resh+resm+resl=((ah+al) + (bh+bm+bl)) * (1+eps)
+		    where
+		    abs(eps) <= 
+                       <= ????
+
+   Details:         resh, resm and resl are considered to be pointers
+*/
+#define Add233Cond(resh, resm, resl, ah, al, bh, bm, bl)        \
+{                                                               \
+    double _t1, _t2, _t3, _t4, _t5, _t6, _t7;                   \
+                                                                \
+    Add12Cond((*(resh)),_t1,(ah),(bh));                         \
+    Add12Cond(_t2,_t3,(al),(bm));                               \
+    Add12Cond(_t4,_t5,_t1,_t2);                                 \
+    _t6 = _t3 + (bl);                                           \
+    _t7 = _t6 + _t5;                                            \
+    Add12Cond((*(resm)),(*(resl)),_t4,_t7);                     \
+}
+
+
+
 
 /* Mul33
 
@@ -322,9 +368,9 @@
 		    b_u >= 2
 
 		    
-   Guarantees:      resm and resl are non-overlapping
-                    resm = round-to-nearest(resm + resl)
-		    abs(resm) <= 2^(-52) * abs(resh)
+   Guarantees:      // TO DO
+
+
 		    resh+resm+resl = (ah+am+al + bh+bm+bl) * (1+eps)
                     where 
 		    abs(eps) <= 2^(-b_o-b_u-49) + 2^(-b_o-101) + 2^-156
@@ -335,13 +381,12 @@
 {                                                          \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9;    \
                                                            \
-    Mul12(&_t1,&_t2,(a),(bh));                             \
+    Mul12((resh),&_t2,(a),(bh));                           \
     Mul12(&_t3,&_t4,(a),(bm));                             \
     _t5 = (a) * (bl);                                      \
-    Add12Cond(_t6,_t7,_t2,_t3);                            \
+    Add12Cond((*(resm)),_t7,_t2,_t3);                      \
     _t8 = _t4 + _t5;                                       \
-    _t9 = _t7 + _t8;                                       \
-    Renormalize3((resh),(resm),(resl),_t1,_t6,_t9);        \
+    *(resl) = _t7 + _t8;                                   \
 }
 
 
