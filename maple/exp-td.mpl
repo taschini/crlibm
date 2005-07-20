@@ -37,14 +37,14 @@ indexmask1 := 2^(L/2) - 1:
 indexmask2 := indexmask1 * 2^(L/2):
 
 largest := 2^(1023) * ((2^(53) - 1) / 2^(52)):
-smallest := 2^(-1023) * 1 * 2^(-52):
+smallest := 2^(-1023) * 1 * 2^(-51):
 
 overflowbound := nearest(log(largest)):
 
 overflowboundHex := ieeehexa(overflowbound):
 overflowSimplebound := convert(overflowboundHex[1],decimal,hex):
 
-underflowbound := nearest(log(smallest)):
+underflowbound := nearest(log(2^(-1075))):
 
 denormbound := nearest(log(2^(-1022) * 1)):
 
@@ -55,6 +55,8 @@ overUnderflowSimplebound := convert(overUnderflowboundHex[1],decimal,hex):
 twoPowerM1000 := 2^(-1000):
 twoPower1000 := 2^(1000):
 
+twoM52 := 2^(-52):
+mTwoM53 := - 2^(-53):
 
 for i from 0 to 2^(L/2) - 1 do
 	twoPowerIndex1hi[i], twoPowerIndex1mi[i], twoPowerIndex1lo[i] := hi_mi_lo(evalf(2^(i/(2^L)))):
@@ -134,6 +136,9 @@ fprintf(fd, "\#define UNDERFLWBOUND %1.50e\n",underflowbound):
 fprintf(fd, "\#define twoPowerM1000 %1.50e\n",twoPowerM1000):
 fprintf(fd, "\#define twoPower1000 %1.50e\n",twoPower1000):
 fprintf(fd, "\#define ROUNDCST %1.50e\n", compute_rn_constant(epsilon_quick)):   
+fprintf(fd, "\#define RDROUNDCST %1.50e\n", epsilon_quick):   
+fprintf(fd, "\#define twoM52 %1.50e\n", twoM52):   
+fprintf(fd, "\#define mTwoM53 %1.50e\n", mTwoM53):   
 
 fprintf(fd,"\n\n"):
 

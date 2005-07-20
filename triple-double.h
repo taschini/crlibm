@@ -379,7 +379,7 @@
 */
 #define Mul133(resh, resm, resl, a, bh, bm, bl)            \
 {                                                          \
-    double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9;    \
+    double _t2, _t3, _t4, _t5, _t7, _t8;                   \
                                                            \
     Mul12((resh),&_t2,(a),(bh));                           \
     Mul12(&_t3,&_t4,(a),(bm));                             \
@@ -689,6 +689,189 @@
     else                                                      \
       ReturnRoundUpwards3Unfiltered((xh),(xm),(xl),(wca))     \
 }
+
+/* RoundToNearest3
+
+   Procedure for rounding a triple to a double number
+   in round-to-nearest-ties-to-even mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   xh, xm and xl are non-overlapping
+                    xm = RN(xm +math xl)
+		    xh != 0, xm != 0
+		    xl = 0 iff xm != +/- 0.5 * ulp(xh) (0.25 if xh = 2^e)
+		    		    
+   Guarantees:      xprime = RN(xh + xm + xl)
+
+   Details:         res is considered to be a pointer
+
+*/
+#define RoundToNearest3(res,xh,xm,xl)                         \
+{                                                             \
+    double _t1, _t2, _t3, _t4, _t5, _t6;                      \
+    db_number _xp, _xn;                                       \
+                                                              \
+    _xp.d = (xh);                                             \
+    _xn.i[HI] = _xp.i[HI];                                    \
+    _xn.i[LO] = _xp.i[LO];                                    \
+    _xn.l--;                                                  \
+    _t1 = _xn.d;                                              \
+    _xp.l++;                                                  \
+    _t4 = _xp.d;                                              \
+    _t2 = (xh) - _t1;                                         \
+    _t3 = _t2 * -0.5;                                         \
+    _t5 = _t4 - (xh);                                         \
+    _t6 = _t5 * 0.5;                                          \
+    if (((xm) != _t3) && ((xm) != _t6))                       \
+      (*(res)) = ((xh) + (xm));                               \
+    else {                                                    \
+      if ((xm) * (xl) > 0.0) {                                \
+        if ((xh) * (xl) > 0.0)                                \
+          (*(res)) = _t4;                                     \
+        else                                                  \
+          (*(res)) = _t1;                                     \
+      } else (*(res)) = (xh);                                 \
+    }                                                         \
+}
+
+/* RoundUpwards3
+
+   Procedure for rounding a triple to a double number
+   in round-upwards mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   xh, xm and xl are non-overlapping
+                    xm = RN(xm +math xl)
+		    xh != 0, xm != 0
+
+		    Exact algebraic images have already
+		    been filtered out.
+		    		    
+   Guarantees:      xprime = RU(xh + xm + xl)
+
+   Details:         res is considered to be a pointer
+
+*/
+#define RoundUpwards3(res,xh,xm,xl)                           \
+{                                                             \
+    double _t1, _t2, _t3;                                     \
+    db_number _tdb;                                           \
+                                                              \
+    Add12(_t1,_t2,(xh),(xm));                                 \
+    _t3 = _t2 + (xl);                                         \
+    if (_t3 > 0.0) {                                          \
+      if (_t1 > 0.0) {                                        \
+         _tdb.d = _t1;                                        \
+         _tdb.l++;                                            \
+         (*(res)) = _tdb.d;                                   \
+      } else {                                                \
+         _tdb.d = _t1;                                        \
+         _tdb.l--;                                            \
+         (*(res)) = _tdb.d;                                   \
+      }                                                       \
+    } else (*(res)) = _t1;                                    \
+}
+
+
+/* RoundDownwards3
+
+   Procedure for rounding a triple to a double number
+   in round-downwards mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   xh, xm and xl are non-overlapping
+                    xm = RN(xm +math xl)
+		    xh != 0, xm != 0
+
+		    Exact algebraic images have already
+		    been filtered out.
+		    		    
+   Guarantees:      xprime = RD(xh + xm + xl)
+
+   Details:         res is considered to be a pointer
+
+*/
+#define RoundDownwards3(res,xh,xm,xl)                         \
+{                                                             \
+    double _t1, _t2, _t3;                                     \
+    db_number _tdb;                                           \
+                                                              \
+    Add12(_t1,_t2,(xh),(xm));                                 \
+    _t3 = _t2 + (xl);                                         \
+    if (_t3 < 0.0) {                                          \
+      if (_t1 > 0.0) {                                        \
+         _tdb.d = _t1;                                        \
+         _tdb.l--;                                            \
+         (*(res)) = _tdb.d;                                   \
+      } else {                                                \
+         _tdb.d = _t1;                                        \
+         _tdb.l++;                                            \
+         (*(res)) = _tdb.d;                                   \
+      }                                                       \
+    } else (*(res)) = _t1;                                    \
+}
+
+
+/* RoundTowardsZero3
+
+   Procedure for rounding a triple to a double number
+   in round-towards-zero mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   xh, xm and xl are non-overlapping
+                    xm = RN(xm +math xl)
+		    xh != 0, xm != 0
+
+		    Exact algebraic images have already
+		    been filtered out.
+		    		    
+   Guarantees:      xprime = RZ(xh + xm + xl)
+
+   Details:         res is considered to be a pointer
+
+*/
+#define RoundTowardsZero3(res,xh,xm,xl)                       \
+{                                                             \
+    double _t1, _t2, _t3;                                     \
+    db_number _tdb;                                           \
+                                                              \
+    Add12(_t1,_t2,(xh),(xm));                                 \
+    _t3 = _t2 + (xl);                                         \
+    if (_t1 > 0.0) {                                          \
+       if (_t3 < 0.0) {                                       \
+         _tdb.d = _t1;                                        \
+         _tdb.l--;                                            \
+         (*(res)) = _tdb.d;                                   \
+       } else (*(res)) = _t1;                                 \
+    } else {                                                  \
+       if (_t3 > 0.0) {                                       \
+         _tdb.d = _t1;                                        \
+         _tdb.l--;                                            \
+         (*(res)) = _tdb.d;                                   \
+       } else (*(res)) = _t1;                                 \
+    }                                                         \
+}
+
 
 
 

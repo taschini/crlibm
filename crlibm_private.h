@@ -216,6 +216,81 @@ double. See the chapter about the log for an example
 }
 
 
+
+#define TEST_AND_COPY_RU(__cond__, __res__, __yh__, __yl__, __eps__)   \
+{                                                                      \
+  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
+  yh.d = __yh__;    yl.d = __yl__;                                     \
+  yh_neg = (yh.i[HI] & 0x80000000);                                    \
+  yl_neg = (yl.i[HI] & 0x80000000);                                    \
+  yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
+  __cond__ = 0;                                                        \
+  if(yl.d > __eps__ * u53.d){                                          \
+     __cond__ = 1;                                                     \
+    if(!yl_neg) {  /* The case yl==0 is filtered by the above test*/   \
+      /* return next up */                                             \
+      yh.d = __yh__;                                                   \
+      if(yh_neg) yh.l--;  else yh.l++; /* Beware: fails for zero */    \
+      __res__ = yh.d ;                                                 \
+    }                                                                  \
+    else {                                                             \
+      __res__ = __yh__;                                                \
+    }                                                                  \
+  }                                                                    \
+}
+
+#define TEST_AND_COPY_RD(__cond__, __res__, __yh__, __yl__, __eps__)   \
+{                                                                      \
+  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
+  yh.d = __yh__;    yl.d = __yl__;                                     \
+  yh_neg = (yh.i[HI] & 0x80000000);                                    \
+  yl_neg = (yl.i[HI] & 0x80000000);                                    \
+  yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
+  __cond__ = 0;                                                        \
+  if(yl.d > __eps__ * u53.d){                                          \
+    __cond__ = 1;                                                      \
+    if(yl_neg) {  /* The case yl==0 is filtered by the above test*/    \
+      /* return next down */                                           \
+      yh.d = __yh__;                                                   \
+      if(yh_neg) yh.l++;  else yh.l--; /* Beware: fails for zero */    \
+      __res__ = yh.d ;                                                 \
+    }                                                                  \
+    else {                                                             \
+      __res__ = __yh__;                                                \
+    }                                                                  \
+  }                                                                    \
+}
+
+
+#define TEST_AND_COPY_RZ(__cond__, __res__, __yh__, __yl__, __eps__)   \
+{                                                                      \
+  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
+  yh.d = __yh__;    yl.d = __yl__;                                     \
+  yh_neg = (yh.i[HI] & 0x80000000);                                    \
+  yl_neg = (yl.i[HI] & 0x80000000);                                    \
+  yh.l = yh.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
+  yl.l = yl.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
+  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
+  __cond__ = 0;                                                        \
+  if(yl.d > __eps__ * u53.d){                                          \
+    if(yl_neg!=yh_neg) {                                               \
+      yh.d = __yh__;                                                   \
+      yh.l--;                          /* Beware: fails for zero */    \
+      __res__ = yh.d ;                                                 \
+      __cond__ = 1;                                                    \
+    }                                                                  \
+    else {                                                             \
+      __res__ = __yh__;                                                \
+      __cond__ = 1;                                                    \
+  }                                                                    \
+}
+
+
+
 /* If the processor has a FMA, use it !   **/
 
 /* All this probably works only with gcc. 
@@ -223,6 +298,7 @@ double. See the chapter about the log for an example
 
 #if defined(CRLIBM_TYPECPU_POWERPC) && defined(__GNUC__)
 #define PROCESSOR_HAS_FMA 1
+#undef PROCESSOR_HAS_FMA
 #define FMA(a,b,c)  /* r = a*b + c*/                   \
 ({                                                     \
   double _a, _b,_c,_r;                                 \
