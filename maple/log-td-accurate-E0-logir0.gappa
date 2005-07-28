@@ -128,6 +128,7 @@ aux1 = -0.5 * Z + MZSquare * MT14; #MAPLE
 #End additional definitions
 
 {
+(
 (T2hl - T2) / T2 in [-1b-103,1b-103]
 /\ (T3hl - T3) / T3 in [-1b-102,1b-102]
 /\ (T4hl - T4) / T4 in [-1b-103,1b-103]
@@ -147,10 +148,37 @@ aux1 = -0.5 * Z + MZSquare * MT14; #MAPLE
 /\ (PolyWithSquarehml - PolyWithSquare) / PolyWithSquare in [-1b-137,1b-137]
 /\ (Polyhml - Poly) / Poly in [-1b-134,1b-134]
 /\ (MPoly - MLog1pZ) / MLog1pZ in [-_epsilonApproxAccurate,_epsilonApproxAccurate]
-/\ Z in [_zmin,_zmax]
+/\ Z in [1b-900,_zmax]
 /\ ((logh + logm + logl) - Loghml) / Loghml in [-1b-159,1b-159]
 ->
 ((logh + logm + logl) - MLog) / MLog in [-5735b-132,5735b-132]
+)
+/\
+(
+(T2hl - T2) / T2 in [-1b-103,1b-103]
+/\ (T3hl - T3) / T3 in [-1b-102,1b-102]
+/\ (T4hl - T4) / T4 in [-1b-103,1b-103]
+/\ (T5hl - T5) / T5 in [-1b-102,1b-102]
+/\ (T6hl - T6) / T6 in [-1b-103,1b-103]
+/\ (T7hl - T7) / T7 in [-1b-102,1b-102]
+/\ (T8hl - T8) / T8 in [-1b-103,1b-103]
+/\ (T9hl - T9) / T9 in [-1b-102,1b-102]
+/\ (T10hl - T10) / T10 in [-1b-103,1b-103]
+/\ (T11hl - T11) / T11 in [-1b-102,1b-102]
+/\ (T12hl - T12) / T12 in [-1b-103,1b-103]
+/\ (T13hl - T13) / T13 in [-1b-102,1b-102]
+/\ (T14hl - T14) / T14 in [-1b-103,1b-103]
+/\ (ZSquarehml - ZSquare) / ZSquare in [-1b-149,1b-149]
+/\ (ZCubehml - ZCube) / ZCube in [-1b-144,1b-144]
+/\ (HigherPolyMultZhml - HigherPolyMultZ) / HigherPolyMultZ in [-1b-141,1b-141]
+/\ (PolyWithSquarehml - PolyWithSquare) / PolyWithSquare in [-1b-137,1b-137]
+/\ (Polyhml - Poly) / Poly in [-1b-134,1b-134]
+/\ (MPoly - MLog1pZ) / MLog1pZ in [-_epsilonApproxAccurate,_epsilonApproxAccurate]
+/\ Z in [_zmin,-1b-900]
+/\ ((logh + logm + logl) - Loghml) / Loghml in [-1b-159,1b-159]
+->
+((logh + logm + logl) - MLog) / MLog in [-5735b-132,5735b-132]
+)
 }
 
 ((logh + logm + logl) - MLog) / MLog -> ((Loghml - MLog) / MLog) + ((((logh + logm + logl) - Loghml) / Loghml) * (((Loghml - MLog) / MLog) + 1));

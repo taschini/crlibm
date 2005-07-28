@@ -278,7 +278,7 @@ filename:="run-log-td-proof.sh":
 fd:=fopen(filename, WRITE, TEXT):
 fprintf(fd, "#!/bin/sh\n"):
 fprintf(fd, "# You probably need to edit the path to the gappa executable\n"):
-fprintf(fd, "GAPPA=~/ble/gappa-0.4.5/src/gappa\n"):
+fprintf(fd, "GAPPA=~/sangria/gappa-0.4.7/src/gappa\n"):
 fprintf(fd, "# Test all the possible table value for E=1\n"):
 fprintf(fd, "for num in `seq 0 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo $num, E=1:\n"):
