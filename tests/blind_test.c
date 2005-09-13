@@ -41,12 +41,15 @@ int main (int argc, char *argv[])
   char* r;
   int count=0;
   double worstcase;
-  db_number input, output, expected, res_mpfr;
-  double (*testfun_crlibm)() = NULL;
-  double (*unused)() = NULL;
-  int (*mpfr_fun)() = NULL;
+  db_number input, output, expected;
+#ifdef HAVE_MPFR_H  
+  db_number res_mpfr;
   mpfr_t mp_res, mp_inpt; 
   mp_rnd_t mpfr_rnd_mode;
+#endif
+  int (*mpfr_fun)() = NULL;
+  double (*testfun_crlibm)() = NULL;
+  double (*unused)() = NULL;
 
   FILE* f;
 
@@ -112,6 +115,7 @@ int main (int argc, char *argv[])
       printf("      Output: %08x %08x  (%0.50e)\n", output.i[HI], output.i[LO], output.d ); 
       printf("    Expected: %08x %08x  (%0.50e)\n", expected.i[HI], expected.i[LO], expected.d ); 
 
+#ifdef HAVE_MPFR_H  
       if      ((strcmp(rounding_mode,"RU")==0) || (strcmp(rounding_mode,"P")==0)) mpfr_rnd_mode = GMP_RNDU;
       else if ((strcmp(rounding_mode,"RD")==0) || (strcmp(rounding_mode,"M")==0)) mpfr_rnd_mode = GMP_RNDD;
       else if ((strcmp(rounding_mode,"RZ")==0) || (strcmp(rounding_mode,"Z")==0)) mpfr_rnd_mode = GMP_RNDZ;
@@ -128,6 +132,7 @@ int main (int argc, char *argv[])
       res_mpfr.d = mpfr_get_d(mp_res, mpfr_rnd_mode);
 
       printf(" MPFR result: %08x %08x  (%0.50e)\n", res_mpfr.i[HI], res_mpfr.i[LO], res_mpfr.d ); 
+#endif /* HAVE_MPFR_H */ 
 
     }
     fflush(stdout); /* To help debugging */
