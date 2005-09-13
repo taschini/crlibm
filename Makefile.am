@@ -7,10 +7,10 @@ lib_LIBRARIES = libcrlibm.a
 
 
 # removed as of 0.10
-#	log_fast.c log_fast.h log_accurate.h log_accurate.c \
-#	exp_fast.h exp_fast.c exp_accurate.h exp_accurate.c \
-#	log10_accurate.h log10_accurate.c \
-#	log2_accurate.h  log2_accurate.c \
+#	log_fast.c log_fast.h log_accurate.h log_accurate.c 
+#	exp_fast.h exp_fast.c exp_accurate.h exp_accurate.c 
+#	log10_accurate.h log10_accurate.c 
+#	log2_accurate.h  log2_accurate.c 
 
 
 if HAS_HARDWARE_DE
