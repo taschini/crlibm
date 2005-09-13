@@ -12,6 +12,7 @@ lib_LIBRARIES = libcrlibm.a
 #	log10_accurate.h log10_accurate.c 
 #	log2_accurate.h  log2_accurate.c 
 
+# IMPORTANT: be sure that the extra_dist below includes all files for both alternatives
 
 if USE_HARDWARE_DE
 libcrlibm_a_SOURCES =  \
@@ -26,7 +27,7 @@ libcrlibm_a_SOURCES =  \
 	csh_fast.h csh_fast.c exp_accurate.h exp_accurate.c
 else 
 libcrlibm_a_SOURCES =  \
-	crlibm.h crlibm_private.h crlibm_private.c\
+	crlibm.h crlibm_private.h crlibm_private.c triple-double.h\
 	exp-td.h exp-td.c \
 	log-td.c log-td.h  \
 	log10-td.h log10-td.c \
@@ -55,6 +56,8 @@ else
 AM_CFLAGS =  -std=c99 -fPIC -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
 endif
 
+
+
 EXTRA_DIST = VERSION\
 	maple/common-procedures.mpl \
 	maple/log.mpl maple/trigo.mpl maple/atan.mpl maple/csh.mpl \
@@ -65,5 +68,7 @@ EXTRA_DIST = VERSION\
 	docs/latex/1_common.tex docs/latex/2_exp.tex docs/latex/3_log.tex\
 	docs/latex/4_atan.tex docs/latex/5_csh.tex docs/latex/6_trigo.tex \
 	docs/latex/fig_scs docs/latex/fig_exp\
-	docs/latex/elem-fun.bib
+	docs/latex/elem-fun.bib\
+	scs_lib/tests/tbx_timing.h \
+	log-de.c log-de.h double-extended.h log-td.c log-td.h triple-double.h 
  
