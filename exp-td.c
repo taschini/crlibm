@@ -245,10 +245,11 @@ double exp_rn(double x){
      /* For x86, force the compiler to pass through memory for having the right rounding */
 
      t4db.d = t4;   /* Do not #if-ify this line, we need the copy */
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
      t4db2.i[HI] = t4db.i[HI];
      t4db2.i[LO] = t4db.i[LO];
      t4 = t4db2.d;
-
+#endif
 
      /* Remultiply by 2^(-M) for manipulating the rounding error and the lower significant parts */
      M *= -1;
@@ -541,9 +542,11 @@ double exp_ru(double x) {
      /* For x86, force the compiler to pass through memory for having the right rounding */
 
      t4db.d = t4;   /* Do not #if-ify this line, we need the copy */
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
      t4db2.i[HI] = t4db.i[HI];
      t4db2.i[LO] = t4db.i[LO];
      t4 = t4db2.d;
+#endif
 
 
      /* Remultiply by 2^(-M) for manipulating the rounding error and the lower significant parts */
@@ -836,10 +839,11 @@ double exp_rd(double x) {
      /* For x86, force the compiler to pass through memory for having the right rounding */
 
      t4db.d = t4;   /* Do not #if-ify this line, we need the copy */
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
      t4db2.i[HI] = t4db.i[HI];
      t4db2.i[LO] = t4db.i[LO];
      t4 = t4db2.d;
-
+#endif
 
      /* Remultiply by 2^(-M) for manipulating the rounding error and the lower significant parts */
      M *= -1;
