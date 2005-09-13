@@ -33,13 +33,17 @@ sparc)
 powerpc*)  
 	AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_POWERPC,1,[Processor type]);;
 i*86|k6|k7|pentium*|athlon*)
-	AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_X86,1,[Processor type]);;
+	AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_X86,1,[Processor type])
+	has_hardware_de=true;;
 x86_64|amd64)
-        AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_AMD64,1,[Processor type]);;
+        AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_AMD64,1,[Processor type])
+	has_hardware_de=true;;
 ia64)
-	AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_ITANIUM,1,[Processor type]);;
+	AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_ITANIUM,1,[Processor type])
+	has_hardware_de=true;;
 esac;
 
+AM_CONDITIONAL(HAS_HARDWARE_DE, test x$has_hardware_de = xtrue)
 
 AC_CONFIG_SRCDIR([exp_accurate.c])
 AC_PROG_MAKE_SET
@@ -128,6 +132,7 @@ dnl defines WORDS_BIGENDIAN, or not
 
 AC_C_LONG_DOUBLE
 dnl defines HAVE_LONG_DOUBLE, or not
+
 
 AC_CHECK_SIZEOF(int)
 dnl defines SIZEOF_INT to be the size in bytes of int

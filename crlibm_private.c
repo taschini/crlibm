@@ -230,8 +230,20 @@ void Div22(double* pzh, double* pzl, double xh, double xl, double yh, double yl)
 int crlibm_second_step_taken;
 #endif
 
+/* A debug functions */
 
+void printHexa(char* s, double x) {
+  db_number xdb;
 
+  xdb.d = x;
+  printf("%s = %08x%08x (%1.8e) exponent = %d exponent of ulp = %d\n",
+	 s,
+	 xdb.i[HI],
+	 xdb.i[LO],
+	 x,
+	 ((xdb.i[HI] & 0x7ff00000) >> 20) - 1023,
+	 ((xdb.i[HI] & 0x7ff00000) >> 20) - 1023 - 52);
+}
 
 
 

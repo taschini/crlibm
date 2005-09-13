@@ -87,11 +87,10 @@ double_ext  th, tl, eh,el, t;
 
 
 double log_rn(double x) {
-  double wi;
-  double_ext logirh, r, y, z, z2,z4, th, tl, p01, p23, p45, p67, p03, p47, p07, log;
+  double_ext logirh, r, y, z, z2,z4, th, tl, p01, p23, p45, p67, p03, p47, p07, logde;
 #if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64)
   db_number xdb;
-  int E, i, index, index0, center, roundtestmask;
+  int E, index, index0, roundtestmask;
 #else
   int64_t  E, i;
   uint64_t index, roundtestmask;
@@ -180,14 +179,14 @@ double log_rn(double x) {
    z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
    z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
    p07 = p03 + z4*p47;
-   log = p07 + E*log2h;
+   logde = p07 + E*log2h;
 #if 0 /* to time the first step only */
    BACK_TO_DOUBLE_MODE; return (double)t;
 #endif
 
 
    /* To test the second step only, comment out the following line */
-   DE_TEST_AND_RETURN_RN(log, roundtestmask);
+   DE_TEST_AND_RETURN_RN(logde, roundtestmask);
    
 
    log_accurate(&th, &tl, z, E, index);
@@ -207,11 +206,10 @@ double log_rn(double x) {
 
 
 double log_rd(double x) {
-  double wi;
-  double_ext logirh, r, y, z, z2,z4, th, tl, p01, p23, p45, p67, p03, p47, p07, log;
+  double_ext logirh, r, y, z, z2,z4, th, tl, p01, p23, p45, p67, p03, p47, p07, logde;
 #if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64)
   db_number xdb;
-  int E, i, index, roundtestmask;
+  int E, index, roundtestmask;
 #else
   int64_t  E, i;
   uint64_t index, roundtestmask;
@@ -294,14 +292,14 @@ double log_rd(double x) {
    z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
    z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
    p07 = p03 + z4*p47;
-   log = p07 + E*log2h;
+   logde = p07 + E*log2h;
 #if 0 /* to time the first step only */
    BACK_TO_DOUBLE_MODE; return (double)t;
 #endif
 
 
    /* To test the second step only, comment out the following line */
-   DE_TEST_AND_RETURN_RD(log, roundtestmask);
+   DE_TEST_AND_RETURN_RD(logde, roundtestmask);
 
    log_accurate(&th, &tl, z, E, index);
 
@@ -319,11 +317,10 @@ double log_rd(double x) {
 
 
 double log_ru(double x) {
-  double wi;
-  double_ext logirh, r, y, z, z2,z4, th, tl, p01, p23, p45, p67, p03, p47, p07, log;
+  double_ext logirh, r, y, z, z2,z4, th, tl, p01, p23, p45, p67, p03, p47, p07, logde;
 #if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64)
   db_number xdb;
-  int E, i, index, roundtestmask;
+  int E, index, roundtestmask;
 #else
   int64_t  E, i;
   uint64_t index, roundtestmask;
@@ -408,14 +405,14 @@ double log_ru(double x) {
    z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
    z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
    p07 = p03 + z4*p47;
-   log = p07 + E*log2h;
+   logde = p07 + E*log2h;
 #if 0 /* to time the first step only */
    BACK_TO_DOUBLE_MODE; return (double)t;
 #endif
 
    
    /* To test the second step only, comment out the following line */
-   DE_TEST_AND_RETURN_RU(log, roundtestmask);
+   DE_TEST_AND_RETURN_RU(logde, roundtestmask);
 
    log_accurate(&th, &tl, z, E, index);
 

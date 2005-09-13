@@ -97,7 +97,7 @@ case). However it uses a coarser error estimation.
 #define DE_TEST_AND_RETURN_RD(_y, _mask)                                        \
 {                                                           			\
   double _result; int _bits;                                                    \
-  db_ext_number _z;   db_number _yd;                        			\
+  db_ext_number _z;                                     			\
   _z.d = _y;                                                			\
   DOUBLE_DOWN_MODE;                                                             \
   _bits = _z.i[DE_MANTISSA_LO] &(_mask);     			                \
@@ -111,7 +111,7 @@ case). However it uses a coarser error estimation.
 #define DE_TEST_AND_RETURN_RU(_y, _mask)                                        \
 {                                                           			\
   double _result; int _bits;                                                    \
-  db_ext_number _z;   db_number _yd;                        			\
+  db_ext_number _z;                                     			\
   _z.d = _y;                                                			\
   DOUBLE_UP_MODE;                                                               \
   _bits = _z.i[DE_MANTISSA_LO] &(_mask);     			                \
@@ -365,19 +365,19 @@ case). However it uses a coarser error estimation.
 #if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
 #define Mul12_ext(prh,prl,u,v)                         \
 {                                                      \
-  const double_ext c  = 4294967297.L; /* 2^32 +1 */   \
-  double_ext up, u1, u2, vp, v1, v2;                  \
-  double_ext _u =u, _v=v;                             \
+  const double_ext _c  = 4294967297.L; /* 2^32 +1 */   \
+  double_ext _up, _u1, _u2, _vp, _v1, _v2;             \
+  double_ext _u =u, _v=v;                              \
                                                        \
-  up = _u*c;        vp = _v*c;                         \
-  u1 = (_u-up)+up;  v1 = (_v-vp)+vp;                   \
-  u2 = _u-u1;       v2 = _v-v1;                        \
+  _up = _u*_c;         _vp = _v*_c;                    \
+  _u1 = (_u-_up)+_up;  _v1 = (_v-_vp)+_vp;             \
+  _u2 = _u-_u1;        _v2 = _v-_v1;                   \
                                                        \
   *prh = _u*_v;                                        \
-  *prl = u1*v1 - *prh;                                 \
-  *prl = *prl + u1*v2;                                 \
-  *prl = *prl + u2*v1;                                 \
-  *prl = *prl + u2*v2;                                 \
+  *prl = _u1*_v1 - *prh;                               \
+  *prl = *prl + _u1*_v2;                               \
+  *prl = *prl + _u2*_v1;                               \
+  *prl = *prl + _u2*_v2;                               \
 }
 
 #define Mul22_ext(prh,prl, ah,al, bh,bl)               \

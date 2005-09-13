@@ -5,16 +5,38 @@ lib_LIBRARIES = libcrlibm.a
 # shared libraries need libtool. We'll do it later.
 #lib_LTLIBRARIES = libcrlibm.la
 
+
+# removed as of 0.10
+#	log_fast.c log_fast.h log_accurate.h log_accurate.c \
+#	exp_fast.h exp_fast.c exp_accurate.h exp_accurate.c \
+#	log10_accurate.h log10_accurate.c \
+#	log2_accurate.h  log2_accurate.c \
+
+
+if HAS_HARDWARE_DE
 libcrlibm_a_SOURCES =  \
-	crlibm.h crlibm_private.h crlibm_private.c\
-	exp_fast.h exp_fast.c exp_accurate.h exp_accurate.c \
-	log_fast.c log_fast.h log_accurate.h log_accurate.c \
-	log10_accurate.h log10_accurate.c \
-	log2_accurate.h  log2_accurate.c \
+	crlibm.h crlibm_private.h crlibm_private.c double-extended.h\
+	exp-td.h exp-td.c \
+	log-de.c log-de.h  \
+	log10-td.h log10-td.c \
+	log2-td.h  log2-td.c \
 	rem_pio2_accurate.h rem_pio2_accurate.c \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
-	csh_fast.h csh_fast.c
+	csh_fast.h csh_fast.c exp_accurate.h exp_accurate.c
+else 
+libcrlibm_a_SOURCES =  \
+	crlibm.h crlibm_private.h crlibm_private.c\
+	exp-td.h exp-td.c \
+	log-td.c log-td.h  \
+	log10-td.h log10-td.c \
+	log2-td.h  log2-td.c \
+	rem_pio2_accurate.h rem_pio2_accurate.c \
+	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
+	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
+	csh_fast.h csh_fast.c exp_accurate.h exp_accurate.c
+endif
+
 
 # add all the scs_lib useful functions
 libcrlibm_a_LIBADD = scs_lib/scs_private.o scs_lib/addition_scs.o  \
