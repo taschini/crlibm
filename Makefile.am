@@ -13,7 +13,7 @@ lib_LIBRARIES = libcrlibm.a
 #	log2_accurate.h  log2_accurate.c 
 
 
-if HAS_HARDWARE_DE
+if USE_HARDWARE_DE
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c double-extended.h\
 	exp-td.h exp-td.c \

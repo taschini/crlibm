@@ -43,7 +43,6 @@ ia64)
 	has_hardware_de=true;;
 esac;
 
-AM_CONDITIONAL(HAS_HARDWARE_DE, test x$has_hardware_de = xtrue)
 
 AC_CONFIG_SRCDIR([exp_accurate.c])
 AC_PROG_MAKE_SET
@@ -166,6 +165,17 @@ fi
 
 dnl Command-line arguments to ./configure:
 
+
+dnl A switch to disable use of double-extended optimised version
+AC_ARG_ENABLE(double-extended,        
+  [  --enable-double-extended        enable double-extended optimised versions of functions if hardware supports it  [[default=yes]]],
+  [case $enableval in
+  yes|no) ;;
+  *) AC_MSG_ERROR([bad value $enableval for --enable-double-extended, need yes or no]) ;;
+  esac],
+  [enable_double_extended=yes])
+
+AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_hardware_de = xtrue -a x$enable_double_extended = xyes)
 
 dnl If at some point we wish to include SPARC optimization back,
 dnl  the default should take the value 10 and 25 in this case 
