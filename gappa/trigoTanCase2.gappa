@@ -1,0 +1,73 @@
+# Usage: You need to replace a few constants (beginning by _) by numerical
+# values. Running the trigo.mpl Maple script will generate a
+# TEMPTRIG/tanCase2.sed sed script that does it.
+# Then sed -f TEMPTRIG/TanCase2.sed trigoTanCase2.gappa | gappa  > /dev/null
+
+
+# NOTATION CONVENTION 
+# Variables that correspond to double-precision variables in the code begin with a small letter
+# Other variables begin with a capital letter.
+# Otherwise avoid underscores as they are painful to carry on to LaTeX :)
+
+
+
+# Definition of the polynomial constants:
+t11 = <float64ne>(_t11);
+t9  = <float64ne>(_t9);
+t7  = <float64ne>(_t7);
+t5  = <float64ne>(_t5);
+t3h = <float64ne>(_t3h);
+t3l = <float64ne>(_t3l);
+
+#######################################################################
+
+# First, a transcription of the actual computation, which could (and
+# should eventually) be generated automatically from the actual code
+
+# ---------------------Code cut from tan_rn : 
+#    x2 = x*x;
+x2 <float64ne>= x * x;
+X2 = x*x;
+
+#    p5 = t5 + x2*(t7 + x2*(t9 + x2*t11));
+p5 <float64ne>= t5 + x2*(t7 + x2*(t9 + x2*t11));
+P5            = t5 + X2*(t7 + X2*(t9 + X2*t11));
+
+#    tt = x2*(t3h + (t3l + x2*p5));
+tt <float64ne>= x2*(t3h + (t3l + x2*p5));
+Tt            = X2*(t3h + (t3l + X2*p5));
+
+#    Add12(rri.rh, rri.rl, x, x*tt);   
+rdd = x + <float64ne>(x*tt);  # The Add12 is exact
+
+Poly = x+x*Tt;
+
+epsilon=(rdd - TanX)/TanX;
+
+{
+    x in [1b-30, _xmax]
+ /\ (Poly - TanX)/TanX in [-_maxEpsApprox, _maxEpsApprox]
+ /\ ((Poly - TanX)/TanX)/x in [-_maxEpsApproxOverX, _maxEpsApproxOverX]
+
+->  
+
+epsilon in ?
+/\
+epsilon/x in  [-1b-56,1b-56] 
+ 
+}
+
+# Use a dichotomy on x to get an interval of epsilon/x
+epsilon/x $ x;
+
+# The usual hint for relative errors, with an additional /x*x so that Gappa uses the Maple-computed mathematical bound
+(rdd - TanX)/TanX -> (rdd - Poly)/Poly  + (((Poly - TanX)/TanX)/x)*x + ((rdd - Poly)/Poly) * ((Poly - TanX)/TanX) ; 
+
+(rdd - Poly)/Poly  ->  ((<float64ne>(x*tt) - x*Tt) / x) * (x/Poly);
+
+# I'm not sure I understand why this one improves the result
+(<float64ne>(x*tt) - x*Tt)/x -> ((<float64ne>(x*tt) - x*tt)/(x*tt)) * tt   +  (tt - Tt);  
+
+# Easy hints
+x/Poly -> 1/(Poly/x);
+Poly/x -> 1+Tt;

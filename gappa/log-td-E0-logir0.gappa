@@ -1,0 +1,126 @@
+
+c3 = <float64ne> (_c3);
+c4 = <float64ne> (_c4);
+c5 = <float64ne> (_c5);
+c6 = <float64ne> (_c6);
+c7 = <float64ne> (_c7);
+
+
+E = 0; #MAPLE
+
+zh = <float64ne> (Z);
+zl = Z - zh; #MAPLE
+
+polyHorner <float64ne>= c3 + zh * (c4 + zh * (c5 + zh * (c6 + zh * c7)));
+
+ZhSquarehl = zh * zh; #MAPLE
+zhSquareh = <float64ne> (ZhSquarehl);
+zhSquarel = <float64ne> (ZhSquarehl - zhSquareh);
+
+zhSquareHalfh = zhSquareh * (-0.5); #MAPLE
+zhSquareHalfl = zhSquarel * (-0.5); #MAPLE
+ZhSquareHalfhl = ZhSquarehl * (-0.5); #MAPLE
+
+ZhCube <float64ne>= (zh * zhSquareh);
+polyUpper <float64ne>= polyHorner * ZhCube;
+
+temp = <float64ne> (zh * zl);
+T1hl = polyUpper - temp; #MAPLE
+t1h = <float64ne> (T1hl);
+t1l = <float64ne> (T1hl - t1h);
+
+T2 = Z + ZhSquareHalfhl; #MAPLE
+t2h = <float64ne> (T2hl);
+t2l = <float64ne> (T2hl - t2h);
+
+PE = T2hl + T1hl; #MAPLE
+ph = <float64ne> (Phl);
+pl = <float64ne> (Phl - ph);
+
+
+#We can simplify the computations in the function in this case as we know that 
+#all operations (add, mult) on 0 (as a double double) are exact.
+
+Loghm = Phl; #MAPLE
+
+logh = <float64ne> (Loghm);
+logm = <float64ne> (Loghm - logh);
+
+#Mathematical definition of the logarithm and the polynomial
+
+Phigher = (c3 + Z * (c4 + Z * (c5 + Z * (c6 + Z * c7)))); #MAPLE
+ZZZ = Z*Z*Z; #MAPLE
+ZZZPhigher = ZZZ * Phigher; #MAPLE
+HZZ = (-0.5*Z*Z); #MAPLE
+ZpHZZ = Z + HZZ; #MAPLE
+P = ZpHZZ + ZZZPhigher; #MAPLE
+
+#We apply the same simplification on the mathematical definition of the log
+Log = Log1pZ; #MAPLE
+
+
+#Additional useful definitions
+
+ZZ = Z*Z; #MAPLE
+ZZZPhigherPzhzl = ZZZPhigher - zh * zl; #MAPLE
+
+HZ = -0.5*Z; #MAPLE
+
+Flzhzl = temp; #MAPLE
+
+{
+(T2hl - T2) / T2 in [-1b-103,1b-103]
+/\ (Phl - PE) / PE in [-1b-103,1b-103]
+/\ Z in [_zmin,_zmax]
+/\ (P - Log1pZ) / Log1pZ in [-_epsilonApproxQuick,_epsilonApproxQuick]
+/\ ((logh + logm) - Loghm) / Loghm in [-1b-106,1b-106]
+->
+((logh + logm) - Log) / Log in [-5b-65,5b-65]
+}
+
+T2hl - T2 -> ((T2hl - T2) / T2) * T2;
+T2hl -> (T2hl - T2) + T2;
+
+Phl - PE -> ((Phl - PE) / PE) * PE;
+Phl -> (Phl - PE) + PE;
+
+
+(ZhSquarehl - ZZ) / ZZ -> 2 * ((zh - Z) / Z) + ((zh - Z) / Z) * ((zh - Z) / Z);
+
+(zhSquareh - ZZ) / ZZ -> ((ZhSquarehl - ZZ) / ZZ) + ((zhSquareh - ZhSquarehl) / ZZ);
+
+(zhSquareh - ZhSquarehl) / ZZ -> ((zhSquareh - ZhSquarehl) / ZhSquarehl) * (ZhSquarehl / ZZ);
+
+ZhSquarehl / ZZ -> ((ZhSquarehl - ZZ) / ZZ) + 1;
+
+(ZhCube - ZZZ) / ZZZ -> (((zh * zhSquareh) - ZZZ) / ZZZ) + ((ZhCube - (zh * zhSquareh)) / ZZZ);
+
+((zh * zhSquareh) - ZZZ) / ZZZ -> (1 + ((zh - Z) / Z)) * (1 + ((zhSquareh - ZZ) / ZZ)) - 1;
+
+((ZhCube - (zh * zhSquareh)) / ZZZ) -> ((ZhCube - (zh * zhSquareh)) / (zh * zhSquareh)) * (((zh - Z) / Z) + 1) * (((zhSquareh - ZZ) / ZZ) + 1);
+
+polyHorner / Phigher -> ((polyHorner - Phigher) / Phigher) + 1;
+
+(polyUpper - ZZZPhigher) / ZZZPhigher -> ((polyHorner - Phigher) / Phigher) + ((ZhCube - ZZZ) / ZZZ) * (polyHorner / Phigher) + 
+					  + ((polyUpper - (polyHorner * ZhCube)) / (polyHorner * ZhCube)) * (polyHorner / Phigher) +
+					  + ((ZhCube - ZZZ) / ZZZ) * ((polyUpper - (polyHorner * ZhCube)) / (polyHorner * ZhCube)) * 
+					    (polyHorner / Phigher);
+
+
+((ZhSquareHalfhl - (zh * zl)) - HZZ) / HZZ -> - ((zh - Z) / Z) * ((zh - Z) / Z);
+
+(ZhSquareHalfhl - HZZ) / HZZ -> (ZhSquarehl - ZZ) / ZZ;
+
+((T2hl - (zh * zl)) - ZpHZZ) / ZpHZZ -> ((HZ * (((ZhSquareHalfhl - (zh * zl)) - HZZ) / HZZ)) + ((T2hl - T2) / T2) 
+                                        + (HZ * ((T2hl - T2) / T2)) 
+					+ (HZ * ((ZhSquareHalfhl - HZZ) / HZZ) * ((T2hl - T2) / T2))) / (1 + HZ);
+
+(PE - P) / P -> (((1 + HZ) * (((T2hl - (zh * zl)) - ZpHZZ) / ZpHZZ)) +
+		((1 + ((zh - Z) / Z)) * (Z * ((zh - Z) / Z)) * ((Flzhzl - (zh * zl)) / (zh * zl))) 
+	        + (ZZ * Phigher * ((polyUpper - ZZZPhigher) / ZZZPhigher))) / (1 + HZ + ZZ * Phigher);
+
+(Phl - P) / P -> ((PE - P) / P) + ((((PE - P) / P) + 1) * ((Phl - PE) / PE));
+
+(Loghm - Log) / Log -> ((Loghm - P) / P) + ((P - Log) / Log) + ((Loghm - P) / P) * ((P - Log) / Log);
+
+(((logh + logm) - Log) / Log) -> (((logh + logm) - Loghm) / Loghm) + ((Loghm - Log) / Log) + (((logh + logm) - Loghm) / Loghm) * ((Loghm - Log) / Log);
