@@ -58,7 +58,7 @@ endif
 
 
 
-EXTRA_DIST = VERSION\
+EXTRA_DIST = VERSION TODO\
 	docs/crlibm.pdf \
 	maple/common-procedures.mpl \
 	maple/double-extended.mpl maple/triple-double.mpl\
