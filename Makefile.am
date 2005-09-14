@@ -59,10 +59,19 @@ endif
 
 
 EXTRA_DIST = VERSION\
-	maple/common-procedures.mpl \
-	maple/log.mpl maple/trigo.mpl maple/atan.mpl maple/csh.mpl \
-	maple/trigoSinCosCase3.gappa maple/trigoTanCase2.gappa \
 	docs/crlibm.pdf \
+	maple/common-procedures.mpl \
+	maple/double-extended.mpl maple/triple-double.mpl\
+	maple/exp-td.mpl maple/csh.mpl \
+	maple/log-td.mpl  maple/log-de.mpl \
+	maple/log2-td.mpl maple/log10-td.mpl \
+	maple/trigo.mpl maple/atan.mpl \
+	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
+	gappa/trigoTanCase2.gappa \
+	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
+	gappa/log-de.gappa gappa/log-de-E0.gappa gappa/log-de-E0-logir0.gappa \
+	gappa/log-td.gappa gappa/log-td-E0.gappa gappa/log-td-E0-logir0.gappa \
+	gappa/log-td-accurate.gappa gappa/log-td-accurate-E0.gappa gappa/log-td-accurate-E0-logir0.gappa \
 	docs/latex/crlibm.tex \
 	docs/latex/0_intro.tex docs/latex/0_getting-started.tex\
 	docs/latex/1_common.tex docs/latex/2_exp.tex docs/latex/3_log.tex\

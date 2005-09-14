@@ -1,0 +1,33 @@
+TODO before 0.10 release (will we call it 1.0?)
+
+Proof stuff
+-----------
+Write proofs for log2-td, log10-td
+Check all the existing .gappa against last version of Gappa
+Write proofs of the DE integer rounding tests.
+
+Cleaning up stuff
+-----------------
+Check .mpl with underscored variables (some versions of Maple don't like them)
+Replace calls to expSCS in csh.c with calls to functions in exp-td
+
+
+
+===========================================================================
+
+TODO some day
+
+New functions
+-------------
+Easy: 2^x, 10^x
+Moderate: inverse trigs, inverse hyperbolic
+Difficult: power
+
+Optimisation stuff
+------------------
+Write TD versions of: csh, trigo
+Write DE versions of: exp, csh, trigo
+
+Interval stuff
+--------------
+Write interval functions for each CR function

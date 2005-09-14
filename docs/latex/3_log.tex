@@ -908,12 +908,15 @@ $118$ bits\cite{DinDefLau2004LIP}, we can consider the implementation to be corr
 that the final rounding sequence used is exact and correct. Since we suppose this -- a correctness proof can be 
 found in \cite{Lau05} -- the correctly rounding property is verified.
 \section{Performance results}
-The given implementation of the natural logarithm function aims at being both portable and more performant than
-other implementations using the SCS libary for the accurate phase (cf. chapter \ref{chap3:log}). 
-This goal is acheived in terms of memory consumption
-(if the code sizes for {\tt scslib} are taken into account) and in terms of speed performance. The reason for this
-is mainly the possibility of reusing all values computed in the argument reduction phase and the tables for the 
-accurate phase directly. 
+The given implementation of the natural logarithm function aims at
+being both portable and more performant than the previous
+implementations using the SCS libary for the accurate phase.  This
+goal is acheived in terms of memory consumption (if the code sizes for
+{\tt scslib} are taken into account) and in terms of speed
+performance. The reason for this is mainly the possibility of reusing
+all values computed in the argument reduction phase and the tables for
+the accurate phase directly.
+
 \subsection{Memory requirements}
 
 

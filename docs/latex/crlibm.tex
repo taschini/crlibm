@@ -1,6 +1,5 @@
 \documentclass[a4paper]{book} 
 
-\usepackage{hyperref}
 \usepackage{fullpage}
 \usepackage{isolatin1} 
 \usepackage{graphicx}
@@ -12,6 +11,7 @@
 \usepackage{makeidx}
 \usepackage{color}
 \usepackage{amstext,url,latexsym,amsfonts,amssymb,amsmath,amsthm}
+\usepackage{hyperref}
 
 
 \newtheorem{example}{Example}
@@ -213,9 +213,13 @@ This work was partly funded by the \textsc{Inria}, the ÉNS-Lyon and the Universi
  \chapter{The natural logarithm \label{chap:log}}
  \input{3_log.tex}
 
-\chapter{The portable SCS-free implementation of the natural logarithm \label{chap:log}}
-\input{7_logalt.tex}
+ \chapter{The logarithm in base 2 \label{chap:log2}}
+ Todo. In between, see files log2-td.\{h,c,mpl,gappa\}.
 
+ \chapter{The logarithm in base 10 \label{chap:log10}}
+ Todo. In between, see files log10-td.\{h,c,mpl,gappa\}.
+
+ 
  \chapter{The exponential \label{chap:exp}}
  \input{2_exp.tex}
  \chapter{The trigonometric functions \label{chap:trigo}}

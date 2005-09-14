@@ -155,6 +155,7 @@ preferable, for performance issue, to implement them as macros, as in
 selected by the \texttt{DEKKER\_AS\_FUNCTIONS} constant which is set
 by default to 1 (functions).
 
+A more recent proof is available in \cite{Lau05}.
 
 \subsection{Exact sum algorithm {Add12}}
 
@@ -211,7 +212,10 @@ The cost of this algorithm is $3$ floating-point additions.
 
 \subsection{Exact product algorithm {Mul12}}
 
-This algorithm is sometimes  also known as the Dekker algorithm \cite{Dek71,Knu73}.
+This algorithm is sometimes also known as the Dekker algorithm
+\cite{Dek71}. It was proven by Dekker but the proof predates the
+IEEE-754 standard and is difficult to read. An easier proof is
+available in \cite{Gol91} (see Th. 14).
 
 \begin{theorem}[Restricted exact product]
   Let $a$ and $b$ be two double-precision floating-point numbers, with
@@ -302,7 +306,8 @@ it is availables (currently Itanium and PowerPC).
   
 This algorithm, also due to Dekker \cite{Dek71}, computes the sum of
 two double-double numbers as a double-double, with a relative error
-smaller than $2^{-103}$.
+smaller than $2^{-103}$ (there is a proof in \cite{Dek71}, a more recent one can be found in in \cite{Lau05}).
+
 
 \begin{lstlisting}[label={Add22Cond},caption={Add22Cond},firstnumber=1]
 void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, double yl)
@@ -339,7 +344,7 @@ s = xh-r+yh+yl+xl;
   
 This algorithm, also due to Dekker \cite{Dek71}, computes the product of
 two double-double numbers as a double-double, with a relative error
-smaller than $2^{-102}$, under the condition $x_h<2^{970}$ and $y_h<2^{970}$ . 
+smaller than $2^{-102}$, under the condition $x_h<2^{970}$ and $y_h<2^{970}$  (there is a proof in \cite{Dek71}, a more recent one can be found in in \cite{Lau05}). 
 
 \begin{lstlisting}[label={Mul22},caption={Mul22},firstnumber=1]
 void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl)
@@ -377,11 +382,280 @@ by zero and one useless addition: a specific procedure is not needed.
 
 
 Use Cody and Waite algorithm. See for instance the $\log$ and the
-trigonometric argument reduction (chapter \ref{chap3:log}, p. \pageref{chap3:log}).
+trigonometric argument reduction (chapter \ref{chap:log}, p.
+\pageref{chap:log}).
 
 
+\section{Common C procedures for triple-double arithmetic\label{section:commonCtripledouble}}
+
+These procedures are used tor reach accuracies of about 150 bits. They
+are detailed and proven in \cite{Lau05}.
+
+\subsection{The addition operator \AddTT}
+\begin{algorithm}[\AddTT] \label{addTTref} ~ \\
+{\bf In:} two triple-double numbers, $a_\hi + a_\mi + a_\lo$ et $b_\hi + b_\mi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert b_\hi \right \vert & \leq & \frac{3}{4} \cdot \left \vert a_\hi \right \vert \\
+\left \vert a_\mi \right \vert & \leq & 2^{-\alpha_o} \cdot \left \vert a_\hi \right \vert \\
+\left \vert a_\lo \right \vert & \leq & 2^{-\alpha_u} \cdot \left \vert a_\mi \right \vert \\
+\left \vert b_\mi \right \vert & \leq & 2^{-\beta_o} \cdot \left \vert b_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-\beta_u} \cdot \left \vert b_\mi \right \vert \\
+\alpha_o & \geq & 4 \\
+\alpha_u & \geq & 1 \\
+\beta_o & \geq & 4 \\
+\beta_u & \geq & 1 \\
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left(r_\hi, t_1 \right) \gets \mAdd\left( a_\hi, b_\hi \right)$ \\
+$\left(t_2, t_3 \right) \gets \mAdd\left( a_\mi, b_\mi \right)$ \\
+$\left(t_7, t_4 \right) \gets \mAdd\left( t_1, t_2 \right)$ \\
+$t_6 \gets a_\lo \oplus b_\lo$ \\
+$t_5 \gets t_3 \oplus t_4$ \\
+$t_8 \gets t_5 \oplus t_6$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAdd\left( t_7, t_8 \right)$
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{addTTref} \AddTT\label{theoAddTT}] ~ \\
+Let be $a_\hi + a_\mi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ the triple-double
+arguments of algorithm \ref{addTTref} \AddTT~ verifying the given 
+preconditions.\\
+So the following egality will hold for the returned values $r_\hi$, $r_\mi$ et $r_\lo$ 
+$$r_\hi + r_\mi + r_\lo = \left(\left(a_\hi + a_\mi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded by:
+$$\left \vert \epsilon \right \vert \leq 2^{-\min\left(\alpha_o + \alpha_u,\beta_o + \beta_u\right) - 47} + 
+2^{-\min\left( \alpha_o, \beta_o\right) - 98}$$
+The returned values $r_\mi$ and $r_\lo$ will not overlap at all and the
+overlap of $r_\hi$ and $r_\mi$ will be bounded by the following expression:
+$$\left \vert r_\mi \right \vert \leq 2^{-\min\left( \alpha_o, \beta_o \right) + 5} \cdot \left \vert r_\hi \right \vert$$
+\end{theorem}
+
+\subsection{The addition operator \AddDTT}
+\begin{algorithm}[\AddDTT] \label{addDTTref} ~ \\
+{\bf In:} a double-double number $a_\hi + a_\lo$ and a triple-double number $b_\hi + b_\mi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert b_\hi \right \vert & \leq & 2^{-2} \cdot \left \vert a_\hi \right \vert \\
+\left \vert a_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert \\
+\left \vert b_\mi \right \vert & \leq & 2^{-\beta_o} \cdot \left \vert b_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-\beta_u} \cdot \left \vert b_\mi \right \vert 
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( r_\hi, t_1 \right) \gets \mAdd\left( a_\hi, b_\hi \right)$ \\
+$\left( t_2, t_3 \right) \gets \mAdd\left( a_\lo, b_\mi \right)$ \\
+$\left( t_4, t_5 \right) \gets \mAdd\left( t_1, t_2 \right)$ \\
+$t_6 \gets t_3 \oplus b_\lo$ \\
+$t_7 \gets t_6 \oplus t_5$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAdd\left( t_4, t_7 \right)$ \\
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{addDTTref} \AddDTT] ~ \\
+Let be $a_\hi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ the values taken in argument of algorithm \ref{addDTTref} \AddDTT. 
+Let the preconditions hold for this values.\\
+So the following holds for the values returned by the algorithm $r_\hi$, $r_\mi$ et $r_\lo$ 
+$$r_\hi + r_\mi + r_\lo = \left(\left(a_\hi + a_\mi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded by
+$$\left \vert \epsilon \right \vert \leq 2^{-\beta_o - \beta_u - 52} + 2^{-\beta_o - 104} + 2^{-153}$$
+The values $r_\mi$ and $r_\lo$ will not overlap at all and the overlap of $r_\hi$ and $r_\mi$ will be bounded by:
+$$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right \vert$$
+with
+$$\gamma \geq \min\left( 45, \beta_o - 4, \beta_o + \beta_u - 2 \right)$$
+\end{theorem}
+\subsection{The multiplication procedure \MulDT}
+\begin{algorithm}[\MulDT] \label{mulDTref} ~ \\
+{\bf In:} two double-double numbers $a_\hi + a_\lo$ and $b_\hi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert a_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert b_\hi \right \vert \\
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( r_\hi, t_1 \right) \gets \mMul\left( a_\hi, b_\hi \right)$ \\
+$\left( t_2, t_3 \right) \gets \mMul\left( a_\hi, b_\lo \right)$ \\
+$\left( t_4, t_5 \right) \gets \mMul\left( a_\lo, b_\hi \right)$ \\
+$t_6 \gets a_\lo \otimes b_\lo$ \\
+$\left( t_7, t_8 \right) \gets \mAddDD\left( t_2, t_3, t_4, t_5 \right)$ \\
+$\left( t_9, t_{10} \right) \gets \mAdd\left( t_1, t_6 \right)$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAddDD\left( t_7, t_8, t_9, t_{10} \right)$ \\
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{mulDTref} \MulDT] ~ \\
+Let be $a_\hi + a_\lo$ and $b_\hi + b_\lo$ the values taken by arguments of algorithm \ref{mulDTref} \MulDT \\
+So the following holds for the values returned $r_\hi$, $r_\mi$ and $r_\lo$:
+$$r_\hi + r_\mi + r_\lo = \left(\left(a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded as follows:
+$$\left \vert \epsilon \right \vert \leq 2^{-149}$$
+The values returned $r_\mi$ and $r_\lo$ will not overlap at all and the overlap of $r_\hi$ et $r_\mi$ will be bounded as
+follows:
+$$\left \vert r_\mi \right \vert \leq 2^{-48} \cdot \left \vert r_\hi \right \vert$$
+\end{theorem}
+
+\subsection{The multiplication procedure \MulDTT}
+\begin{algorithm}[\MulDTT] \label{mulDTTref} ~ \\
+{\bf In:} a double-double number $a_\hi + a_\lo$  and a triple-double number $b_\hi + b_\mi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert a_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert \\
+\left \vert b_\mi \right \vert & \leq & 2^{-\beta_o} \cdot \left \vert b_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-\beta_u} \cdot \left \vert b_\mi \right \vert 
+\end{eqnarray*}
+with
+\begin{eqnarray*}
+\beta_o & \geq & 2 \\
+\beta_u & \geq & 1 
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{60mm}
+$\left( r_\hi, t_1 \right) \gets \mMul\left( a_\hi, b_\hi \right)$ \\
+$\left( t_2, t_3 \right) \gets \mMul\left( a_\hi, b_\mi \right)$ \\
+$\left( t_4, t_5 \right) \gets \mMul\left( a_\hi, b_\lo \right)$ \\
+$\left( t_6, t_7 \right) \gets \mMul\left( a_\lo, b_\hi \right)$ \\
+$\left( t_8, t_9 \right) \gets \mMul\left( a_\lo, b_\mi \right)$ \\
+$t_{10} \gets a_\lo \otimes b_\lo$ \\
+$\left( t_{11}, t_{12} \right) \gets \mAddDD\left( t_2, t_3, t_4, t_5 \right)$ \\
+$\left( t_{13}, t_{14} \right) \gets \mAddDD\left( t_6, t_7, t_8, t_9 \right)$ \\
+$\left( t_{15}, t_{16} \right) \gets \mAddDD\left( t_{11}, t_{12}, t_{13}, t_{14} \right)$ \\
+$\left( t_{17}, t_{18} \right) \gets \mAdd\left( t_1, t_{10} \right)$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAddDD\left( t_{17}, t_{18}, t_{15}, t_{16} \right)$ \\
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{mulDTTref} \MulDTT] ~ \\
+Let be $a_\hi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ the values in argument of algorithm \ref{mulDTTref} \MulDTT~ such that 
+the given preconditions hold.\\
+So the following will hold for the values $r_\hi$, $r_\mi$ and $r_\lo$ returned
+$$r_\hi + r_\mi + r_\lo = \left(\left(a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\mi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded as follows:
+$$\left \vert \epsilon \right \vert \leq \frac{2^{-99 - \beta_o} + 2^{-99 - \beta_o - \beta_u} + 2^{-152}}
+                                              {1 - 2^{-53} - 2^{-\beta_o + 1} - 2^{-\beta_o - \beta_u + 1}}
+                                    \leq 2^{-97 - \beta_o} + 2^{-97 - \beta_o - \beta_u} + 2^{-150}$$
+The values $r_\mi$ and  $r_\lo$ will not overlap at all and the following bound will be verified for the overlap of 
+$r_\hi$ and $r_\mi$:
+$$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right \vert$$
+where
+$$\gamma \geq \min\left( 48, \beta_o - 4, \beta_o + \beta_u - 4 \right)$$
+\end{theorem}
 
 
+\subsection{Final rounding to the nearest even}
+
+\begin{algorithm}[Final rounding to the nearest (even)] \label{algarrpres} ~ \\
+{\bf In:} a triple-double number $x_\hi + x_\mi + x_\lo$ \\
+{\bf Out:} a double precision number $x^\prime$ returned by the algorithm \\
+{\bf Preconditions on the arguments:}
+\begin{itemize}
+\item $x_\hi$ and $x_\mi$ as well as $x_\mi$ and $x_\lo$ do not overlap
+\item $x_\mi = \circ \left( x_\mi + x_\lo \right)$
+\item $x_\hi \not = 0$, $x_\mi \not = 0$ et $x_\lo \not = 0$  
+\item $\circ \left( x_\hi + x_\mi \right) \not \in \left \lbrace x_\hi^-, x_\hi, x_\hi^+ \right \rbrace \Rightarrow 
+\left \vert \left( x_\hi + x_\mi \right) - \circ\left( x_\hi + x_\mi \right) \right \vert \not = 
+\frac{1}{2} \cdot \mUlp\left( \circ \left( x_\hi + x_\mi \right) \right)$
+\end{itemize}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{80mm}
+$t_1 \gets x_\hi^-$ \\
+$t_2 \gets x_\hi \ominus t_1$ \\
+$t_3 \gets t_2 \otimes \frac{1}{2}$ \\
+$t_4 \gets x_\hi^+$ \\
+$t_5 \gets t_4 \ominus x_\hi$ \\
+$t_6 \gets t_5 \otimes \frac{1}{2}$ 
+\\ ~ \\
+{\bf if} $\left( x_\mi \not = -t_3 \right)$ {\bf and} $\left( x_\mi \not = t_6 \right)$ {\bf then} 
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{70mm}
+\vspace{-2.4mm}
+{\bf return } $\left( x_\hi \oplus x_\mi \right)$
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf else} 
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{70mm}
+{\bf if} $\left( x_\mi \otimes x_\lo > 0.0 \right)$ {\bf then} 
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{60mm}
+{\bf if} $\left( x_\hi \otimes x_\lo > 0.0 \right)$ {\bf then} 
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{50mm}
+\vspace{-2.4mm}
+{\bf return } $x_\hi^+ $
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf else}
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{50mm}
+\vspace{-2.4mm}
+{\bf return } $x_\hi^- $
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf end if} 
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf else}
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{60mm}
+\vspace{-2.4mm}
+{\bf return } $x_\hi $
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf end if} 
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf end if} 
+\end{minipage}
+\end{center}
+\end{algorithm}
+
+\begin{theorem}[Correctness of the final rounding procedure \ref{algarrpres}]\label{corralgpluspres} ~\\
+Let be {\bf A} the algorithm \ref{algarrpres} said `` Final rounding to the nearest (even)''.
+Let be $x_\hi + x_\mi + x_\lo$ triple-double number for which the preconditions of algorithm {\bf A} hold.
+Let us notate $x^\prime$ the double precision number returned by the procedure. \\
+So
+$$x^\prime = \circ \left( x_\hi + x_\mi + x_\lo \right)$$
+i.e. {\bf A} is a correct rounding procedure for round-to-nearest-ties-to-even mode.
+\end{theorem}
+
+\subsection{Final rounding for the directed modes}
+
+\begin{theorem}[Directed final rounding of a triple-double number] \label{arrdir} ~ \\
+Let be $x_\hi + x_\mi + x_\lo \in \F + \F + \F$ a non-overlapping triple-double number. \\
+Let be $\diamond$ a directed rounding mode.\\
+Let be {\bf A} the following instruction sequence:
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( t_1, t_2 \right) \gets \mAdd\left( x_\hi, x_\mi \right)$ \\
+$t_3 \gets t_2 \oplus x_\lo$ \\
+{\bf return } $\diamond\left( t_1 + t_3 \right)$
+\end{minipage}
+\end{center}
+So {\bf A} is a correct rounding procedure for the rounding mode $\diamond$.
+\end{theorem}
 
 \section{Horner polynomial approximations \label{sec:Horner}}
 
@@ -856,8 +1130,9 @@ The following test determines whether $y_h$ is the
 
 \item These tests launch the accurate phase when yl=0, in particular
   in the exceptional cases when the image of a double is a double. See
-  the chapter \ref{chap3:log} (page \pageref{pageref:log_of_one}) for
-  an example where it can introduce a misround.
+  the chapter \ref{chap:log}
+% (page \pageref{pageref:log_of_one}) % TODO: still true? 
+for  an example where it may introduce a misround.
 
 \item These tests don't work if $y_h$ is a subnormal. If one cannot
   prove statically that this case doesn't appear, a sensible solution
