@@ -11,7 +11,9 @@ Cleaning up stuff
 Check .mpl with underscored variables (some versions of Maple don't like them)
 Replace calls to expSCS in csh.c with calls to functions in exp-td
 
-
+Autotest stuff
+--------------
+Add some of Vincent's worst cases to log2 and log10 testdata
 
 ===========================================================================
 
