@@ -119,7 +119,7 @@ $log2_\hi + log2_\mi + log2_\lo \approx \log\left( 2 \right)$ and $logi_\hi + lo
 Since the critical accuracy of the double precision $\log$ function is $118$ bits according to 
 \cite{DinDefLau2004LIP}, rounding $\log_\hi + log_\mi + log_\lo \approx \log\left( x \right)$ to double precision is equivalent 
 to rounding the infinite precision value $\log\left( x \right)$ to double precision. 
-Using the final rounding sequences presented in \cite{Lau05}, which are supposed to be correct, 
+Using the final rounding sequences presented in \cite{Lauter2005LIP:tripledouble}, which are supposed to be correct, 
 the double precision value returned by the function is the correctly rounded double precision value of 
 $\log\left( x \right)$.
 \section{Correctness proof\label{sec:proof}}
@@ -140,7 +140,7 @@ double-double and triple-double numbers,
 \item the mathematical equality of the term rewriting hints in the Gappa code.
 \end{itemize}
 The proofs for the accuracy of the basic operation bricks and the correctness proof of the final rounding sequences
-are somewhat lengthy and are not given here; they can be found in \cite{Lau05}.
+are somewhat lengthy and are not given here; they can be found in \cite{Lauter2005LIP:tripledouble}.
 \subsection{Exactness of the argument reduction\label{subsec:reduction}}
 In this section, we will show that all special cases are handled correctly and that the 
 reduced argument consisting in $E$ and $z_\hi + z_\lo$ is exact, which means that we have the mathematically exact 
@@ -391,7 +391,7 @@ $$\left \vert \frac{T2hl - T2}{T2} \right \vert \leq 2^{-103}$$ is verified as $
 $$T2hl = t2_\hi + t2_\lo \gets \mAddDD \left( z_\hi, z_\lo, zhSquareHalf_\hi, zhSquareHalf_\lo \right)$$
 $$T2 = \left( z_\hi + z_\lo \right) + \left( zhSquareHalf_\hi + zhSquareHalf_\lo \right)$$
 The given bound is thus just the accuracy bound of the \AddDD~ sequence for which a proof can be found in 
-\cite{Lau05}.
+\cite{Lauter2005LIP:tripledouble}.
 \item {\tt (Phl - PE) / PE in [-1b-103,1b-103]} is verified for the same reason; let us just recall the definitions
 $$Phl = p_\hi + p_\lo \gets \mAddDD \left( t2_\hi, t2_\lo, t1_\hi, t1_\lo \right)$$
 $$PE = \left( t2_\hi + t2_\lo\right) + \left( t1_\hi + t1_\lo \right)$$
@@ -562,15 +562,15 @@ For the reasons mentionned, we can consider the accuracy proof of the quick phas
 The accuracy proof of the accurate phase is also based mainly on the use of the Gappa tool. 
 Nevertheless, since the tool is currently not directly supporting triple-double representations, some additional
 hand-proven accuracy bound results for the main addition and multiplication operators are needed. They can be
-found in \cite{Lau05}. Since all these accuracy bounds are parameterized by the maximal overlap bound
+found in \cite{Lauter2005LIP:tripledouble}. Since all these accuracy bounds are parameterized by the maximal overlap bound
 for the triple-double numbers along the computations, before being able to give a numerical value for
 these error bounds understood by the Gappa tool, it is necessary to do a maximal overlap bound analysis using
-the theorems given in \cite{Lau05}.\par
+the theorems given in \cite{Lauter2005LIP:tripledouble}.\par
 Eventually, since not an overlapped triple-double intermediate result is to be returned by the logarithm function but a 
 double precision number that is the correct rounding according to the rounding mode chosen, the algorithm effectuates
 a renormalizing operation on the final result and rounds this non-overlapped result down to a double using an
 appropriate rounding sequence. All this renormalization and rounding sequences are exact and have been shown to be
-correct in \cite{Lau05}. The same way, all properties shown in section \ref{subsec:reduction} 
+correct in \cite{Lauter2005LIP:tripledouble}. The same way, all properties shown in section \ref{subsec:reduction} 
 concerning the special case handling and exactness argument reduction can be reused because the algorithm implemented in
 the accurate phase uses the same reduced argument and is substantially the same as for the quick phase. \par
 We will thus rely on all these properties and simply show the following accuracy bound
@@ -687,7 +687,7 @@ follows. Call the number in consideration e.g. $a_\hi + a_\mi + a_\lo$. So we wi
 \end{eqnarray*}
 where $\alpha_o, \alpha_u \geq 2$.
 We will then propagate this information following the flow of control in the implementation and using the overlap 
-bound theorems given in \cite{Lau05}. Here, we understand by ``propagating'' checking a system of constraints 
+bound theorems given in \cite{Lauter2005LIP:tripledouble}. Here, we understand by ``propagating'' checking a system of constraints 
 of the bounds under the limitations provided by the theorems. As the control-flow-graph of our implementation
 is completely linear, this check is linear, too. The theorems mentionned can be summarized as follows:
 \begin{center}
@@ -766,10 +766,10 @@ as small as $0$ in magnitude and further, since the multiplication is pairwise, 
 $Log2edhml$ is the same as for $Log2hml$ which is stored with at least $11$ bit trailing zeros. 
 So an appropriate bound is $\alpha_o \geq 52 - 11 \geq 40$ and $\alpha_u \geq 40$. 
 \end{itemize}
-All other bounds can be verified the same way using the theorems given in \cite{Lau05} and indicated above. \par
+All other bounds can be verified the same way using the theorems given in \cite{Lauter2005LIP:tripledouble} and indicated above. \par
 Since we have computed the overlap bounds for the different triple-double operands in the code, we can now 
 calculate the accuracy bounds for the operations. Doing this is only possible with the knowledge of the
-overlap of the operations because all accuracy bound theorems given in \cite{Lau05} are parameterized with this 
+overlap of the operations because all accuracy bound theorems given in \cite{Lauter2005LIP:tripledouble} are parameterized with this 
 overlap expressions. \\
 Let us first give a list of the accuracy of the different basic operations which is not exhaustive with regard to
 its lack of listing almost all preconditions on the sequences required for theorems to hold. We refrain from explicitely 
@@ -906,7 +906,7 @@ By the existence of an accuracy proof for a final relative error of $\left \vert
 by the use of the critical accuracy of the double precision natural logarithm function which is 
 $118$ bits\cite{DinDefLau2004LIP}, we can consider the implementation to be correctly rounding under the hypothesis
 that the final rounding sequence used is exact and correct. Since we suppose this -- a correctness proof can be 
-found in \cite{Lau05} -- the correctly rounding property is verified.
+found in \cite{Lauter2005LIP:tripledouble} -- the correctly rounding property is verified.
 \section{Performance results}
 The given implementation of the natural logarithm function aims at
 being both portable and more performant than the previous

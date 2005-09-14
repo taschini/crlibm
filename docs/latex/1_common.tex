@@ -155,7 +155,7 @@ preferable, for performance issue, to implement them as macros, as in
 selected by the \texttt{DEKKER\_AS\_FUNCTIONS} constant which is set
 by default to 1 (functions).
 
-A more recent proof is available in \cite{Lau05}.
+A more recent proof is available in \cite{Lauter2005LIP:tripledouble}.
 
 \subsection{Exact sum algorithm {Add12}}
 
@@ -306,7 +306,7 @@ it is availables (currently Itanium and PowerPC).
   
 This algorithm, also due to Dekker \cite{Dek71}, computes the sum of
 two double-double numbers as a double-double, with a relative error
-smaller than $2^{-103}$ (there is a proof in \cite{Dek71}, a more recent one can be found in in \cite{Lau05}).
+smaller than $2^{-103}$ (there is a proof in \cite{Dek71}, a more recent one can be found in in \cite{Lauter2005LIP:tripledouble}).
 
 
 \begin{lstlisting}[label={Add22Cond},caption={Add22Cond},firstnumber=1]
@@ -344,7 +344,7 @@ s = xh-r+yh+yl+xl;
   
 This algorithm, also due to Dekker \cite{Dek71}, computes the product of
 two double-double numbers as a double-double, with a relative error
-smaller than $2^{-102}$, under the condition $x_h<2^{970}$ and $y_h<2^{970}$  (there is a proof in \cite{Dek71}, a more recent one can be found in in \cite{Lau05}). 
+smaller than $2^{-102}$, under the condition $x_h<2^{970}$ and $y_h<2^{970}$  (there is a proof in \cite{Dek71}, a more recent one can be found in in \cite{Lauter2005LIP:tripledouble}). 
 
 \begin{lstlisting}[label={Mul22},caption={Mul22},firstnumber=1]
 void Mul22(double *zh, double *zl, double xh, double xl, double yh, double yl)
@@ -389,7 +389,7 @@ trigonometric argument reduction (chapter \ref{chap:log}, p.
 \section{Common C procedures for triple-double arithmetic\label{section:commonCtripledouble}}
 
 These procedures are used tor reach accuracies of about 150 bits. They
-are detailed and proven in \cite{Lau05}.
+are detailed and proven in \cite{Lauter2005LIP:tripledouble}.
 
 \subsection{The addition operator \AddTT}
 \begin{algorithm}[\AddTT] \label{addTTref} ~ \\
