@@ -34,13 +34,13 @@ powerpc*)
 	AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_POWERPC,1,[Processor type]);;
 i*86|k6|k7|pentium*|athlon*)
 	AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_X86,1,[Processor type])
-	has_hardware_de=true;;
+	has_ia32_de=true;;
 x86_64|amd64)
         AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_AMD64,1,[Processor type])
-	has_hardware_de=true;;
+	has_ia32_de=true;;
 ia64)
 	AC_DEFINE_UNQUOTED(CRLIBM_TYPECPU_ITANIUM,1,[Processor type])
-	has_hardware_de=true;;
+	has_ia64_de=true;;
 esac;
 
 
@@ -175,7 +175,9 @@ AC_ARG_ENABLE(double-extended,
   esac],
   [enable_double_extended=yes])
 
-AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_hardware_de = xtrue -a x$enable_double_extended = xyes)
+dnl following line needs a little bit more work on log-de.c and double-extended.h
+dnl AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_ia32_de = xtrue -a x$enable_double_extended = xyes   -o  x$has_ia64_de = xtrue -a x$CC = xicc -a x$enable_double_extended = xyes  )
+AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_ia32_de = xtrue -a x$enable_double_extended = xyes   )
 
 dnl If at some point we wish to include SPARC optimization back,
 dnl  the default should take the value 10 and 25 in this case 

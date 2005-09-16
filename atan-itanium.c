@@ -6,11 +6,12 @@
  *
 
 WARNING : This code is dirty and experimental, and remains here for
-history. A cleaner, portable version of an exponential using
-double-extended arithmetic will be available as atan-de.c
+history. A cleaner, portable version using double-extended arithmetic will be available some day as atan-de.c
+For this reason there is only atan_rn so it fails the "make check" for all the other rounding modes
+
 
    To test within crlibm: (tested with Intel icc compiler version 8.1)
-icc  -mcpu=itanium2  -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c atan-itanium.c; mv atan-itanium.o atan_fast.o; make
+icc -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c atan-itanium.c; mv atan-itanium.o atan_fast.o; make
 
 
 

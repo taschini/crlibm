@@ -22,9 +22,9 @@ on pentium,
 
 on itanium, use icc 8.1 or higher. 
 
-icc -DHAVE_CONFIG_H -I/users/fdedinex/local/IA64/include -mcpu=itanium2\
- -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe -c log-de.c;\
- mv log-de.o log_fast.o; make
+icc -DHAVE_CONFIG_H  -Qoption,cpp,--extended_float_types \
+                    -IPF_fp_speculationsafe -c log-de.c;\
+ mv log-de.o log-td.o; make
 
  
 */
