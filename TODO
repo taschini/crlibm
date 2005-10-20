@@ -17,6 +17,8 @@ Check icc 9
 At the moment, on itanium/icc, log-de only compiles without -mp-std=c99, and 4 of the other ones only compile with these options.
 Solution: add FMADE macros everywhere FMA intended
 add make timings
+On x86, the test procedure is unfair to the default libm : it should put the processor back to its default state.
+
 
 Autotest stuff
 --------------
