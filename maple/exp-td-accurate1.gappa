@@ -1,0 +1,141 @@
+# Gappa proof for the relative error of a polynomial approximation of exp(rh)-1
+# abs(rh) \leq 2^(-12)
+
+
+# Rounding operators and sequences definition
+
+@double = float<ieee_64,ne>;
+@Add22 = add_rel<102>;
+@Mul22 = mul_rel<102>;
+@Mul23 = mul_rel<149>;
+
+
+# Instantiating of constants
+accPolyC7 = double(_accPolyC7);
+accPolyC6 = double(_accPolyC6);
+accPolyC5 = double(_accPolyC5);
+accPolyC4h = double(_accPolyC4h);
+accPolyC4l = double(_accPolyC4l);
+accPolyC3h = double(_accPolyC3h);
+accPolyC3l = double(_accPolyC3l);
+
+AccPolyC4hl = accPolyC4h + accPolyC4l;
+AccPolyC3hl = accPolyC3h + accPolyC3l;
+
+
+#Translation of the C code
+
+highPoly double= accPolyC5 + rh * (accPolyC6 + rh * accPolyC7);
+
+T1hl = rh * highPoly;
+T2hl = Add22(AccPolyC4hl,T1hl);
+T3hl = Mul22(rh,T2hl);
+T4hl = Add22(AccPolyC3hl,T3hl);
+
+RhSquarehl = rh * rh;
+RhCubehml = Mul23(rh,RhSquarehl);
+
+RhSquareHalfhl = 0.5 * RhSquarehl;
+
+LowPolyhml = rh + RhSquareHalfhl;
+
+HighPolyMulthml = mul_rel<148>(T4hl,RhCubehml);
+
+Phml = add_rel<145>(LowPolyhml,HighPolyMulthml);
+
+#Mathematical definitions corresponding to the code
+
+MHighPoly = accPolyC5 + rh * (accPolyC6 + rh * accPolyC7);
+
+MT1 = rh * MHighPoly;
+MT2 = AccPolyC4hl + MT1;
+MT3 = rh * MT2;
+MT4 = AccPolyC3hl + MT3;
+
+MRhSquare = rh * rh;
+MRhCube = rh * MRhSquare;
+
+MRhSquareHalf = 0.5 * MRhSquare;
+
+MLowPoly = rh + MRhSquareHalf;
+
+MHighPolyMult = MT4 * MRhCube;
+
+MP = MLowPoly + MHighPolyMult;
+
+
+#Definition of the errors
+
+epsilonApprox = (MP - MExpM1) / MExpM1;
+
+epsilonApproxRh = (Phml - MExpM1) / MExpM1;
+
+epsilon1  = (highPoly - MHighPoly) / MHighPoly;
+epsilon2  = (T1hl - MT1) / MT1;
+epsilon3  = (T2hl - MT2) / MT2;
+epsilon4  = (T3hl - MT3) / MT3;
+epsilon5  = (T4hl - MT4) / MT4;
+epsilon6  = (RhSquarehl - MRhSquare) / MRhSquare;
+epsilon7  = (RhCubehml - MRhCube) / MRhCube;
+epsilon8  = (RhSquareHalfhl - MRhSquareHalf) / MRhSquareHalf;
+epsilon9  = (LowPolyhml - MLowPoly) / MLowPoly;
+epsilon10 = (HighPolyMulthml - MHighPolyMult) / MHighPolyMult;
+epsilon11 = (Phml - MP) / MP;
+epsilon12 = ((LowPolyhml + HighPolyMulthml) - MP)/MP;
+epsilon13 = (Phml - (LowPolyhml + HighPolyMulthml)) / (LowPolyhml + HighPolyMulthml);
+
+
+# Additional mathematical definitions (values divided by rh)
+
+MRhHalf = rh * 0.5;
+
+
+
+#Logical implication to prove
+
+{
+( rh in [-_rhmax,-1b-800] 
+/\ epsilonApprox in [-_epsilonApproxAccurate, _epsilonApproxAccurate]
+
+->
+   epsilonApproxRh in [-1b-112,1b-112]
+/\ Phml in [-1b-12,-1b-820]
+)
+/\
+( rh in [1b-800,_rhmax] 
+/\ epsilonApprox in [-_epsilonApproxAccurate, _epsilonApproxAccurate]
+
+->
+   epsilonApproxRh in [-1b-112,1b-112]
+/\ Phml in [1b-820,1b-12]
+)
+/\
+( rh in [-1b-30,-1b-800]
+/\ epsilonApprox in [-_epsilonApproxSpecial, _epsilonApproxSpecial]
+
+->
+   epsilonApproxRh in [-1b-144,1b-144]
+/\ Phml in [-1b-29,-1b-820]
+)
+/\
+( rh in [1b-800,1b-30] 
+/\ epsilonApprox in [-_epsilonApproxSpecial, _epsilonApproxSpecial]
+
+->
+   epsilonApproxRh in [-1b-144,1b-144]
+/\ Phml in [-1b-820,1b-29]
+)
+}
+
+
+#Hints for composing the errors in the different levels
+
+epsilonApproxRh -> epsilon11 + epsilonApprox + epsilon11 * epsilonApprox;
+epsilon11 -> epsilon12 + epsilon13 + epsilon12 * epsilon13;
+epsilon12 -> (epsilon9 + epsilon9 * MRhHalf + epsilon10 * MRhSquare * MT4) / (1 + MRhHalf + MRhSquare * MT4);
+
+
+#Hints for convincing Gappa that some terms do not cross zero
+
+MLowPoly -> rh * (1 + MRhHalf);
+

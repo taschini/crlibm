@@ -73,7 +73,7 @@ printf("   degree of the polynomial used in the quick phase is %d\n",PolyDegreeQ
 polyQuick:= poly_exact(1 + x + 0.5*x^2 + x^3 * (numapprox[minimax](((exp(x) - (1 + x + 0.5*x^2))/x^3),  
 				x=-rmax..rmax, [PolyDegreeQuick-3,0], 1 ,  'deltaApprox'))):
 
-epsilonApproxQuick := numapprox[infnorm]( (polyQuick/exp(x))-1, x=-rmax..rmax):
+epsilonApproxQuick := numapprox[infnorm]( ((polyQuick-1)/(exp(x)-1))-1, x=-rmax..rmax):
 printf("   approximation rel error for the quick phase is 2^(%2f)\n", log2(epsilonApproxQuick) ) :
 deltaApproxQuick := numapprox[infnorm]( polyQuick-exp(x), x=-rmax..rmax):
 printf("   approximation abs error for the quick phase is 2^(%2f)\n", log2(deltaApproxQuick) ) :
@@ -96,11 +96,21 @@ polyAccurate:= poly_exact2(1 + x + 0.5*x^2 + x^3 * (numapprox[minimax](((exp(x) 
 				DDNumberAccu):	
 
 
-epsilonApproxAccurate := numapprox[infnorm]( (polyAccurate/exp(x))-1, x=-rmax..rmax):
+epsilonApproxAccurate := numapprox[infnorm]( ((polyAccurate-1)/(exp(x)-1))-1, x=-rmax..rmax):
 printf("   approximation rel error for the accurate phase is 2^(%2f)\n", log2(epsilonApproxAccurate) ) :
 deltaApproxAccurate := numapprox[infnorm]( polyAccurate-exp(x), x=-rmax..rmax):
-printf("   approximation abs error for the quick phase is 2^(%2f)\n", log2(deltaApproxAccurate) ) :
+printf("   approximation abs error for the accurate phase is 2^(%2f)\n", log2(deltaApproxAccurate) ) :
 
+
+epsilonApproxRmAccurate := numapprox[infnorm]( (x/(exp(x)-1))-1, x=-rmax*2^(-52)..rmax*2^(-52)):
+epsilonApproxRlAccurate := numapprox[infnorm]( (x/(exp(x)-1))-1, x=-rmax*2^(-105)..rmax*2^(-105)):
+
+printf("   approximation rel error for approximating exp(rm) - 1 by rm is 2^(%2f)\n", log2(abs(epsilonApproxRmAccurate))):
+printf("   approximation rel error for approximating exp(rl) - 1 by rl is 2^(%2f)\n", log2(abs(epsilonApproxRlAccurate))):
+
+epsilonApproxAccurateSpecial := numapprox[infnorm]( ((polyAccurate-1)/(exp(x)-1))-1, x=-2^(-30)..2^(-30)):
+printf("   approximation rel error for the accurate phase in the special interval (|r| \\leq 2^(-30)) is 2^(%2f)\n", 
+log2(epsilonApproxAccurateSpecial) ) :
 
 epsilon_quick := 2^(-64): # The Gappa proof will show this bound
 
@@ -182,11 +192,31 @@ for i from 0 to 2^(L/2)-1 do
 od:
 fprintf(fd, "}; \n \n"):
 
-
-
-
 fprintf(fd, "\n\n"):
 
+fclose(fd):
+
+filename:="TEMPEXP/exp-td-accurate.sed":
+fd:=fopen(filename, WRITE, TEXT):
+fprintf(fd, " s/_rhmax/%1.50e/g\n", rmax):
+fprintf(fd, " s/_rmmax/%1.50e/g\n", rmax*2^(-52)):
+fprintf(fd, " s/_rlmax/%1.50e/g\n", rmax*2^(-105)):
+fprintf(fd, " s/_epsilonApproxAccurate/%1.50e/g\n", epsilonApproxAccurate):
+fprintf(fd, " s/_epsilonApproxRmAccurate/%1.50e/g\n", epsilonApproxRmAccurate):
+fprintf(fd, " s/_epsilonApproxRlAccurate/%1.50e/g\n", epsilonApproxRlAccurate):
+fprintf(fd, " s/_epsilonApproxSpecial/%1.50e/g\n", epsilonApproxAccurateSpecial):
+
+for i from 3 to DDNumberAccu-1 do
+	(hi,lo) := hi_lo(coeff(polyAccurate,x,i)):
+	fprintf(fd, "s/_accPolyC%dh/%1.50e/g\n",i,hi):
+	fprintf(fd, "s/_accPolyC%dl/%1.50e/g\n",i,lo):
+od:
+
+for i from DDNumberAccu to PolyDegreeAccurate do
+	fprintf(fd, "s/_accPolyC%d/%1.50e/g\n",i,coeff(polyAccurate,x,i)):
+od:
+
+fclose(fd):
 
 
 
