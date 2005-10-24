@@ -56,3 +56,23 @@ deg:=degree(P,x):
   od:
   return(Q):
 end:
+
+
+#---------------------------------------------------------------------
+# Returns nearest double-double:
+nearestDD := proc(x)
+  local xh,xm:
+  xh := nearest(x);
+  xm := nearest(x - xh);
+  evalf(xh + xm);
+end:
+
+#---------------------------------------------------------------------
+# Returns nearest triple-double:
+nearestTD := proc(x)
+  local xh,xm,xl:
+  xh := nearest(x);
+  xm := nearest(x - xh);
+  xl := nearest(x - (xh + xm));
+  evalf(xh + xm + xl);
+end:

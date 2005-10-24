@@ -344,6 +344,30 @@ local xb,xs,s,e,m:
     substring(xs,55..153)
 end proc:
 
+#---------------------------------------------------------------------
+# Computes the floating point successor of x 
+succDouble:=proc(x)
+local s,he,hexcat,hehi,helo,castx,shex,neg;
+he := ieeehexa(x); 
+hehi:= op(1, he);
+helo:= op(2, he);
+hexcat := cat(hehi, helo);
+neg := 1;
+castx := convert(hexcat, decimal, hex);
+if (castx >= 2^(63)) then
+	castx := castx - 2^(63);
+	neg := -1;
+end if;
+castx := castx + neg;
+shex := convert(convert(castx, hex),string);
+s := neg * hexa2ieee([substring(shex,1..8), substring(shex,9..16)]);
+s;
+end proc:
+
+
+
+
+
 
 
 #####################################################################
