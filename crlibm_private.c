@@ -23,6 +23,7 @@
 #include "crlibm.h"
 #include "crlibm_private.h"
 
+
 /* I wish I could use C99 fenv.h, but as of 2004 it doesn't specify
    anything about precision, only rounding direction. */
 
@@ -220,6 +221,100 @@ void Div22(double* pzh, double* pzl, double xh, double xl, double yh, double yl)
 }
 
 #endif /* DEKKER_AS_FUNCTIONS && (!defined PROCESSOR_HAS_FMA)  */
+
+
+#if SQRT_AS_FUNCTIONS 
+
+/* 
+   Computes sqrt(x) with a result in double-double precision 
+   Should be provable to be exact to at least 100 bits.
+   
+   Only handles the following special cases:
+   - x == 0
+   - subnormal x 
+   The following cases are not handled:
+   - x < 0
+   - x = +/-Infty, NaN
+*/
+void sqrt12(double *resh, double *resl, double x) {
+  db_number xdb;
+  int E;
+  double m, r0, r1, r2, r3h, r3l, r4h, r4l, srtmh, srtml;
+  double r2PHr2h, r2PHr2l, r2Sqh, r2Sql;
+  double mMr2h, mMr2l, mMr2Ch, mMr2Cl;
+  double MHmMr2Ch, MHmMr2Cl;
+  double r3Sqh, r3Sql, mMr3Sqh, mMr3Sql;
+
+  /* Special case x = 0 */
+  if (x == 0) {
+    *resh = x;
+    *resl = 0;
+  } else {
+
+    E = 0;
+
+    /* Convert to integer format */
+    xdb.d = x;
+      
+    /* Handle subnormal case */
+    if (xdb.i[HI] < 0x00100000) {
+      E = -52;
+      xdb.d *= ((db_number) ((double) SQRTTWO52)).d; 	  /* make x a normal number */ 
+    }
+    
+    /* Extract exponent E and mantissa m */
+    E += (xdb.i[HI]>>20)-1023; 
+    xdb.i[HI] = (xdb.i[HI] & 0x000fffff) | 0x3ff00000;
+    m = xdb.d;
+    
+    /* Make exponent even */
+    if (E & 0x00000001) {
+      E++;
+      m *= 0.5;    /* Suppose now 1/2 <= m <= 2 */
+    }
+  
+    /* Construct sqrt(2^E) = 2^(E/2) */
+    xdb.i[HI] = (E/2 + 1023) << 20;
+    xdb.i[LO] = 0;
+    
+    /* Compute initial approximation to r = 1/sqrt(m) */
+    
+    r0 = SQRTPOLYC0 + m * (SQRTPOLYC1 + m * (SQRTPOLYC2 + m * (SQRTPOLYC3 + m * SQRTPOLYC4)));
+    
+    /* Iterate two times on double precision */
+    
+    r1 = 0.5 * r0 * (3 - m * (r0 * r0));
+    r2 = 0.5 * r1 * (3 - m * (r1 * r1));
+
+    /* Iterate two times on double-double precision */
+
+    Mul12(&r2Sqh, &r2Sql, r2, r2);    Add12(r2PHr2h, r2PHr2l, r2, 0.5 * r2);
+    Mul12(&mMr2h, &mMr2l, m, r2);
+    Mul22(&mMr2Ch, &mMr2Cl, mMr2h, mMr2l, r2Sqh, r2Sql);
+    
+    MHmMr2Ch = -0.5 * mMr2Ch;
+    MHmMr2Cl = -0.5 * mMr2Cl;
+
+    Add22(&r3h, &r3l, r2PHr2h, r2PHr2l, MHmMr2Ch, MHmMr2Cl);
+ 
+    Mul22(&r3Sqh, &r3Sql, r3h, r3l, r3h, r3l);
+    Mul22(&mMr3Sqh, &mMr3Sql, m, 0, r3Sqh, r3Sql);  /* To prove: mMr3Sqh = 1.0 in each case */ 
+    
+    Mul22(&r4h, &r4l, r3h, r3l, 1, -0.5 * mMr3Sql);
+
+    /* Multiply obtained reciprocal square root by m */
+    
+    Mul22(&srtmh,&srtml,m,0,r4h,r4l);
+
+    /* Multiply componentwise by sqrt(2^E), which is an integer power of 2 that may not produce a subnormal */
+    
+    *resh = xdb.d * srtmh;
+    *resl = xdb.d * srtml;
+    
+  } /* End: special case 0 */
+}
+
+#endif /* SQRT_AS_FUNCTIONS */
 
 
 
