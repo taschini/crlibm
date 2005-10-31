@@ -58,14 +58,14 @@ end proc:
 galDoubleToDouble:=proc(xstart,f,epsi,iter)
 local g,b,xn; 
 (g,b) := gal(xstart,nearest,f,nearest,epsi,succDouble,iter);
-if (b) then xn := g; else xn = g; end if; 
+if (b) then xn := g; else xn = xstart; end if; 
 xn;
 end proc:
 
 galDoubleToDoubleDouble:=proc(xstart,f,epsi,iter) 
 local g,b,xn; 
 (g,b) := gal(xstart,nearest,f,nearestDD,epsi,succDouble,iter);
-if (b) then xn := g; else xn = g; end if;
+if (b) then xn := g; else xn = xstart; end if;
 xn;
 end proc:
 
