@@ -1,0 +1,83 @@
+asin     # Name of the function to test
+
+# The following lines are either comments (beginning with a #)
+# or give 
+#   1/ a rounding mode : RN|RU|RD|RZ (crlibm syntax) or  N|P|M|Z (libmcr syntax)
+#   2/ The high and low hexadecimal halves of an input
+#   3/ The high and low hexadecimal halves of the expected corresponding output
+
+
+# Special cases
+
+N 00000000 00000000 00000000 00000000  # +0 -> +0
+N 80000000 00000000 80000000 00000000  # -0 -> -0
+N 3ff00000 00000000 3ff921fb 54442d18  # +1 -> RN(Pi/2)
+N bff00000 00000000 bff921fb 54442d18  # -1 -> RN(-Pi/2)
+N 3ff00000 00000001 fff80000 00000000  # +1 + 1ulp -> NaN the first one
+N bff00000 00000001 fff80000 00000000  # -1 - 1ulp -> NaN the first one
+
+
+
+
+# Cases around the interval bounds in the implementation
+
+N 3FC7AE14 00000000 3fc7d133 6cab9375  # BOUND 1 
+N 3FD32E91 00000000 3fd37b3a 3331c2ac  # BOUND 2 
+N 3FD9CA24 00000000 3fda8b4a ab3277c6  # BOUND 3 
+N 3FDF90B3 00000000 3fe08134 b1b5a263  # BOUND 4 
+N 3FE23ADC 00000000 3fe3655b 073f2f1d  # BOUND 5 
+N 3FE4781D 00000000 3fe635ba ce48ee61  # BOUND 6 
+N 3FE647BB 00000000 3fe8a538 4e186e62  # BOUND 7 
+N 3FE7BC81 00000000 3feabdfc f76e4f11  # BOUND 8 
+N 3FE8F5C2 00000000 3feca119 5024c020  # BOUND 9 
+
+N 3FC7AE14 00000001 3fc7d133 6cab9376  # BOUND 1 + 1ulp
+N 3FD32E91 00000001 3fd37b3a 3331c2ad  # BOUND 2 + 1ulp
+N 3FD9CA24 00000001 3fda8b4a ab3277c7  # BOUND 3 + 1ulp
+N 3FDF90B3 00000001 3fe08134 b1b5a264  # BOUND 4 + 1ulp
+N 3FE23ADC 00000001 3fe3655b 073f2f1e  # BOUND 5 + 1ulp
+N 3FE4781D 00000001 3fe635ba ce48ee62  # BOUND 6 + 1ulp
+N 3FE647BB 00000001 3fe8a538 4e186e64  # BOUND 7 + 1ulp
+N 3FE7BC81 00000001 3feabdfc f76e4f12  # BOUND 8 + 1ulp
+N 3FE8F5C2 00000001 3feca119 5024c021  # BOUND 9 + 1ulp
+
+N 3FC7AE13 ffffffff 3fc7d133 6cab9374  # BOUND 1 - 1ulp
+N 3FD32E90 ffffffff 3fd37b3a 3331c2ab  # BOUND 2 - 1ulp
+N 3FD9CA23 ffffffff 3fda8b4a ab3277c5  # BOUND 3 - 1ulp
+N 3FDF90B2 ffffffff 3fe08134 b1b5a263  # BOUND 4 - 1ulp
+N 3FE23ADB ffffffff 3fe3655b 073f2f1b  # BOUND 5 - 1ulp
+N 3FE4781C ffffffff 3fe635ba ce48ee5f  # BOUND 6 - 1ulp
+N 3FE647BA ffffffff 3fe8a538 4e186e61  # BOUND 7 - 1ulp
+N 3FE7BC80 ffffffff 3feabdfc f76e4f0f  # BOUND 8 - 1ulp
+N 3FE8F5C1 ffffffff 3feca119 5024c01e  # BOUND 9 - 1ulp
+
+N 3FC7AE14 00000000 3fc7d133 6cab9375  # BOUND 1 
+N 3FD32E91 00000000 3fd37b3a 3331c2ac  # BOUND 2 
+N 3FD9CA24 00000000 3fda8b4a ab3277c6  # BOUND 3 
+N 3FDF90B3 00000000 3fe08134 b1b5a263  # BOUND 4 
+N 3FE23ADC 00000000 3fe3655b 073f2f1d  # BOUND 5 
+N 3FE4781D 00000000 3fe635ba ce48ee61  # BOUND 6 
+N 3FE647BB 00000000 3fe8a538 4e186e62  # BOUND 7 
+N 3FE7BC81 00000000 3feabdfc f76e4f11  # BOUND 8 
+N 3FE8F5C2 00000000 3feca119 5024c020  # BOUND 9 
+
+N BFC7AE14 00000001 bfc7d133 6cab9376  # -BOUND 1 - 1ulp
+N BFD32E91 00000001 bfd37b3a 3331c2ad  # -BOUND 2 - 1ulp
+N BFD9CA24 00000001 bfda8b4a ab3277c7  # -BOUND 3 - 1ulp
+N BFDF90B3 00000001 bfe08134 b1b5a264  # -BOUND 4 - 1ulp
+N BFE23ADC 00000001 bfe3655b 073f2f1e  # -BOUND 5 - 1ulp
+N BFE4781D 00000001 bfe635ba ce48ee62  # -BOUND 6 - 1ulp
+N BFE647BB 00000001 bfe8a538 4e186e64  # -BOUND 7 - 1ulp
+N BFE7BC81 00000001 bfeabdfc f76e4f12  # -BOUND 8 - 1ulp
+N BFE8F5C2 00000001 bfeca119 5024c021  # -BOUND 9 - 1ulp
+
+N BFC7AE13 ffffffff bfc7d133 6cab9374  # -BOUND 1 + 1ulp
+N BFD32E90 ffffffff bfd37b3a 3331c2ab  # -BOUND 2 + 1ulp
+N BFD9CA23 ffffffff bfda8b4a ab3277c5  # -BOUND 3 + 1ulp
+N BFDF90B2 ffffffff bfe08134 b1b5a263  # -BOUND 4 + 1ulp
+N BFE23ADB ffffffff bfe3655b 073f2f1b  # -BOUND 5 + 1ulp
+N BFE4781C ffffffff bfe635ba ce48ee5f  # -BOUND 6 + 1ulp
+N BFE647BA ffffffff bfe8a538 4e186e61  # -BOUND 7 + 1ulp
+N BFE7BC80 ffffffff bfeabdfc f76e4f0f  # -BOUND 8 + 1ulp
+N BFE8F5C1 ffffffff bfeca119 5024c01e  # -BOUND 9 + 1ulp
+

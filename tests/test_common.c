@@ -240,6 +240,29 @@ double rand_for_pow_perf(){
 
 
 
+/* Produces x with |x| in [2^(-31);1] and a random sign */
+double rand_for_asin(){
+  db_number result;
+  int e;
+  /*first the low bits of the mantissa*/
+  result.i[LO]=rand_int();
+  /* then the high bits of the mantissa */
+  result.i[HI]=  rand_int() & 0x000fffff;
+  /* Now set the exponent */
+  e = (rand_int() & 0x0000001f) + 0x000003e0;
+  if (e == 0x000003ff) {
+    result.i[HI] = 0;
+    result.i[LO] = 0;
+  }
+  /* Now set the sign */
+  e += (rand_int() & 0x00000800);
+  result.i[HI] += e<<20;
+  return (result.d);
+}
+
+
+
+
 
 void test_rand()  {
   int i;
@@ -585,8 +608,33 @@ void test_init(/* pointers to returned value */
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_sinh;
 #endif
+    } 
+  else if (strcmp (func_name, "asin") == 0)
+    {
+      *randfun_perf     = rand_for_asin;
+      *randfun_soaktest = rand_for_asin;
+      *worst_case = 0;                          /* TODO: I don't know anything about that by now */
+      *testfun_libm   = asin;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = asin_ru;	break;
+      case RD:
+	*testfun_crlibm = asin_rd;	break;
+      case RZ:
+	*testfun_crlibm = asin_rz; 	break;
+      default:
+	*testfun_crlibm = asin_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_libultim  = NULL;   /* TODO */
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = NULL;   /* TODO */
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_asin;
+#endif
     }
-
   else if (strcmp (func_name, "pow") == 0)
     {
       *randfun_perf     = rand_for_pow_perf;

@@ -24,7 +24,8 @@ libcrlibm_a_SOURCES =  \
 	rem_pio2_accurate.h rem_pio2_accurate.c \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
-	csh_fast.h csh_fast.c exp_accurate.h exp_accurate.c
+	csh_fast.h csh_fast.c exp_accurate.h exp_accurate.c \
+	asin-td.h asin-td.c 
 else 
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c triple-double.h\
@@ -35,7 +36,8 @@ libcrlibm_a_SOURCES =  \
 	rem_pio2_accurate.h rem_pio2_accurate.c \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
-	csh_fast.h csh_fast.c exp_accurate.h exp_accurate.c
+	csh_fast.h csh_fast.c exp_accurate.h exp_accurate.c \
+	asin-td.h asin-td.c
 endif
 
 
@@ -80,5 +82,6 @@ EXTRA_DIST = VERSION TODO\
 	docs/latex/fig_scs docs/latex/fig_exp\
 	docs/latex/elem-fun.bib\
 	scs_lib/tests/tbx_timing.h \
-	log-de.c log-de.h double-extended.h log-td.c log-td.h triple-double.h atan-pentium.c atan-itanium.c
+	log-de.c log-de.h double-extended.h log-td.c log-td.h triple-double.h atan-pentium.c atan-itanium.c \
+	maple/asin-td.mpl
  

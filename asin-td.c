@@ -1,0 +1,826 @@
+/*
+ * Correctly rounded arctangent
+ *
+ * Author : Christoph Lauter (ENS Lyon)
+ *
+ * This file is part of the crlibm library developed by the Arenaire
+ * project at Ecole Normale Superieure de Lyon
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or 
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "crlibm.h"
+#include "crlibm_private.h"
+#include "triple-double.h"
+#include "asin-td.h"
+
+
+
+void asin_accurate_lower(double *asinh, double *asinm, double *asinl, double x, double xSqh, double xSql, double sign) {
+  double highPoly;
+  double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l, t7h, t7l;
+  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l, tt6h, tt6l, tt7h, tt7l;
+  double t8h, t8m, t8l, t9h, t9m, t9l, t10h, t10m, t10l, t11h, t11m, t11l, t12h, t12m, t12l;
+  double tt8h, tt8m, tt8l, tt9h, tt9m, tt9l, tt10h, tt10m, tt10l, tt11h, tt11m, tt11l, tt12h, tt12m, tt12l;
+  double xCubeh, xCubem, xCubel, tt13h, tt13m, tt13l, t13h, t13m, t13l, polyh, polym, polyl;
+  double tt11hover, tt11mover, tt11lover;
+
+  /* Evaluate the polynomial of degree 37
+     Its coefficients start at tbl[0]
+
+     p(x) = x + x * x^2 * (c3 + x^2 * (c5 + ...
+
+     We receive x^2 as xSqh + xSql = x * x (exactly)
+     in argument
+
+     |x| <= 0.185 = 2^(-2.43)
+
+     Compute monomials 27 to 37 in double precision
+     monomials 13 to 25 in double-double and
+     1 to 11 in triple-double precision in a 
+     modified Horner form
+
+  */
+
+  /* Double computations */
+  
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+  highPoly = FMA(FMA(FMA(FMA(FMA(tbl[33],xSqh,tbl[32]),xSqh,tbl[31]),xSqh,tbl[30]),xSqh,tbl[29]),xSqh,tbl[28]);		 
+#else
+  highPoly = tbl[28] + xSqh * (tbl[29] + xSqh * (tbl[30] + xSqh * (tbl[31] + xSqh * (tbl[32] + xSqh * tbl[33]))));
+#endif
+
+  /* Double-double computations */
+
+  Mul12(&tt1h,&tt1l,xSqh,highPoly);
+  Add22(&t1h,&t1l,tbl[27],0,tt1h,tt1l);
+     
+  Mul22(&tt2h,&tt2l,xSqh,xSql,t1h,t1l);
+  Add22(&t2h,&t2l,tbl[25],tbl[26],tt2h,tt2l);
+  Mul22(&tt3h,&tt3l,xSqh,xSql,t2h,t2l);
+  Add22(&t3h,&t3l,tbl[23],tbl[24],tt3h,tt3l);
+  Mul22(&tt4h,&tt4l,xSqh,xSql,t3h,t3l);
+  Add22(&t4h,&t4l,tbl[21],tbl[22],tt4h,tt4l);
+  Mul22(&tt5h,&tt5l,xSqh,xSql,t4h,t4l);
+  Add22(&t5h,&t5l,tbl[19],tbl[20],tt5h,tt5l);
+  Mul22(&tt6h,&tt6l,xSqh,xSql,t5h,t5l);
+  Add22(&t6h,&t6l,tbl[17],tbl[18],tt6h,tt6l);
+  Mul22(&tt7h,&tt7l,xSqh,xSql,t6h,t6l);
+  Add22(&t7h,&t7l,tbl[15],tbl[16],tt7h,tt7l);
+
+  /* Triple-double computations */
+
+  Mul23(&tt8h,&tt8m,&tt8l,xSqh,xSql,t7h,t7l);                             /* 149 - 48/53 */
+  Add33(&t8h,&t8m,&t8l,tbl[12],tbl[13],tbl[14],tt8h,tt8m,tt8l);           /* 145 - 43/53 */
+  Mul233(&tt9h,&tt9m,&tt9l,xSqh,xSql,t8h,t8m,t8l);                        /* 139 - 39/53 */
+  Add33(&t9h,&t9m,&t9l,tbl[9],tbl[10],tbl[11],tt9h,tt9m,tt9l);            /* 136 - 34/53 */
+  Mul233(&tt10h,&tt10m,&tt10l,xSqh,xSql,t9h,t9m,t9l);                     /* 130 - 30/53 */
+  Add33(&t10h,&t10m,&t10l,tbl[6],tbl[7],tbl[8],tt10h,tt10m,tt10l);        /* 127 - 25/53 */
+  Mul233(&tt11hover,&tt11mover,&tt11lover,xSqh,xSql,t10h,t10m,t10l);      /* 121 - 21/53 */
+
+  Renormalize3(&tt11h,&tt11m,&tt11l,tt11hover,tt11mover,tt11lover);       /* infty - 52/53 */
+
+  Add33(&t11h,&t11m,&t11l,tbl[3],tbl[4],tbl[5],tt11h,tt11m,tt11l);        /* 149 - 47/53 */
+  Mul233(&tt12h,&tt12m,&tt12l,xSqh,xSql,t11h,t11m,t11l);                  /* 143 - 43/53 */
+  Add33(&t12h,&t12m,&t12l,tbl[0],tbl[1],tbl[2],tt12h,tt12m,tt12l);        /* 140 - 38/53 */
+
+  Mul123(&xCubeh,&xCubem,&xCubel,x,xSqh,xSql);                            /* 154 - 47/53 */
+ 
+  Mul33(&tt13h,&tt13m,&tt13l,xCubeh,xCubem,xCubel,t12h,t12m,t12l);        /* 136 - 34/53 */
+  Add133(&t13h,&t13m,&t13l,x,tt13h,tt13m,tt13l);                          /* 138 - 32/53 */
+
+  Renormalize3(&polyh,&polym,&polyl,t13h,t13m,t13l);                      /* infty - 52/53 */
+  *asinh = sign * polyh;
+  *asinm = sign * polym;
+  *asinl = sign * polyl;
+}
+
+
+
+void  asin_accurate_middle(double *asinh, double *asinm, double *asinl, double z, int i, double sign) {
+  double highPoly;
+  double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l, t7h, t7l, t8h, t8l, t9h, t9l;
+  double t10h, t10m, t10l, t11h, t11m, t11l, t12h, t12m, t12l, t13h, t13m, t13l, t14h, t14m, t14l;
+  double t15h, t15m, t15l, t16h, t16m, t16l;
+  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l, tt6h, tt6l, tt7h, tt7l;
+  double tt8h, tt8l, tt9h, tt9l, tt10h, tt10m, tt10l, tt11h, tt11m, tt11l, tt12h, tt12m, tt12l;
+  double tt13h, tt13m, tt13l, tt14h, tt14m, tt14l, tt15h, tt15m, tt15l, tt16h, tt16m, tt16l;
+  double polyh, polym, polyl, tt13hover, tt13mover, tt13lover;
+
+
+  /* Evaluate the polynomial of degree 35
+     Its coefficients start at tbl[i+1] 
+     Evaluate degrees 35 to 20 in double precision,
+     degrees 20 to 7 in double-double precision and
+     finally degrees 6 to 1 in triple-double. 
+     The constant coefficient is a double-double, the 
+     computations are nevertheless in triple-double 
+  */
+
+  /* Double computations */
+  
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+  highPoly = FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(
+             tbl[i+58] ,z,tbl[i+57]),z,tbl[i+56]),z,tbl[i+55]),z,tbl[i+54]),z,
+             tbl[i+53]),z,tbl[i+52]),z,tbl[i+51]),z,tbl[i+50]),z,tbl[i+49]),z,
+             tbl[i+48]),z,tbl[i+47]),z,tbl[i+46]),z,tbl[i+45]),z,tbl[i+44]),z,
+	     tbl[i+43]),z,tbl[i+42]),z,tbl[i+41]),z,tbl[i+40]),z,tbl[i+39]);
+								 
+#else
+  highPoly = tbl[i+39] + z * (tbl[i+40] + z * (tbl[i+41] + z * (tbl[i+42] + z * (
+             tbl[i+43] + z * (tbl[i+44] + z * (tbl[i+45] + z * (tbl[i+46] + z * (
+             tbl[i+47] + z * (tbl[i+48] + z * (tbl[i+49] + z * (tbl[i+50] + z * (
+             tbl[i+51] + z * (tbl[i+52] + z * (tbl[i+53] + z * (tbl[i+54] + z * (
+             tbl[i+55] + z * (tbl[i+56] + z * (tbl[i+57] + z * tbl[i+58]))))))))))))))))));
+#endif
+
+  
+  /* Double-double computations */
+  
+  Mul12(&tt1h,&tt1l,z,highPoly);
+  Add22(&t1h,&t1l,tbl[i+37],tbl[i+38],tt1h,tt1l);
+  Mul122(&tt2h,&tt2l,z,t1h,t1l);
+  Add22(&t2h,&t2l,tbl[i+35],tbl[i+36],tt2h,tt2l);
+  Mul122(&tt3h,&tt3l,z,t2h,t2l);
+  Add22(&t3h,&t3l,tbl[i+33],tbl[i+34],tt3h,tt3l);
+  Mul122(&tt4h,&tt4l,z,t3h,t3l);
+  Add22(&t4h,&t4l,tbl[i+31],tbl[i+32],tt4h,tt4l);
+  Mul122(&tt5h,&tt5l,z,t4h,t4l);
+  Add22(&t5h,&t5l,tbl[i+29],tbl[i+30],tt5h,tt5l);
+  Mul122(&tt6h,&tt6l,z,t5h,t5l);
+  Add22(&t6h,&t6l,tbl[i+27],tbl[i+28],tt6h,tt6l);
+  Mul122(&tt7h,&tt7l,z,t6h,t6l);
+  Add22(&t7h,&t7l,tbl[i+25],tbl[i+26],tt7h,tt7l);
+  Mul122(&tt8h,&tt8l,z,t7h,t7l);
+  Add22(&t8h,&t8l,tbl[i+23],tbl[i+24],tt8h,tt8l);
+  Mul122(&tt9h,&tt9l,z,t8h,t8l);
+  Add22(&t9h,&t9l,tbl[i+21],tbl[i+22],tt9h,tt9l);
+
+  /* Triple-double computations */
+
+  Mul123(&tt10h,&tt10m,&tt10l,z,t9h,t9l);                                          /* 154 - 47/53 */
+  Add33(&t10h,&t10m,&t10l,tbl[i+18],tbl[i+19],tbl[i+20],tt10h,tt10m,tt10l);        /* 144 - 42/53 */
+  Mul133(&tt11h,&tt11m,&tt11l,z,t10h,t10m,t10l);                                   /* 142 - 38/53 */
+  Add33(&t11h,&t11m,&t11l,tbl[i+15],tbl[i+16],tbl[i+17],tt11h,tt11m,tt11l);        /* 136 - 33/53 */
+  Mul133(&tt12h,&tt12m,&tt12l,z,t11h,t11m,t11l);                                   /* 133 - 28/53 */
+  Add33(&t12h,&t12m,&t12l,tbl[i+12],tbl[i+13],tbl[i+14],tt12h,tt12m,tt12l);        /* 125 - 23/53 */
+  Mul133(&tt13hover,&tt13mover,&tt13lover,z,t12h,t12m,t12l);                       /* 123 - 18/53 */
+
+  Renormalize3(&tt13h,&tt13m,&tt13l,tt13hover,tt13mover,tt13lover);                /* infty - 52/53 */
+
+  Add33(&t13h,&t13m,&t13l,tbl[i+9],tbl[i+10],tbl[i+11],tt13h,tt13m,tt13l);         /* 149 - 47/53 */
+  Mul133(&tt14h,&tt14m,&tt14l,z,t13h,t13m,t13l);                                   /* 147 - 42/53 */
+  Add33(&t14h,&t14m,&t14l,tbl[i+6],tbl[i+7],tbl[i+8],tt14h,tt14m,tt14l);           /* 139 - 37/53 */
+  Mul133(&tt15h,&tt15m,&tt15l,z,t14h,t14m,t14l);                                   /* 137 - 32/53 */
+  Add33(&t15h,&t15m,&t15l,tbl[i+3],tbl[i+4],tbl[i+5],tt15h,tt15m,tt15l);           /* 129 - 28/53 */
+  Mul133(&tt16h,&tt16m,&tt16l,z,t15h,t15m,t15l);                                   /* 128 - 23/53 */
+  Add233(&t16h,&t16m,&t16l,tbl[i+1],tbl[i+2],tt16h,tt16m,tt16l);                   /* 126 - 19/53 */
+
+  Renormalize3(&polyh,&polym,&polyl,t16h,t16m,t16l);                               /* infty - 52/53 */
+  *asinh = sign * polyh;
+  *asinm = sign * polym;
+  *asinl = sign * polyl;
+}
+
+
+void asin_accurate_higher(double *asinh, double *asinm, double *asinl, double z, double sign) {
+  double highPoly;
+  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l, tt6h, tt6l, tt7h, tt7l, tt8h, tt8l;
+  double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l, t7h, t7l, t8h, t8l;
+  double tt9h, tt9l, tt10h, tt10m, tt10l, tt11h, tt11m, tt11l, tt12h, tt12m, tt12l, tt13h, tt13m, tt13l;
+  double tt14h, tt14m, tt14l, tt15h, tt15m, tt15l, tt16h, tt16m, tt16l, tt17h, tt17m, tt17l;
+  double t9h, t9l, t10h, t10m, t10l, t11h, t11m, t11l, t12h, t12m, t12l, t13h, t13m, t13l;
+  double t14h, t14m, t14l, t15h, t15m, t15l, t16h, t16m, t16l, t17h, t17m, t17l;
+  double tt18h, tt18m, tt18l, polyh, polym, polyl;
+  double sqrtzh, sqrtzm, sqrtzl, twoZ, pTimesSh, pTimesSm, pTimesSl;
+  double allhover, allmover, alllover, allh, allm, alll;
+  double t13hover, t13mover, t13lover, tt17hover, tt17mover, tt17lover;
+
+  /* We evaluate asin(x) as 
+
+     asin(x) = f(z) * sqrt(2*z) + Pi/2
+
+     with z = 1 - x and
+
+     f(z) = (asin(z) - Pi/2) / sqrt(2*z)
+
+     f(z) is approximated by p(z)
+
+     The polynomial p(z) is of degree 29
+     Its coefficients start at tbl[TBLIDX10] 
+     Coefficients for degrees 29 to 18 are in double precision,
+     for degrees 17 to 9 in double-double precision and
+     finally for degrees 8 to 1 in triple-double. 
+     The constant coefficient (-1) is not stored in the table, 
+     the computations are nevertheless in triple-double 
+     We evaluate the monomials in the precision in which
+     the correspondant coefficients are stored
+     The coefficients' values decrease very quickly 
+     so even with |z| < 2^-2.18 we can compute degree 18 
+     already in double precision
+
+     Compute than sqrt(2*z) as a triple-double
+     multiply in triple-double and add Pi/2
+     We will cancel no bit in the addition since
+     f(z) < 0.5 * Pi/2
+
+  */
+
+  /* Double computations */
+
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+  highPoly = FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(
+             tbl[TBLIDX10+53] ,z,tbl[TBLIDX10+52]),z,tbl[TBLIDX10+51]),z,
+             tbl[TBLIDX10+50]),z,tbl[TBLIDX10+49]),z,tbl[TBLIDX10+48]),z,
+             tbl[TBLIDX10+47]),z,tbl[TBLIDX10+46]),z,tbl[TBLIDX10+45]),z,
+             tbl[TBLIDX10+44]),z,tbl[TBLIDX10+43]),z,tbl[TBLIDX10+42]);						 
+#else
+  highPoly = tbl[TBLIDX10+42] + z * (tbl[TBLIDX10+43] + z * (tbl[TBLIDX10+44] + z * (
+             tbl[TBLIDX10+45] + z * (tbl[TBLIDX10+46] + z * (tbl[TBLIDX10+47] + z * (
+             tbl[TBLIDX10+48] + z * (tbl[TBLIDX10+49] + z * (tbl[TBLIDX10+50] + z * (
+             tbl[TBLIDX10+51] + z * (tbl[TBLIDX10+52] + z *  tbl[TBLIDX10+53]))))))))));
+#endif
+  
+  /* Double-double computations */
+
+  Mul12(&tt1h,&tt1l,z,highPoly);
+  Add22(&t1h,&t1l,tbl[TBLIDX10+40],tbl[TBLIDX10+41],tt1h,tt1l);
+  Mul122(&tt2h,&tt2l,z,t1h,t1l);
+  Add22(&t2h,&t2l,tbl[TBLIDX10+38],tbl[TBLIDX10+39],tt2h,tt2l);
+  Mul122(&tt3h,&tt3l,z,t2h,t2l);
+  Add22(&t3h,&t3l,tbl[TBLIDX10+36],tbl[TBLIDX10+37],tt3h,tt3l);
+  Mul122(&tt4h,&tt4l,z,t3h,t3l);
+  Add22(&t4h,&t4l,tbl[TBLIDX10+34],tbl[TBLIDX10+35],tt4h,tt4l);
+  Mul122(&tt5h,&tt5l,z,t4h,t4l);
+  Add22(&t5h,&t5l,tbl[TBLIDX10+32],tbl[TBLIDX10+33],tt5h,tt5l);
+  Mul122(&tt6h,&tt6l,z,t5h,t5l);
+  Add22(&t6h,&t6l,tbl[TBLIDX10+30],tbl[TBLIDX10+31],tt6h,tt6l);
+  Mul122(&tt7h,&tt7l,z,t6h,t6l);
+  Add22(&t7h,&t7l,tbl[TBLIDX10+28],tbl[TBLIDX10+29],tt7h,tt7l);
+  Mul122(&tt8h,&tt8l,z,t7h,t7l);
+  Add22(&t8h,&t8l,tbl[TBLIDX10+26],tbl[TBLIDX10+27],tt8h,tt8l);
+  Mul122(&tt9h,&tt9l,z,t8h,t8l);
+  Add22(&t9h,&t9l,tbl[TBLIDX10+24],tbl[TBLIDX10+25],tt9h,tt9l);
+
+  /* Triple-double computations */
+
+  Mul123(&tt10h,&tt10m,&tt10l,z,t9h,t9l);                                                         /* 154 - 47/53 */
+  Add33(&t10h,&t10m,&t10l,tbl[TBLIDX10+21],tbl[TBLIDX10+22],tbl[TBLIDX10+23],tt10h,tt10m,tt10l);  /* 144 - 42/53 */
+  Mul133(&tt11h,&tt11m,&tt11l,z,t10h,t10m,t10l);                                                  /* 142 - 37/53 */
+  Add33(&t11h,&t11m,&t11l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],tbl[TBLIDX10+20],tt11h,tt11m,tt11l);  /* 134 - 32/53 */
+  Mul133(&tt12h,&tt12m,&tt12l,z,t11h,t11m,t11l);                                                  /* 132 - 27/53 */
+  Add33(&t12h,&t12m,&t12l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],tbl[TBLIDX10+17],tt12h,tt12m,tt12l);  /* 124 - 22/53 */
+  Mul133(&tt13h,&tt13m,&tt13l,z,t12h,t12m,t12l);                                                  /* 122 - 17/53 */
+  Add33(&t13hover,&t13mover,&t13lover,
+                          tbl[TBLIDX10+12],tbl[TBLIDX10+13],tbl[TBLIDX10+14],tt13h,tt13m,tt13l);  /* 114 - 12/53 */
+
+  Renormalize3(&t13h,&t13m,&t13l,t13hover,t13mover,t13lover);                                     /* infty - 52/53 */
+
+  Mul133(&tt14h,&tt14m,&tt14l,z,t13h,t13m,t13l);                                                  /* 154 - 47/53 */
+  Add33(&t14h,&t14m,&t14l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tbl[TBLIDX10+11],tt14h,tt14m,tt14l);   /* 144 - 42/53 */
+  Mul133(&tt15h,&tt15m,&tt15l,z,t14h,t14m,t14l);                                                  /* 142 - 37/53 */
+  Add33(&t15h,&t15m,&t15l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tbl[TBLIDX10+8],tt15h,tt15m,tt15l);     /* 134 - 32/53 */
+  Mul133(&tt16h,&tt16m,&tt16l,z,t15h,t15m,t15l);                                                  /* 132 - 27/53 */
+  Add33(&t16h,&t16m,&t16l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tbl[TBLIDX10+5],tt16h,tt16m,tt16l);     /* 124 - 22/53 */ 
+  Mul133(&tt17hover,&tt17mover,&tt17lover,z,t16h,t16m,t16l);                                      /* 122 - 17/53 */
+
+  Renormalize3(&tt17h,&tt17m,&tt17l,tt17hover,tt17mover,tt17lover);                               /* infty - 52/53 */
+
+  Add33(&t17h,&t17m,&t17l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tbl[TBLIDX10+2],tt17h,tt17m,tt17l);     /* 149 - 47/53 */
+
+  Mul133(&tt18h,&tt18m,&tt18l,z,t17h,t17m,t17l);                                                  /* 147 - 42/53 */
+  Add133(&polyh,&polym,&polyl,-1,tt18h,tt18m,tt18l);                                              /* 146 - 40/53 */
+
+  /* Compute sqrt(2*z) as a triple-double */
+
+  twoZ = 2 * z;
+  sqrt13(&sqrtzh,&sqrtzm,&sqrtzl,twoZ);                                                           /* 135 - 52/53 */
+
+  /* Multiply p(z) by sqrt(2*z) and add Pi/2 */
+
+  Mul33(&pTimesSh,&pTimesSm,&pTimesSl,polyh,polym,polyl,sqrtzh,sqrtzm,sqrtzl);                    /* 138 - 36/53 */
+  Add33(&allhover,&allmover,&alllover,PIHALFH,PIHALFM,PIHALFL,pTimesSh,pTimesSm,pTimesSl);        /* 133 - 31/53 */
+
+  /* Renormalize and multiply by sign */
+  Renormalize3(&allh,&allm,&alll,allhover,allmover,alllover);                                     /* infty - 52/53 */
+  *asinh = sign * allh;
+  *asinm = sign * allm;
+  *asinl = sign * alll;
+}
+
+
+double asin_rn(double x) {
+  db_number xdb;
+  double sign, z, asinh, asinm, asinl;
+  int i;
+  double xSqh, xSql;
+
+  /* Transform the argument into integer */
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Strip off the sign of argument x */
+  if (xdb.i[HI] & 0x80000000) sign = -1; else sign = 1;
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* asin is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if ((xdb.i[HI] > 0x3ff00000) || ((xdb.i[HI] == 0x3ff00000) && (xdb.i[LO] != 0x00000000))) {
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* If |x| < 2^(-28) we have
+     
+     arcsin(x) = x * ( 1 + xi ) 
+
+     with |xi| < 2^(-55) and
+          sgn(xi) = sgn(x) 
+   
+     So we can decide the rounding without any computation 
+  */
+  if (xdb.i[HI] < 0x3e300000) {
+    return x;
+  }
+
+  /* Recast x */
+  x = xdb.d;
+
+  /* Find correspondant interval and compute
+     We start by filtering the two special cases around 0 and 1
+  */
+
+  if (xdb.i[HI] < BOUND1) {
+    /* Special interval 0..BOUND1 
+       The polynomial has no even monomials
+       We must prove extra accuracy in the interval 0..sin(2^(-18))
+    */
+
+    /* Quick phase starts */
+
+    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+    Mul12(&xSqh,&xSql,x,x);
+
+
+
+    /* Launch accurate phase */
+
+    asin_accurate_lower(&asinh,&asinm,&asinl,x,xSqh,xSql,sign);
+
+    ReturnRoundToNearest3(asinh,asinm,asinl); 
+  }
+
+  if (xdb.i[HI] > BOUND9) {
+    /* Special interval BOUND9..1
+       We use an asymptotic development of arcsin in sqrt(1 - x)
+    */
+
+    /* Argument reduction 
+       z = 1 - x
+       The operation is exact by Sterbenz' lemma
+    */
+
+    z = 1 - x;
+
+    /* Quick phase starts */
+
+    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+
+    /* Launch accurate phase */
+
+    asin_accurate_higher(&asinh,&asinm,&asinl,z,sign);
+
+    ReturnRoundToNearest3(asinh,asinm,asinl); 
+  }
+  
+  /* General 8 main intervals 
+     We can already suppose that BOUND1 <= x <= BOUND9
+  */
+  
+  if (xdb.i[HI] < BOUND5) {
+    if (xdb.i[HI] < BOUND3) {
+      if (xdb.i[HI] < BOUND2) i = TBLIDX2; else i = TBLIDX3;
+    } else {
+      if (xdb.i[HI] < BOUND4) i = TBLIDX4; else i = TBLIDX5;
+    }
+  } else {
+    if (xdb.i[HI] < BOUND7) {
+      if (xdb.i[HI] < BOUND6) i = TBLIDX6; else i = TBLIDX7;
+    } else {
+      if (xdb.i[HI] < BOUND8) i = TBLIDX8; else i = TBLIDX9;
+    }
+  }
+
+  /* Argument reduction 
+     i points to the interval midpoint value in the table
+  */
+  z = x - tbl[i];
+
+  /* Quick phase starts */
+
+  /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+  /* Launch accurate phase */
+
+  asin_accurate_middle(&asinh,&asinm,&asinl,z,i,sign);
+
+  ReturnRoundToNearest3(asinh,asinm,asinl); 
+}
+
+double asin_ru(double x) {
+  db_number xdb;
+  double sign, z, asinh, asinm, asinl;
+  int i;
+  double xSqh, xSql;
+
+  /* Transform the argument into integer */
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Strip off the sign of argument x */
+  if (xdb.i[HI] & 0x80000000) sign = -1; else sign = 1;
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* asin is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if ((xdb.i[HI] > 0x3ff00000) || ((xdb.i[HI] == 0x3ff00000) && (xdb.i[LO] != 0x00000000))) {
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* If |x| < 2^(-28) we have
+     
+     arcsin(x) = x * ( 1 + xi ) 
+
+     with |xi| < 2^(-55) and
+          sgn(xi) = sgn(x) 
+   
+     So we can decide the rounding without any computation 
+  */
+  if (xdb.i[HI] < 0x3e300000) {
+    /* If x == 0 then we got the algebraic result arcsin(0) = 0
+       If x < 0 then the truncation rest is negative but less than 
+       1 ulp; we round upwards by returning x
+    */
+    if (x <= 0) return x;
+    /* Otherwise the rest is positive, less than 1 ulp and the
+       image is not algebraic 
+       We return x + 1ulp
+    */
+    xdb.l++;
+    return xdb.d;
+  }
+
+  /* Recast x */
+  x = xdb.d;
+
+  /* Find correspondant interval and compute
+     We start by filtering the two special cases around 0 and 1
+  */
+
+  if (xdb.i[HI] < BOUND1) {
+    /* Special interval 0..BOUND1 
+       The polynomial has no even monomials
+       We must prove extra accuracy in the interval 0..sin(2^(-18))
+    */
+
+    /* Quick phase starts */
+
+    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+    Mul12(&xSqh,&xSql,x,x);
+
+
+
+    /* Launch accurate phase */
+
+    asin_accurate_lower(&asinh,&asinm,&asinl,x,xSqh,xSql,sign);
+
+    ReturnRoundUpwards3(asinh,asinm,asinl); 
+  }
+
+  if (xdb.i[HI] > BOUND9) {
+    /* Special interval BOUND9..1
+       We use an asymptotic development of arcsin in sqrt(1 - x)
+    */
+
+    /* Argument reduction 
+       z = 1 - x
+       The operation is exact by Sterbenz' lemma
+    */
+
+    z = 1 - x;
+
+    /* Quick phase starts */
+
+    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+
+    /* Launch accurate phase */
+
+    asin_accurate_higher(&asinh,&asinm,&asinl,z,sign);
+
+    ReturnRoundUpwards3(asinh,asinm,asinl); 
+  }
+  
+  /* General 8 main intervals 
+     We can already suppose that BOUND1 <= x <= BOUND9
+  */
+  
+  if (xdb.i[HI] < BOUND5) {
+    if (xdb.i[HI] < BOUND3) {
+      if (xdb.i[HI] < BOUND2) i = TBLIDX2; else i = TBLIDX3;
+    } else {
+      if (xdb.i[HI] < BOUND4) i = TBLIDX4; else i = TBLIDX5;
+    }
+  } else {
+    if (xdb.i[HI] < BOUND7) {
+      if (xdb.i[HI] < BOUND6) i = TBLIDX6; else i = TBLIDX7;
+    } else {
+      if (xdb.i[HI] < BOUND8) i = TBLIDX8; else i = TBLIDX9;
+    }
+  }
+
+  /* Argument reduction 
+     i points to the interval midpoint value in the table
+  */
+  z = x - tbl[i];
+
+  /* Quick phase starts */
+
+  /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+  /* Launch accurate phase */
+
+  asin_accurate_middle(&asinh,&asinm,&asinl,z,i,sign);
+
+  ReturnRoundUpwards3(asinh,asinm,asinl); 
+}
+
+double asin_rd(double x) {
+  db_number xdb;
+  double sign, z, asinh, asinm, asinl;
+  int i;
+  double xSqh, xSql;
+
+  /* Transform the argument into integer */
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Strip off the sign of argument x */
+  if (xdb.i[HI] & 0x80000000) sign = -1; else sign = 1;
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* asin is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if ((xdb.i[HI] > 0x3ff00000) || ((xdb.i[HI] == 0x3ff00000) && (xdb.i[LO] != 0x00000000))) {
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* If |x| < 2^(-28) we have
+     
+     arcsin(x) = x * ( 1 + xi ) 
+
+     with |xi| < 2^(-55) and
+          sgn(xi) = sgn(x) 
+   
+     So we can decide the rounding without any computation 
+  */
+  if (xdb.i[HI] < 0x3e300000) {
+    /* If x == 0 then we got the algebraic result arcsin(0) = 0
+       If x > 0 then the truncation rest is positive but less than 
+       1 ulp; we round downwards by returning x
+    */
+    if (x >= 0) return x;
+    /* Otherwise the rest is negative, less than 1 ulp and the
+       image is not algebraic 
+       We return x - 1ulp
+       We stripped off the sign, so we add 1 ulp to -x (in xdb.d) and multiply by -1
+    */
+    xdb.l++;
+    return -1 * xdb.d;
+  }
+
+  /* Recast x */
+  x = xdb.d;
+
+  /* Find correspondant interval and compute
+     We start by filtering the two special cases around 0 and 1
+  */
+
+  if (xdb.i[HI] < BOUND1) {
+    /* Special interval 0..BOUND1 
+       The polynomial has no even monomials
+       We must prove extra accuracy in the interval 0..sin(2^(-18))
+    */
+
+    /* Quick phase starts */
+
+    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+    Mul12(&xSqh,&xSql,x,x);
+
+
+
+    /* Launch accurate phase */
+
+    asin_accurate_lower(&asinh,&asinm,&asinl,x,xSqh,xSql,sign);
+
+    ReturnRoundDownwards3(asinh,asinm,asinl); 
+  }
+
+  if (xdb.i[HI] > BOUND9) {
+    /* Special interval BOUND9..1
+       We use an asymptotic development of arcsin in sqrt(1 - x)
+    */
+
+    /* Argument reduction 
+       z = 1 - x
+       The operation is exact by Sterbenz' lemma
+    */
+
+    z = 1 - x;
+
+    /* Quick phase starts */
+
+    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+
+    /* Launch accurate phase */
+
+    asin_accurate_higher(&asinh,&asinm,&asinl,z,sign);
+
+    ReturnRoundDownwards3(asinh,asinm,asinl); 
+  }
+  
+  /* General 8 main intervals 
+     We can already suppose that BOUND1 <= x <= BOUND9
+  */
+  
+  if (xdb.i[HI] < BOUND5) {
+    if (xdb.i[HI] < BOUND3) {
+      if (xdb.i[HI] < BOUND2) i = TBLIDX2; else i = TBLIDX3;
+    } else {
+      if (xdb.i[HI] < BOUND4) i = TBLIDX4; else i = TBLIDX5;
+    }
+  } else {
+    if (xdb.i[HI] < BOUND7) {
+      if (xdb.i[HI] < BOUND6) i = TBLIDX6; else i = TBLIDX7;
+    } else {
+      if (xdb.i[HI] < BOUND8) i = TBLIDX8; else i = TBLIDX9;
+    }
+  }
+
+  /* Argument reduction 
+     i points to the interval midpoint value in the table
+  */
+  z = x - tbl[i];
+
+  /* Quick phase starts */
+
+  /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+  /* Launch accurate phase */
+
+  asin_accurate_middle(&asinh,&asinm,&asinl,z,i,sign);
+
+  ReturnRoundDownwards3(asinh,asinm,asinl); 
+}
+
+double asin_rz(double x) {
+  db_number xdb;
+  double sign, z, asinh, asinm, asinl;
+  int i;
+  double xSqh, xSql;
+
+  /* Transform the argument into integer */
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Strip off the sign of argument x */
+  if (xdb.i[HI] & 0x80000000) sign = -1; else sign = 1;
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* asin is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if ((xdb.i[HI] > 0x3ff00000) || ((xdb.i[HI] == 0x3ff00000) && (xdb.i[LO] != 0x00000000))) {
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* If |x| < 2^(-28) we have
+     
+     arcsin(x) = x * ( 1 + xi ) 
+
+     with |xi| < 2^(-55) and
+          sgn(xi) = sgn(x) 
+   
+     So we can decide the rounding without any computation 
+  */
+  if (xdb.i[HI] < 0x3e300000) {
+    /* If x == 0 the result is algebraic and equal to 0
+       If x < 0 the truncation rest is negative and less than 1 ulp, we return x
+       If x > 0 the truncation rest is positive and less than 1 ulp, we return x
+    */
+    return x;
+  }
+
+  /* Recast x */
+  x = xdb.d;
+
+  /* Find correspondant interval and compute
+     We start by filtering the two special cases around 0 and 1
+  */
+
+  if (xdb.i[HI] < BOUND1) {
+    /* Special interval 0..BOUND1 
+       The polynomial has no even monomials
+       We must prove extra accuracy in the interval 0..sin(2^(-18))
+    */
+
+    /* Quick phase starts */
+
+    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+    Mul12(&xSqh,&xSql,x,x);
+
+
+
+    /* Launch accurate phase */
+
+    asin_accurate_lower(&asinh,&asinm,&asinl,x,xSqh,xSql,sign);
+
+    ReturnRoundTowardsZero3(asinh,asinm,asinl); 
+  }
+
+  if (xdb.i[HI] > BOUND9) {
+    /* Special interval BOUND9..1
+       We use an asymptotic development of arcsin in sqrt(1 - x)
+    */
+
+    /* Argument reduction 
+       z = 1 - x
+       The operation is exact by Sterbenz' lemma
+    */
+
+    z = 1 - x;
+
+    /* Quick phase starts */
+
+    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+
+    /* Launch accurate phase */
+
+    asin_accurate_higher(&asinh,&asinm,&asinl,z,sign);
+
+    ReturnRoundTowardsZero3(asinh,asinm,asinl); 
+  }
+  
+  /* General 8 main intervals 
+     We can already suppose that BOUND1 <= x <= BOUND9
+  */
+  
+  if (xdb.i[HI] < BOUND5) {
+    if (xdb.i[HI] < BOUND3) {
+      if (xdb.i[HI] < BOUND2) i = TBLIDX2; else i = TBLIDX3;
+    } else {
+      if (xdb.i[HI] < BOUND4) i = TBLIDX4; else i = TBLIDX5;
+    }
+  } else {
+    if (xdb.i[HI] < BOUND7) {
+      if (xdb.i[HI] < BOUND6) i = TBLIDX6; else i = TBLIDX7;
+    } else {
+      if (xdb.i[HI] < BOUND8) i = TBLIDX8; else i = TBLIDX9;
+    }
+  }
+
+  /* Argument reduction 
+     i points to the interval midpoint value in the table
+  */
+  z = x - tbl[i];
+
+  /* Quick phase starts */
+
+  /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+
+  /* Launch accurate phase */
+
+  asin_accurate_middle(&asinh,&asinm,&asinl,z,i,sign);
+
+  ReturnRoundTowardsZero3(asinh,asinm,asinl); 
+}
+

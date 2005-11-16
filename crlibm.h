@@ -97,26 +97,31 @@ extern double sinh_rz(double); /* toward zero */
 /*  pow  */
 extern double pow_rn(double, double); /* to nearest */
 
-
-/* Unfinished functions */
-/* These functions provide correct rounding but are very slow
-   (typically 100 times slower that the standard libm) */
-
-
-extern double exp2_rn(double); /* to nearest  */
-extern double exp2_rd(double); /* toward -inf */ 
-extern double exp2_ru(double); /* toward +inf */ 
-
-
+/* base 2 logarithm */
 extern double log2_rn(double); /* to nearest  */
 extern double log2_rd(double); /* toward -inf */ 
 extern double log2_ru(double); /* toward +inf */ 
 extern double log2_rz(double); /* towards zero */ 
 
+/* base 10 logarithm */
 extern double log10_rn(double); /* to nearest  */
 extern double log10_rd(double); /* toward -inf */ 
 extern double log10_ru(double); /* toward +inf */ 
 extern double log10_rz(double); /* towards zero */ 
+
+/* arcsine */
+extern double asin_rn(double); /* to nearest */
+extern double asin_rd(double); /* toward -inf */
+extern double asin_ru(double); /* toward +inf */
+extern double asin_rz(double); /* toward zero */
+
+/* Unfinished functions */
+/* These functions provide correct rounding but are very slow
+   (typically 100 times slower that the standard libm) */
+
+extern double exp2_rn(double); /* to nearest  */
+extern double exp2_rd(double); /* toward -inf */ 
+extern double exp2_ru(double); /* toward +inf */ 
 
 #if defined (__cplusplus)
 }

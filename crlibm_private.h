@@ -632,6 +632,16 @@ double mh, ml;                                        \
 #endif /* PROCESSOR_HAS_FMA */
 
 
+/* Eps Mul122 <= 2^-102 */
+#define Mul122(resh,resl,a,bh,bl)                 \
+{                                                 \
+    double _t1, _t2, _t3, _t4;                    \
+                                                  \
+    Mul12(&_t1,&_t2,(a),(bh));                    \
+    _t3 = (a) * (bl);                             \
+    _t4 = _t2 + _t3;                              \
+    Add12((*(resh)),(*(resl)),_t1,_t4);           \
+}
 
 /* In the following the one-line computation of _cl was split so that
    icc(8.1) would compile it properly. It's a bug of icc */

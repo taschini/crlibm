@@ -246,6 +246,49 @@
     Add12Cond((*(resm)),(*(resl)),_t4,_t7);                     \
 }
 
+/* Add133
+
+   Procedure for adding a double number to a triple 
+   double number resulting in a triple double number
+
+
+   Arguments:       a double number a 
+                    a triple double number bh, bm, bl
+   
+   Results:         a triple double number resh, resm, resl
+
+   Preconditions:   abs(bh) <= 2^(-2) * abs(a)
+		    abs(bm) <= 2^(-b_o) * abs(bh)
+		    abs(bl) <= 2^(-b_u) * abs(bm)
+		    where
+		    b_o >= 2
+		    b_u >= 1
+		    
+   Guarantees:      resm and resl are non-overlapping
+                    resm = round-to-nearest(resm + resl)
+		    abs(resm) <= 2^(\gamma) * abs(resh)
+		    where
+		    \gamma >= min(47,2-b_o,1-b_o-b_u)
+		    resh+resm+resl=(a + (bh+bm+bl)) * (1+eps)
+		    where
+		    abs(eps) <= 
+                       <= 2^(-52-b_o-b_u) + 2^(-154)
+
+
+   Details:         resh, resm and resl are considered to be pointers
+*/
+#define Add133(resh, resm, resl, a, bh, bm, bl)                 \
+{                                                               \
+    double _t1, _t2, _t3, _t4;                                  \
+                                                                \
+    Add12((*(resh)),_t1,(a),(bh));                              \
+    Add12Cond(_t2,_t3,_t1,(bm));                                \
+    _t4 = _t3 + (bl);                                           \
+    Add12Cond((*(resm)),(*(resl)),_t2,_t4);                     \
+}
+
+
+
 /* Add233Cond
 
    Procedure for adding a double double number to a triple 
@@ -310,43 +353,47 @@
 		    abs(bm) <= 2^(-b_o) * abs(bh)
 		    abs(bl) <= 2^(-b_u) * abs(bm)
 		    where
-		    b_o >= a_o >= 4
-		    b_u >= a_u >= 4
+		    b_o, a_o >= 5
+		    b_u, a_u >= 5
 
 		    
    Guarantees:      resm and resl are non-overlapping
                     resm = round-to-nearest(resm + resl)
-		    abs(resm) <= 2^(???) * abs(resh)
-		    resh+resm+resl = (ah+am+al + bh+bm+bl) * (1+eps)
+		    abs(resm) <= 2^(-g_o) * abs(resh)
+		    with
+		    g_o > min(48,-4+a_o,-4+b_o,-4+a_o-b_o)
+		    resh+resm+resl = (ah+am+al) * (bh+bm+bl) * (1+eps)
                     where 
-		    abs(eps) <= 2^???
+		    abs(eps) <= 2^-151 + 2^-99-a_o + 2^-99-b_o +
+		    + 2^-49-a_o-a_u + 2^-49-b_o-b_u + 2^50-a_o-b_o-b_u + 
+		    + 2^50-a_o-b_o-b_u + 2^-101-a_o-b_o + 2^-52-a_o-a_u-b_o-b_u
 
    Details:         resh, resm and resl are considered to be pointers
 */
+
 #define Mul33(resh, resm, resl, ah, am, al, bh, bm, bl)      \
 {                                                            \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9;      \
     double _t10, _t11, _t12, _t13, _t14, _t15, _t16, _t17;   \
-    double _t18, _t19, _t20, _t21, _t22, _t23, _t24, _t25;   \
-    double _t26, _t27, _t28, _t29, _t30;                     \
+    double _t18, _t19, _t20, _t21, _t22;                     \
                                                              \
     Mul12((resh),&_t1,(ah),(bh));                            \
-    Mul12(&_t2, &_t3, (ah), (bm));                           \
-    Mul12(&_t4, &_t5, (am), (bh));                           \
-    Mul12(&_t6, &_t7, (am), (bm));                           \
-    Mul12(&_t8, &_t9, (ah), (bl));                           \
-    Mul12(&_t10, &_t11, (al), (bh));                         \
-    Mul12(&_t12, &_t13, (am), (bl));                         \
-    Mul12(&_t14, &_t15, (al), (bm));                         \
-    _t16 = (al) * (bl);                                      \
-    Add12Cond(_t27,_t28,_t1,_t16);                           \
-    Add22Cond(&_t17,&_t18,_t2,_t3,_t4,_t5);                  \
-    Add22Cond(&_t19,&_t20,_t8,_t9,_t10,_t11);                \
-    Add22Cond(&_t21,&_t22,_t12,_t13,_t14,_t15);              \
-    Add22Cond(&_t23,&_t24,_t17,_t18,_t6,_t7);                \
-    Add22Cond(&_t25,&_t26,_t19,_t20,_t21,_t22);              \
-    Add22Cond(&_t29,&_t30,_t23,_t24,_t25,_t26);              \
-    Add22Cond((resm),(resl),_t27,_t28,_t29,_t30);            \
+    Mul12(&_t2,&_t3,(ah),(bm));                              \
+    Mul12(&_t4,&_t5,(am),(bh));                              \
+    Mul12(&_t6,&_t7,(am),(bm));                              \
+    _t8 = (ah) * (bl);                                       \
+    _t9 = (al) * (bh);                                       \
+    _t10 = (am) * (bl);                                      \
+    _t11 = (al) * (bm);                                      \
+    _t12 = _t8 + _t9;                                        \
+    _t13 = _t10 + _t11;                                      \
+    Add12Cond(_t14,_t15,_t1,_t6);                            \
+    _t16 = _t7 + _t15;                                       \
+    _t17 = _t12 + _t13;                                      \
+    _t18 = _t16 + _t17;                                      \
+    Add12Cond(_t19,_t20,_t14,_t18);                          \
+    Add22Cond(&_t21,&_t22,_t2,_t3,_t4,_t5);                  \
+    Add22Cond((resm),(resl),_t21,_t22,_t19,_t20);            \
 }
 
 
@@ -368,26 +415,63 @@
 		    b_u >= 2
 
 		    
-   Guarantees:      // TO DO
-
-
-		    resh+resm+resl = (ah+am+al + bh+bm+bl) * (1+eps)
+   Guarantees:      resm and resl are non-overlapping
+                    resm = round-to-nearest(resm + resl)
+		    abs(resm) <= 2^(-g_o) * abs(resh)
+		    with
+		    g_o > min(47,-5-b_o,-5+b_o+b_u) 
+		    resh+resm+resl = a * (bh+bm+bl) * (1+eps)
                     where 
-		    abs(eps) <= 2^(-b_o-b_u-49) + 2^(-b_o-101) + 2^-156
+		    abs(eps) <= 2^-49-b_o-b_u + 2^-101-b_o + 2^-156
 
    Details:         resh, resm and resl are considered to be pointers
 */
 #define Mul133(resh, resm, resl, a, bh, bm, bl)            \
 {                                                          \
-    double _t2, _t3, _t4, _t5, _t7, _t8;                   \
+    double _t2, _t3, _t4, _t5, _t7, _t8, _t9, _t10;        \
                                                            \
     Mul12((resh),&_t2,(a),(bh));                           \
     Mul12(&_t3,&_t4,(a),(bm));                             \
     _t5 = (a) * (bl);                                      \
-    Add12Cond((*(resm)),_t7,_t2,_t3);                      \
+    Add12Cond(_t9,_t7,_t2,_t3);                            \
     _t8 = _t4 + _t5;                                       \
-    *(resl) = _t7 + _t8;                                   \
+    _t10 = _t7 + _t8;                                      \
+    Add12Cond((*(resm)),(*(resl)),_t9,_t10);               \
 }
+
+/* Mul123
+
+   Procedure for multiplying double by a double double number resulting
+   in a triple double number
+
+
+   Arguments:       a double a
+		    a double double bh, bl
+   
+   Results:         a triple double number resh, resm, resl
+		    
+   Guarantees:      resm and resl are non-overlapping
+                    resm = round-to-nearest(resm + resl)
+		    abs(resm) <= 2^(-g_o) * abs(resh)
+		    with
+		    g_o > 47 
+		    resh+resm+resl = a * (bh+bm) * (1+eps)
+                    where 
+		    abs(eps) <= 2^-154
+
+   Details:         resh, resm and resl are considered to be pointers
+*/
+#define Mul123(resh, resm, resl, a, bh, bl)                \
+{                                                          \
+    double _t1, _t2, _t3, _t4, _t5, _t6;                   \
+                                                           \
+    Mul12((resh),&_t1,(a),(bh));                           \
+    Mul12(&_t2,&_t3,(a),(bl));                             \
+    Add12Cond(_t5,_t4,_t1,_t2);                            \
+    _t6 = _t3 + _t4;                                       \
+    Add12Cond((*(resm)),(*(resl)),_t5,_t6);                \
+}
+
 
 
 /* ReturnRoundToNearest3
