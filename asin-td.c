@@ -39,6 +39,10 @@ void asin_accurate_lower(double *asinh, double *asinm, double *asinl, double x, 
   double xCubeh, xCubem, xCubel, tt13h, tt13m, tt13l, t13h, t13m, t13l, polyh, polym, polyl;
   double tt11hover, tt11mover, tt11lover;
 
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+
   /* Evaluate the polynomial of degree 37
      Its coefficients start at tbl[0]
 
@@ -121,6 +125,9 @@ void  asin_accurate_middle(double *asinh, double *asinm, double *asinl, double z
   double tt13h, tt13m, tt13l, tt14h, tt14m, tt14l, tt15h, tt15m, tt15l, tt16h, tt16m, tt16l;
   double polyh, polym, polyl, tt13hover, tt13mover, tt13lover;
 
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
 
   /* Evaluate the polynomial of degree 35
      Its coefficients start at tbl[i+1] 
@@ -209,6 +216,10 @@ void asin_accurate_higher(double *asinh, double *asinm, double *asinl, double z,
   double sqrtzh, sqrtzm, sqrtzl, twoZ, pTimesSh, pTimesSm, pTimesSl;
   double allhover, allmover, alllover, allh, allm, alll;
   double t13hover, t13mover, t13lover, tt17hover, tt17mover, tt17lover;
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
 
   /* We evaluate asin(x) as 
 
