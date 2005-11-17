@@ -390,9 +390,9 @@ double asin_rn(double x) {
 
     /* Double precision evaluation */
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-    highPoly = FMA(FMA(FMA(FMA(FMA(tbl[25],xSqh,tbl[23]),xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+    highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
 #else
-    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * (tbl[23] + xSqh * tbl[25]))));
+    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
 #endif
 
     /* Double-double precision evaluation */
@@ -492,7 +492,7 @@ double asin_rn(double x) {
     asinm = sign * alll;
 
     /* Rounding test 
-       The RN rounding constant is a tbl[TBLIDX10+54]
+       The RN rounding constant is at tbl[TBLIDX10+54]
     */
     if(asinh == (asinh + (asinm * tbl[TBLIDX10+54]))) 
       return asinh;
@@ -563,7 +563,7 @@ double asin_rn(double x) {
   asinm = sign * polyl;
 
   /* Rounding test 
-     The RN rounding constant is a tbl[i+59]
+     The RN rounding constant is at tbl[i+59]
   */
   if(asinh == (asinh + (asinm * tbl[i+59]))) 
     return asinh;
@@ -642,9 +642,9 @@ double asin_ru(double x) {
 
     /* Double precision evaluation */
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-    highPoly = FMA(FMA(FMA(FMA(FMA(tbl[25],xSqh,tbl[23]),xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+    highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
 #else
-    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * (tbl[23] + xSqh * tbl[25]))));
+    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
 #endif
 
     /* Double-double precision evaluation */
@@ -892,9 +892,9 @@ double asin_rd(double x) {
 
     /* Double precision evaluation */
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-    highPoly = FMA(FMA(FMA(FMA(FMA(tbl[25],xSqh,tbl[23]),xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+    highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
 #else
-    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * (tbl[23] + xSqh * tbl[25]))));
+    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
 #endif
 
     /* Double-double precision evaluation */
@@ -1135,9 +1135,9 @@ double asin_rz(double x) {
 
     /* Double precision evaluation */
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-    highPoly = FMA(FMA(FMA(FMA(FMA(tbl[25],xSqh,tbl[23]),xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+    highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
 #else
-    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * (tbl[23] + xSqh * tbl[25]))));
+    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
 #endif
 
     /* Double-double precision evaluation */
