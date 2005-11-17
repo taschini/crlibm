@@ -29,7 +29,6 @@
 #include "asin-td.h"
 
 
-
 void asin_accurate_lower(double *asinh, double *asinm, double *asinl, double x, double xSqh, double xSql, double sign) {
   double highPoly;
   double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l, t7h, t7l;
@@ -339,6 +338,11 @@ double asin_rn(double x) {
   double sign, z, asinh, asinm, asinl;
   int i;
   double xSqh, xSql;
+  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l;
+  double tt6h, tt6l, tt7h, tt7l, tt8h, tt8l, tt9h, tt9l;
+  double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l;
+  double t7h, t7l, t8h, t8l, polyh, polyl, twoZ, sqrtzh, sqrtzl;
+  double pTimesSh, pTimesSl, allh, alll, highPoly, xCubeh, xCubel;
 
   /* Transform the argument into integer */
   xdb.d = x;
@@ -358,9 +362,8 @@ double asin_rn(double x) {
      
      arcsin(x) = x * ( 1 + xi ) 
 
-     with |xi| < 2^(-55) and
-          sgn(xi) = sgn(x) 
-   
+     with 0 <= xi < 2^(-55) 
+          
      So we can decide the rounding without any computation 
   */
   if (xdb.i[HI] < 0x3e300000) {
@@ -370,7 +373,7 @@ double asin_rn(double x) {
   /* Recast x */
   x = xdb.d;
 
-  /* Find correspondant interval and compute
+  /* Find correspondant interval and compute index to the table
      We start by filtering the two special cases around 0 and 1
   */
 
@@ -382,11 +385,42 @@ double asin_rn(double x) {
 
     /* Quick phase starts */
 
-    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
-
+    /* Compute square of x for both quick and accurate phases */
     Mul12(&xSqh,&xSql,x,x);
 
+    /* Double precision evaluation */
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+    highPoly = FMA(FMA(FMA(FMA(FMA(tbl[25],xSqh,tbl[23]),xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+#else
+    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * (tbl[23] + xSqh * tbl[25]))));
+#endif
 
+    /* Double-double precision evaluation */
+    Mul12(&tt1h,&tt1l,xSqh,highPoly);
+    Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
+    Mul22(&tt2h,&tt2l,xSqh,xSql,t1h,t1l);
+    Add22(&t2h,&t2l,tbl[9],tbl[10],tt2h,tt2l);
+    Mul22(&tt3h,&tt3l,xSqh,xSql,t2h,t2l);
+    Add22(&t3h,&t3l,tbl[6],tbl[7],tt3h,tt3l);
+    Mul22(&tt4h,&tt4l,xSqh,xSql,t3h,t3l);
+    Add22(&t4h,&t4l,tbl[3],tbl[4],tt4h,tt4l);
+    Mul22(&tt5h,&tt5l,xSqh,xSql,t4h,t4l);
+    Add22(&t5h,&t5l,tbl[0],tbl[1],tt5h,tt5l);
+
+    Mul122(&xCubeh,&xCubel,x,xSqh,xSql);
+    Mul22(&tt6h,&tt6l,xCubeh,xCubel,t5h,t5l);
+    
+    Add22(&polyh,&polyl,x,0,tt6h,tt6l);
+
+    /* Multiply by sign */
+    asinh = sign * polyh;
+    asinm = sign * polyl;
+
+    /* Rounding test 
+       The RN rounding constant is at tbl[34]
+    */
+    if(asinh == (asinh + (asinm * tbl[34]))) 
+      return asinh;
 
     /* Launch accurate phase */
 
@@ -400,17 +434,68 @@ double asin_rn(double x) {
        We use an asymptotic development of arcsin in sqrt(1 - x)
     */
 
-    /* Argument reduction 
+    /* Argument reduction for quick and accurate phase
        z = 1 - x
-       The operation is exact by Sterbenz' lemma
+       The operation is exact as per Sterbenz' lemma
     */
 
     z = 1 - x;
 
     /* Quick phase starts */
 
-    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+    /* Double precision evaluation */
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+    highPoly = FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(
+	       tbl[TBLIDX10+42] ,z,tbl[TBLIDX10+40]),z,tbl[TBLIDX10+38]),z,
+               tbl[TBLIDX10+36]),z,tbl[TBLIDX10+34]),z,tbl[TBLIDX10+32]),z,
+               tbl[TBLIDX10+30]),z,tbl[TBLIDX10+28]),z,tbl[TBLIDX10+26]),z,
+               tbl[TBLIDX10+24]);
+#else
+    highPoly = tbl[TBLIDX10+24] + z * (tbl[TBLIDX10+26] + z * (tbl[TBLIDX10+28] + z * (
+	       tbl[TBLIDX10+30] + z * (tbl[TBLIDX10+32] + z * (tbl[TBLIDX10+34] + z * (
+	       tbl[TBLIDX10+36] + z * (tbl[TBLIDX10+38] + z * (tbl[TBLIDX10+40] + z * 
+               tbl[TBLIDX10+42]))))))));
+#endif
+    
+    /* Double-double precision evaluation */
+    Mul12(&tt1h,&tt1l,z,highPoly);
+    Add22(&t1h,&t1l,tbl[TBLIDX10+21],tbl[TBLIDX10+22],tt1h,tt1l);
+    Mul122(&tt2h,&tt2l,z,t1h,t1l);
+    Add22(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],tt2h,tt2l);
+    Mul122(&tt3h,&tt3l,z,t2h,t2l);
+    Add22(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],tt3h,tt3l);
+    Mul122(&tt4h,&tt4l,z,t3h,t3l);
+    Add22(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],tt4h,tt4l);
+    Mul122(&tt5h,&tt5l,z,t4h,t4l);
+    Add22(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tt5h,tt5l);
+    Mul122(&tt6h,&tt6l,z,t5h,t5l);
+    Add22(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tt6h,tt6l);
+    Mul122(&tt7h,&tt7l,z,t6h,t6l);
+    Add22(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tt7h,tt7l);
+    Mul122(&tt8h,&tt8l,z,t7h,t7l);
+    Add22(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tt8h,tt8l);
+    Mul122(&tt9h,&tt9l,z,t8h,t8l);
+    Add22(&polyh,&polyl,-1,0,tt9h,tt9l);
 
+    /* Compute sqrt(2*z) as a double-double */
+
+    twoZ = 2 * z;
+    sqrt12(&sqrtzh,&sqrtzl,twoZ);                                                         
+
+    /* Multiply p(z) by sqrt(2*z) and add Pi/2 */
+
+    Mul22(&pTimesSh,&pTimesSl,polyh,polyl,sqrtzh,sqrtzl);                    
+    Add22(&allh,&alll,PIHALFH,PIHALFM,pTimesSh,pTimesSl);       
+
+    /* Multiply by sign */
+    asinh = sign * allh;
+    asinm = sign * alll;
+
+    /* Rounding test 
+       The RN rounding constant is a tbl[TBLIDX10+54]
+    */
+    if(asinh == (asinh + (asinm * tbl[TBLIDX10+54]))) 
+      return asinh;
 
     /* Launch accurate phase */
 
@@ -444,7 +529,44 @@ double asin_rn(double x) {
 
   /* Quick phase starts */
 
-  /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+  /* Double precision evaluation */
+
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+  highPoly = FMA(FMA(FMA(FMA(FMA(FMA(FMA(
+	     tbl[i+35] ,z,tbl[i+33]),z,tbl[i+31]),z,tbl[i+29]),z,
+             tbl[i+27]),z,tbl[i+25]),z,tbl[i+23]),z,tbl[i+21]);
+#else
+  highPoly = tbl[i+21] + z * (tbl[i+23] + z * (tbl[i+25] + z * (
+             tbl[i+27] + z * (tbl[i+29] + z * (tbl[i+31] + z * ( 
+             tbl[i+33] + z *  tbl[i+35]))))));
+#endif
+
+  /* Double-double precision evaluation */
+    
+  Mul12(&tt1h,&tt1l,z,highPoly);
+  Add22(&t1h,&t1l,tbl[i+18],tbl[i+19],tt1h,tt1l);
+  Mul122(&tt2h,&tt2l,z,t1h,t1l);
+  Add22(&t2h,&t2l,tbl[i+15],tbl[i+16],tt2h,tt2l);
+  Mul122(&tt3h,&tt3l,z,t2h,t2l);
+  Add22(&t3h,&t3l,tbl[i+12],tbl[i+13],tt3h,tt3l);
+  Mul122(&tt4h,&tt4l,z,t3h,t3l);
+  Add22(&t4h,&t4l,tbl[i+9],tbl[i+10],tt4h,tt4l);
+  Mul122(&tt5h,&tt5l,z,t4h,t4l);
+  Add22(&t5h,&t5l,tbl[i+6],tbl[i+7],tt5h,tt5l);
+  Mul122(&tt6h,&tt6l,z,t5h,t5l);
+  Add22(&t6h,&t6l,tbl[i+3],tbl[i+4],tt6h,tt6l);
+  Mul122(&tt7h,&tt7l,z,t6h,t6l);
+  Add22(&polyh,&polyl,tbl[i+1],tbl[i+2],tt7h,tt7l);
+
+  /* Multiply by sign */
+  asinh = sign * polyh;
+  asinm = sign * polyl;
+
+  /* Rounding test 
+     The RN rounding constant is a tbl[i+59]
+  */
+  if(asinh == (asinh + (asinm * tbl[i+59]))) 
+    return asinh;
 
   /* Launch accurate phase */
 
@@ -458,6 +580,11 @@ double asin_ru(double x) {
   double sign, z, asinh, asinm, asinl;
   int i;
   double xSqh, xSql;
+  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l;
+  double tt6h, tt6l, tt7h, tt7l, tt8h, tt8l, tt9h, tt9l;
+  double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l;
+  double t7h, t7l, t8h, t8l, polyh, polyl, twoZ, sqrtzh, sqrtzl;
+  double pTimesSh, pTimesSl, allh, alll, highPoly, xCubeh, xCubel;
 
   /* Transform the argument into integer */
   xdb.d = x;
@@ -477,9 +604,8 @@ double asin_ru(double x) {
      
      arcsin(x) = x * ( 1 + xi ) 
 
-     with |xi| < 2^(-55) and
-          sgn(xi) = sgn(x) 
-   
+     with 0 <= xi < 2^(-55) 
+          
      So we can decide the rounding without any computation 
   */
   if (xdb.i[HI] < 0x3e300000) {
@@ -499,7 +625,7 @@ double asin_ru(double x) {
   /* Recast x */
   x = xdb.d;
 
-  /* Find correspondant interval and compute
+  /* Find correspondant interval and compute index to the table
      We start by filtering the two special cases around 0 and 1
   */
 
@@ -511,11 +637,41 @@ double asin_ru(double x) {
 
     /* Quick phase starts */
 
-    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
-
+    /* Compute square of x for both quick and accurate phases */
     Mul12(&xSqh,&xSql,x,x);
 
+    /* Double precision evaluation */
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+    highPoly = FMA(FMA(FMA(FMA(FMA(tbl[25],xSqh,tbl[23]),xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+#else
+    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * (tbl[23] + xSqh * tbl[25]))));
+#endif
 
+    /* Double-double precision evaluation */
+    Mul12(&tt1h,&tt1l,xSqh,highPoly);
+    Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
+    Mul22(&tt2h,&tt2l,xSqh,xSql,t1h,t1l);
+    Add22(&t2h,&t2l,tbl[9],tbl[10],tt2h,tt2l);
+    Mul22(&tt3h,&tt3l,xSqh,xSql,t2h,t2l);
+    Add22(&t3h,&t3l,tbl[6],tbl[7],tt3h,tt3l);
+    Mul22(&tt4h,&tt4l,xSqh,xSql,t3h,t3l);
+    Add22(&t4h,&t4l,tbl[3],tbl[4],tt4h,tt4l);
+    Mul22(&tt5h,&tt5l,xSqh,xSql,t4h,t4l);
+    Add22(&t5h,&t5l,tbl[0],tbl[1],tt5h,tt5l);
+
+    Mul122(&xCubeh,&xCubel,x,xSqh,xSql);
+    Mul22(&tt6h,&tt6l,xCubeh,xCubel,t5h,t5l);
+    
+    Add22(&polyh,&polyl,x,0,tt6h,tt6l);
+
+    /* Multiply by sign */
+    asinh = sign * polyh;
+    asinm = sign * polyl;
+
+    /* Rounding test 
+       The RU rounding constant is at tbl[35]
+    */
+    TEST_AND_RETURN_RU(asinh, asinm, tbl[35]);
 
     /* Launch accurate phase */
 
@@ -529,17 +685,67 @@ double asin_ru(double x) {
        We use an asymptotic development of arcsin in sqrt(1 - x)
     */
 
-    /* Argument reduction 
+    /* Argument reduction for quick and accurate phase
        z = 1 - x
-       The operation is exact by Sterbenz' lemma
+       The operation is exact as per Sterbenz' lemma
     */
 
     z = 1 - x;
 
     /* Quick phase starts */
 
-    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+    /* Double precision evaluation */
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+    highPoly = FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(
+	       tbl[TBLIDX10+42] ,z,tbl[TBLIDX10+40]),z,tbl[TBLIDX10+38]),z,
+               tbl[TBLIDX10+36]),z,tbl[TBLIDX10+34]),z,tbl[TBLIDX10+32]),z,
+               tbl[TBLIDX10+30]),z,tbl[TBLIDX10+28]),z,tbl[TBLIDX10+26]),z,
+               tbl[TBLIDX10+24]);
+#else
+    highPoly = tbl[TBLIDX10+24] + z * (tbl[TBLIDX10+26] + z * (tbl[TBLIDX10+28] + z * (
+	       tbl[TBLIDX10+30] + z * (tbl[TBLIDX10+32] + z * (tbl[TBLIDX10+34] + z * (
+	       tbl[TBLIDX10+36] + z * (tbl[TBLIDX10+38] + z * (tbl[TBLIDX10+40] + z * 
+               tbl[TBLIDX10+42]))))))));
+#endif
+    
+    /* Double-double precision evaluation */
+    Mul12(&tt1h,&tt1l,z,highPoly);
+    Add22(&t1h,&t1l,tbl[TBLIDX10+21],tbl[TBLIDX10+22],tt1h,tt1l);
+    Mul122(&tt2h,&tt2l,z,t1h,t1l);
+    Add22(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],tt2h,tt2l);
+    Mul122(&tt3h,&tt3l,z,t2h,t2l);
+    Add22(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],tt3h,tt3l);
+    Mul122(&tt4h,&tt4l,z,t3h,t3l);
+    Add22(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],tt4h,tt4l);
+    Mul122(&tt5h,&tt5l,z,t4h,t4l);
+    Add22(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tt5h,tt5l);
+    Mul122(&tt6h,&tt6l,z,t5h,t5l);
+    Add22(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tt6h,tt6l);
+    Mul122(&tt7h,&tt7l,z,t6h,t6l);
+    Add22(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tt7h,tt7l);
+    Mul122(&tt8h,&tt8l,z,t7h,t7l);
+    Add22(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tt8h,tt8l);
+    Mul122(&tt9h,&tt9l,z,t8h,t8l);
+    Add22(&polyh,&polyl,-1,0,tt9h,tt9l);
 
+    /* Compute sqrt(2*z) as a double-double */
+
+    twoZ = 2 * z;
+    sqrt12(&sqrtzh,&sqrtzl,twoZ);                                                         
+
+    /* Multiply p(z) by sqrt(2*z) and add Pi/2 */
+
+    Mul22(&pTimesSh,&pTimesSl,polyh,polyl,sqrtzh,sqrtzl);                    
+    Add22(&allh,&alll,PIHALFH,PIHALFM,pTimesSh,pTimesSl);       
+
+    /* Multiply by sign */
+    asinh = sign * allh;
+    asinm = sign * alll;
+
+    /* Rounding test 
+       The RU rounding constant is at tbl[TBLIDX10+55]
+    */
+    TEST_AND_RETURN_RU(asinh, asinm, tbl[TBLIDX10+55]);
 
     /* Launch accurate phase */
 
@@ -573,7 +779,43 @@ double asin_ru(double x) {
 
   /* Quick phase starts */
 
-  /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+  /* Double precision evaluation */
+
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+  highPoly = FMA(FMA(FMA(FMA(FMA(FMA(FMA(
+	     tbl[i+35] ,z,tbl[i+33]),z,tbl[i+31]),z,tbl[i+29]),z,
+             tbl[i+27]),z,tbl[i+25]),z,tbl[i+23]),z,tbl[i+21]);
+#else
+  highPoly = tbl[i+21] + z * (tbl[i+23] + z * (tbl[i+25] + z * (
+             tbl[i+27] + z * (tbl[i+29] + z * (tbl[i+31] + z * ( 
+             tbl[i+33] + z *  tbl[i+35]))))));
+#endif
+
+  /* Double-double precision evaluation */
+    
+  Mul12(&tt1h,&tt1l,z,highPoly);
+  Add22(&t1h,&t1l,tbl[i+18],tbl[i+19],tt1h,tt1l);
+  Mul122(&tt2h,&tt2l,z,t1h,t1l);
+  Add22(&t2h,&t2l,tbl[i+15],tbl[i+16],tt2h,tt2l);
+  Mul122(&tt3h,&tt3l,z,t2h,t2l);
+  Add22(&t3h,&t3l,tbl[i+12],tbl[i+13],tt3h,tt3l);
+  Mul122(&tt4h,&tt4l,z,t3h,t3l);
+  Add22(&t4h,&t4l,tbl[i+9],tbl[i+10],tt4h,tt4l);
+  Mul122(&tt5h,&tt5l,z,t4h,t4l);
+  Add22(&t5h,&t5l,tbl[i+6],tbl[i+7],tt5h,tt5l);
+  Mul122(&tt6h,&tt6l,z,t5h,t5l);
+  Add22(&t6h,&t6l,tbl[i+3],tbl[i+4],tt6h,tt6l);
+  Mul122(&tt7h,&tt7l,z,t6h,t6l);
+  Add22(&polyh,&polyl,tbl[i+1],tbl[i+2],tt7h,tt7l);
+
+  /* Multiply by sign */
+  asinh = sign * polyh;
+  asinm = sign * polyl;
+
+  /* Rounding test 
+     The RU rounding constant is at tbl[i+60]
+  */
+  TEST_AND_RETURN_RU(asinh, asinm, tbl[i+60]);
 
   /* Launch accurate phase */
 
@@ -587,6 +829,11 @@ double asin_rd(double x) {
   double sign, z, asinh, asinm, asinl;
   int i;
   double xSqh, xSql;
+  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l;
+  double tt6h, tt6l, tt7h, tt7l, tt8h, tt8l, tt9h, tt9l;
+  double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l;
+  double t7h, t7l, t8h, t8l, polyh, polyl, twoZ, sqrtzh, sqrtzl;
+  double pTimesSh, pTimesSl, allh, alll, highPoly, xCubeh, xCubel;
 
   /* Transform the argument into integer */
   xdb.d = x;
@@ -606,9 +853,8 @@ double asin_rd(double x) {
      
      arcsin(x) = x * ( 1 + xi ) 
 
-     with |xi| < 2^(-55) and
-          sgn(xi) = sgn(x) 
-   
+     with 0 <= xi < 2^(-55) 
+          
      So we can decide the rounding without any computation 
   */
   if (xdb.i[HI] < 0x3e300000) {
@@ -629,7 +875,7 @@ double asin_rd(double x) {
   /* Recast x */
   x = xdb.d;
 
-  /* Find correspondant interval and compute
+  /* Find correspondant interval and compute index to the table
      We start by filtering the two special cases around 0 and 1
   */
 
@@ -641,11 +887,41 @@ double asin_rd(double x) {
 
     /* Quick phase starts */
 
-    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
-
+    /* Compute square of x for both quick and accurate phases */
     Mul12(&xSqh,&xSql,x,x);
 
+    /* Double precision evaluation */
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+    highPoly = FMA(FMA(FMA(FMA(FMA(tbl[25],xSqh,tbl[23]),xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+#else
+    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * (tbl[23] + xSqh * tbl[25]))));
+#endif
 
+    /* Double-double precision evaluation */
+    Mul12(&tt1h,&tt1l,xSqh,highPoly);
+    Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
+    Mul22(&tt2h,&tt2l,xSqh,xSql,t1h,t1l);
+    Add22(&t2h,&t2l,tbl[9],tbl[10],tt2h,tt2l);
+    Mul22(&tt3h,&tt3l,xSqh,xSql,t2h,t2l);
+    Add22(&t3h,&t3l,tbl[6],tbl[7],tt3h,tt3l);
+    Mul22(&tt4h,&tt4l,xSqh,xSql,t3h,t3l);
+    Add22(&t4h,&t4l,tbl[3],tbl[4],tt4h,tt4l);
+    Mul22(&tt5h,&tt5l,xSqh,xSql,t4h,t4l);
+    Add22(&t5h,&t5l,tbl[0],tbl[1],tt5h,tt5l);
+
+    Mul122(&xCubeh,&xCubel,x,xSqh,xSql);
+    Mul22(&tt6h,&tt6l,xCubeh,xCubel,t5h,t5l);
+    
+    Add22(&polyh,&polyl,x,0,tt6h,tt6l);
+
+    /* Multiply by sign */
+    asinh = sign * polyh;
+    asinm = sign * polyl;
+
+    /* Rounding test 
+       The RD rounding constant is at tbl[35]
+    */
+    TEST_AND_RETURN_RD(asinh, asinm, tbl[35]);
 
     /* Launch accurate phase */
 
@@ -659,17 +935,67 @@ double asin_rd(double x) {
        We use an asymptotic development of arcsin in sqrt(1 - x)
     */
 
-    /* Argument reduction 
+    /* Argument reduction for quick and accurate phase
        z = 1 - x
-       The operation is exact by Sterbenz' lemma
+       The operation is exact as per Sterbenz' lemma
     */
 
     z = 1 - x;
 
     /* Quick phase starts */
 
-    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+    /* Double precision evaluation */
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+    highPoly = FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(
+	       tbl[TBLIDX10+42] ,z,tbl[TBLIDX10+40]),z,tbl[TBLIDX10+38]),z,
+               tbl[TBLIDX10+36]),z,tbl[TBLIDX10+34]),z,tbl[TBLIDX10+32]),z,
+               tbl[TBLIDX10+30]),z,tbl[TBLIDX10+28]),z,tbl[TBLIDX10+26]),z,
+               tbl[TBLIDX10+24]);
+#else
+    highPoly = tbl[TBLIDX10+24] + z * (tbl[TBLIDX10+26] + z * (tbl[TBLIDX10+28] + z * (
+	       tbl[TBLIDX10+30] + z * (tbl[TBLIDX10+32] + z * (tbl[TBLIDX10+34] + z * (
+	       tbl[TBLIDX10+36] + z * (tbl[TBLIDX10+38] + z * (tbl[TBLIDX10+40] + z * 
+               tbl[TBLIDX10+42]))))))));
+#endif
+    
+    /* Double-double precision evaluation */
+    Mul12(&tt1h,&tt1l,z,highPoly);
+    Add22(&t1h,&t1l,tbl[TBLIDX10+21],tbl[TBLIDX10+22],tt1h,tt1l);
+    Mul122(&tt2h,&tt2l,z,t1h,t1l);
+    Add22(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],tt2h,tt2l);
+    Mul122(&tt3h,&tt3l,z,t2h,t2l);
+    Add22(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],tt3h,tt3l);
+    Mul122(&tt4h,&tt4l,z,t3h,t3l);
+    Add22(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],tt4h,tt4l);
+    Mul122(&tt5h,&tt5l,z,t4h,t4l);
+    Add22(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tt5h,tt5l);
+    Mul122(&tt6h,&tt6l,z,t5h,t5l);
+    Add22(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tt6h,tt6l);
+    Mul122(&tt7h,&tt7l,z,t6h,t6l);
+    Add22(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tt7h,tt7l);
+    Mul122(&tt8h,&tt8l,z,t7h,t7l);
+    Add22(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tt8h,tt8l);
+    Mul122(&tt9h,&tt9l,z,t8h,t8l);
+    Add22(&polyh,&polyl,-1,0,tt9h,tt9l);
 
+    /* Compute sqrt(2*z) as a double-double */
+
+    twoZ = 2 * z;
+    sqrt12(&sqrtzh,&sqrtzl,twoZ);                                                         
+
+    /* Multiply p(z) by sqrt(2*z) and add Pi/2 */
+
+    Mul22(&pTimesSh,&pTimesSl,polyh,polyl,sqrtzh,sqrtzl);                    
+    Add22(&allh,&alll,PIHALFH,PIHALFM,pTimesSh,pTimesSl);       
+
+    /* Multiply by sign */
+    asinh = sign * allh;
+    asinm = sign * alll;
+
+    /* Rounding test 
+       The RD rounding constant is at tbl[TBLIDX10+55]
+    */
+    TEST_AND_RETURN_RD(asinh, asinm, tbl[TBLIDX10+55]);
 
     /* Launch accurate phase */
 
@@ -703,7 +1029,43 @@ double asin_rd(double x) {
 
   /* Quick phase starts */
 
-  /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+  /* Double precision evaluation */
+
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+  highPoly = FMA(FMA(FMA(FMA(FMA(FMA(FMA(
+	     tbl[i+35] ,z,tbl[i+33]),z,tbl[i+31]),z,tbl[i+29]),z,
+             tbl[i+27]),z,tbl[i+25]),z,tbl[i+23]),z,tbl[i+21]);
+#else
+  highPoly = tbl[i+21] + z * (tbl[i+23] + z * (tbl[i+25] + z * (
+             tbl[i+27] + z * (tbl[i+29] + z * (tbl[i+31] + z * ( 
+             tbl[i+33] + z *  tbl[i+35]))))));
+#endif
+
+  /* Double-double precision evaluation */
+    
+  Mul12(&tt1h,&tt1l,z,highPoly);
+  Add22(&t1h,&t1l,tbl[i+18],tbl[i+19],tt1h,tt1l);
+  Mul122(&tt2h,&tt2l,z,t1h,t1l);
+  Add22(&t2h,&t2l,tbl[i+15],tbl[i+16],tt2h,tt2l);
+  Mul122(&tt3h,&tt3l,z,t2h,t2l);
+  Add22(&t3h,&t3l,tbl[i+12],tbl[i+13],tt3h,tt3l);
+  Mul122(&tt4h,&tt4l,z,t3h,t3l);
+  Add22(&t4h,&t4l,tbl[i+9],tbl[i+10],tt4h,tt4l);
+  Mul122(&tt5h,&tt5l,z,t4h,t4l);
+  Add22(&t5h,&t5l,tbl[i+6],tbl[i+7],tt5h,tt5l);
+  Mul122(&tt6h,&tt6l,z,t5h,t5l);
+  Add22(&t6h,&t6l,tbl[i+3],tbl[i+4],tt6h,tt6l);
+  Mul122(&tt7h,&tt7l,z,t6h,t6l);
+  Add22(&polyh,&polyl,tbl[i+1],tbl[i+2],tt7h,tt7l);
+
+  /* Multiply by sign */
+  asinh = sign * polyh;
+  asinm = sign * polyl;
+
+  /* Rounding test 
+     The RD rounding constant is at tbl[i+60]
+  */
+  TEST_AND_RETURN_RD(asinh, asinm, tbl[i+60]);
 
   /* Launch accurate phase */
 
@@ -717,6 +1079,11 @@ double asin_rz(double x) {
   double sign, z, asinh, asinm, asinl;
   int i;
   double xSqh, xSql;
+  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l;
+  double tt6h, tt6l, tt7h, tt7l, tt8h, tt8l, tt9h, tt9l;
+  double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l;
+  double t7h, t7l, t8h, t8l, polyh, polyl, twoZ, sqrtzh, sqrtzl;
+  double pTimesSh, pTimesSl, allh, alll, highPoly, xCubeh, xCubel;
 
   /* Transform the argument into integer */
   xdb.d = x;
@@ -736,9 +1103,8 @@ double asin_rz(double x) {
      
      arcsin(x) = x * ( 1 + xi ) 
 
-     with |xi| < 2^(-55) and
-          sgn(xi) = sgn(x) 
-   
+     with 0 <= xi < 2^(-55) 
+          
      So we can decide the rounding without any computation 
   */
   if (xdb.i[HI] < 0x3e300000) {
@@ -747,12 +1113,12 @@ double asin_rz(double x) {
        If x > 0 the truncation rest is positive and less than 1 ulp, we return x
     */
     return x;
-  }
+  }  
 
   /* Recast x */
   x = xdb.d;
 
-  /* Find correspondant interval and compute
+  /* Find correspondant interval and compute index to the table
      We start by filtering the two special cases around 0 and 1
   */
 
@@ -764,11 +1130,41 @@ double asin_rz(double x) {
 
     /* Quick phase starts */
 
-    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
-
+    /* Compute square of x for both quick and accurate phases */
     Mul12(&xSqh,&xSql,x,x);
 
+    /* Double precision evaluation */
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+    highPoly = FMA(FMA(FMA(FMA(FMA(tbl[25],xSqh,tbl[23]),xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+#else
+    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * (tbl[23] + xSqh * tbl[25]))));
+#endif
 
+    /* Double-double precision evaluation */
+    Mul12(&tt1h,&tt1l,xSqh,highPoly);
+    Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
+    Mul22(&tt2h,&tt2l,xSqh,xSql,t1h,t1l);
+    Add22(&t2h,&t2l,tbl[9],tbl[10],tt2h,tt2l);
+    Mul22(&tt3h,&tt3l,xSqh,xSql,t2h,t2l);
+    Add22(&t3h,&t3l,tbl[6],tbl[7],tt3h,tt3l);
+    Mul22(&tt4h,&tt4l,xSqh,xSql,t3h,t3l);
+    Add22(&t4h,&t4l,tbl[3],tbl[4],tt4h,tt4l);
+    Mul22(&tt5h,&tt5l,xSqh,xSql,t4h,t4l);
+    Add22(&t5h,&t5l,tbl[0],tbl[1],tt5h,tt5l);
+
+    Mul122(&xCubeh,&xCubel,x,xSqh,xSql);
+    Mul22(&tt6h,&tt6l,xCubeh,xCubel,t5h,t5l);
+    
+    Add22(&polyh,&polyl,x,0,tt6h,tt6l);
+
+    /* Multiply by sign */
+    asinh = sign * polyh;
+    asinm = sign * polyl;
+
+    /* Rounding test 
+       The RZ rounding constant is at tbl[35]
+    */
+    TEST_AND_RETURN_RZ(asinh, asinm, tbl[35]);
 
     /* Launch accurate phase */
 
@@ -782,17 +1178,67 @@ double asin_rz(double x) {
        We use an asymptotic development of arcsin in sqrt(1 - x)
     */
 
-    /* Argument reduction 
+    /* Argument reduction for quick and accurate phase
        z = 1 - x
-       The operation is exact by Sterbenz' lemma
+       The operation is exact as per Sterbenz' lemma
     */
 
     z = 1 - x;
 
     /* Quick phase starts */
 
-    /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+    /* Double precision evaluation */
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+    highPoly = FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(FMA(
+	       tbl[TBLIDX10+42] ,z,tbl[TBLIDX10+40]),z,tbl[TBLIDX10+38]),z,
+               tbl[TBLIDX10+36]),z,tbl[TBLIDX10+34]),z,tbl[TBLIDX10+32]),z,
+               tbl[TBLIDX10+30]),z,tbl[TBLIDX10+28]),z,tbl[TBLIDX10+26]),z,
+               tbl[TBLIDX10+24]);
+#else
+    highPoly = tbl[TBLIDX10+24] + z * (tbl[TBLIDX10+26] + z * (tbl[TBLIDX10+28] + z * (
+	       tbl[TBLIDX10+30] + z * (tbl[TBLIDX10+32] + z * (tbl[TBLIDX10+34] + z * (
+	       tbl[TBLIDX10+36] + z * (tbl[TBLIDX10+38] + z * (tbl[TBLIDX10+40] + z * 
+               tbl[TBLIDX10+42]))))))));
+#endif
+    
+    /* Double-double precision evaluation */
+    Mul12(&tt1h,&tt1l,z,highPoly);
+    Add22(&t1h,&t1l,tbl[TBLIDX10+21],tbl[TBLIDX10+22],tt1h,tt1l);
+    Mul122(&tt2h,&tt2l,z,t1h,t1l);
+    Add22(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],tt2h,tt2l);
+    Mul122(&tt3h,&tt3l,z,t2h,t2l);
+    Add22(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],tt3h,tt3l);
+    Mul122(&tt4h,&tt4l,z,t3h,t3l);
+    Add22(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],tt4h,tt4l);
+    Mul122(&tt5h,&tt5l,z,t4h,t4l);
+    Add22(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tt5h,tt5l);
+    Mul122(&tt6h,&tt6l,z,t5h,t5l);
+    Add22(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tt6h,tt6l);
+    Mul122(&tt7h,&tt7l,z,t6h,t6l);
+    Add22(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tt7h,tt7l);
+    Mul122(&tt8h,&tt8l,z,t7h,t7l);
+    Add22(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tt8h,tt8l);
+    Mul122(&tt9h,&tt9l,z,t8h,t8l);
+    Add22(&polyh,&polyl,-1,0,tt9h,tt9l);
 
+    /* Compute sqrt(2*z) as a double-double */
+
+    twoZ = 2 * z;
+    sqrt12(&sqrtzh,&sqrtzl,twoZ);                                                         
+
+    /* Multiply p(z) by sqrt(2*z) and add Pi/2 */
+
+    Mul22(&pTimesSh,&pTimesSl,polyh,polyl,sqrtzh,sqrtzl);                    
+    Add22(&allh,&alll,PIHALFH,PIHALFM,pTimesSh,pTimesSl);       
+
+    /* Multiply by sign */
+    asinh = sign * allh;
+    asinm = sign * alll;
+
+    /* Rounding test 
+       The RZ rounding constant is at tbl[TBLIDX10+55]
+    */
+    TEST_AND_RETURN_RZ(asinh, asinm, tbl[TBLIDX10+55]);
 
     /* Launch accurate phase */
 
@@ -826,7 +1272,43 @@ double asin_rz(double x) {
 
   /* Quick phase starts */
 
-  /* TODO: IMPLEMENT QUICK PHASE AND ROUNDING TEST */
+  /* Double precision evaluation */
+
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+  highPoly = FMA(FMA(FMA(FMA(FMA(FMA(FMA(
+	     tbl[i+35] ,z,tbl[i+33]),z,tbl[i+31]),z,tbl[i+29]),z,
+             tbl[i+27]),z,tbl[i+25]),z,tbl[i+23]),z,tbl[i+21]);
+#else
+  highPoly = tbl[i+21] + z * (tbl[i+23] + z * (tbl[i+25] + z * (
+             tbl[i+27] + z * (tbl[i+29] + z * (tbl[i+31] + z * ( 
+             tbl[i+33] + z *  tbl[i+35]))))));
+#endif
+
+  /* Double-double precision evaluation */
+    
+  Mul12(&tt1h,&tt1l,z,highPoly);
+  Add22(&t1h,&t1l,tbl[i+18],tbl[i+19],tt1h,tt1l);
+  Mul122(&tt2h,&tt2l,z,t1h,t1l);
+  Add22(&t2h,&t2l,tbl[i+15],tbl[i+16],tt2h,tt2l);
+  Mul122(&tt3h,&tt3l,z,t2h,t2l);
+  Add22(&t3h,&t3l,tbl[i+12],tbl[i+13],tt3h,tt3l);
+  Mul122(&tt4h,&tt4l,z,t3h,t3l);
+  Add22(&t4h,&t4l,tbl[i+9],tbl[i+10],tt4h,tt4l);
+  Mul122(&tt5h,&tt5l,z,t4h,t4l);
+  Add22(&t5h,&t5l,tbl[i+6],tbl[i+7],tt5h,tt5l);
+  Mul122(&tt6h,&tt6l,z,t5h,t5l);
+  Add22(&t6h,&t6l,tbl[i+3],tbl[i+4],tt6h,tt6l);
+  Mul122(&tt7h,&tt7l,z,t6h,t6l);
+  Add22(&polyh,&polyl,tbl[i+1],tbl[i+2],tt7h,tt7l);
+
+  /* Multiply by sign */
+  asinh = sign * polyh;
+  asinm = sign * polyl;
+
+  /* Rounding test 
+     The RZ rounding constant is at tbl[i+60]
+  */
+  TEST_AND_RETURN_RZ(asinh, asinm, tbl[i+60]);
 
   /* Launch accurate phase */
 

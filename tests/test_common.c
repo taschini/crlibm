@@ -241,7 +241,7 @@ double rand_for_pow_perf(){
 
 
 /* Produces x with |x| in [2^(-31);1] and a random sign */
-double rand_for_asin(){
+double rand_for_asin_testperf(){
   db_number result;
   int e;
   /*first the low bits of the mantissa*/
@@ -260,6 +260,25 @@ double rand_for_asin(){
   return (result.d);
 }
 
+/* Produces x with |x| in [0;1] */
+double rand_for_asin_soaktest(){
+  db_number result;
+  int e;
+  /*first the low bits of the mantissa*/
+  result.i[LO]=rand_int();
+  /* then the high bits of the mantissa */
+  result.i[HI]=  rand_int() & 0x000fffff;
+  /* Now set the exponent */
+  e = (rand_int() & 0x000003ff);
+  if (e == 0x000003ff) {
+    result.i[HI] = 0;
+    result.i[LO] = 0;
+  }
+  /* Now set the sign */
+  e += (rand_int() & 0x00000800);
+  result.i[HI] += e<<20;
+  return (result.d);
+}
 
 
 
@@ -611,8 +630,8 @@ void test_init(/* pointers to returned value */
     } 
   else if (strcmp (func_name, "asin") == 0)
     {
-      *randfun_perf     = rand_for_asin;
-      *randfun_soaktest = rand_for_asin;
+      *randfun_perf     = rand_for_asin_testperf;
+      *randfun_soaktest = rand_for_asin_soaktest;
       *worst_case = 0;                          /* TODO: I don't know anything about that by now */
       *testfun_libm   = asin;
       switch(crlibm_rnd_mode){
