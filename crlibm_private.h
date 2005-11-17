@@ -298,7 +298,6 @@ double. See the chapter about the log for an example
 
 #if defined(CRLIBM_TYPECPU_POWERPC) && defined(__GNUC__)
 #define PROCESSOR_HAS_FMA 1
-#undef PROCESSOR_HAS_FMA
 #define FMA(a,b,c)  /* r = a*b + c*/                   \
 ({                                                     \
   double _a, _b,_c,_r;                                 \
