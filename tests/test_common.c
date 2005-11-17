@@ -432,9 +432,14 @@ void test_init(/* pointers to returned value */
       default:
 	*testfun_crlibm = log10_rn;
       }
+
+      /*
 #ifdef HAVE_MATHLIB_H
       *testfun_libultim    = ulog10;
 #endif
+
+      */
+
 #ifdef HAVE_LIBMCR_H
       *testfun_libmcr    = __libmcr_log10;
 #endif
@@ -645,7 +650,7 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = asin_rn;
       }
 #ifdef HAVE_MATHLIB_H
-      *testfun_libultim  = NULL;   /* TODO */
+      *testfun_libultim  = uasin;  
 #endif
 #ifdef HAVE_LIBMCR_H
       *testfun_libmcr    = NULL;   /* TODO */
