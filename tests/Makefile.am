@@ -34,10 +34,12 @@ check_sinh: crlibm_blindtest
 	echo ./crlibm_blindtest sinh.testdata>check_sinh; chmod a+rx check_sinh
 check_cosh: crlibm_blindtest
 	echo ./crlibm_blindtest cosh.testdata>check_cosh; chmod a+rx check_cosh
+check_asin: crlibm_blindtest
+	echo ./crlibm_blindtest asin.testdata>check_asin; chmod a+rx check_asin
 
-CRLIBM_CHECKLIST = check_exp check_log check_log2 check_log10  check_sin check_cos check_tan check_atan check_sinh check_cosh
+CRLIBM_CHECKLIST = check_exp check_log check_log2 check_log10  check_sin check_cos check_tan check_atan check_sinh check_cosh check_asin
 TESTS = $(CRLIBM_CHECKLIST)
 
-EXTRA_DIST = exp.testdata log.testdata log2.testdata log10.testdata sin.testdata cos.testdata tan.testdata atan.testdata sinh.testdata cosh.testdata
+EXTRA_DIST = exp.testdata log.testdata log2.testdata log10.testdata sin.testdata cos.testdata tan.testdata atan.testdata sinh.testdata cosh.testdata asin.testdata
 
 CLEANFILES = $(CRLIBM_CHECKLIST)
