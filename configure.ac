@@ -49,7 +49,7 @@ AC_PROG_MAKE_SET
 
 dnl Check for compiler
 
-AC_PROG_CC(gcc-3.3 gcc-3.2 gcc icc cc)
+AC_PROG_CC(gcc-4.0 gcc-3.4 gcc-3.3 gcc-3.2 gcc icc cc)
 
 # Try to set compiler flags to get floating point arithmetics 
 # to work
@@ -144,7 +144,7 @@ dnl All the rest is related to MPFR and to Ziv's lib, useful for testing.
 
 dnl Sometimes the following function is provided by aclocal, sometimes not.
 dnl Copying it here is probably a bad way of managing this problem
-AC_DEFUN(AC_ADD_PATH_LIBS,
+AC_DEFUN([AC_ADD_PATH_LIBS],
 [
 if ` test "$1" `
 then  
