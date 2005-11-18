@@ -1,0 +1,109 @@
+# Gappa proof for the relative error of the approximation of (exp(rh)-1)*(exp(rm)-1)*(exp(rl)-1)
+# abs(rh) \leq 2^(-12) using the proof for the approximation of exp(rh)-1
+
+
+# Rounding operators and sequences definition
+
+@double = float<ieee_64,ne>;
+@Add22 = add_rel<102>;
+@Mul22 = mul_rel<102>;
+@Mul23 = mul_rel<149>;
+
+#Different approximations of Rhml and definition of pl
+
+Rhml = rh + rm + rl;
+Rml = rm + rl;
+
+pl = double(Phml - Phm);
+
+#Translation of the C code
+
+RmlMultPhl = Mul22(Rml,Phm);
+Qhl = Add22(Rml,RmlMultPhl);
+FullPolyhml = add_rel<142>(Qhl,Phml);
+
+#Additional mathematical definitions
+
+MExpRmM1PExpRlM1 = MExpRmM1 + MExpRlM1;
+MExpRmM1MultExpRlM1 = MExpRmM1 * MExpRlM1;
+
+#Mathematical definitions corresponding to the code
+
+MExpRmM1PExpRlM1MultExpRhM1 = MExpRmM1PExpRlM1 * MExpRhM1;
+MExpLowerM1 = MExpRmM1PExpRlM1 + MExpRmM1PExpRlM1MultExpRhM1;
+MExpRhmlM1 = (MExpLowerM1 + MExpRhM1) + MExpRmM1MultExpRlM1;
+
+#Definition of the errors
+
+epsilonApproxRh = (Phml - MExpRhM1) / MExpRhM1;
+epsilonApproxRm = (rm - MExpRmM1) / MExpRmM1;
+epsilonApproxRl = (rl - MExpRlM1) / MExpRlM1;
+
+epsilonApproxPhm = (Phm - Phml) / Phml;
+
+deltaApproxExpRhml = FullPolyhml - MExpRhmlM1;
+
+delta1 = Phml - MExpRhM1;
+delta2 = FullPolyhml - (Qhl + Phml);
+delta3 = Qhl - MExpLowerM1;
+delta4 = Qhl - (Rml + RmlMultPhl);
+delta5 = Rml - MExpRmM1PExpRlM1;
+delta6 = RmlMultPhl - MExpRmM1PExpRlM1MultExpRhM1;
+delta7 = RmlMultPhl - (Rml * Phm);
+delta8 = (Rml * Phm) - MExpRmM1PExpRlM1MultExpRhM1;
+delta9 = Phm - MExpRhM1;
+
+epsilon1 = (FullPolyhml - (Qhl + Phml)) / (Qhl + Phml);
+epsilon2 = (Qhl - (Rml + RmlMultPhl)) / (Rml + RmlMultPhl);
+epsilon3 = (RmlMultPhl - (Rml * Phm)) / (Rml * Phm);
+
+
+#Logical implication to prove
+
+{
+(  epsilonApproxRh in [-1b-112,1b-112]
+/\ epsilonApproxRm in [-_epsilonApproxRmAccurate,_epsilonApproxRmAccurate]
+/\ epsilonApproxRl in [-_epsilonApproxRlAccurate,_epsilonApproxRlAccurate]
+/\ ( rh in [-_rhmax,-1b-800] \/ rh in [1b-800,_rhmax] ) 
+/\ ( rm in [-_rmmax,-1b-800] \/ rm in [1b-800,_rmmax] ) 
+/\ ( rl in [-_rlmax,-1b-800] \/ rl in [1b-800,_rlmax] ) 
+/\ ( Phml in [-1b-12,-1b-820] \/ Phml in [1b-820,1b-12] )
+/\ epsilonApproxPhm in [-1b-91,1b-91]
+
+-> deltaApproxExpRhml in [-1b-122,1b-122]
+/\ FullPolyhml in [-1b-11,1b-11]
+)
+/\
+(  epsilonApproxRh in [-1b-144,1b-144]
+/\ epsilonApproxRm in [0,0]
+/\ epsilonApproxRl in [0,0]
+/\ ( rh in [-1b-30,-1b-800] \/ rh in [1b-800,1b-30] ) 
+/\   rm in [0,0] 
+/\   rl in [0,0] 
+/\ ( Phml in [-1b-29,-1b-820] \/ Phml in [1b-820,1b-29] )
+/\ epsilonApproxPhm in [-1b-91,1b-91]
+
+-> deltaApproxExpRhml in [-1b-170,1b-170]
+/\ FullPolyhml in [-1b-28,1b-28]
+)
+}
+
+#Hints for composing the errors in the different levels
+
+deltaApproxExpRhml -> delta1 + delta2 + delta3 - MExpRmM1MultExpRlM1;
+delta1 -> epsilonApproxRh * MExpRhM1;
+delta2 -> epsilon1 * (Qhl + Phml);
+delta4 -> epsilon2 * (Rml + RmlMultPhl);
+delta3 -> delta4 + delta5 + delta6;
+delta7 -> epsilon3 * (Rml * Phm);
+delta6 -> delta7 + delta8;
+delta9 -> epsilonApproxPhm * Phml + delta1;
+delta8 -> delta5 * MExpRhM1 + delta9 * MExpRmM1PExpRlM1 + delta5 * delta9;
+
+#Hints for computing the absolute mathematical values for the arithmetical ones
+
+MExpRhM1 -> Phml * (1 / (1 + epsilonApproxRh));
+MExpRmM1 -> rm * (1 / (1 + epsilonApproxRm));
+MExpRlM1 -> rl * (1 / (1 + epsilonApproxRl));
+Phm -> Phml + epsilonApproxPhm * Phml;
+Phml - Phm -> -epsilonApproxPhm * Phml;

@@ -1,0 +1,46 @@
+# Gappa proof for the relative error of a polynomial approximation of exp(r)
+# abs(r) \leq 2^(-12), 
+# integrating the final adding step, the errors made in the polynomial approximation 
+# and the argument reduction error
+#
+# THIS IS THE SIMPLE CASE WHERE THERE IS NO GAPPING EFFECT TO PROVE
+#
+
+#Translation of the C code
+
+PolyAddOnehml = add_rel<138>(1,FullPolyhml);
+
+#Mathematical definitions corresponding to the code
+
+MExpRhml = 1 + MExpRhmlM1;
+
+#Definition of the errors
+
+deltaApproxExpRhml = FullPolyhml - MExpRhmlM1;
+epsilonArgRed = (MExpRhml - MExpR) / MExpR;
+
+epsilon = (PolyAddOnehml - MExpR) / MExpR;
+
+epsilon1 = (PolyAddOnehml - MExpRhml) / MExpRhml;
+
+
+#Logical implication to prove
+
+{
+deltaApproxExpRhml in [-1b-122,1b-122]
+/\ FullPolyhml in [-1b-11,1b-11]
+/\ epsilonArgRed in [-1b-141,1b-141]
+
+->
+
+   epsilon in [-1b-121,1b-121]
+}
+
+#Hints for composing the errors in the different levels
+
+epsilon -> epsilonArgRed + epsilon1 + epsilonArgRed * epsilon1;
+
+#Hints for computing the absolute mathematical values for the arithmetical ones
+
+MExpRhmlM1 -> FullPolyhml - deltaApproxExpRhml;
+
