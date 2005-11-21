@@ -280,19 +280,6 @@ double rand_for_asin_soaktest(){
   return (result.d);
 }
 
-double rand_for_asin_test() {
-  db_number xdb;
-  double scale, offset;
-
-  xdb.i[LO] = 0x00000000;
-  xdb.i[HI] = 0x3e300000;
-  offset = xdb.d;
-
-  scale = 0.185 - offset;
-
-  return ((rand_double() * scale) + offset);
-}
-
 
 void test_rand()  {
   int i;
