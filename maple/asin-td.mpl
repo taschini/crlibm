@@ -72,6 +72,8 @@ polyQuickDCoeffsHighest := 9:
 
 polyQuickDegreeHighest := polyQuickDDCoeffsHighest + polyQuickDCoeffsHighest:
 
+extrabound := hexa2ieee(["3F500000","00000000"]):
+polyQuickDegreeExtra := 5:
 
 bound[0] := 0:
 b := nearest(lowestIntervalMax):
@@ -108,6 +110,8 @@ printf("Using %d intervals with bounds:\n",intervals):
 for i from 0 to intervals do
 	printf("bound[%d] = %f\n",i,bound[i]):
 od:
+printf("Using an extra bound for truncating the quick phase poly to degree %d in interval #0 for small args up to %f\n",
+	polyQuickDegreeExtra,extrabound);
 
 printf("Computing Gal's accurate table values for interval midpoints\n"):
 for i from 2 to (intervals-1) do
@@ -170,6 +174,10 @@ polyQuickExact[1] := truncPoly(polyAccuExact[1],polyQuickDegreeLowest):
 polyQuick[1] := poly_exact2(polyQuickExact[1],polyQuickDDCoeffsLowest):
 
 epsQuick[1] := numapprox[infnorm]((polyQuick[1]/arcsin(x))-1, x=bound[0]..bound[1]):
+
+polyQuickExtraExact := truncPoly(polyAccuExact[1],polyQuickDegreeExtra):
+polyQuickExtra := poly_exact2(polyQuickExtraExact,polyQuickDegreeExtra):
+epsQuickExtra := numapprox[infnorm]((polyQuickExtra/arcsin(x))-1, x=bound[0]..extrabound):
 
 end if:
 
@@ -241,6 +249,10 @@ od:
 printf("Relative error for accurate phase polynomial #1 in special interval [0;sin(2^(-18))]) is 2^(%f)\n",
        log[2](abs(epsAccurateSpecial))):
 
+printf("Relative error for quick phase extra case truncated polynomial #1 in special interval [0;%f]) is 2^(%f)\n",
+       extrabound,log[2](abs(epsQuickExtra))):
+
+
 (PiHalfH, PiHalfM, PiHalfL) := hi_mi_lo(evalf(Pi/2)):
 
 epsPiDD := evalf(((PiHalfH + PiHalfM) - Pi/2)/(Pi/2)):
@@ -251,15 +263,33 @@ printf("Relative error for storing Pi/2 as a triple-double is 2^(%f)\n",evalf(lo
 
 # Ce qui suit est pifometrique et doit etre prouve en Gappa ensuite
 
-arithmeticalErrorQuick := 2^(-61):
+arithmeticalErrorQuick[1] := 2^(-61):
+arithmeticalErrorQuick[2] := 2^(-61):
+arithmeticalErrorQuick[3] := 2^(-61):
+arithmeticalErrorQuick[4] := 2^(-61):
+arithmeticalErrorQuick[5] := 2^(-61):
+arithmeticalErrorQuick[6] := 2^(-61):
+arithmeticalErrorQuick[7] := 2^(-61):
+arithmeticalErrorQuick[8] := 2^(-61):
+arithmeticalErrorQuick[9] := 2^(-61):
+arithmeticalErrorQuick[10] := 2^(-68):
+
+arithmeticalErrorQuickExtra := 2^(-80):
 
 for i from 1 to intervals do
 	estimatedOverallEpsQuick[i] := abs(epsQuick[i]) + 
-				       abs(arithmeticalErrorQuick) + 
-                                       abs(epsQuick[i]) * abs(arithmeticalErrorQuick):
+				       abs(arithmeticalErrorQuick[i]) + 
+                                       abs(epsQuick[i]) * abs(arithmeticalErrorQuick[i]):
 	printf("Relative quick phase overall error bound to show in Gappa for interval %d ([%f;%f]) is 2^(%f)\n",
 		i,bound[i-1],bound[i],log[2](abs(estimatedOverallEpsQuick[i]))):
 od:
+
+estimatedOverallEpsQuickExtra := abs(epsQuickExtra) + 
+				 abs(arithmeticalErrorQuickExtra) + 
+                                 abs(epsQuickExtra) * abs(arithmeticalErrorQuickExtra):
+printf("Relative quick phase overall error bound to show for extra truncted poly in interval [0;%f]) is 2^(%f)\n",
+	extrabound,log[2](abs(estimatedOverallEpsQuickExtra))):
+
 
 printf("Write tables...\n"):
 
@@ -277,6 +307,9 @@ for i from 1 to (intervals-1) do
 	heb := ieeehexa(bound[i]):
 	fprintf(fd, "\#define BOUND%d 0x%s\n",i,heb[1]):
 od:
+
+heb := ieeehexa(extrabound):
+fprintf(fd, "\#define EXTRABOUND 0x%s\n",heb[1]):
 
 printf("Write additional constants\n"):
 
