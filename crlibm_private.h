@@ -630,6 +630,7 @@ double mh, ml;                                        \
 
 #endif /* PROCESSOR_HAS_FMA */
 
+/* Additional double-double operators */
 
 /* Eps Mul122 <= 2^-102 */
 #define Mul122(resh,resl,a,bh,bl)                 \
@@ -641,6 +642,39 @@ double mh, ml;                                        \
     _t4 = _t2 + _t3;                              \
     Add12((*(resh)),(*(resl)),_t1,_t4);           \
 }
+
+
+#define MulAdd212(resh,resl,ch,cl,a,bh,bl)           \
+{                                                    \
+    double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8;   \
+                                                     \
+    Mul12(&_t1,&_t2,(a),(bh));                       \
+    Add12(_t3,_t4,(ch),_t1);                         \
+    _t5 = (bl) * (a);                                \
+    _t6 = (cl) + _t2;                                \
+    _t7 = _t5 + _t6;                                 \
+    _t8 = _t7 + _t4;                                 \
+    Add12((*(resh)),(*(resl)),_t3,_t8);              \
+}
+
+#define MulAdd22(resh,resl,ch,cl,ah,al,bh,bl)        \
+{                                                    \
+    double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8;   \
+    double _t9, _t10, _t11;                          \
+                                                     \
+    Mul12(&_t1,&_t2,(ah),(bh));                      \
+    Add12(_t3,_t4,(ch),_t1);                         \
+    _t5 = (ah) * (bl);                               \
+    _t6 = (al) * (bh);                               \
+    _t7 = _t2 + (cl);                                \
+    _t8 = _t4 + _t2;                                 \
+    _t9 = _t5 + _t6;                                 \
+    _t10 = _t7 + _t9;                                \
+    _t11 = _t8 + _t10;                               \
+    Add12((*(resh)),(*(resl)),_t3,_t11);             \
+}
+
+
 
 /* In the following the one-line computation of _cl was split so that
    icc(8.1) would compile it properly. It's a bug of icc */
