@@ -280,7 +280,18 @@ double rand_for_asin_soaktest(){
   return (result.d);
 }
 
+double rand_for_asin_test() {
+  db_number xdb;
+  double scale, offset;
 
+  xdb.i[LO] = 0x00000000;
+  xdb.i[HI] = 0x3e300000;
+  offset = xdb.d;
+
+  scale = 0.185 - offset;
+
+  return ((rand_double() * scale) + offset);
+}
 
 
 void test_rand()  {
@@ -637,7 +648,7 @@ void test_init(/* pointers to returned value */
     {
       *randfun_perf     = rand_for_asin_testperf;
       *randfun_soaktest = rand_for_asin_soaktest;
-      *worst_case = 0;                          /* TODO: I don't know anything about that by now */
+      *worst_case = 1.7881393432608611291409050209066933234680618625134229660034179687500000e-06;      /* TODO: To be checked */
       *testfun_libm   = asin;
       switch(crlibm_rnd_mode){
       case RU:

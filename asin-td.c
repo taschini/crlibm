@@ -28,11 +28,12 @@
 #include "triple-double.h"
 #include "asin-td.h"
 
+#define AVOID_FMA 1
 
 void asin_accurate_lower(double *asinh, double *asinm, double *asinl, double x, double xSqh, double xSql, double sign) {
   double highPoly;
   double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l, t7h, t7l;
-  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l, tt6h, tt6l, tt7h, tt7l;
+  double tt1h, tt1l;
   double t8h, t8m, t8l, t9h, t9m, t9l, t10h, t10m, t10l, t11h, t11m, t11l, t12h, t12m, t12l;
   double tt8h, tt8m, tt8l, tt9h, tt9m, tt9l, tt10h, tt10m, tt10l, tt11h, tt11m, tt11l, tt12h, tt12m, tt12l;
   double xCubeh, xCubem, xCubel, tt13h, tt13m, tt13l, t13h, t13m, t13l, polyh, polym, polyl;
@@ -71,19 +72,13 @@ void asin_accurate_lower(double *asinh, double *asinm, double *asinl, double x, 
 
   Mul12(&tt1h,&tt1l,xSqh,highPoly);
   Add22(&t1h,&t1l,tbl[27],0,tt1h,tt1l);
-     
-  Mul22(&tt2h,&tt2l,xSqh,xSql,t1h,t1l);
-  Add22(&t2h,&t2l,tbl[25],tbl[26],tt2h,tt2l);
-  Mul22(&tt3h,&tt3l,xSqh,xSql,t2h,t2l);
-  Add22(&t3h,&t3l,tbl[23],tbl[24],tt3h,tt3l);
-  Mul22(&tt4h,&tt4l,xSqh,xSql,t3h,t3l);
-  Add22(&t4h,&t4l,tbl[21],tbl[22],tt4h,tt4l);
-  Mul22(&tt5h,&tt5l,xSqh,xSql,t4h,t4l);
-  Add22(&t5h,&t5l,tbl[19],tbl[20],tt5h,tt5l);
-  Mul22(&tt6h,&tt6l,xSqh,xSql,t5h,t5l);
-  Add22(&t6h,&t6l,tbl[17],tbl[18],tt6h,tt6l);
-  Mul22(&tt7h,&tt7l,xSqh,xSql,t6h,t6l);
-  Add22(&t7h,&t7l,tbl[15],tbl[16],tt7h,tt7l);
+
+  MulAdd22(&t2h,&t2l,tbl[25],tbl[26],xSqh,xSql,t1h,t1l);
+  MulAdd22(&t3h,&t3l,tbl[23],tbl[24],xSqh,xSql,t2h,t2l);
+  MulAdd22(&t4h,&t4l,tbl[21],tbl[22],xSqh,xSql,t3h,t3l);
+  MulAdd22(&t5h,&t5l,tbl[19],tbl[20],xSqh,xSql,t4h,t4l);
+  MulAdd22(&t6h,&t6l,tbl[17],tbl[18],xSqh,xSql,t5h,t5l);
+  MulAdd22(&t7h,&t7l,tbl[15],tbl[16],xSqh,xSql,t6h,t6l);
 
   /* Triple-double computations */
 
@@ -119,8 +114,8 @@ void  asin_accurate_middle(double *asinh, double *asinm, double *asinl, double z
   double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l, t7h, t7l, t8h, t8l, t9h, t9l;
   double t10h, t10m, t10l, t11h, t11m, t11l, t12h, t12m, t12l, t13h, t13m, t13l, t14h, t14m, t14l;
   double t15h, t15m, t15l, t16h, t16m, t16l;
-  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l, tt6h, tt6l, tt7h, tt7l;
-  double tt8h, tt8l, tt9h, tt9l, tt10h, tt10m, tt10l, tt11h, tt11m, tt11l, tt12h, tt12m, tt12l;
+  double tt1h, tt1l;
+  double tt10h, tt10m, tt10l, tt11h, tt11m, tt11l, tt12h, tt12m, tt12l;
   double tt13h, tt13m, tt13l, tt14h, tt14m, tt14l, tt15h, tt15m, tt15l, tt16h, tt16m, tt16l;
   double polyh, polym, polyl, tt13hover, tt13mover, tt13lover;
 
@@ -159,22 +154,15 @@ void  asin_accurate_middle(double *asinh, double *asinm, double *asinl, double z
   
   Mul12(&tt1h,&tt1l,z,highPoly);
   Add22(&t1h,&t1l,tbl[i+37],tbl[i+38],tt1h,tt1l);
-  Mul122(&tt2h,&tt2l,z,t1h,t1l);
-  Add22(&t2h,&t2l,tbl[i+35],tbl[i+36],tt2h,tt2l);
-  Mul122(&tt3h,&tt3l,z,t2h,t2l);
-  Add22(&t3h,&t3l,tbl[i+33],tbl[i+34],tt3h,tt3l);
-  Mul122(&tt4h,&tt4l,z,t3h,t3l);
-  Add22(&t4h,&t4l,tbl[i+31],tbl[i+32],tt4h,tt4l);
-  Mul122(&tt5h,&tt5l,z,t4h,t4l);
-  Add22(&t5h,&t5l,tbl[i+29],tbl[i+30],tt5h,tt5l);
-  Mul122(&tt6h,&tt6l,z,t5h,t5l);
-  Add22(&t6h,&t6l,tbl[i+27],tbl[i+28],tt6h,tt6l);
-  Mul122(&tt7h,&tt7l,z,t6h,t6l);
-  Add22(&t7h,&t7l,tbl[i+25],tbl[i+26],tt7h,tt7l);
-  Mul122(&tt8h,&tt8l,z,t7h,t7l);
-  Add22(&t8h,&t8l,tbl[i+23],tbl[i+24],tt8h,tt8l);
-  Mul122(&tt9h,&tt9l,z,t8h,t8l);
-  Add22(&t9h,&t9l,tbl[i+21],tbl[i+22],tt9h,tt9l);
+
+  MulAdd212(&t2h,&t2l,tbl[i+35],tbl[i+36],z,t1h,t1l);
+  MulAdd212(&t3h,&t3l,tbl[i+33],tbl[i+34],z,t2h,t2l);
+  MulAdd212(&t4h,&t4l,tbl[i+31],tbl[i+32],z,t3h,t3l);
+  MulAdd212(&t5h,&t5l,tbl[i+29],tbl[i+30],z,t4h,t4l);
+  MulAdd212(&t6h,&t6l,tbl[i+27],tbl[i+28],z,t5h,t5l);
+  MulAdd212(&t7h,&t7l,tbl[i+25],tbl[i+26],z,t6h,t6l);
+  MulAdd212(&t8h,&t8l,tbl[i+23],tbl[i+24],z,t7h,t7l);
+  MulAdd212(&t9h,&t9l,tbl[i+21],tbl[i+22],z,t8h,t8l);
 
   /* Triple-double computations */
 
@@ -205,9 +193,9 @@ void  asin_accurate_middle(double *asinh, double *asinm, double *asinl, double z
 
 void asin_accurate_higher(double *asinh, double *asinm, double *asinl, double z, double sign) {
   double highPoly;
-  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l, tt6h, tt6l, tt7h, tt7l, tt8h, tt8l;
+  double tt1h, tt1l;
   double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l, t7h, t7l, t8h, t8l;
-  double tt9h, tt9l, tt10h, tt10m, tt10l, tt11h, tt11m, tt11l, tt12h, tt12m, tt12l, tt13h, tt13m, tt13l;
+  double tt10h, tt10m, tt10l, tt11h, tt11m, tt11l, tt12h, tt12m, tt12l, tt13h, tt13m, tt13l;
   double tt14h, tt14m, tt14l, tt15h, tt15m, tt15l, tt16h, tt16m, tt16l, tt17h, tt17m, tt17l;
   double t9h, t9l, t10h, t10m, t10l, t11h, t11m, t11l, t12h, t12m, t12l, t13h, t13m, t13l;
   double t14h, t14m, t14l, t15h, t15m, t15l, t16h, t16m, t16l, t17h, t17m, t17l;
@@ -269,22 +257,15 @@ void asin_accurate_higher(double *asinh, double *asinm, double *asinl, double z,
 
   Mul12(&tt1h,&tt1l,z,highPoly);
   Add22(&t1h,&t1l,tbl[TBLIDX10+40],tbl[TBLIDX10+41],tt1h,tt1l);
-  Mul122(&tt2h,&tt2l,z,t1h,t1l);
-  Add22(&t2h,&t2l,tbl[TBLIDX10+38],tbl[TBLIDX10+39],tt2h,tt2l);
-  Mul122(&tt3h,&tt3l,z,t2h,t2l);
-  Add22(&t3h,&t3l,tbl[TBLIDX10+36],tbl[TBLIDX10+37],tt3h,tt3l);
-  Mul122(&tt4h,&tt4l,z,t3h,t3l);
-  Add22(&t4h,&t4l,tbl[TBLIDX10+34],tbl[TBLIDX10+35],tt4h,tt4l);
-  Mul122(&tt5h,&tt5l,z,t4h,t4l);
-  Add22(&t5h,&t5l,tbl[TBLIDX10+32],tbl[TBLIDX10+33],tt5h,tt5l);
-  Mul122(&tt6h,&tt6l,z,t5h,t5l);
-  Add22(&t6h,&t6l,tbl[TBLIDX10+30],tbl[TBLIDX10+31],tt6h,tt6l);
-  Mul122(&tt7h,&tt7l,z,t6h,t6l);
-  Add22(&t7h,&t7l,tbl[TBLIDX10+28],tbl[TBLIDX10+29],tt7h,tt7l);
-  Mul122(&tt8h,&tt8l,z,t7h,t7l);
-  Add22(&t8h,&t8l,tbl[TBLIDX10+26],tbl[TBLIDX10+27],tt8h,tt8l);
-  Mul122(&tt9h,&tt9l,z,t8h,t8l);
-  Add22(&t9h,&t9l,tbl[TBLIDX10+24],tbl[TBLIDX10+25],tt9h,tt9l);
+
+  MulAdd212(&t2h,&t2l,tbl[TBLIDX10+38],tbl[TBLIDX10+39],z,t1h,t1l);
+  MulAdd212(&t3h,&t3l,tbl[TBLIDX10+36],tbl[TBLIDX10+37],z,t2h,t2l);
+  MulAdd212(&t4h,&t4l,tbl[TBLIDX10+34],tbl[TBLIDX10+35],z,t3h,t3l);
+  MulAdd212(&t5h,&t5l,tbl[TBLIDX10+32],tbl[TBLIDX10+33],z,t4h,t4l);
+  MulAdd212(&t6h,&t6l,tbl[TBLIDX10+30],tbl[TBLIDX10+31],z,t5h,t5l);
+  MulAdd212(&t7h,&t7l,tbl[TBLIDX10+28],tbl[TBLIDX10+29],z,t6h,t6l);
+  MulAdd212(&t8h,&t8l,tbl[TBLIDX10+26],tbl[TBLIDX10+27],z,t7h,t7l);
+  MulAdd212(&t9h,&t9l,tbl[TBLIDX10+24],tbl[TBLIDX10+25],z,t8h,t8l);
 
   /* Triple-double computations */
 
@@ -338,11 +319,12 @@ double asin_rn(double x) {
   double sign, z, asinh, asinm, asinl;
   int i;
   double xSqh, xSql;
-  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l;
-  double tt6h, tt6l, tt7h, tt7l, tt8h, tt8l, tt9h, tt9l;
+  double tt1h, tt1l;
+  double tt6h, tt6l;
   double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l;
   double t7h, t7l, t8h, t8l, polyh, polyl, twoZ, sqrtzh, sqrtzl;
   double pTimesSh, pTimesSl, allh, alll, highPoly, xCubeh, xCubel;
+  double tmp1, tmp2, tmp3, tmp4, tmp5;
 
   /* Transform the argument into integer */
   xdb.d = x;
@@ -388,29 +370,35 @@ double asin_rn(double x) {
     /* Compute square of x for both quick and accurate phases */
     Mul12(&xSqh,&xSql,x,x);
 
-    /* Double precision evaluation */
+    tmp4 = tbl[3];
+    tmp5 = tbl[4];
+    t4h = tmp4;
+    t4l = tmp5;
+    if (xdb.i[HI] > EXTRABOUND) {
+      /* Double precision evaluation */
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-    highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+      highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
 #else
-    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
+      highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
 #endif
 
-    /* Double-double precision evaluation */
-    Mul12(&tt1h,&tt1l,xSqh,highPoly);
-    Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
-    Mul22(&tt2h,&tt2l,xSqh,xSql,t1h,t1l);
-    Add22(&t2h,&t2l,tbl[9],tbl[10],tt2h,tt2l);
-    Mul22(&tt3h,&tt3l,xSqh,xSql,t2h,t2l);
-    Add22(&t3h,&t3l,tbl[6],tbl[7],tt3h,tt3l);
-    Mul22(&tt4h,&tt4l,xSqh,xSql,t3h,t3l);
-    Add22(&t4h,&t4l,tbl[3],tbl[4],tt4h,tt4l);
-    Mul22(&tt5h,&tt5l,xSqh,xSql,t4h,t4l);
-    Add22(&t5h,&t5l,tbl[0],tbl[1],tt5h,tt5l);
+      /* Double-double precision evaluation */
+      Mul12(&tt1h,&tt1l,xSqh,highPoly);
+      Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
+      
+      MulAdd212(&t2h,&t2l,tbl[9],tbl[10],xSqh,t1h,t1l);
+      MulAdd212(&t3h,&t3l,tbl[6],tbl[7],xSqh,t2h,t2l);
+      MulAdd22(&t4h,&t4l,tmp4,tmp5,xSqh,xSql,t3h,t3l);
+    }
+
+    MulAdd22(&t5h,&t5l,tbl[0],tbl[1],xSqh,xSql,t4h,t4l);
 
     Mul122(&xCubeh,&xCubel,x,xSqh,xSql);
     Mul22(&tt6h,&tt6l,xCubeh,xCubel,t5h,t5l);
     
-    Add22(&polyh,&polyl,x,0,tt6h,tt6l);
+    Add12(tmp1,tmp2,x,tt6h);
+    tmp3 = tmp2 + tt6l;
+    Add12(polyh,polyl,tmp1,tmp3);
 
     /* Multiply by sign */
     asinh = sign * polyh;
@@ -460,22 +448,15 @@ double asin_rn(double x) {
     /* Double-double precision evaluation */
     Mul12(&tt1h,&tt1l,z,highPoly);
     Add22(&t1h,&t1l,tbl[TBLIDX10+21],tbl[TBLIDX10+22],tt1h,tt1l);
-    Mul122(&tt2h,&tt2l,z,t1h,t1l);
-    Add22(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],tt2h,tt2l);
-    Mul122(&tt3h,&tt3l,z,t2h,t2l);
-    Add22(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],tt3h,tt3l);
-    Mul122(&tt4h,&tt4l,z,t3h,t3l);
-    Add22(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],tt4h,tt4l);
-    Mul122(&tt5h,&tt5l,z,t4h,t4l);
-    Add22(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tt5h,tt5l);
-    Mul122(&tt6h,&tt6l,z,t5h,t5l);
-    Add22(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tt6h,tt6l);
-    Mul122(&tt7h,&tt7l,z,t6h,t6l);
-    Add22(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tt7h,tt7l);
-    Mul122(&tt8h,&tt8l,z,t7h,t7l);
-    Add22(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tt8h,tt8l);
-    Mul122(&tt9h,&tt9l,z,t8h,t8l);
-    Add22(&polyh,&polyl,-1,0,tt9h,tt9l);
+
+    MulAdd212(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],z,t1h,t1l);
+    MulAdd212(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],z,t2h,t2l);
+    MulAdd212(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],z,t3h,t3l);
+    MulAdd212(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],z,t4h,t4l);
+    MulAdd212(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],z,t5h,t5l);
+    MulAdd212(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],z,t6h,t6l);
+    MulAdd212(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],z,t7h,t7l);
+    MulAdd212(&polyh,&polyl,-1,0,z,t8h,t8l);
 
     /* Compute sqrt(2*z) as a double-double */
 
@@ -545,18 +526,13 @@ double asin_rn(double x) {
     
   Mul12(&tt1h,&tt1l,z,highPoly);
   Add22(&t1h,&t1l,tbl[i+18],tbl[i+19],tt1h,tt1l);
-  Mul122(&tt2h,&tt2l,z,t1h,t1l);
-  Add22(&t2h,&t2l,tbl[i+15],tbl[i+16],tt2h,tt2l);
-  Mul122(&tt3h,&tt3l,z,t2h,t2l);
-  Add22(&t3h,&t3l,tbl[i+12],tbl[i+13],tt3h,tt3l);
-  Mul122(&tt4h,&tt4l,z,t3h,t3l);
-  Add22(&t4h,&t4l,tbl[i+9],tbl[i+10],tt4h,tt4l);
-  Mul122(&tt5h,&tt5l,z,t4h,t4l);
-  Add22(&t5h,&t5l,tbl[i+6],tbl[i+7],tt5h,tt5l);
-  Mul122(&tt6h,&tt6l,z,t5h,t5l);
-  Add22(&t6h,&t6l,tbl[i+3],tbl[i+4],tt6h,tt6l);
-  Mul122(&tt7h,&tt7l,z,t6h,t6l);
-  Add22(&polyh,&polyl,tbl[i+1],tbl[i+2],tt7h,tt7l);
+
+  MulAdd212(&t2h,&t2l,tbl[i+15],tbl[i+16],z,t1h,t1l);
+  MulAdd212(&t3h,&t3l,tbl[i+12],tbl[i+13],z,t2h,t2l);
+  MulAdd212(&t4h,&t4l,tbl[i+9],tbl[i+10],z,t3h,t3l);
+  MulAdd212(&t5h,&t5l,tbl[i+6],tbl[i+7],z,t4h,t4l);
+  MulAdd212(&t6h,&t6l,tbl[i+3],tbl[i+4],z,t5h,t5l);
+  MulAdd212(&polyh,&polyl,tbl[i+1],tbl[i+2],z,t6h,t6l);
 
   /* Multiply by sign */
   asinh = sign * polyh;
@@ -580,11 +556,12 @@ double asin_ru(double x) {
   double sign, z, asinh, asinm, asinl;
   int i;
   double xSqh, xSql;
-  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l;
-  double tt6h, tt6l, tt7h, tt7l, tt8h, tt8l, tt9h, tt9l;
+  double tt1h, tt1l;
+  double tt6h, tt6l;
   double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l;
   double t7h, t7l, t8h, t8l, polyh, polyl, twoZ, sqrtzh, sqrtzl;
   double pTimesSh, pTimesSl, allh, alll, highPoly, xCubeh, xCubel;
+  double tmp1, tmp2, tmp3, tmp4, tmp5;
 
   /* Transform the argument into integer */
   xdb.d = x;
@@ -640,29 +617,35 @@ double asin_ru(double x) {
     /* Compute square of x for both quick and accurate phases */
     Mul12(&xSqh,&xSql,x,x);
 
-    /* Double precision evaluation */
+    tmp4 = tbl[3];
+    tmp5 = tbl[4];
+    t4h = tmp4;
+    t4l = tmp5;
+    if (xdb.i[HI] > EXTRABOUND) {
+      /* Double precision evaluation */
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-    highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+      highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
 #else
-    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
+      highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
 #endif
 
-    /* Double-double precision evaluation */
-    Mul12(&tt1h,&tt1l,xSqh,highPoly);
-    Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
-    Mul22(&tt2h,&tt2l,xSqh,xSql,t1h,t1l);
-    Add22(&t2h,&t2l,tbl[9],tbl[10],tt2h,tt2l);
-    Mul22(&tt3h,&tt3l,xSqh,xSql,t2h,t2l);
-    Add22(&t3h,&t3l,tbl[6],tbl[7],tt3h,tt3l);
-    Mul22(&tt4h,&tt4l,xSqh,xSql,t3h,t3l);
-    Add22(&t4h,&t4l,tbl[3],tbl[4],tt4h,tt4l);
-    Mul22(&tt5h,&tt5l,xSqh,xSql,t4h,t4l);
-    Add22(&t5h,&t5l,tbl[0],tbl[1],tt5h,tt5l);
+      /* Double-double precision evaluation */
+      Mul12(&tt1h,&tt1l,xSqh,highPoly);
+      Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
+      
+      MulAdd212(&t2h,&t2l,tbl[9],tbl[10],xSqh,t1h,t1l);
+      MulAdd212(&t3h,&t3l,tbl[6],tbl[7],xSqh,t2h,t2l);
+      MulAdd22(&t4h,&t4l,tmp4,tmp5,xSqh,xSql,t3h,t3l);
+    }
+
+    MulAdd22(&t5h,&t5l,tbl[0],tbl[1],xSqh,xSql,t4h,t4l);
 
     Mul122(&xCubeh,&xCubel,x,xSqh,xSql);
     Mul22(&tt6h,&tt6l,xCubeh,xCubel,t5h,t5l);
     
-    Add22(&polyh,&polyl,x,0,tt6h,tt6l);
+    Add12(tmp1,tmp2,x,tt6h);
+    tmp3 = tmp2 + tt6l;
+    Add12(polyh,polyl,tmp1,tmp3);
 
     /* Multiply by sign */
     asinh = sign * polyh;
@@ -711,22 +694,15 @@ double asin_ru(double x) {
     /* Double-double precision evaluation */
     Mul12(&tt1h,&tt1l,z,highPoly);
     Add22(&t1h,&t1l,tbl[TBLIDX10+21],tbl[TBLIDX10+22],tt1h,tt1l);
-    Mul122(&tt2h,&tt2l,z,t1h,t1l);
-    Add22(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],tt2h,tt2l);
-    Mul122(&tt3h,&tt3l,z,t2h,t2l);
-    Add22(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],tt3h,tt3l);
-    Mul122(&tt4h,&tt4l,z,t3h,t3l);
-    Add22(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],tt4h,tt4l);
-    Mul122(&tt5h,&tt5l,z,t4h,t4l);
-    Add22(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tt5h,tt5l);
-    Mul122(&tt6h,&tt6l,z,t5h,t5l);
-    Add22(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tt6h,tt6l);
-    Mul122(&tt7h,&tt7l,z,t6h,t6l);
-    Add22(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tt7h,tt7l);
-    Mul122(&tt8h,&tt8l,z,t7h,t7l);
-    Add22(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tt8h,tt8l);
-    Mul122(&tt9h,&tt9l,z,t8h,t8l);
-    Add22(&polyh,&polyl,-1,0,tt9h,tt9l);
+
+    MulAdd212(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],z,t1h,t1l);
+    MulAdd212(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],z,t2h,t2l);
+    MulAdd212(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],z,t3h,t3l);
+    MulAdd212(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],z,t4h,t4l);
+    MulAdd212(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],z,t5h,t5l);
+    MulAdd212(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],z,t6h,t6l);
+    MulAdd212(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],z,t7h,t7l);
+    MulAdd212(&polyh,&polyl,-1,0,z,t8h,t8l);
 
     /* Compute sqrt(2*z) as a double-double */
 
@@ -795,18 +771,13 @@ double asin_ru(double x) {
     
   Mul12(&tt1h,&tt1l,z,highPoly);
   Add22(&t1h,&t1l,tbl[i+18],tbl[i+19],tt1h,tt1l);
-  Mul122(&tt2h,&tt2l,z,t1h,t1l);
-  Add22(&t2h,&t2l,tbl[i+15],tbl[i+16],tt2h,tt2l);
-  Mul122(&tt3h,&tt3l,z,t2h,t2l);
-  Add22(&t3h,&t3l,tbl[i+12],tbl[i+13],tt3h,tt3l);
-  Mul122(&tt4h,&tt4l,z,t3h,t3l);
-  Add22(&t4h,&t4l,tbl[i+9],tbl[i+10],tt4h,tt4l);
-  Mul122(&tt5h,&tt5l,z,t4h,t4l);
-  Add22(&t5h,&t5l,tbl[i+6],tbl[i+7],tt5h,tt5l);
-  Mul122(&tt6h,&tt6l,z,t5h,t5l);
-  Add22(&t6h,&t6l,tbl[i+3],tbl[i+4],tt6h,tt6l);
-  Mul122(&tt7h,&tt7l,z,t6h,t6l);
-  Add22(&polyh,&polyl,tbl[i+1],tbl[i+2],tt7h,tt7l);
+
+  MulAdd212(&t2h,&t2l,tbl[i+15],tbl[i+16],z,t1h,t1l);
+  MulAdd212(&t3h,&t3l,tbl[i+12],tbl[i+13],z,t2h,t2l);
+  MulAdd212(&t4h,&t4l,tbl[i+9],tbl[i+10],z,t3h,t3l);
+  MulAdd212(&t5h,&t5l,tbl[i+6],tbl[i+7],z,t4h,t4l);
+  MulAdd212(&t6h,&t6l,tbl[i+3],tbl[i+4],z,t5h,t5l);
+  MulAdd212(&polyh,&polyl,tbl[i+1],tbl[i+2],z,t6h,t6l);
 
   /* Multiply by sign */
   asinh = sign * polyh;
@@ -829,11 +800,12 @@ double asin_rd(double x) {
   double sign, z, asinh, asinm, asinl;
   int i;
   double xSqh, xSql;
-  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l;
-  double tt6h, tt6l, tt7h, tt7l, tt8h, tt8l, tt9h, tt9l;
+  double tt1h, tt1l;
+  double tt6h, tt6l;
   double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l;
   double t7h, t7l, t8h, t8l, polyh, polyl, twoZ, sqrtzh, sqrtzl;
   double pTimesSh, pTimesSl, allh, alll, highPoly, xCubeh, xCubel;
+  double tmp1, tmp2, tmp3, tmp4, tmp5;
 
   /* Transform the argument into integer */
   xdb.d = x;
@@ -890,29 +862,35 @@ double asin_rd(double x) {
     /* Compute square of x for both quick and accurate phases */
     Mul12(&xSqh,&xSql,x,x);
 
-    /* Double precision evaluation */
+    tmp4 = tbl[3];
+    tmp5 = tbl[4];
+    t4h = tmp4;
+    t4l = tmp5;
+    if (xdb.i[HI] > EXTRABOUND) {
+      /* Double precision evaluation */
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-    highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+      highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
 #else
-    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
+      highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
 #endif
 
-    /* Double-double precision evaluation */
-    Mul12(&tt1h,&tt1l,xSqh,highPoly);
-    Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
-    Mul22(&tt2h,&tt2l,xSqh,xSql,t1h,t1l);
-    Add22(&t2h,&t2l,tbl[9],tbl[10],tt2h,tt2l);
-    Mul22(&tt3h,&tt3l,xSqh,xSql,t2h,t2l);
-    Add22(&t3h,&t3l,tbl[6],tbl[7],tt3h,tt3l);
-    Mul22(&tt4h,&tt4l,xSqh,xSql,t3h,t3l);
-    Add22(&t4h,&t4l,tbl[3],tbl[4],tt4h,tt4l);
-    Mul22(&tt5h,&tt5l,xSqh,xSql,t4h,t4l);
-    Add22(&t5h,&t5l,tbl[0],tbl[1],tt5h,tt5l);
+      /* Double-double precision evaluation */
+      Mul12(&tt1h,&tt1l,xSqh,highPoly);
+      Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
+      
+      MulAdd212(&t2h,&t2l,tbl[9],tbl[10],xSqh,t1h,t1l);
+      MulAdd212(&t3h,&t3l,tbl[6],tbl[7],xSqh,t2h,t2l);
+      MulAdd22(&t4h,&t4l,tmp4,tmp5,xSqh,xSql,t3h,t3l);
+    }
+
+    MulAdd22(&t5h,&t5l,tbl[0],tbl[1],xSqh,xSql,t4h,t4l);
 
     Mul122(&xCubeh,&xCubel,x,xSqh,xSql);
     Mul22(&tt6h,&tt6l,xCubeh,xCubel,t5h,t5l);
     
-    Add22(&polyh,&polyl,x,0,tt6h,tt6l);
+    Add12(tmp1,tmp2,x,tt6h);
+    tmp3 = tmp2 + tt6l;
+    Add12(polyh,polyl,tmp1,tmp3);
 
     /* Multiply by sign */
     asinh = sign * polyh;
@@ -961,22 +939,15 @@ double asin_rd(double x) {
     /* Double-double precision evaluation */
     Mul12(&tt1h,&tt1l,z,highPoly);
     Add22(&t1h,&t1l,tbl[TBLIDX10+21],tbl[TBLIDX10+22],tt1h,tt1l);
-    Mul122(&tt2h,&tt2l,z,t1h,t1l);
-    Add22(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],tt2h,tt2l);
-    Mul122(&tt3h,&tt3l,z,t2h,t2l);
-    Add22(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],tt3h,tt3l);
-    Mul122(&tt4h,&tt4l,z,t3h,t3l);
-    Add22(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],tt4h,tt4l);
-    Mul122(&tt5h,&tt5l,z,t4h,t4l);
-    Add22(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tt5h,tt5l);
-    Mul122(&tt6h,&tt6l,z,t5h,t5l);
-    Add22(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tt6h,tt6l);
-    Mul122(&tt7h,&tt7l,z,t6h,t6l);
-    Add22(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tt7h,tt7l);
-    Mul122(&tt8h,&tt8l,z,t7h,t7l);
-    Add22(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tt8h,tt8l);
-    Mul122(&tt9h,&tt9l,z,t8h,t8l);
-    Add22(&polyh,&polyl,-1,0,tt9h,tt9l);
+
+    MulAdd212(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],z,t1h,t1l);
+    MulAdd212(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],z,t2h,t2l);
+    MulAdd212(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],z,t3h,t3l);
+    MulAdd212(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],z,t4h,t4l);
+    MulAdd212(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],z,t5h,t5l);
+    MulAdd212(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],z,t6h,t6l);
+    MulAdd212(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],z,t7h,t7l);
+    MulAdd212(&polyh,&polyl,-1,0,z,t8h,t8l);
 
     /* Compute sqrt(2*z) as a double-double */
 
@@ -1045,18 +1016,13 @@ double asin_rd(double x) {
     
   Mul12(&tt1h,&tt1l,z,highPoly);
   Add22(&t1h,&t1l,tbl[i+18],tbl[i+19],tt1h,tt1l);
-  Mul122(&tt2h,&tt2l,z,t1h,t1l);
-  Add22(&t2h,&t2l,tbl[i+15],tbl[i+16],tt2h,tt2l);
-  Mul122(&tt3h,&tt3l,z,t2h,t2l);
-  Add22(&t3h,&t3l,tbl[i+12],tbl[i+13],tt3h,tt3l);
-  Mul122(&tt4h,&tt4l,z,t3h,t3l);
-  Add22(&t4h,&t4l,tbl[i+9],tbl[i+10],tt4h,tt4l);
-  Mul122(&tt5h,&tt5l,z,t4h,t4l);
-  Add22(&t5h,&t5l,tbl[i+6],tbl[i+7],tt5h,tt5l);
-  Mul122(&tt6h,&tt6l,z,t5h,t5l);
-  Add22(&t6h,&t6l,tbl[i+3],tbl[i+4],tt6h,tt6l);
-  Mul122(&tt7h,&tt7l,z,t6h,t6l);
-  Add22(&polyh,&polyl,tbl[i+1],tbl[i+2],tt7h,tt7l);
+
+  MulAdd212(&t2h,&t2l,tbl[i+15],tbl[i+16],z,t1h,t1l);
+  MulAdd212(&t3h,&t3l,tbl[i+12],tbl[i+13],z,t2h,t2l);
+  MulAdd212(&t4h,&t4l,tbl[i+9],tbl[i+10],z,t3h,t3l);
+  MulAdd212(&t5h,&t5l,tbl[i+6],tbl[i+7],z,t4h,t4l);
+  MulAdd212(&t6h,&t6l,tbl[i+3],tbl[i+4],z,t5h,t5l);
+  MulAdd212(&polyh,&polyl,tbl[i+1],tbl[i+2],z,t6h,t6l);
 
   /* Multiply by sign */
   asinh = sign * polyh;
@@ -1079,11 +1045,12 @@ double asin_rz(double x) {
   double sign, z, asinh, asinm, asinl;
   int i;
   double xSqh, xSql;
-  double tt1h, tt1l, tt2h, tt2l, tt3h, tt3l, tt4h, tt4l, tt5h, tt5l;
-  double tt6h, tt6l, tt7h, tt7l, tt8h, tt8l, tt9h, tt9l;
+  double tt1h, tt1l;
+  double tt6h, tt6l;
   double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l;
   double t7h, t7l, t8h, t8l, polyh, polyl, twoZ, sqrtzh, sqrtzl;
   double pTimesSh, pTimesSl, allh, alll, highPoly, xCubeh, xCubel;
+  double tmp1, tmp2, tmp3, tmp4, tmp5;
 
   /* Transform the argument into integer */
   xdb.d = x;
@@ -1133,29 +1100,35 @@ double asin_rz(double x) {
     /* Compute square of x for both quick and accurate phases */
     Mul12(&xSqh,&xSql,x,x);
 
-    /* Double precision evaluation */
+    tmp4 = tbl[3];
+    tmp5 = tbl[4];
+    t4h = tmp4;
+    t4l = tmp5;
+    if (xdb.i[HI] > EXTRABOUND) {
+      /* Double precision evaluation */
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-    highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
+      highPoly = FMA(FMA(FMA(FMA(tbl[23],xSqh,tbl[21]),xSqh,tbl[19]),xSqh,tbl[17]),xSqh,tbl[15]);
 #else
-    highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
+      highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
 #endif
 
-    /* Double-double precision evaluation */
-    Mul12(&tt1h,&tt1l,xSqh,highPoly);
-    Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
-    Mul22(&tt2h,&tt2l,xSqh,xSql,t1h,t1l);
-    Add22(&t2h,&t2l,tbl[9],tbl[10],tt2h,tt2l);
-    Mul22(&tt3h,&tt3l,xSqh,xSql,t2h,t2l);
-    Add22(&t3h,&t3l,tbl[6],tbl[7],tt3h,tt3l);
-    Mul22(&tt4h,&tt4l,xSqh,xSql,t3h,t3l);
-    Add22(&t4h,&t4l,tbl[3],tbl[4],tt4h,tt4l);
-    Mul22(&tt5h,&tt5l,xSqh,xSql,t4h,t4l);
-    Add22(&t5h,&t5l,tbl[0],tbl[1],tt5h,tt5l);
+      /* Double-double precision evaluation */
+      Mul12(&tt1h,&tt1l,xSqh,highPoly);
+      Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
+      
+      MulAdd212(&t2h,&t2l,tbl[9],tbl[10],xSqh,t1h,t1l);
+      MulAdd212(&t3h,&t3l,tbl[6],tbl[7],xSqh,t2h,t2l);
+      MulAdd22(&t4h,&t4l,tmp4,tmp5,xSqh,xSql,t3h,t3l);
+    }
+
+    MulAdd22(&t5h,&t5l,tbl[0],tbl[1],xSqh,xSql,t4h,t4l);
 
     Mul122(&xCubeh,&xCubel,x,xSqh,xSql);
     Mul22(&tt6h,&tt6l,xCubeh,xCubel,t5h,t5l);
     
-    Add22(&polyh,&polyl,x,0,tt6h,tt6l);
+    Add12(tmp1,tmp2,x,tt6h);
+    tmp3 = tmp2 + tt6l;
+    Add12(polyh,polyl,tmp1,tmp3);
 
     /* Multiply by sign */
     asinh = sign * polyh;
@@ -1204,22 +1177,15 @@ double asin_rz(double x) {
     /* Double-double precision evaluation */
     Mul12(&tt1h,&tt1l,z,highPoly);
     Add22(&t1h,&t1l,tbl[TBLIDX10+21],tbl[TBLIDX10+22],tt1h,tt1l);
-    Mul122(&tt2h,&tt2l,z,t1h,t1l);
-    Add22(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],tt2h,tt2l);
-    Mul122(&tt3h,&tt3l,z,t2h,t2l);
-    Add22(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],tt3h,tt3l);
-    Mul122(&tt4h,&tt4l,z,t3h,t3l);
-    Add22(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],tt4h,tt4l);
-    Mul122(&tt5h,&tt5l,z,t4h,t4l);
-    Add22(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tt5h,tt5l);
-    Mul122(&tt6h,&tt6l,z,t5h,t5l);
-    Add22(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tt6h,tt6l);
-    Mul122(&tt7h,&tt7l,z,t6h,t6l);
-    Add22(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tt7h,tt7l);
-    Mul122(&tt8h,&tt8l,z,t7h,t7l);
-    Add22(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tt8h,tt8l);
-    Mul122(&tt9h,&tt9l,z,t8h,t8l);
-    Add22(&polyh,&polyl,-1,0,tt9h,tt9l);
+
+    MulAdd212(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],z,t1h,t1l);
+    MulAdd212(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],z,t2h,t2l);
+    MulAdd212(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],z,t3h,t3l);
+    MulAdd212(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],z,t4h,t4l);
+    MulAdd212(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],z,t5h,t5l);
+    MulAdd212(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],z,t6h,t6l);
+    MulAdd212(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],z,t7h,t7l);
+    MulAdd212(&polyh,&polyl,-1,0,z,t8h,t8l);
 
     /* Compute sqrt(2*z) as a double-double */
 
@@ -1288,18 +1254,13 @@ double asin_rz(double x) {
     
   Mul12(&tt1h,&tt1l,z,highPoly);
   Add22(&t1h,&t1l,tbl[i+18],tbl[i+19],tt1h,tt1l);
-  Mul122(&tt2h,&tt2l,z,t1h,t1l);
-  Add22(&t2h,&t2l,tbl[i+15],tbl[i+16],tt2h,tt2l);
-  Mul122(&tt3h,&tt3l,z,t2h,t2l);
-  Add22(&t3h,&t3l,tbl[i+12],tbl[i+13],tt3h,tt3l);
-  Mul122(&tt4h,&tt4l,z,t3h,t3l);
-  Add22(&t4h,&t4l,tbl[i+9],tbl[i+10],tt4h,tt4l);
-  Mul122(&tt5h,&tt5l,z,t4h,t4l);
-  Add22(&t5h,&t5l,tbl[i+6],tbl[i+7],tt5h,tt5l);
-  Mul122(&tt6h,&tt6l,z,t5h,t5l);
-  Add22(&t6h,&t6l,tbl[i+3],tbl[i+4],tt6h,tt6l);
-  Mul122(&tt7h,&tt7l,z,t6h,t6l);
-  Add22(&polyh,&polyl,tbl[i+1],tbl[i+2],tt7h,tt7l);
+
+  MulAdd212(&t2h,&t2l,tbl[i+15],tbl[i+16],z,t1h,t1l);
+  MulAdd212(&t3h,&t3l,tbl[i+12],tbl[i+13],z,t2h,t2l);
+  MulAdd212(&t4h,&t4l,tbl[i+9],tbl[i+10],z,t3h,t3l);
+  MulAdd212(&t5h,&t5l,tbl[i+6],tbl[i+7],z,t4h,t4l);
+  MulAdd212(&t6h,&t6l,tbl[i+3],tbl[i+4],z,t5h,t5l);
+  MulAdd212(&polyh,&polyl,tbl[i+1],tbl[i+2],z,t6h,t6l);
 
   /* Multiply by sign */
   asinh = sign * polyh;
