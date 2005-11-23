@@ -36,4 +36,15 @@ fprintf(fd, "\#define TWO52 %1.50e\n",evalf(2^(52))):
 
 fclose(fd):
 
+filename:="TEMPSQRT/sqrt.sed":
+fd:=fopen(filename, WRITE, TEXT):
+
+fprintf(fd, "s/_epsilonApprox/%1.50e/g\n",eps):
+
+for i from 0 to polyDegree do
+   fprintf(fd, "s/_SQRTPOLYC%d/%1.50e/g\n",i,coeff(poly,x,i)):
+od:
+
+fclose(fd):
+
 printf("... done\n");
