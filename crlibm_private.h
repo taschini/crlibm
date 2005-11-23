@@ -643,7 +643,7 @@ double mh, ml;                                        \
     Add12((*(resh)),(*(resl)),_t1,_t4);           \
 }
 
-
+/* Eps MulAdd212 <= 2^-97 for |a * (bh + bl)| <= 1/4 * |ch + cl| */
 #define MulAdd212(resh,resl,ch,cl,a,bh,bl)           \
 {                                                    \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8;   \
@@ -660,18 +660,17 @@ double mh, ml;                                        \
 #define MulAdd22(resh,resl,ch,cl,ah,al,bh,bl)        \
 {                                                    \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8;   \
-    double _t9, _t10, _t11;                          \
+    double _t9, _t10;                                \
                                                      \
     Mul12(&_t1,&_t2,(ah),(bh));                      \
     Add12(_t3,_t4,(ch),_t1);                         \
     _t5 = (ah) * (bl);                               \
     _t6 = (al) * (bh);                               \
     _t7 = _t2 + (cl);                                \
-    _t8 = _t4 + _t2;                                 \
+    _t8 = _t4 + _t7;                                 \
     _t9 = _t5 + _t6;                                 \
-    _t10 = _t7 + _t9;                                \
-    _t11 = _t8 + _t10;                               \
-    Add12((*(resh)),(*(resl)),_t3,_t11);             \
+    _t10 = _t8 + _t9;                                \
+    Add12((*(resh)),(*(resl)),_t3,_t10);             \
 }
 
 
