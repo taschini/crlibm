@@ -396,23 +396,23 @@ od:
 printf("************ DONE TEMPTRIG/*.sed ************\n"):
 
 # A shell script to use them
-filename:="trigo_test.sh":
+filename:="../gappa/run_trigo_proof.sh":
 fd:=fopen(filename, WRITE, TEXT):
 fprintf(fd, "#!/bin/sh\n"):
 fprintf(fd, "# You probably need to edit the path to the gappa executable\n"):
-fprintf(fd, "for file in TEMPTRIG/SinACosA*.sed  \n"):
+fprintf(fd, "for file in ../maple/TEMPTRIG/SinACosA*.sed  \n"):
 fprintf(fd, "do\n"):
 fprintf(fd, "  echo $file:\n"):
-fprintf(fd, "  sed -f  $file  trigoSinCosCase3.gappa | ~/gappa/src/gappa > /dev/null\n"):
+fprintf(fd, "  sed -f  $file  trigoSinCosCase3.gappa | ~/gappa/src/gappa\n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fclose(fd):
 
 printf("************ DONE trigo_test.sh ************\n"):
-printf("Now you should run\n"):
-printf(" sh trigo_test.sh 2>TEMPTRIG/Gappa.out\n"):
+printf("To run the Gappa proof, you should go to the gappa directory and run\n"):
+printf(" sh run_trigo_proof.sh 2> ../maple/TEMPTRIG/Gappa.out\n"):
 
-printf("Then look at TEMPTRIG/Gappa.out. It shouldn't contain 'No proof'.\n This means that everything is OK and the rounding constants in TEMPTRIG/trigo_fast.h are proven upper bounds.\n\n"):
+printf("Then look at maple/TEMPTRIG/Gappa.out. It shouldn't contain 'No proof'.\n This means that everything is OK and the rounding constants in TEMPTRIG/trigo_fast.h are proven upper bounds.\n\n"):
 
 
 
