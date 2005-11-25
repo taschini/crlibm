@@ -94,8 +94,6 @@ extern double sinh_rd(double); /* toward -inf */
 extern double sinh_ru(double); /* toward +inf */ 
 extern double sinh_rz(double); /* toward zero */ 
 
-/*  pow  */
-extern double pow_rn(double, double); /* to nearest */
 
 /* base 2 logarithm */
 extern double log2_rn(double); /* to nearest  */
@@ -122,6 +120,10 @@ extern double asin_rz(double); /* toward zero */
 extern double exp2_rn(double); /* to nearest  */
 extern double exp2_rd(double); /* toward -inf */ 
 extern double exp2_ru(double); /* toward +inf */ 
+
+/*  pow 
+ extern double pow_rn(double, double); /* to nearest */
+
 
 #if defined (__cplusplus)
 }
