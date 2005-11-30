@@ -80,7 +80,7 @@ development/debugging phase, until no type warning remains.
    using 3 floating point additions, a absolute value test and 
    a branch or using 6 floating point additions but no branch.
    The Add22 sequence is similar. 
-   It seems that the branchless versions are faster (approx. 10%) 
+   The branchless versions might be faster on some systems.
 
    The function versions of Add12Cond and Add22Cond are not 
    implemented in branchless versions.
