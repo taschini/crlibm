@@ -76,6 +76,18 @@ development/debugging phase, until no type warning remains.
 #define DEKKER_AS_FUNCTIONS 0
 #define SQRT_AS_FUNCTIONS 0
 
+/* The conditional version of the Add12 can be implemented either
+   using 3 floating point additions, a absolute value test and 
+   a branch or using 6 floating point additions but no branch.
+   The Add22 sequence is similar. 
+   It seems that the branchless versions are faster (approx. 10%) 
+
+   The function versions of Add12Cond and Add22Cond are not 
+   implemented in branchless versions.
+*/
+
+#define AVOID_BRANCHES 1
+
 
 /* setting the following variable adds variables and code for
    monitoring the performance.
@@ -448,6 +460,21 @@ extern const scs scs_zer, scs_half, scs_one, scs_two, scs_sixinv;
 /*
  * computes s and r such that s + r = a + b,  with s = a @+ b exactly 
  */
+#if AVOID_BRANCHES
+#define Add12Cond(s, r, a, b)      \
+{                                  \
+    double _u1, _u2, _u3, _u4;     \
+    double  _a=a, _b=b;            \
+                                   \
+    s = _a + _b;                   \
+    _u1 = s - _a;                  \
+    _u2 = s - _u1;                 \
+    _u3 = _b - _u1;                \
+    _u4 = _a - _u2;                \
+    r = _u4 + _u3;                 \
+}
+
+#else
 #define Add12Cond(s, r, a, b)      \
         {double _z, _a=a, _b=b;    \
          s = _a + _b;              \
@@ -457,6 +484,7 @@ extern const scs scs_zer, scs_half, scs_one, scs_two, scs_sixinv;
          }else {                   \
            _z = s - _b;            \
            r = _a - _z;}}                          
+#endif
 
 /*
  *  computes s and r such that s + r = a + b,  with s = a @+ b exactly 
@@ -497,6 +525,17 @@ extern void Add22Cond(double *zh, double *zl, double xh, double xl, double yh, d
 
 #else /* ADD22_AS_FUNCTIONS */
 
+#if AVOID_BRANCHES
+#define Add22Cond(zh,zl,xh,xl,yh,yl)                                                   \
+do {                                                                                   \
+  double _v1, _v2, _v3, _v4;                                                           \
+                                                                                       \
+  Add12Cond(_v1, _v2, (xh), (yh));                                                     \
+  _v3 = (xl) + (yl);                                                                   \
+  _v4 = _v2 + _v3;                                                                     \
+  Add12((*(zh)),(*(zl)),_v1,_v4);                                                      \
+} while (2+2==5) 
+#else
 #define Add22Cond(zh,zl,xh,xl,yh,yl)                                                   \
 do {                                                                                   \
   double _r,_s;                                                                        \
@@ -505,7 +544,7 @@ do {                                                                            
   *zh = _r+_s;                                                                         \
   *zl = (_r - (*zh)) + _s;                                                             \
 } while(2+2==5)
-
+#endif
   
 
 #define Add22(zh,zl,xh,xl,yh,yl)         \
