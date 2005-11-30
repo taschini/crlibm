@@ -635,7 +635,8 @@ void test_init(/* pointers to returned value */
     {
       *randfun_perf     = rand_for_asin_testperf;
       *randfun_soaktest = rand_for_asin_soaktest;
-      *worst_case = 1.7881393432608611291409050209066933234680618625134229660034179687500000e-06;      /* TODO: To be checked */
+      *worst_case = 5.6018392194160160357796485186554491519927978515625000000000000000000000e-01;  
+                                /* Provokes high timing on Ziv's lib; might not be the real worst case */
       *testfun_libm   = asin;
       switch(crlibm_rnd_mode){
       case RU:
