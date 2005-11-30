@@ -70,11 +70,11 @@ extern double tan_ru(double); /* toward +inf */
 extern double tan_rz(double); /* toward zero */
  
 
-/*  cotangent  */
-extern double cotan_rn(double); /* to nearest  */
-extern double cotan_rd(double); /* toward -inf */ 
-extern double cotan_ru(double); /* toward +inf */ 
-extern double cotan_rz(double); /* toward zero */ 
+/* /\*  cotangent  *\/ */
+/* extern double cotan_rn(double); /\* to nearest  *\/ */
+/* extern double cotan_rd(double); /\* toward -inf *\/  */
+/* extern double cotan_ru(double); /\* toward +inf *\/  */
+/* extern double cotan_rz(double); /\* toward zero *\/  */
 
 /*  arctangent  */
 extern double atan_rn(double); /* to nearest  */
