@@ -396,7 +396,7 @@ od:
 printf("************ DONE TEMPTRIG/*.sed ************\n"):
 
 # A shell script to use them
-filename:="../gappa/run_trigo_proof.sh":
+filename:="../gappa/run-trigo-proof.sh":
 fd:=fopen(filename, WRITE, TEXT):
 fprintf(fd, "#!/bin/sh\n"):
 fprintf(fd, "# You probably need to edit the path to the gappa executable\n"):
@@ -410,7 +410,7 @@ fclose(fd):
 
 printf("************ DONE trigo_test.sh ************\n"):
 printf("To run the Gappa proof, you should go to the gappa directory and run\n"):
-printf(" sh run_trigo_proof.sh 2> ../maple/TEMPTRIG/Gappa.out\n"):
+printf(" sh run-trigo-proof.sh 2> ../maple/TEMPTRIG/Gappa.out\n"):
 
 printf("Then look at maple/TEMPTRIG/Gappa.out. It shouldn't contain 'No proof'.\n This means that everything is OK and the rounding constants in TEMPTRIG/trigo_fast.h are proven upper bounds.\n\n"):
 
