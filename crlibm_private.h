@@ -442,9 +442,11 @@ extern const scs scs_zer, scs_half, scs_one, scs_two, scs_sixinv;
 
 
 
-
+#if defined(__GNUC__)
+#define ABS(x) (__builtin_fabs((x)))
+#else
 #define ABS(x) (((x)>0) ? (x) : (-(x)))
-
+#endif
 
 
 
