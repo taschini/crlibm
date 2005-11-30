@@ -41,16 +41,16 @@ od:
 
 #Computation of ZMax.
 for i from 0 to MAXINDEX-1 do
-    _x := center[i] + 2^(-L-1) :
-    zmax[i] := (_x*r[i]-1) :
-    _x := center[i] - 2^(-L-1) :
-    zmin[i] := (_x*r[i]-1) :
+    t_x := center[i] + 2^(-L-1) :
+    zmax[i] := (t_x*r[i]-1) :
+    t_x := center[i] - 2^(-L-1) :
+    zmin[i] := (t_x*r[i]-1) :
 od:
 for i from MAXINDEX to 2^L do
-    _x := center[i] + 2^(-L-2) :
-    zmax[i] := (_x*r[i]-1) :
-    _x := center[i] - 2^(-L-2) :
-    zmin[i] := (_x*r[i]-1) :
+    t_x := center[i] + 2^(-L-2) :
+    zmax[i] := (t_x*r[i]-1) :
+    t_x := center[i] - 2^(-L-2) :
+    zmin[i] := (t_x*r[i]-1) :
 od:
 
 zmaxmax:=0:
@@ -208,7 +208,7 @@ for j from 0 to 2^L-1 do
 printf("\n\n************ DONE TEMPLOG/log-de*.sed ************\n");
 
 # A shell script to use them
-filename:="TEMPLOG/run-log-de-proof.sh":
+filename:="../gappa/run-log-de-proof.sh":
 fd:=fopen(filename, WRITE, TEXT):
 fprintf(fd, "#!/bin/sh\n"):
 fprintf(fd, "# You probably need to edit the path to the gappa executable\n"):
@@ -216,24 +216,24 @@ fprintf(fd, "GAPPA=~/gappa/src/gappa\n"):
 fprintf(fd, "# Test all the possible table value for E=1\n"):
 fprintf(fd, "for num in `seq 0 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo $num, E=1:\n"):
-fprintf(fd, "  sed -f TEMPLOG/log-de_$num.sed log-de.gappa | $GAPPA > /dev/null\n"):
+fprintf(fd, "  sed -f ../maple/TEMPLOG/log-de_$num.sed log-de.gappa | $GAPPA \n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fprintf(fd, "# For the case E=0 we first handle the cases 0 and %d using log-de-E0-logir0.gappa\n", 2^L):
 fprintf(fd, "echo 0 and %d, E=0:\n", 2^L):
-fprintf(fd, "sed -f TEMPLOG/log-de_0.sed log-de-E0-logir0.gappa | $GAPPA > /dev/null\n"):
+fprintf(fd, "sed -f ../maple/TEMPLOG/log-de_0.sed log-de-E0-logir0.gappa | $GAPPA \n"):
 fprintf(fd, "# then the other cases where logirh <> 0\n"):
 fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo $num, E=0:\n"):
-fprintf(fd, "  sed -f TEMPLOG/log-de_$num.sed log-de-E0.gappa | $GAPPA > /dev/null\n"):
+fprintf(fd, "  sed -f  ../maple/TEMPLOG/log-de_$num.sed log-de-E0.gappa | $GAPPA\n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fclose(fd):
 
 printf("************ DONE TEMPLOG/run-log-de-proof.sh ************\n"):
-printf("Now you should run\n"):
-printf(" sh TEMPLOG/run-log-de-proof.sh  2>TEMPLOG/Gappa.out\n"):
-printf("  (You probably need to edit the path to the gappa executable within TEMPLOG/run-log-de-proof.sh)\n"):
+printf("Now you should go to ../gappa and run\n"):
+printf(" sh TEMPLOG/run-log-de-proof.sh  2>../maple/TEMPLOG/Gappa.out\n"):
+printf("  (You probably need to edit the path to the gappa executable within run-log-de-proof.sh)\n"):
 printf("Then look at TEMPLOG/Gappa.out. It shouldn't contain 'no proof'.\nThis means that everything is OK.\n\n"):
 
 
