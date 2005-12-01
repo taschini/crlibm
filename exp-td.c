@@ -259,7 +259,7 @@ double exp_rn(double x){
      t6 = t5 * twoPower1000;
      t7 = polyTblh - t6;
      
-     /* The rounding decision is made at 1 ulp of a denormal, i.e. at 2^(-1075)
+     /* The rounding decision is made at 1/2 ulp of a denormal, i.e. at 2^(-1075)
 	We construct this number and by comparing with it we get to know 
 	whether we are in a difficult rounding case or not. If not we just return 
 	the known result. Otherwise we continue with further tests.
