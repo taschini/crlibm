@@ -520,6 +520,45 @@
     } else return (xh);                                       \
 }
 
+/* ReturnRoundToNearest3Other
+
+   ATTENTION: THIS CURRENTLY UNPROVEN CODE !!!
+
+   Procedure for rounding a triple to a double number
+   in round-to-nearest-ties-to-even mode.
+
+
+   Arguments:       a triple double number xh, xm, xl
+   
+   Results:         a double number xprime 
+                    returned by a return-statement
+
+   Preconditions:   |xh| >= 2^(-5) * |xm| >= 2^(-5) * |xl|
+		    		    
+   Guarantees:      xprime = RN(xh + xm + xl)
+
+   Sideeffects:     returns, i.e. leaves the function
+
+*/
+#define ReturnRoundToNearest3Other(xh,xm,xl)                  \
+{                                                             \
+    double _t1, _t2, _t3, _t4;                                \
+    db_number _t3db;                                          \
+                                                              \
+    Add12(_t1,_t2,(xh),(xm));                                 \
+    Add12Cond(_t3,_t4,_t2,(xl));                              \
+    if (_t4 != 0.0) {                                         \
+      _t3db.d = _t3;                                          \
+      if (!(_t3db.i[LO] & 0x00000001)) {                      \
+        if (_t3 * _t4 >= 0.0) _t3db.l++; else _t3db.l--;      \
+        _t3 = _t3db.d;                                        \
+      }                                                       \
+    }                                                         \
+    return _t1 + _t3;                                         \
+}
+
+
+
 /* ReturnRoundUpwards3
 
    Procedure for rounding a triple to a double number
