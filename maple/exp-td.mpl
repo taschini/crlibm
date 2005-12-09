@@ -24,8 +24,10 @@ MsLog2Div2L := evalf(-log(2)/(2^L)):
 
 msLog2Div2Lh, msLog2Div2Lm, msLog2Div2Ll := hi_mi_lo(MsLog2Div2L):
 
-epsMsLog2Div2L := evalf(((msLog2Div2Lh + msLog2Div2Lm + msLog2Div2Ll) - MsLog2Div2L)/MsLog2Div2L):
+epsMsLog2Div2L := evalf(abs(((msLog2Div2Lh + msLog2Div2Lm + msLog2Div2Ll) - MsLog2Div2L)/MsLog2Div2L)):
+epsDDMsLog2Div2L := evalf(abs(((msLog2Div2Lh + msLog2Div2Lm) - MsLog2Div2L)/MsLog2Div2L)):
 
+printf("   error made by storing MsLog2Div2L as a double-double: 2^(%f)\n",log[2](epsDDMsLog2Div2L)):
 printf("   error made by storing MsLog2Div2L as a triple-double: 2^(%f)\n",log[2](epsMsLog2Div2L)):
 
 
