@@ -533,7 +533,7 @@
    Results:         a double number xprime 
                     returned by a return-statement
 
-   Preconditions:   |xh| >= 2^(-5) * |xm| >= 2^(-5) * |xl|
+   Preconditions:   |xm + xl| <= 2^(-5) * |xh|
 		    		    
    Guarantees:      xprime = RN(xh + xm + xl)
 
@@ -542,19 +542,21 @@
 */
 #define ReturnRoundToNearest3Other(xh,xm,xl)                  \
 {                                                             \
-    double _t1, _t2, _t3, _t4;                                \
+    double _t3, _t4;                                          \
     db_number _t3db;                                          \
                                                               \
-    Add12(_t1,_t2,(xh),(xm));                                 \
-    Add12Cond(_t3,_t4,_t2,(xl));                              \
+    Add12(_t3,_t4,(xm),(xl));                                 \
     if (_t4 != 0.0) {                                         \
       _t3db.d = _t3;                                          \
       if (!(_t3db.i[LO] & 0x00000001)) {                      \
-        if (_t3 * _t4 >= 0.0) _t3db.l++; else _t3db.l--;      \
+        if ((_t4 > 0.0) ^ ((_t3db.i[HI] & 0x80000000) != 0))  \
+           _t3db.l++;                                         \
+        else                                                  \
+           _t3db.l--;                                         \
         _t3 = _t3db.d;                                        \
       }                                                       \
     }                                                         \
-    return _t1 + _t3;                                         \
+    return (xh) + _t3;                                        \
 }
 
 
