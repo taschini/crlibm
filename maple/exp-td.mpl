@@ -30,6 +30,10 @@ epsDDMsLog2Div2L := evalf(abs(((msLog2Div2Lh + msLog2Div2Lm) - MsLog2Div2L)/MsLo
 printf("   error made by storing MsLog2Div2L as a double-double: 2^(%f)\n",log[2](epsDDMsLog2Div2L)):
 printf("   error made by storing MsLog2Div2L as a triple-double: 2^(%f)\n",log[2](epsMsLog2Div2L)):
 
+gap := -floor(-log[2](abs(msLog2Div2Lm/msLog2Div2Lh))):
+
+printf("   |msLog2Div2Lm| <= 2^(%f) * |msLog2Div2Lh|\n",gap):
+
 
 log2InvMult2L := nearest(2^L / (log(2))):
 
