@@ -1,2008 +1,1087 @@
-This chapter is contributed by David Defour, with assistance from F.
-de~Dinechin and J.M. Muller.
-
-Warning: THIS CHAPTER IS OBSOLETE. As of version 0.10beta there is a
-triple-double implementation of the exponential which is more
-efficient than the one presented here. The proof will be written
-before 0.10 comes out of beta.
-
-
-This chapter was the first to be written, while the library
-was in prototype stage. It may therefore present some inconsistencies
-in notations with the other chapters. 
-
-
 \section{Overview of the algorithm}
-\label{section:overview}
-We are now going to present and proof the correct rounding of the evaluation scheme chosen for the exponential within \emph{crlibm}.
+The exponential function allows for additive argument reduction with
+multiplicative reconstruction: $e^{a + b} = e^a \cdot e^b$. In
+particular, the following equation is useful in developing an
+argument reduction:
+$$e^x = e^{E \cdot \ln\left(2\right) + z} = \left(e^{\ln\left( 2
+\right)}\right)^E \cdot e^z = 2^E \cdot e^z$$ Here, $E$ can be
+considered to be a signed integer, $E \in \Z$ and $z$ to be a reduced
+argument such that $\left \vert z \right \vert <
+\ln\left(2\right)$. One remarks that the use of such an argument
+reduction implies a multiplication with a transcendental constant,
+$\ln\left( 2 \right)$.  This means that the reduced argument will not
+be exact. The corresponding error bound will be given in section
+\ref{sec:expargred}.
 
-We have done the evaluation of the exponential in two steps. First, we use the \emph{quick} phase of the algorithm to get an approximation good to $68$ bits of the result. Then we perform a test to check whether we need to use the \emph{accurate} phase, based on multiprecision operators from SCSlib~\cite{SCSweb} .
+A reduced argument obtained by the reduction shown above is generally
+still to great for polynomial approximation. By use of tabulation
+methods, the following argument reduction can be employed and yields
+to smaller reduced arguments.
+\begin{eqnarray*}
+k & = & \left \lfloor x \cdot \frac{2^l}{\ln\left(2 \right)} \right \rceil \\
+\hat{r} & = & x - k \cdot \frac{\ln\left( 2 \right)}{2^l} \\
+k & = & 2^l \cdot M + 2^{w_1} \cdot i_2 + i_1 
+\end{eqnarray*}
+where $\hat{r}$ is the reduced argument, $k, M \in \N$ are intermediate
+integers, and $w_1, w_2 \in \N$, $l = w_1 + w_2$, are the widths of
+the indices to the two tables. The corresponding reconstruction phase
+is
+$$e^x = 2^M \cdot 2^{\frac{i_2}{2^{w_1}}} \cdot 2^{\frac{i_1}{2^l}}
+\cdot e^{\hat{r}} = 2^M \cdot t_1 \cdot t_2 \cdot e^{\hat{r}}$$ with the table values $t_1 =
+2^{\frac{i_2}{2^{w_1}}}$ and $t_2 = 2^{\frac{i_1}{2^l}}$. The argument
+reduction ensures that $\left \vert \hat{r} \right \vert \leq
+\frac{\ln\left( 2 \right)}{2^l} < 2^{-l}$. This magnitude is small enough for 
+allowing for polynomial approximation.
 
-To increase the trust of the code, with have included constants in hexadecimal format, and for concision reason only the one in big endian format are present. However to help the reader we are giving the corresponding decimal values.
+In the case of the given algorithm, we use $l = 12$ and $w_1 = w_2 = 6$.
 
-\section{Quick phase}
+The subtraction $\hat{r} = x - k \cdot \round \left(\frac{\ln\left( 2
+\right)}{2^l}\right)$ can be implemented exactly but leads to
+catastrophic cancellation that amplifies the absolute error of the
+potentially exact multiplication of $k$ by the approximated
+$\frac{\ln\left( 2 \right)}{2^l}$. Is is nevertheless not of such an
+issue, as will be shown in section \ref{sec:expaccuracy}.                  % ATTENTION: CHANGER EVTL LA MARQUE
 
-Here is the general scheme chosen for the first step of the evaluation of the exponential : 
+\section{Special case handling}\label{sec:expspecial}
+The exponential function $e^x$, which is monotone increasing, produces
+results that are representable in a floating point format for
+arguments $$x \in \left[ \mbox{\small \it underflowBound};
+\mbox{\small \it overflowBound} \right]$$ Herein the following values
+are observed for double precision: $$\mbox{\small \it underflowBound}
+= \round \left( \ln\left(2^{-1075} \right) \right) \approx -745.13$$
+and $$\mbox{\small \it overflowBound} = \round \left(
+\ln\left(2^{1024} \cdot \left( 1 - 2^{-53} \right) \right) \right)
+\approx 709.78$$ Its double precision result is gradually underflowed
+in the argument domain $$x \in \left[\mbox{\small \it underflowBound};
+\mbox{\small \it denormBound} \right]$$ where
+$$\mbox{\small \it denormBound} = \round\left( \ln\left( 2^{-1022}
+\right) \right) \approx -708.40$$ for double precision.  No special
+case can therefore occur for arguments $x$ such that $$\left \vert x
+\right \vert \leq \min \left( \left \vert \mbox{\small \it
+underflowBound} \right \vert, \left \vert \mbox{\small \it
+overflowBound} \right \vert, \left \vert \mbox{\small \it denormBound}
+\right \vert \right) \approx 708.40$$ This provides us a very
+efficient filter for the greatest part of the definition domain.
+Since also some arguments are filtered out that actually do not
+represent a special case, additional tests are made in the body of the
+main special handling sequence launched by the filter. Particular cases like
+$x=\pm \infty$, $x = \nan$ are handled as follows:
+\begin{itemize}
+\item The result for $x = \nan$ is $\nan$.
+\item The result for $x = + \infty$ is $+ \infty$.
+\item The result for $x = - \infty$ is $0$, even in round-upwards mode.
+\end{itemize}
+If the result is clearly underflowed, $0$ is returned with the inexact
+flag set for round-to-nearest and round-downwards, $0^+$ is returned
+for round-upwards.
 
+The ordering of double precision numbers is compatible with the
+integer ordering of the signed 64 bit integers the floating point
+numbers can be read in memory as. Further the ordering on numbers is
+equal to the lexicographic ordering of its digits. So if the higher
+order word of $\left \vert x \right \vert$ is less than the higher
+order word of $\mbox{\small \it overUnderDenormBound} = \min \left(
+\left \vert \mbox{\small \it underflowBound} \right \vert, \left \vert
+\mbox{\small \it overflowBound} \right \vert, \left \vert \mbox{\small
+\it denormBound} \right \vert \right)$, no underflow, gradual
+underflow or overflow can occur. In the other cases, special handling
+in the reconstruction step may be necessary. A flag
+\texttt{mightBeDenorm} is set for possible subnormals. Cases where
+intermediate results are not representable because of overflow but
+where the final result is representable can be overcome by replacing
+the corresponding floating point multiplication by an integer
+manipulation. This will be shown below.
+
+Since $e^{x} = 1 + x + \Ord\left( x^2 \right)$ for small $\left
+\vert x \right \vert$, underflowed arguments $x$ ($\left \vert x \right
+\vert \leq 2^{-1022}$) can be handled as follows:
+\begin{itemize}
+\item In round-to-nearest mode, $1$ can be returned since $\round
+\left( 1 + x \right) = 1$ for $\left \vert x \right \vert \leq
+2^{-54}$.
+\item In round-upwards mode, $1$ must be returned for $x = 0$. For $x
+< 0$, $1$ can be returned, too, because $\roundup \left( 1 - \left
+\vert x \right \vert \right) = 1$.  If $x > 0$, $1^+$ must be
+returned.
+\item Round-downwards mode is analogous to round-upwards mode, but the signs 
+are inverted. 
+\item Round-towards-zero mode is equivalent to round-downwards mode since 
+$e^x > 0 \mbox{~~} \forall x \in \R$.
+\end{itemize}
+
+The following sequence realizes the special case handling for
+round-to-nearest. The sequences for the other rounding modes are
+straightforward and will not be shown here. The constants\\
+\texttt{OVRUDRFLWSMPLBOUND}, \texttt{OVRFLWBOUND} and
+\texttt{DENORMBOUND} are computed by the corresponding Maple script
+that realizes the equations given above.
+\begin{lstlisting}[caption={Handling special cases},firstnumber=1]
+/* Special cases tests */
+xIntHi = xdb.i[HI];
+mightBeDenorm = 0;
+/* Test if argument is a denormal or zero */
+if ((xIntHi & 0x7ff00000) == 0) {
+  /* We are in the RN case, return 1.0 in all cases */
+  return 1.0;
+}
+
+/* Test if argument is greater than approx. 709 in magnitude */
+if ((xIntHi & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) {
+  /* If we are here, the result might be overflowed, underflowed, inf, or NaN */
+
+  /* Test if +/- Inf or NaN */
+  if ((xIntHi & 0x7fffffff) >= 0x7ff00000) {
+    /* Either NaN or Inf in this case since exponent is maximal */
+
+    /* Test if NaN: mantissa is not 0 */
+    if (((xIntHi & 0x000fffff) | xdb.i[LO]) != 0) {
+	/* x = NaN, return NaN */
+	return x + x;
+    } else {
+	/* +/- Inf */
+
+	/* Test sign */
+	if ((xIntHi & 0x80000000)==0) 
+	  /* x = +Inf, return +Inf */
+	  return x;
+	else
+	  /* x = -Inf, return 0 */
+	  return 0;
+    } /* End which in NaN, Inf */
+  } /* End NaN or Inf ? */
+  
+  /* If we are here, we might be overflowed, denormalized or underflowed in the result 
+     but there is no special case (NaN, Inf) left */
+
+  /* Test if actually overflowed */
+  if (x > OVRFLWBOUND) {
+    /* We are actually overflowed in the result */
+    return LARGEST * LARGEST;
+  }
+
+  /* Test if surely underflowed */
+  if (x <= UNDERFLWBOUND) {
+    /* We are actually sure to be underflowed and not denormalized any more 
+	 So we return 0 and raise the inexact flag */
+    return SMALLEST * SMALLEST;
+  }
+     
+  /* Test if possibly denormalized */
+  if (x <= DENORMBOUND) {
+    /* We know now that we are not sure to be normalized in the result
+	 We just set an internal flag for a further test 
+    */
+    mightBeDenorm = 1;
+  }
+} /* End might be a special case */
+\end{lstlisting}
+\section{Argument reduction}\label{sec:expargred}
+Mathematically, the argument reduction used for quick and accurate phase is the same.
+The reduced argument is nevertheless different for the both phases because the
+reduction is inexact. It is therefore implemented in two or three phases:
+
+First, $k$ corresponding to $\left \lfloor x \cdot
+\frac{2^{12}}{\ln\left(2 \right)} \right \rceil$ is computed in both
+integer and floating point (double) representation. Herein
+$\frac{2^{12}}{\ln\left(2 \right)}$ is represented in double precision
+and the multiplication by $x$ is performed in double precision,
+too. Then the nearest integer $k$ to the number obtained is
+computed. This computational problem is principally subject to the
+Table Maker's Dilemma: $x \cdot \frac{2^{12}}{\ln\left(2 \right)}$ is
+transcendental for all $x \not = \ln\left(2 \right)$ and the
+to-nearest-integer operation is equivalent to a rounding to the
+nearest. It is not possible to guarantee that the computed $k$ is
+really the integer nearest to $x \cdot \frac{2^{12}}{\ln\left(2
+\right)}$. Nevertheless, this is not a problem. The following argument
+reduction steps, as $\hat{r} = x - k \cdot
+\frac{\ln\left(2\right)}{2^{12}}$, and the reconstruction are
+mathematically correct for any $k$. So computing the wrong $k$ only
+leads to a slight enlargement of the interval of the reduced argument
+$\hat{r}$, as one can see with the following argument:
+
+The function's argument's value $x$ is bounded in magnitude by
+$2^{10}$. So, $x \cdot \frac{2^{12}}{\ln\left(2 \right)}$ is bounded
+in magnitude by $2^{22}$. Since the accuracy of the value
+$xMultLog2InvMult2L = \round \left( x \cdot \round \left(
+\frac{2^{12}}{\ln\left(2 \right)} \right) \right)$ with respect to the
+exact value $x \cdot \frac{2^{12}}{\ln\left(2 \right)}$ is at least
+$51$ bits, an error is made not earlier than at the $19$th bit
+following the integer-fractional point. Thus
+$$\left \vert \frac{k - x \cdot \frac{2^{12}}{\ln\left(2
+\right)}}{x \cdot \frac{2^{12}}{\ln\left(2
+\right)}} \right \vert \leq \frac{1}{2} + 2^{-19}$$
+Therefore $\hat{r}^\prime$ is actually bounded by $\left \vert \hat{r}^\prime \right \vert \leq
+\frac{\ln\left( 2 \right)}{2^{12}} \cdot \left( \frac{1}{2} + 2^{-19}
+\right)$ instead of $\left \vert \hat{r} \right \vert \leq \frac{\ln\left( 2
+\right)}{2^{12}} \cdot \frac{1}{2}$. This difference can be neglected.
+
+Note further that $k$ is computed exactly ($k = 0$) for $\left \vert x
+\right \vert \leq 2^{-14}$ because no Table Maker's Dilemma can no
+longer occur.
+
+This first step is performed by the following code sequence:
+\begin{lstlisting}[caption={Argument reduction - first step},firstnumber=1]
+xMultLog2InvMult2L = x * log2InvMult2L;
+shiftedXMult = xMultLog2InvMult2L + shiftConst;
+kd = shiftedXMult - shiftConst;
+shiftedXMultdb.d = shiftedXMult;
+k = shiftedXMultdb.i[LO];
+\end{lstlisting}
+Here, \texttt{k} and \texttt{kd} represent $k$ in integer and floating
+point (double) format. The technique for computing $\left \lfloor z
+\right \rceil$ out of $z$ is explained in section
+\ref{sec:double2int}, page \pageref{sec:double2int}.
+
+In the second step of the argument reduction, an arithmetical
+approximation to $\hat{r} = x - k \cdot \frac{\ln\left( 2
+\right)}{2^{12}}$, $r_\hi + r_\mi = \hat{r} + \delta_{\mbox{\tiny
+argred}}$, is computed using a double-double approximation to
+$\frac{\ln\left( 2 \right)}{2^{12}}$ and double-double precision for
+computations. We will consider its absolute error $\delta_{\mbox{\tiny
+argredquick}} = r_\hi + r_\mi - \hat{r}$ and the resulting relative
+error on the exponential function $\epsilon_{\mbox{\tiny argredquick}}
+= \frac{e^{\hat{r} + \delta} - e^{\hat{r}}}{e^{\hat{r}}}$ below.
+
+This argument reduction step is implemented as follows:
+\begin{lstlisting}[caption={Argument reduction - second step},firstnumber=1]
+Mul12(&s1,&s2,msLog2Div2Lh,kd);
+s3 = kd * msLog2Div2Lm;
+s4 = s2 + s3; 
+s5 = x + s1;
+Add12Cond(rh,rm,s5,s4);
+\end{lstlisting}
+Here, \texttt{msLog2Div2Lh} and \texttt{msLog2Div2Lm} are a
+double-double representing $-\frac{\ln\left( 2 \right)}{2^{12}}$ with
+an relative error $\left \vert \epsilon_{\mbox{\tiny logconstquick}}
+\right \vert = \left \vert \frac{msLog2Div2L_\hi + msLog2Div2L_\mi +
+2^{-12} \cdot \ln\left( 2 \right)}{-2^{-12} \cdot \ln\left( 2 \right)}
+\right \vert \leq 2^{-109}$. Further, $\left \vert msLog2Div2L_\hi
+\right \vert \leq 2^{-54} \cdot \left \vert msLog2Div2L_\mi \right
+\vert$.
+
+Let us now show first a bound on the absolute round-off error of the
+given sequence.  We know that the multiplication $s_1 + s_2 = kd \cdot
+msLog2Div2h$ and the final addition $r_\hi + r_\mi = s_5 + s_4$ are
+exact. Further, the addition $s_5 = x \oplus s_1$ is exact as per Sterbenz' lemma.
+In fact, since 
+$$\left \vert x - \left \lfloor x \cdot
+\frac{2^{12}}{\ln\left(2\right)} \right \rceil \cdot
+\frac{\ln\left(2\right)}{2^{12}} \right \vert \leq 2^{-12}$$ and
+$$s_1 = - \left \lfloor x \cdot \frac{2^{12}}{\ln\left(2\right)}
+\right \rceil \cdot \frac{\ln\left(2\right)}{2^{12}} \cdot \left( 1 + \epsilon^\prime \right)$$
+with $\left \vert \epsilon^\prime \right \vert \leq 2^{-50}$, it is trivial to see that
+$$\frac{1}{2} \cdot \left \vert s_1 \right \vert \leq \left \vert x
+\right \vert \leq 2 \cdot \left \vert s_1 \right \vert$$ In addition,
+$s_1$ and $x$ are clearly of opposed sign. So, noting
+$$s_3 = k \cdot msLog2Div2L_\mi \cdot \left( 1 + \epsilon_1 \right)$$ and
+$$s_4 = \left( s_2 + s_3 \right) \cdot \left( 1 + \epsilon_2 \right)$$
+with $\left \vert \epsilon_1 \right \vert \leq 2^{-53}$ and $\left
+\vert \epsilon_2 \right \vert \leq 2^{-53}$, we get
+$$r_\hi + r_\mi = x + k \cdot \left( msLog2Div2L_\hi + msLog2Div2L_\mi \right) + \delta^\prime$$
+with 
+$$\left \vert \delta^\prime \right \vert \leq \left \vert \epsilon_1 \right
+\vert \cdot \left \vert k \cdot msLog2Div2L_\mi \right \vert + \left
+\vert \epsilon_2 \right \vert \cdot \left \vert s_2 + s_3 \right
+\vert$$
+We have
+$$\left \vert s_2 \right \vert \leq 2^{-53} \cdot \left \vert s_1
+\right \vert \leq 2^{-53} \cdot \left \vert \round \left( k \cdot
+msLog2Div2L_\hi \right) \right \vert \leq 2^{-52} \cdot \left \vert k
+\cdot msLog2Div2L_\hi \right \vert$$
+and further
+$$\left \vert s_3 \right \vert \leq \left \vert k \cdot msLog2Div2L_\mi \left( 1 + \epsilon_1 \right) \right \vert
+\leq \left \vert k \cdot msLog2Div2L_\mi \right \vert + \left \vert \epsilon_1 \right \vert \cdot
+\left \vert k \cdot msLog2Div2L_\mi \right \vert$$
+So one can easliy check that 
+$$\left \vert \delta^\prime \right \vert \leq 2^{-104} \cdot \left
+\vert k \cdot msLog2Div2Lh \right \vert$$ In consequence using the
+fact that $\left \vert msLog2Div2L_\hi \right \vert = \left \vert \round
+\left( \frac{\ln\left( 2 \right)}{2^{12}} \right) \right \vert \leq 2
+\cdot \left \vert \frac{\ln\left( 2 \right)}{2^{12}} \right \vert$ and
+the bound for $k$, one obtains
+$$\left \vert \delta^\prime \right \vert \leq \left \vert \left( x
+\cdot \frac{2^{12}}{\ln\left( 2 \right)} + \frac{1}{2} + 2^{-19}
+\right) \cdot \frac{\ln\left( 2 \right)}{2^{12}} \right \vert$$ Since
+$\left \vert x \right \vert \leq 746$ after filtering out the special
+cases, we obtain $\left \vert \delta^\prime \right \vert \leq 2^{-103}
+\cdot 2^{10} = 2^{-93}$.  
+
+To this round-off error adds the
+approximation error comitted by rounding $\frac{\ln\left( 2
+\right)}{2^{12}}$ to a double-double.
+We can note 
+$$r_\hi + r_\mi = x - k \cdot \frac{\ln\left( 2 \right)}{2^{12}} \cdot
+\left( 1 + \epsilon_{\mbox{\tiny logconstquick}} \right) +
+\delta^\prime$$
+This gives us 
+$$r_\hi + r_\mi = \hat{r} + \delta$$ with $\left \vert \delta \right
+\vert \leq \left \vert k \cdot \frac{\ln\left( 2 \right)}{2^{12}}
+\cdot \epsilon_{\mbox{\tiny logconstquick}} \right \vert + \left \vert
+\delta^\prime \right \vert$. One can easily check that one obtains
+thus finally $\left \vert \delta \right \vert \leq 2^{-92}$.
+
+This absolute error $\delta$ in the reduced argument $\hat{r}$
+translates to a relative error $\epsilon_{\mbox{\tiny argredquick}}$ in the function $e^{\hat{r}}$ as
+follows:
+\begin{eqnarray*}
+e^r & = & e^{\hat{r} + \delta} \\
+& = & e^{\hat{r}} \cdot e^{\delta} \\
+& = & e^{\hat{r}} \cdot \sum\limits_{i=0}^{\infty} \frac{1}{i!} \cdot \delta^i \\
+& = & e^{\hat{r}} \cdot \left( 1 + \sum\limits_{i=1}^{\infty} \frac{1}{i!} \cdot \delta^i \right) \\
+& = & e^{\hat{r}} \cdot \left( 1 + \epsilon_{\mbox{\tiny argredquick}} \right)
+\end{eqnarray*}
+with $\epsilon_{\mbox{\tiny argredquick}} = \sum\limits_{i=1}^{\infty} \frac{1}{i!} \cdot \delta^i =
+\delta \cdot \sum\limits_{i=0}^{\infty} \frac{1}{\left(i + 1 \right)!}
+\cdot \delta^i$.
+Since $\left \vert \delta \right \vert < \frac{1}{2}$, we get 
+$$\forall i \geq 0 \mbox{ . } \left \vert \frac{1}{\left( i + 1
+\right)!} \cdot \delta^i \right \vert \leq \left( \frac{1}{2}
+\right)^i$$ In consequence, $\sum\limits_{i=0}^{\infty}
+\frac{1}{\left(i + 1 \right)!}  \cdot \delta^i \leq
+\sum\limits_{i=0}^{\infty} \left( \frac{1}{2} \right)^i = 2$.  
+
+Thus we get $\left \vert \epsilon_{\mbox{\tiny argredquick}} \right
+\vert \leq 2 \cdot \left \vert \delta \right \vert \leq 2^{-91}$.
+
+Still in the second step of the argument reduction, the values $M$,
+$i_1$ and $i_2$ are computed exactly in integer computation as
+follows:
+\begin{lstlisting}[caption={Argument reduction - second step (cont'd)},firstnumber=1]
+M = k >> L;
+index1 = k & INDEXMASK1;
+index2 = (k & INDEXMASK2) >> LHALF;
+\end{lstlisting}
+Here \texttt{L} is equal to $12$ and \texttt{LHALF} is equal to
+$6$. The values \texttt{INDEXMASK1} and \texttt{INDEXMASK2} are masks
+to the lowest 6 bits and respectively to bits 6 through 15 of an 32
+bit word.
+
+If ever the accurate phase must be launched, a third argument
+reduction phase is performed.  It computes a triple-double $r_\hi +
+r_\mi + r_\lo = \hat{r} + \delta$ such that the resulting relative
+error on the exponential function $\epsilon_{\mbox{\tiny
+argredaccurate}} = \frac{e^{\hat{r} + \delta} -
+e^{\hat{r}}}{e^{\hat{r}}}$ is bounded by $\left \vert
+\epsilon_{\mbox{\tiny argredaccurate}} \right \vert \leq 2^{-140}$ as
+will be shown below. This step uses a triple-double approximation to
+$\frac{\ln\left( 2 \right)}{2^{12}}$ with a relative error $$\left
+\vert \epsilon_{\mbox{\tiny logconstaccurate}} \right \vert = \left
+\vert \frac{msLog2Div2L_\hi + msLog2Div2L_\mi + msLog2Div2L_\lo +
+2^{-12} \cdot \ln\left( 2 \right)}{-2^{-12} \cdot \ln\left( 2 \right)}
+\right \vert \leq 2^{-163}$$ It is implemented as follows:
+\begin{lstlisting}[caption={Argument reduction - third step},firstnumber=1]
+Mul133(&msLog2Div2LMultKh,&msLog2Div2LMultKm,&msLog2Div2LMultKl,kd,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
+t1 = x + msLog2Div2LMultKh;
+Add12Cond(rh,t2,t1,msLog2Div2LMultKm);
+Add12Cond(rm,rl,t2,msLog2Div2LMultKl);
+\end{lstlisting}
+The values for $k$, $M$, $i_1$ and $i_2$ that have been exactly
+computed already at the second argument reduction step can of course
+be reused.
+
+All operation but the first \texttt{Mul133} operator are exact: the
+last two by their general properties, the addition $t_1 = x \oplus
+msLog2Div2LMultK_\hi$ as per Sterbenz' lemma analogously as in the
+second argument reduction step. So one can note
+$$r_\hi + r_\mi + r_\lo = x - k \cdot \left( msLog2Div2L_\hi +
+msLog2Div2L_\mi + msLog2Div2L_\lo \right) \cdot \left( 1 + \epsilon_1
+\right)$$ where $\epsilon_1$ is the relative error bound of the
+\texttt{Mul133} operator, for instance $\left \vert \epsilon_1 \right
+\vert \leq 2^{-153}$. Integrating also the rounding error in the constant, we
+get 
+$$r_\hi + r_\mi + r_\lo = x - k \cdot \frac{\ln\left( 2
+\right)}{2^{12}} + \delta$$ with $\left \vert \delta \right \vert \leq
+\left \vert k \cdot \frac{\ln\left( 2 \right)}{2^{12}} \right \vert
+\cdot \left( 2^{-163} + 2^{-153} \right) \leq 2^{-152} \cdot \left
+\vert k \cdot \frac{\ln\left( 2 \right)}{2^{12}} \right \vert \leq
+2^{-141}$.  One checks the previous upper bounds by using analogous
+arguments as the ones given for the second argument reduction step.
+Once again, this absolute error $\delta$ translates to a relative
+error $\epsilon_{\mbox{\tiny argredaccurate}} = \frac{e^{\hat{r} +
+\delta} - e^{\hat{r}}}{e^{\hat{r}}}$ in a similar way as mentioned
+above. We get $$\left \vert \epsilon_{\mbox{\tiny argredaccurate}}
+\right \vert \leq 2^{-140}$$ which is the bound to prove.
+
+Let us still remark that argument reduction is exact for arguments $x$
+such that $\left \vert x \right \vert \leq \frac{\ln\left( 2
+\right)}{2^{13}} < 2^{-13}$. In fact, in this case, $k = 0$ which
+implies that all multiplications of $k$ by the constants for
+$\frac{\ln\left( 2 \right)}{2^{12}}$ are exact. 
+
+According to their uses either in quick or accurate phase, the table
+values $t_1 = e^{\frac{i_1}{2^{12}}}$ and $t_2 =
+e^{\frac{i_1}{2^{12}}}$ for $i_1, i_2 \in \left \lbrace 0 \dots 63
+\right \rbrace$ are read as a double-double or as a triple-double. By
+construction, the double-double values have a relative error
+$\epsilon_{\mbox{\tiny tablequick}} = \frac{tbl_{i\hi} + tbl_{i\mi} -
+t_i}{t_i}$ bounded by $\left \vert \epsilon_{\mbox{\tiny tablequick}}
+\right \vert \leq 2^{-106}$.  The triple-double values with
+$\epsilon_{\mbox{\tiny tableaccurate}} = \frac{tbl_{i\hi} + tbl_{i\mi}
++ tbl_{i\lo} - t_i}{t_i}$ verify $\left \vert \epsilon_{\mbox{\tiny
+tableaccurate}} \right \vert \leq 2^{-159}$. For $i_1 = 0$ and $i_2 =
+0$ both errors are equal to $0$, so both argument reduction and
+reconstruction steps are exact for argument $x$ that verify $\left
+\vert x \right \vert \leq 2^{-13}$.
+
+\section{Polynomial approximation and reconstruction}\label{sec:exppolynomial}
+In both quick and accurate phase, the reduced argument $r_\hi + r_\mi$
+respectively $r_\hi + r_\mi + r_\lo$ corresponding to their
+mathematical equivalent $\hat{r}$ are bounded by $\left \vert \hat{r}
+\right \vert \leq \frac{\ln\left( 2 \right)}{2^{12}} \cdot \left(
+2^{-1} + 2^{-19} \right) + \delta < 2^{-13}$.  After simplification by
+$e^{r_\hi + r_\mi + r_\lo} = e^{r_\hi} \cdot e^{r_\mi} \cdot
+e^{r_\lo}$, $e^{r_\hi} - 1$ is approximated by a polynomial of degree
+4 or 7. The functions $e^{r_\mi} - 1$ and potentially $e^{r_\lo} - 1$
+are both approximated linearly by $r_\mi$ or, respectively, $r_\lo$.
+
+Concerning the approximation errors for $e^{r_\mi}$ and $e^{r_\lo}$,
+one can note that $\left \vert r_\mi \right \vert \leq 2^{-52} \cdot
+2^{-13} \leq 2^{-65}$ and $\left \vert r_\lo \right \vert \leq
+2^{-105} \cdot 2^{-13} \leq 2^{-118}$. In consequence
+$\epsilon_{\mbox{\tiny approxargmiddle}} = \frac{r_\mi - \left(
+e^{r_\mi} - 1 \right)}{\left( e^{r_\mi} - 1 \right)}$ and
+$\epsilon_{\mbox{\tiny approxarglower}} = \frac{r_\lo - \left(
+e^{r_\lo} - 1 \right)}{\left( e^{r_\lo} - 1 \right)}$ are bounded by
+$\left \vert \epsilon_{\mbox{\tiny approxargmiddle}} \right \vert \leq
+2^{-66}$ and $\left \vert \epsilon_{\mbox{\tiny approxarglower}}
+\right \vert \leq 2^{-119}$.
+
+\subsection{Quick phase polynomial approximation and reconstruction}
+In quick phase $e^{r_\hi} - 1$ is approximated by a polynomial
+$p\left( r_\hi \right)$ of the following form
+$$p\left( r_\hi \right) = r_\hi + \frac{1}{2} \cdot r_\hi^2 + c_3
+\cdot r_\hi^3 + c_4 \cdot r_\hi^4$$ The coefficients $c_3$ and $c_4$
+are stored in double precision, $\frac{1}{2}$ is exactly
+representable. For $r_\hi$ bounded as indicated above, the relative
+approximation error $\epsilon_{\mbox{\tiny approxarghighquick}} =
+\frac{p\left( r_\hi \right) - e^{r_\hi} + 1}{e^{r_\hi} - 1}$ is bounded by 
+$\left \vert \epsilon_{\mbox{\tiny approxarghighquick}} \right \vert \leq 2^{-62}$.
+
+The polynomial $p\left(r_\hi \right) - r_\hi = \frac{1}{2} \cdot
+r_\hi^2 + c_3 \cdot r_\hi^3 + c_4 \cdot r_\hi^4$ is evaluated in
+double precision using the following scheme:
 \begin{enumerate}
-\item 
-{\bf ``Mathematical'' range reduction} \\
-We want to compute $\exp(x)$. We evaluate the reduced argument $$(r\_hi + r\_lo)\in [-\ln(2)/2, +\ln(2)/2]$$ such that :
-
-$$x=k. \ln(2) + (r\_hi + r\_lo)$$
-
-then $\exp(x) = \exp(r\_hi + r\_lo) . 2^{k}$ with $(r\_hi + r\_lo) \in [-\ln(2)/2, +\ln(2)/2]$
-\item
-{\bf Tabular range reduction} \\
-
-Let $index\_flt$ be the first 8 bits of $(r\_hi + r\_lo)$, we want
-
-$$\exp(r\_hi + r\_lo) = \exp(index\_flt) \times \exp(rp\_hi + rp\_lo)$$
-
-where $(rp\_hi + rp\_lo) = (r\_hi + r\_lo) - index\_flt$ such that $(rp\_hi + rp\_lo) \in [-2^{-9}, +2^{9}]$ and $\exp(index\_flt)=(ex\_hi + ex\_lo)$ is obtain with a table lookup.
-
-
-\item
-{\bf Polynomial evaluation} \\
-We evaluate the polynom $P\_r$ of degree 3 such that : 
-
-$$exp(rp\_hi + rp\_lo) \approx 1 + (rp\_hi + rp\_lo) + \frac{1}{2}.(rp\_hi+rp\_lo)^2 +(rp\_hi+rp\_lo)^3 . (P\_r)$$
-
-with
-$P\_r = c_0 + c_1 .rp\_hi + c_2 .rp\_hi^2 + c_3 .rp\_hi^3$
-and
-$rp\_hi \in [-2^{-9}, +2^{9}]$
-
-\item
-{\bf Reconstruction} \\
-
-$$
-\begin{array}{rcl}
-\exp(x) &=& 2^k . (ex\_hi+ex\_lo). \\
- &&(1 + (rp\_hi+rp\_lo) + \frac{1}{2}.(rp\_hi+rp\_lo)^2 + (rp\_hi+rp\_lo)^3.P\_r)
-. (1+\epsilon_{-68})\\
-\end{array}
-$$
-
+\item In the beginning, an approximation to $r_\hi^2$, $rhSquare$, is computed. Concurrently, 
+$c_3$ is multiplied by $r_\hi$ yielding to $rhC3 = c_3 \cdot r_\hi \cdot \left( 1 + \epsilon \right)$.
+\item At the first step, the squared argument $rhSquare$ is multiplied
+by $\frac{1}{2}$ yielding to the approximation $rhSquareHalf$. At the
+same time, it is multiplied by $rhC3$ which results in $monomialCube$
+approximating now $c_3 \cdot r_\hi^3$. Still in the same moment, it is
+squared once again yielding to $rhFour$ which approximates thus
+$r_\hi^4$.
+\item At the next dependency top, $rhFour$ is multiplied by
+$c_4$. This results in $monomialFour$ -- a value corresponding to $c_4
+\cdot r_\hi^4$.
+\item In the next moment, $monomialCube$ and $monomialFour$ are added
+together. This gives a value approximating $c_3 \cdot r_\hi^3 + c_4
+\cdot r_\hi^4$.
+\item Finally, $rhSquareHalf$ is added to the value obtained at the
+previous step yielding to an arithmetical approximation of
+$\frac{1}{2} \cdot r_\hi + c_3 \cdot r_\hi^3 + c_4 \cdot r_\hi^4$,
+stored in $highPolyWithSquare$.
 \end{enumerate}
+This scheme does not completely exploit the possible parallelism for
+purpose of not deteriorating too much the final accuracy. It is
+implemented as follows:
+\begin{lstlisting}[caption={Quick phase polynomial evaluation - high order terms},firstnumber=1]
+rhSquare = rh * rh;
+rhC3 = c3 * rh;
 
+rhSquareHalf = 0.5 * rhSquare;
+monomialCube = rhC3 * rhSquare;
+rhFour = rhSquare * rhSquare;
 
+monomialFour = c4 * rhFour;
 
+highPoly = monomialCube + monomialFour;
 
-\subsection{Handling special cases}
-
-\subsubsection{Select the evaluation range to avoid overflows and underflows}
-\label{chap3:exp:overflows}
-In the sequel of this paper, we will consider input numbers in the range $[u\_bound, o\_bound]$, where $u\_bound$ and $o\_bound$ are :
-
-
-$$u\_bound = \bigtriangleup \left(\ln\left(\left(1-2^{-53}\right).2^{-1075}\right)\right) = -745.1332\ldots$$
-$$o\_bound = \bigtriangledown \left( \ln \left(\left(1-2^{-53}\right).2^{1024}\right)\right) = 709.7827\ldots$$
-
-In the rounding mode to nearest, the exponential of a number greater than $o\_bound$ is an overflow, whereas the exponential of a number less than $u\_bound$ is rounded to $0$, and raise an inexact flag.
-
-However, subtler under/overflow situations may arise in two cases, which we should avoid :
-\begin{itemize}
-\item An intermediate computation may raise an overflow although the final result is representable as an IEEE-754 floating-point number.
-
-\item In IEEE-754 arithmetic, when a result is between $2^{-1023}$ and $2^{-1074}$, a gradual underflow exception arises to signal that the precision of the result is reduced in a drastic way.
-\end{itemize}
-
-In both cases, as we will show in the following, it is possible to avoid the exception by predicting that it will occur, and appropriately scaling the input number in the range reduction phase.
-
-
-
-\subsubsection{Rounding to nearest}
-
-\begin{lstlisting}[caption={Handling special cases in rounding to nearest},firstnumber=1]
-static const union{int i[2]; double d;}
-#ifdef BIG_ENDIAN
- _largest    = {0x7fefffff, 0xffffffff},
- _smallest   = {0x00000000, 0x00000001},
- _u_bound    = {0xC0874910, 0xD52D3052}, /* -7.45133219101941222107e+02 */
- _o_bound    = {0x40862E42, 0xFEFA39F0}; /*  7.09782712893384086783e+02 */
-#else
- ...
-#endif
-#define largest    _largest.d
-#define smallest   _smallest.d
-#define u_bound    _u_bound.d
-#define o_bound    _o_bound.d
-
-unsigned int hx;
-
-hx  = HI(x);                                         (*@ \label{exp:code:1} @*)
-hx &= 0x7fffffff;                                    (*@ \label{exp:code:3} @*)
-
-/* Filter special cases */
-if (hx >= 0x40862E42){                               (*@ \label{exp:code:4} @*)
-  if (hx >= 0x7ff00000){                             (*@ \label{exp:code:5} @*)
-    if (((hx&0x000fffff)|LO(x))!=0)                  (*@ \label{exp:code:6} @*)
-      return x+x;                            /* NaN */  (*@ \label{exp:code:7} @*)
-    else return ((hx&0x80000000)==0)? x:0.0; /* exp(+/-inf) = inf,0 */(*@ \label{exp:code:8} @*)
-  }
-  if (x > o_bound) return largest *largest ; /* overflow  */  (*@ \label{exp:code:9} @*)
-  if (x < u_bound) return smallest*smallest; /* underflow */  (*@ \label{exp:code:10} @*)
-}
-
-
-if (hx <= 0x3C900000) return 1.;             /* if (hx <= 2^(-54)) */ (*@ \label{exp:code:10bis} @*)
-
+highPolyWithSquare = rhSquareHalf + highPoly;
 \end{lstlisting}
-
-
-\begin{preuve}
-\begin{longtable}[c]{@{line }p{0.08\textwidth}p{0.81\textwidth}}
-% en cas de cesure c'est ce que l'on place 
-% en debut de page
-\endhead
-% en fin de page
-\endfoot 
-% en fin de derniere page
-\endlastfoot 
-\ref{exp:code:1} & Put the high part of $x$ in $hx$.
-\\
-\ref{exp:code:3} & Remove the sign information within $hx$. It will make tests on special cases simpler.
-\\
-\ref{exp:code:4} & Test equivalent to $if (|x|>=709.7822265625)$. This test is true if $x>u\_bound$, $x<o\_bound$, $x=\pm inf$ or $x=NaN$. This test is performed with integers to make it faster.
-\\
-(\ref{exp:code:5}-\ref{exp:code:7}) & Test if $x=\pm inf$ or $x=NaN$ and give the corresponding results (exact $+\infty$ or $0$).
-\\
-\ref{exp:code:9} & Under the assumption that the compiler correctly translates the floating-point number we have $o\_bound = 390207173010335/549755813888$. If $x>o\_bound$ then $\exp(x)=+\inf$. The multiplication $largest*largest$ leaves to the compiler the generation of an overflow and the corresponding flags. 
-\\
-\ref{exp:code:10} & Under the assumption that the compiler correctly translates the floating-point number we have $u\_bound = -3277130554578985/4398046511104$. If $x<u\_bound$ then $\exp(x)=+0$.  The multiplication $largest*largest$ leaves to the compiler the generation of an underflow and the corresponding flags.
-\\
-\ref{exp:code:10bis} & Test equivalent to $if (|x| \leq 2^{-54})$. This test is performed with integers to make it faster and is valid because $x \notin \{NaN, \infty\}$. In addition, this test allows to handle cases when $x$ is a subnormal number. We have the following property : 
-\begin{prop}
-  \label{chap3:exp:prop10bis}
-  $|x| > 2^{-54}$~~and~~~~$x\notin\{NaN, \infty\}$
-\end{prop}
-Indeed, in rounding to nearest, if $|x| \leq 2^{-54}$ then $\exp(x) = 1.0$. This test prevents to encounter a subnormal number in the rest of the program.
-
-\\
-\end{longtable}
-\end{preuve}
-
-
-
-
-\subsubsection{Rounding toward $+ \infty$}
-
-\begin{lstlisting}[caption={Handling special cases in rounding toward $+\infty$},firstnumber=1]
-static const union{int i[2]; double d;}
-#ifdef BIG_ENDIAN
- _largest    = {0x7fefffff, 0xffffffff},
- _smallest   = {0x00000000, 0x00000001},
- _u_bound    = {0xC0874910, 0xD52D3052}, /* -7.45133219101941222107e+02 */
- _o_bound    = {0x40862E42, 0xFEFA39F0}, /*  7.09782712893384086783e+02 */
- _two_m52_56 = {0x3CB10000, 0x00000000}; /*  2.35922392732845764840e-16 */
-#else
- ...
-#endif
-#define largest    _largest.d
-#define smallest   _smallest.d
-#define u_bound    _u_bound.d
-#define o_bound    _o_bound.d
-#define two_m52_56 _two_m52_56.d
-
-
-unsigned int hx;
-
-hx  = HI(x);    
-hx &= 0x7fffffff;
-
-/* Filter special cases */
-if (hx >= 0x40862E42){
-  if (hx >= 0x7ff00000){
-    if (((hx&0x000fffff)|LO(x))!=0)
-      return x+x;                            /* NaN */
-    else return ((hx&0x80000000)==0)? x:0.0; /* exp(+/-inf) = inf,0 */
-  }
-  if (x > o_bound) return largest*largest;   /* overflow  */
-  if (x < u_bound) return smallest*1.0;      /* 2^(-1074) */
-}
-
-if (hx < 0x3CA00000){                        /* if (hx <= 2^(-53)) */
-  if (HI(x) < 0)
-    return 1. + smallest;                    /* 1 and inexact */
-  else
-    return 1. + two_m52_56;                  /* 1 + 2^(-52) and inexact */ 
-}
-
-\end{lstlisting}
-
-
-\begin{preuve}
-This program is similar to the one used in rounding to nearest mode with the exception of :
-\begin{itemize}
-\item
-When $(x < u\_bound)$, in rounding toward $+\infty$, we have to give as result the smallest representable number ($2^{-1074}$) with the inexact flag raised.
-\item
-When $(|x| < 2^{-53})$, in rounding toward $+\infty$, we have to give as result $1.0$ if $x<0$ with the inexact flag raised or $1+2^{-52}$ with the inexact flag raised if $x>0$.
-\end{itemize}
-\end{preuve}
-
-
-
-\subsubsection{Rounding toward $- \infty$}
-
-\begin{lstlisting}[caption={Handling special cases in rounding toward $- \infty$},firstnumber=1]
-static const union{int i[2]; double d;}
-#ifdef BIG_ENDIAN
- _largest    = {0x7fefffff, 0xffffffff},
- _smallest   = {0x00000000, 0x00000001},
- _u_bound    = {0xC0874910, 0xD52D3052}, /* -7.45133219101941222107e+02 */
- _o_bound    = {0x40862E42, 0xFEFA39F0}, /*  7.09782712893384086783e+02 */
- _two_m52_56 = {0x3CB10000, 0x00000000}; /*  2.35922392732845764840e-16 */
-#else
- ...
-#endif
-#define largest    _largest.d
-#define smallest   _smallest.d
-#define u_bound    _u_bound.d
-#define o_bound    _o_bound.d
-#define two_m52_56 _two_m52_56.d
-
-unsigned int hx;
-
-hx  = HI(x);
-hx &= 0x7fffffff;
-
-/* Filter special cases */
-if (hx >= 0x40862E42){
-  if (hx >= 0x7ff00000){
-    if (((hx&0x000fffff)|LO(x))!=0)
-      return x+x;                            /* NaN */
-    else return ((hx&0x80000000)==0)? x:0.0; /* exp(+/-inf) = inf,0 */
-  }
-  if (x > o_bound) return largest*1.0;       /* (1-2^(-53))*2^1024  */ 
-  if (x < u_bound) return smallest*smallest; /* underflow */
-}
-
-if (hx < 0x3CA00000){                        /* if (hx <= 2^(-53))   */
-  if (HI(x) < 0)
-    return 1. - two_m52_56;                  /* 1-2^(-52) and inexact */
-  else
-    return 1. + smallest;                    /* 1 and inexact */
-}
-
-\end{lstlisting}
-
-
-
-\begin{preuve}
-This program is similar to the one used in rounding to nearest mode with the exception of :
-\begin{itemize}
-\item
-When  $(x > o\_bound)$, in rounding toward $-\infty$, we have to give as result the largest representable number  ($(1-2^{-53}).2^{1024}$) with the inexact flag raised.
-\item
-When $(|x| < 2^{-53})$, in rounding toward $-\infty$, we have to give as result  $1.0 - 2^{-52}$ if $x<0$ with the inexact flag raised or $1.0$ with the inexact flag raised if $x>0$.
-\end{itemize}
-\end{preuve}
-
-
-
-\subsubsection{Rounding toward $0$}
-
-The exponential function is continue and positive, therefore the rounding toward $0$ mode is equivalent to the rounding toward $- \infty$ mode.
-
-
-\subsection{Range reduction}
-\subsubsection{Presentation}
-The typical range reduction used for the exponential use the following property :
-$$
-e^{a+b}=e^a e^b
-$$
-
-\subsubsection{First reduction step}
-The purpose of this first range reduction is to replace the input number $x\in[u\_bound, o\_bound]$ with two floating-point numbers $r\_hi$, $r\_lo$ and an integer $k$ such that :
-
-$$
-x = k.\ln(2) + (r\_hi+r\_lo).(1+ \epsilon)
-$$
-with  $|r\_hi+r\_lo| < \frac{1}{2}  \ln(2)$
-
-This ``additive'' range reduction may generate a cancellation if $x$ is close from a multiple of $\ln(2)$. Using a method from Kahan based on continuous fractions (see Muller \cite{Muller97} pp 154) we compute the worst cases for the range reduction and give the results in Table \ref{chap3:exp:table:reduction}.
-
-\begin{table}[h]
-\begin{center}
-\begin{tabular}{|c|c|c|}
-\hline  Interval &  Worst cases & Number of bits lost  \\ \hline
-\hline  $]2^{1024}, 2^{1024}[$& $5261692873635770 \times 2^{499}$ &  $66,8$\\
-\hline  $[-1024, 1024]$&  $7804143460206699 \times 2^{-51}$ & $57,5$\\
-\hline
-\end{tabular}
-\caption{Worst cases corresponding to the closest number multiple of  $\ln(2)$, for the additive range reduction of the exponential. The maximum number of bits lost by cancellation is also indicated \label{chap3:exp:table:reduction}.}
-\end{center}
-\end{table}
-
-The interval $[u\_bound, o\_bound]$ on which we are evaluating the exponential is included within $[-1024, 1024]$. Then  at most $58$ bits can be  canceled during the subtraction of the closest multiple of  $\ln(2)$ to the input number $x$.
-
-
-\begin{theorem}
-The sequence of instructions of the program \ref{exp:lst:reduction1} computes two floating-point numbers in double precision $r\_hi$, $r\_lo$ and an integer $k$ such that
-$$
-r\_hi + r\_lo = (x - k\times \ln2) + \epsilon_{-69}
-$$
-with $k$ the closest integer to $x / \ln 2$.
-\end{theorem}
-
-\begin{lstlisting}[label={exp:lst:reduction1},caption={First range reduction}]
-static const union{int i[2]; double d;}
-#ifdef BIG_ENDIAN
- _ln2_hi     = {0x3FE62E42, 0xFEFA3800}, /*  6.93147180559890330187e-01 */ (*@ \label{exp:code:001} @*)
- _ln2_me     = {0x3D2EF357, 0x93C76000}, /*  5.49792301870720995198e-14 */
- _ln2_lo     = {0x3A8CC01F, 0x97B57A08}, /*  1.16122272293625324218e-26 */ (*@ \label{exp:code:002} @*)
- _inv_ln2    = {0x3FF71547, 0x6533245F}; /*  1.44269504088896338700e+00 */
-#else
- ...
-#endif
-#define ln2_hi     _ln2_hi.d
-#define ln2_me     _ln2_me.d
-#define ln2_lo     _ln2_lo.d
-#define inv_ln2    _inv_ln2.d
-
-double r_hi, r_lo, rp_hi, rp_lo;
-double u, tmp;
-int k;
-
-DOUBLE2INT(k, x * inv_ln2)                     (*@ \label{exp:code:11} @*)
-
-if (k != 0){ 
-  /* r_hi+r_lo =  x - (ln2_hi + ln2_me + ln2_lo)*k */
-  rp_hi = x-ln2_hi*k;
-  rp_lo =  -ln2_me*k;
-  Add12Cond(r_hi, u, rp_hi, rp_lo);         (*@ \label{exp:code:12} @*)
-  r_lo = u - ln2_lo*k;                         (*@ \label{exp:code:13} @*)
-}else {
-  r_hi = x;  r_lo = 0.;                        (*@ \label{exp:code:14} @*)
-}
-
-\end{lstlisting}
-
-
-\begin{preuve}
-\begin{longtable}[c]{@{line }p{0.08\textwidth}p{0.81\textwidth}}
-% en cas de cesure c'est ce que l'on place 
-% en debut de page
-\endhead
-% en fin de page
-\endfoot 
-% en fin de derniere page
-\endlastfoot 
-(\ref{exp:code:001}-\ref{exp:code:002})& 
-\begin{prop}
-By construction:
-\label{chap3:exp:prop0}
-  $ln2\_hi +ln2\_me +ln2\_lo = \ln(2) (1+ \epsilon_{-140})$
-\end{prop}
-\begin{prop}
-\label{chap3:exp:prop0b}
-  $|ln2\_hi| \leq 2^{0}$ ~~~ $|ln2\_me| \leq 2^{-44}$ ~~~   $|ln2\_hi| \leq 2^{-86}$
-\end{prop}
-
-\begin{prop}
-\label{chap3:exp:prop1}
-  $ln2\_hi$ and $ln2\_me$ hold at most $42$ bits of precision
-\end{prop}
-\\
-\ref{exp:code:11} & Put in $k$ the closest integer of $x*inv\_ln2$. We use the property of DOUBLE2INT that convert a floating-point number in rounding to nearest mode (program \ref{sec:double2int}, page \pageref{sec:double2int}).
-
-In addition $k$ satisfy the following property :
-\begin{prop}
-  \label{chap3:exp:prop2}
-  $\lfloor x \times inv\_ln2 \rfloor \leq k \leq \lceil x \times inv\_ln2
-  \rceil ~~~ \mbox{et} ~~~  |k| \leq \frac{x}{2} \times inv\_ln2$
-\end{prop}
-
-We have seen in Section \ref{chap3:exp:overflows} :
-$-745.1332\ldots <x<709.7827\ldots $, then : 
-\begin{prop}
-  \label{chap3:exp:prop3}
-  $-1075 \leq k \leq 1025$ and $|k|$ is an integer on at most $11$ bits
-\end{prop}
-\\
-\ref{exp:code:12}& 
-Properties \pref{chap3:exp:prop1} and \pref{chap3:exp:prop3} give us : 
-\begin{prop}
-  \label{chap3:exp:prop5}
-  $ln2\_hi \otimes k = ln2\_hi \times k$~~ and ~~$ln2\_me \otimes k = ln2\_me \times k$ exactly
-\end{prop}
-
-
-By property \pref{chap3:exp:prop2} we have :
-$$
- (x \times inv\_ln2 - 1) \times ln2\_hi \leq k \times ln2\_hi \leq (x \times inv\_ln2 + 1) \times ln2\_hi
-$$
-
-$$
-x/2 \leq k \times ln2\_hi \leq 2.x
-$$
-
-By the Sterbenz theorem (theorem \ref{sec:sterbenz}, page \pageref{sec:sterbenz}), we have 
-$$x \ominus (ln2\_hi \otimes k) = x - (ln2\_hi \otimes k)$$ 
-Combined with property \pref{chap3:exp:prop5} we have :
-\begin{prop}
-  \label{chap3:exp:prop6}
-  $x \ominus (ln2\_hi \otimes k) = x - (ln2\_hi \times k)$ exactly
-\end{prop}
-
-We use conditional Add12 algorithm (with tests on entries), because $x-ln2\_hi \times k$ can be equal to zero (due to the $58$ bits of cancellation). The conditional Add12 algorithm (program \ref{lst:Add12Cond}, page \pageref{lst:Add12Cond}) leads to 
-$$r\_hi + u = (x \ominus ln2\_hi \otimes k) + (- ln2\_me \otimes k)$$
- 
-With properties  \pref{chap3:exp:prop5} and \pref{chap3:exp:prop6} we have : 
-\begin{prop}
-  \label{chap3:exp:prop4}
-  $r\_hi + u = (x - ln2\_hi \times k) + (- ln2\_me \times k)$ exactly
-\end{prop}
-\\
-\ref{exp:code:13}&
-By the property \pref{chap3:exp:prop3} we have :
-\begin{prop}
-  \label{chap3:exp:prop4b}
-$|ln2\_lo \times k| \leq 2^{-75}$,
-
-$ln2\_lo \otimes k = (ln2\_lo \times k).(1 + \epsilon_{-54})$
-\end{prop}
-
-$$
-\begin{array}{rclr}
-r\_lo &=& u \ominus (ln2\_lo \otimes k)          &\\
-      &=& (u - (ln2\_lo \otimes k)).(1 + \epsilon_{-54}) & \\
-      &=& (u - (ln2\_lo \times k).(1 + \epsilon_{-54})).(1 + \epsilon_{-54}) & \mbox{\pref{chap3:exp:prop4b}}\\
-      &=& (u - (ln2\_lo \times k)).(1 + \epsilon_{-54}) + \epsilon_{-129} + \epsilon_{-183} & \\
-\end{array}
-$$
-
-That gives us :
-
-\begin{prop}
-  \label{chap3:exp:prop7}
-$ r\_lo = (u - (ln2\_lo \times k)).(1 + \epsilon_{-54}) + \epsilon_{-129} + \epsilon_{-183}$
-\end{prop}
-
-We have :
-
-$$
-\begin{array}{rclr}
-r\_hi + r\_lo 
-&=& r\_hi + (u - (ln2\_lo \times k)).(1 + \epsilon_{-54}) + \epsilon_{-129} + \epsilon_{-183} 
-&\mbox{\pref{chap3:exp:prop7}}\\
-
-&=& (x - ln2\_hi \times k) + (- ln2\_me \times k) - (ln2\_lo \times k)&\\
-& & + (u - (ln2\_lo \times k)).\epsilon_{-54} + \epsilon_{-129} + \epsilon_{-183} 
-&\mbox{\pref{chap3:exp:prop4}}\\
-
-&=& (x - k.\ln(2)) + k.\epsilon_{-140} + (u - (ln2\_lo \times k)).\epsilon_{-54} + &\\
-& & \epsilon_{-129} + \epsilon_{-183}
-&\mbox{\pref{chap3:exp:prop0}}\\
-
-&=& (x - k.\ln(2)) + (u - (ln2\_lo \times k)).\epsilon_{-54} + \epsilon_{-128} + \epsilon_{-183} &\\
-
-\end{array}
-$$
-
-
-In the worst case, we are losing at most $58$ bits by cancellation (Table \ref{chap3:exp:table:reduction}). By property \pref{chap3:exp:prop4}, we deduce that $u=0$ in that case, which combine with property \pref{chap3:exp:prop4b} ($|ln2\_lo \times k| \leq 2^{-75}$) gives us :
-
-\begin{prop}
-  \label{chap3:exp:prop8}
-  $r\_hi + r\_lo = (x - k\times \ln2) +\epsilon_{-127+58=-69}$ 
-\end{prop}
-In addition  $69$ bits is a precision that can be represented as the sum of 2 floating-point numbers in double precision.
-\\
-\ref{exp:code:14} &
-If $k=0$ then no subtraction is necessary, then
- $r\_hi + r\_lo = x$ exactly.
-\\
-\end{longtable}
-\end{preuve}
-
-At the end of this first rang reduction we have :
-$$
-\exp(x) = 2^{k}. \exp(r\_hi + r\_lo + \epsilon_{-69}) = 2^{k}. \exp(r\_hi + r\_lo).(1+ \epsilon_{-69}) 
-$$
-
-
-
-\subsubsection{Second range reduction}
-The number $(r\_hi+r\_lo)$ is still too big to be used in a polynomial evaluation. Then, a second range reduction needs to be done. This second range reduction is based on the additive property of the exponential $e^{a+b}=e^a e^b$, and on the tabulation of some values of the exponential.
-
-Let  $index\_flt$ be the $\ell$ first bits of $(r\_hi+r\_lo)$, then we have :
-
-$
-\begin{array}{rcl}
-\exp(r\_hi+r\_lo) 
-&=& \exp(index\_flt) . \exp(r\_hi + r\_lo-index\_flt) \\
-&\approx& (ex\_hi + ex\_lo) . \exp(rp\_hi + rp\_lo) \\
-\end{array}
-$
-
-\noindent where $ex\_hi$ and $ex\_lo$ are double precision floating-point numbers extractes from table address by $index\_flt$, such that $ex\_hi + ex\_lo \approx \exp(index\_flt)$. The input argument after this reduction step will be represented as the sum of two double precision floating-point numbers $rp\_hi$ and $rp\_lo$ such that $$rp\_hi + rp\_lo = r\_hi + r\_lo-index\_flt$$
-
-
-Tests on memory show that the optimal table size for the range reduction is $4$KBytes~\cite{Defour02}. If we want to store these vales and keep enough precision (at least $69$bits), we need 2 floating-point numbers ($16$ bytes) per value.
-
-Let $\ell$ be the parameter such that $[-2^{-\ell-1},2^{-\ell-1}]$ is the range after reduction, then we want :
-$$
-\lceil \ln 2.2^{\ell} \rceil 16 \leq (2^{12} = 4096)
-$$
-
-With $\ell=8$ we have $\lceil \ln (2) . 2^8 \rceil 16 \mbox{~bytes} = 2848$ bytes, and the evaluation range is reduced to $[-2^{-9},2^{-9}]$. After this reduction step, we have $|rp\_hi + rp\_lo| \leq 2^{-9}$.
-
-
-\noindent The corresponding sequence of instructions performing this second range reduction is :
-
-\begin{lstlisting}[label={exp:lst:reduction2},caption={Second range reduction}]
-/* Constants definition */
-static const union{int i[2]; double d;}
-#ifdef BIG_ENDIAN
- _two_44_43  = {0x42B80000, 0x00000000}; /*  26388279066624.  */ (*@ \label{exp:code:21} @*)
-#else
- ...
-#endif
-#define two_44_43  _two_44_43.d
-#define bias       89;               (*@ \label{exp:code:22} @*)
-
-double ex_hi, ex_lo, index_flt;
-int index;
-
-index_flt = (r_hi + two_44_43);      (*@ \label{exp:code:23} @*)
-index     = LO(index_flt); 
-index_flt-= two_44_43;
-index    += bias;
-r_hi     -= index_flt;               (*@ \label{exp:code:24} @*)
-
-/* Results normalization */
-Add12(rp_hi, rp_lo, r_hi, r_lo)   (*@ \label{exp:code:25} @*)
-
-/* Table lookup */
-ex_hi = tab_exp[index][0];           (*@ \label{exp:code:26} @*)
-ex_lo = tab_exp[index][1];           (*@ \label{exp:code:27} @*)
-
-\end{lstlisting}
-
-\begin{preuve}
-\begin{longtable}[c]{@{line }p{0.08\textwidth}p{0.81\textwidth}}
-% en cas de cesure c'est ce que l'on place 
-% en debut de page
-\endhead
-% en fin de page
-\endfoot 
-% en fin de derniere page
-\endlastfoot 
-\ref{exp:code:21}&
-The constant $two\_44\_43 = 2^{44} + 2^{43}$ is used in rounding to nearest mode to extract the  $\ell=8$ leading bits of $r\_hi + r\_lo$. 
-\\
-\ref{exp:code:22}&
-In C language, tables are address with positive index. We consider positive values as well as negative one for $index$, therefore we need to use a bias equal to $178/2 =89$.
-\\
-(\ref{exp:code:23}, \ref{exp:code:24})&
-This sequence of instructions is similar to the one used within DOUBLE2INT (program \ref{sec:double2int}, page \pageref{sec:double2int}). It puts in $index$ variable, bits of weight $2^0$ to $2^{-8}$, minus the value of the bias. Meanwhile, it puts in $index\_flt$ the floating-point value corresponding to the first $8$ bits of $r\_hi$.
-
-In line \ref{exp:code:24} we have :
-\begin{prop}
-  \label{chap3:exp:index_flt}
-  $r\_hi =  r\_hi - index\_flt$ exactly
-\end{prop}
-
-\\
-\ref{exp:code:25}&
-The Add12 algorithm guarantee :
-\begin{prop}
-  \label{chap3:exp:rphi_rplo}
-$|rp\_hi| \leq 2^{-9}$ ~~and~~ $|rp\_lo| \leq 2^{-63}$, 
-
-$rp\_hi + rp\_lo = r\_hi + r\_lo$ exactly
-\end{prop}
-
-\\
-\ref{exp:code:26}, \ref{exp:code:27}&
-We perform table lookup of the 2 values $ex\_hi$ and $ex\_lo$. The table is build such that only one cache miss can be encounter for these 2 table lookups.
-
-By construction of the table $tab\_exp$ we have :
-\begin{prop}
-  \label{chap3:exp:ex_hilo}
-  $|ex\_hi| \leq 2^{-1}$ and $|ex\_lo| \leq 2^{-55}$ 
-
-  $ex\_hi + ex\_lo = \exp(index\_flt).(1+ \epsilon_{-109})$
-\end{prop}
-
-\\
-\end{longtable}
-\end{preuve}
-
-
-At the end of this second range reduction we have :
-$$
-\exp(x) = 2^{k}. (ex\_hi + ex\_lo) . \exp(rp\_hi + rp\_lo) . (1+ \epsilon_{-69}) . (1+ \epsilon_{-109})
-$$
-
-
-
-\subsection{Polynomial evaluation}
-Let $r=(rp\_hi + rp\_lo)$, we need to evaluate $\exp(r)$ with $r \in [-2^{-9},2^{-9}]$. We will evaluate $f(r)=(\exp(r)-1-r-\frac{r^2}{2})/r^3$ with the following polynom of degree 3 :
-$$
-P(r)= c_0 + c_1 r + c_2 r^2 + c_3 r^3
-$$ 
-where
-\begin{itemize}
-\item $c_0 = 6004799503160629/36028797018963968 \leq 2^{-2}$
-\item $c_1 = 750599937895079/18014398509481984 \leq 2^{-4}$
-\item $c_2 = 300240009245077/36028797018963968 \leq 2^{-6}$
-\item $c_3 = 3202560062254639/2305843009213693952 \leq 2^{-9}$
-\end{itemize}
-with $c_0, c_1, c_2, c_3$ exactly representable with double precision floating-point number.
-
-\noindent By using  \texttt{infnorm} function from Maple we get the following error :
-\begin{prop}
-  \label{chap3:exp:evalpoly}
-  $\exp(r) = (1 + r + \frac{1}{2}r^2 + r^3. P(r)).(1+\epsilon_{-78})$
-  with $r \in [-2^{-9},2^{-9}]$
-\end{prop}
-
-For efficiency reason, we will evaluate $P(rp\_hi)$ instead of $P(rp\_hi + rp\_lo)$. The corresponding error from this approximation is :
-$$
-\begin{array}{rcll}
-P(rp\_hi + rp\_lo) - P(rp\_hi) &=& 
-c_1 .  rp\_lo + &\\&&
-c_2 . (rp\_lo^2 + 2.rp\_hi.rp\_lo) +  &\\&&
-c_3 . (rp\_lo^3 + 3.rp\_hi^2.rp\_lo + 3.rp\_hi.rp\_lo^2) & \mbox{\pref{chap3:exp:rphi_rplo}} \\
- &\leq& \epsilon_{-67} +  \epsilon_{-75} &\\
-\end{array}
-$$
-The, the property \pref{chap3:exp:evalpoly} become :
-
-\begin{prop}
-  \label{chap3:exp:evalpoly2}
-  $\exp(r) = (1 + r + \frac{1}{2}r^2 + r^3. P(rp\_hi)) + \epsilon_{-78} + \epsilon_{-86}$
-  with $r \in [-2^{-9},2^{-9}]$
-\end{prop}
-
-
-
-\noindent $P\_r=P(rp\_hi)$ is evaluated by the following sequences of instructions : 
-
-\begin{lstlisting}[label={exp:lst:evalpoly},caption={Polynomial evaluation}]
-static const union{int i[2]; double d;}
-#ifdef BIG_ENDIAN
- _c0         = {0x3FC55555, 0x55555535}, /*  1.66666666666665769236e-01 */
- _c1         = {0x3FA55555, 0x55555538}, /*  4.16666666666664631257e-02 */
- _c2         = {0x3F811111, 0x31931950}, /*  8.33333427943885873823e-03 */
- _c3         = {0x3F56C16C, 0x3DC3DC5E}; /*  1.38888903080471677251e-03 */
-#else
- ...
-#endif
-#define c0         _c0.d
-#define c1         _c1.d
-#define c2         _c2.d
-#define c3         _c3.d
-double P_r;
-
-P_r = (c_0 + rp_hi * (c_1 + rp_hi * (c_2 + (rp_hi * c_3)))); 
-
-\end{lstlisting}
-
-
-\begin{preuve}
-
-We have :
-
-\begin{tabular}{@{$\bullet$}l@{~~~then~~~}l@{~~~and~~~}l} 
-$P_0 = c\_3 \otimes rp\_hi $ & $|P_0| \leq 2^{-18}$ & 
-$P_0 = (c\_3 \times rp\_hi)  + \epsilon_{-72}$\\
-
-$P_1 = c\_2 \oplus P_0$ & $|P_1| \leq 2^{-6}$ &
-$P_1 = (c\_2 + P_0) + \epsilon_{-60}$ \\
-
-$P_2 = P_1 \otimes rp\_hi$ & $|P_2| \leq 2^{-15}$ &
-$P_2 = (P_1 \times rp\_hi) + \epsilon_{-69}$\\
-
-$P_3 = c\_1 \oplus P_2$ & $|P_3| \leq 2^{-4}$ &
-$P_3 = (c\_1 + P_2)  + \epsilon_{-58}$ \\
-
-$P_4 = P_3 \otimes rp\_hi$ & $|P_4| \leq 2^{-13}$ &
-$P_4 = (P_3 \times rp\_hi) + \epsilon_{-67}$\\
-
-$P_5 = c\_0 \oplus P_4$ & $|P_5| \leq 2^{-2}$ &
-$P_5 = (c\_0 + P_4) + \epsilon_{-56}$ \\
-\end{tabular}
-
-By combining all these errors we get :
-\begin{prop}
-  \label{chap3:exp:prop27bis}
-$|P\_r| \leq 2^{-2}$
-
-$P\_r = (c\_0 + rp\_hi \times (c\_1 + rp\_hi \times (c\_2 + (rp\_hi \times c\_3)))) +  \epsilon_{-55} + \epsilon_{-65}$
-
-$P\_r = P(rp\_hi) + \epsilon_{-55} + \epsilon_{-65}$
-\end{prop}
-
-By the properties \pref{chap3:exp:evalpoly2} and \pref{chap3:exp:prop27bis} :
-
-\begin{prop}
-  \label{chap3:exp:evalpoly3}
-  $\exp(r) = (1 + r + \frac{1}{2}r^2 + r^3. P\_r)  + \epsilon_{-78} + \epsilon_{-81}$
-  with $r \in [-2^{-9},2^{-9}]$
-\end{prop}
-
-\end{preuve}
-
-At the end of the polynomial evaluation scheme we have :
-$$
-\exp(x) = 2^{k}. (ex\_hi + ex\_lo) . ( 1 + r + \frac{1}{2}r^2 + r^3. P\_r  + \epsilon_{-78} + \epsilon_{-81}) . (1+ \epsilon_{-69}) . (1+ \epsilon_{-109})
-$$
-
-
-\subsection{Reconstruction}
-Along previous step of the algorithm we get the following results :
-
-\begin{itemize}
-\item $k$, $r\_hi$ and $r\_lo$ during the additive range reduction,
-\item $ex\_hi$, $ex\_lo$, $rp\_hi$ and $rp\_lo$ during the table range reduction,
-\item $P\_r$ with the polynomial range reduction.
-\end{itemize}
-
-
-
-
-The reconstruction step consist in merging all these results in order to get $\exp(x)$.
-This step is based on the following mathematical formulae :
-$$
-\exp(x) = 2^k . (ex\_hi+ex\_lo).
-(1 + (rp\_hi+rp\_lo) + \frac{1}{2}.(rp\_hi+rp\_lo)^2 + (rp\_hi+rp\_lo)^3.P\_r)
-$$
-
-However, some terms in this equation are too small compared to dominants terms, and should not be taken into account. Then we approximate :
-$$
-Rec = (ex\_hi + ex\_lo) . (1 + (rp\_hi +rp\_lo) + \frac{1}{2}.(rp\_hi +rp\_lo)^2 + (rp\_hi +rp\_lo)^3.P\_r)
-$$
-
- by
-
-$$
-Rec^* = ex\_hi \times (1 + rp\_hi + rp\_lo + \frac{1}{2}(rp\_hi)^2 + P\_r \times (rp\_hi)^3) + ex\_lo \times (1 + rp\_hi + \frac{1}{2}(rp\_hi)^2)
-$$
-The corresponding error is given by :
-$$
-\begin{array}{l}
-Rec - Rec^* = \\
-(ex\_hi + ex\_lo).(rp\_hi.rp\_lo + \frac{1}{2} rp\_lo^2) + \\
-ex\_hi.rp\_lo.(3.rp\_hi^2 + 3 . rp\_hi.rp\_lo + rp\_lo^2) + \\
-ex\_lo.rp\_hi.(3.rp\_lo^2 + 3 . rp\_hi.rp\_lo + rp\_hi^2) + ex\_lo.rp\_lo^3 + \\
-ex\_lo . rp\_lo  \\
-\leq 2^{-74} + 2^{-82} + 2^{-88}\\
-\end{array}
-$$
-
-That gives us the following property :
-\begin{prop}
-  \label{chap3:exp:reconstruction}
-The error done when approximating $Rec$ by $Rec^*$ is :
-$$  Rec  = Rec^* + \epsilon_{-74} + \epsilon_{-81}$$
-\end{prop}
-
-
-The order in which are executed the instructions is choosen in order to minimize the error. These terms and the intermediate computations with their magnitude order are given in Figure \ref{chap4:fig:reconstruction}, page \pageref{chap4:fig:reconstruction}.
- 
-
-\begin{lstlisting}[label={exp:lst:reconstruction1},caption={Reconstruction}]
-double R1, R2, R3_hi, R3_lo, R4, R5_hi, R5_lo, R6, R7, R8, R9, R10, R11, crp_hi;
-
-
-R1 = rp_hi * rp_hi;                        (*@ \label{exp:code:28} @*)
-
-crp_hi = R1 * rp_hi;                       (*@ \label{exp:code:29} @*)
-/* Correspond to R1 /= 2; */
-HI(R1) = HI(R1)-0x00100000;                (*@ \label{exp:code:30} @*)
-
-R2 =  P_r * crp_hi;                        (*@ \label{exp:code:31} @*)
-
-Mul12(R3_hi, R3_lo, ex_hi, rp_hi);        (*@ \label{exp:code:32} @*)
-R4 = ex_hi * rp_lo;                        (*@ \label{exp:code:33} @*)
-
-Mul12(R5_hi, R5_lo, ex_hi, R1);           (*@ \label{exp:code:34} @*)
-R6 = R4 + (ex_lo * (R1 + rp_hi));          (*@ \label{exp:code:35} @*)
-
-R7  = ex_hi * R2;                          (*@ \label{exp:code:36} @*)
-R7 += (R6 + R5_lo) + (R3_lo + ex_lo);      (*@ \label{exp:code:37} @*)
-
-Add12(R9, R8, R7, R5_hi);               (*@ \label{exp:code:38} @*)
-
-Add12(R10, tmp, R3_hi, R9);             (*@ \label{exp:code:39} @*)
-R8 += tmp;                                 (*@ \label{exp:code:40} @*)
-
-Add12(R11, tmp, ex_hi, R10);            (*@ \label{exp:code:41} @*)
-R8 += tmp;                                 (*@ \label{exp:code:42} @*)
-
-Add12(R11, R8, R11, R8);                (*@ \label{exp:code:43} @*)
-
-\end{lstlisting}
-
-
-
-\begin{preuve}
-\begin{longtable}[c]{@{line }p{0.08\textwidth}p{0.81\textwidth}}
-% en cas de cesure c'est ce que l'on place 
-% en debut de page
-\endhead
-% en fin de page
-\endfoot 
-% en fin de derniere page
-\endlastfoot 
-\ref{exp:code:28}&
-$|rp\_hi| \leq 2^{-9}$ then :
-\begin{prop}
-  \label{chap3:exp:prop28}
-  $|R1| \leq 2^{-18}$,
-
-  $R1 = (rp\_hi)^2 . (1 + \epsilon_{-54})$
-\end{prop}\\
-\ref{exp:code:29}&
-By using property \pref{chap3:exp:prop28} and $|rp\_hi| \leq 2^{-9}$ we get :
-\begin{prop}
-  \label{chap3:exp:prop29}
-  $|crp\_hi| \leq 2^{-27}$,
-
-  $crp\_hi = (rp\_hi)^3    . (1 + \epsilon_{-53})$
-\end{prop}\\
-\ref{exp:code:30}&
-This operation is a division by 2, done by subtracting $1$ to the exposant. This oepration is valid and exact if $R1$ is not a subnormal number, which is the case (property \pref{chap3:exp:prop10bis} $|x| \geq 2^{-54}$), and the table  \ref{chap3:exp:table:reduction} showing that we have at most $58$ bits of cancellation).
-
-\begin{prop}
-  \label{chap3:exp:prop30}
-  $|R1| \leq 2^{-19}$,
-
-  $R1 =  \frac{1}{2}(rp\_hi)^2 . (1 + \epsilon_{-54})$
-\end{prop}\\
-\ref{exp:code:31}&
-By using properties  \pref{chap3:exp:prop27bis} and \pref{chap3:exp:prop29}
-\begin{prop}
-  \label{chap3:exp:prop31}
-  $|R2| \leq 2^{-29}$,
-
-  $R2 = P\_r \times (crp\_hi) .(1 + \epsilon_{-54})$ ,
-
-  $R2 = P\_r \times (rp\_hi)^3 .(1 + \epsilon_{-52})$
-\end{prop}\\
-\ref{exp:code:32}&
-By using Mul12 algorithm (programme \ref{lst:Mul12}, page
-\pageref{lst:Mul12}) and properties  \pref{chap3:exp:rphi_rplo} and \pref{chap3:exp:ex_hilo} we have :
-\begin{prop}
-  \label{chap3:exp:prop32}
-  $|R3\_hi| \leq 2^{-10}$ and $|R3\_lo| \leq 2^{-64}$,
-
-  $R3\_hi + R3\_lo = ex\_hi \times rp\_hi$ exactly
-\end{prop}\\
-\ref{exp:code:33}&
-By using properties \pref{chap3:exp:rphi_rplo} and \pref{chap3:exp:ex_hilo} :
-\begin{prop}
-  \label{chap3:exp:prop33}
-  $|R4| \leq 2^{-64}$,
-
-  $R4 = ex\_hi \times rp\_lo . (1 + \epsilon_{-54})$
-\end{prop}\\
-\ref{exp:code:34}&
-By using Mul12 algorithm and properties \pref{chap3:exp:ex_hilo} and \pref{chap3:exp:prop30} we have :
-\begin{prop}
-  \label{chap3:exp:prop34}
-  $|R5\_hi| \leq 2^{-20}$ and $|R5\_lo| \leq 2^{-74} $,
-
-  $(R5\_hi + R5\_lo) = ex\_hi \times R1$ exactly, 
-
-  $(R5\_hi + R5\_lo) = (ex\_hi \times \frac{1}{2}(rp\_hi)^2).(1 + \epsilon_{-54})$
-\end{prop}\\
-\ref{exp:code:35}&
-By using properties  \pref{chap3:exp:ex_hilo} and \pref{chap3:exp:prop30} :
-
-$|R1 + rp\_hi| \leq 2^{-8}$,
-
-$R1 \oplus rp\_hi = R1 + rp\_hi + \epsilon_{-62}$,
-
-$|ex\_lo \times (R1 + rp\_hi)| \leq 2^{-63}$,
-
-$ex\_lo \otimes (R1 \oplus rp\_hi) = ex\_lo \times ( \frac{1}{2}(rp\_hi)^2 + rp\_hi) + \epsilon_{-116} $.
-
-
-which combined with property \pref{chap3:exp:prop33} gives us : 
-\begin{prop}
-  \label{chap3:exp:prop35}
-  $|R6| \leq 2^{-62}$,
-
-  $R6 = R4 + \left(ex\_lo \times \left(\frac{1}{2}(rp\_hi)^2 + rp\_hi \right) + \epsilon_{-116}\right) + \epsilon_{-116}$
-
-  $R6 = (ex\_hi \times rp\_lo) + \left(ex\_lo \times \left(\frac{1}{2}(rp\_hi)^2 + rp\_hi\right)\right) + \epsilon_{-115} +\epsilon_{-118}$
-\end{prop}\\
-
-\ref{exp:code:36}&
-By using properties \pref{chap3:exp:ex_hilo} and \pref{chap3:exp:prop31} we get : 
-\begin{prop}
-  \label{chap3:exp:prop36}
-  $|R7| \leq 2^{-30}$,
- 
-  $R7 = (ex\_hi \times R2) . (1 + \epsilon_{-54})$,
-
-  $R7 = (ex\_hi \times P\_r \times (rp\_hi)^3).(1+ \epsilon_{-52}+\epsilon_{-53})$
-\end{prop}\\
-\ref{exp:code:37}&
-By using properties \pref{chap3:exp:prop34} and \pref{chap3:exp:prop35} we get :
-\begin{prop}
-\label{chap3:exp:prop37a}
-$|R6 + R5\_lo| \leq 2^{-61}$,
-
-$R6 \oplus R5\_lo = R6 + R5\_lo + \epsilon_{-115} $ ou
-
-$R6 \oplus R5\_lo = (ex\_hi \times rp\_lo) + (ex\_lo \times (\frac{1}{2}(rp\_hi)^2 + rp\_hi)) + R5\_lo + \epsilon_{-113}$
-\end{prop}
-
-By using properties \pref{chap3:exp:ex_hilo} and \pref{chap3:exp:prop32} we get :
-\begin{prop}
-\label{chap3:exp:prop37b}
-$|R3\_lo + ex\_lo| \leq 2^{-54}$,
-
-$R3\_lo \oplus ex\_lo = R3\_lo + ex\_lo + \epsilon_{-108} $
-\end{prop}
-
-By using properties \pref{chap3:exp:prop37a} and \pref{chap3:exp:prop37b} we get :
-
-$|R6 + R5\_lo + R3\_lo + ex\_lo| \leq 2^{-53}$ et
-
-$(R6 \oplus R5\_lo) \oplus (R3\_lo \oplus ex\_lo) = (R6 \oplus R5\_lo) + (R3\_lo \oplus ex\_lo) + \epsilon_{-107}$.
-
-
-which combine with property \pref{chap3:exp:prop36} gives us :
-\begin{prop}
-  \label{chap3:exp:prop37}
-  $|R7| \leq 2^{-29}$,
-
-$
-\begin{array}{rcl}
-R7 &=& 
-(ex\_hi \times  P\_r \times (rp\_hi)^3).(1+\epsilon_{-52}+\epsilon_{-53}) + \\ &&
-((ex\_hi \times rp\_lo) + (ex\_lo \times (\frac{1}{2}(rp\_hi)^2 + rp\_hi)) + R5\_lo + \epsilon_{-113}) + \\&&
-(R3\_lo + ex\_lo + \epsilon_{-108}) \\
-
-&=& ex\_hi \times (rp\_lo + P\_r \times (rp\_hi)^3) + \\
-& & ex\_lo \times (1 + rp\_hi + \frac{1}{2}(rp\_hi)^2) +  \\
-& & R5\_lo + R3\_lo + \epsilon_{-80} \\
-\end{array}
-$
-\end{prop}
-\\ 
-
-\ref{exp:code:38}&
-Add12 algorithm guarantee :
-\begin{prop}
-  \label{chap3:exp:prop38}
-  $|R9| \leq 2^{-19}$ and $|R8| \leq 2^{-73}$,
-
-  $R7 + R5\_hi = R9 + R8$ exactly
-\end{prop}\\
-\ref{exp:code:39}&
-Add12 algorithm guarantee :
-\begin{prop}
-  \label{chap3:exp:prop39}
-  $|R10| \leq 2^{-9}$ and $|tmp| \leq 2^{-63}$,
-
-  $R3\_hi + R9 = R10 + tmp$ exactly
-\end{prop}\\
-
-\ref{exp:code:40}&
-By using properties \pref{chap3:exp:prop38} and \pref{chap3:exp:prop39} :
-\begin{prop}
-  \label{chap3:exp:prop40}
-  $|R8 + tmp| \leq 2^{-62}$,
-
-  $R8 = R8 + tmp + \epsilon_{-116}$
-\end{prop}\\
-\ref{exp:code:41}&
-Add12 algorithm guarantee :
-\begin{prop}
-  \label{chap3:exp:prop41}
-  $|R11| \leq 2^{0}$ and $|tmp| \leq 2^{-54}$,
-
-  $R11 + tmp = ex\_hi + R10$ exactly
-\end{prop}\\
-\ref{exp:code:42}&
-By using properties \pref{chap3:exp:prop40} and \pref{chap3:exp:prop41} :
-\begin{prop}
-  \label{chap3:exp:prop42}
-  $|R8 + tmp| \leq 2^{-53}$,
-
-  $R8 = R8 + tmp + \epsilon_{-107}$
-\end{prop}\\
-\ref{exp:code:43}&
-Add12 algorithm guarantee :
-\begin{prop}
-  \label{chap3:exp:prop43}
-  $|R11| \leq 2^{1}$ and $|R8| \leq 2^{-53}$,
-
-  $R11 + R8 = R11 + R8$ exactly
-\end{prop}\\
-
-\end{longtable}
-\end{preuve}
-
-
-Therefore we have :
-$$
-\begin{array}{rcll}
-R11 + R8  
-&=& R11 + tmp + R8 + \epsilon_{-107} 
-& \mbox{\pref{chap3:exp:prop42}} \\
-
-&=& ex\_hi + R10 + R8 + \epsilon_{-107} 
-& \mbox{\pref{chap3:exp:prop41}} \\
-
-&=& ex\_hi + R10 + tmp + R8 + \epsilon_{-107} + \epsilon_{-116} 
-& \mbox{\pref{chap3:exp:prop40}} \\
-
-&=& ex\_hi + R3\_hi + R9 + R8 + \epsilon_{-106}
-& \mbox{\pref{chap3:exp:prop39}} \\
-
-&=& ex\_hi + R3\_hi + R7 + R5\_hi + \epsilon_{-106}
-& \mbox{\pref{chap3:exp:prop38}} \\
-
-&=&  ex\_hi + R3\_hi + R5\_hi + &\\
-& & ex\_hi \times (rp\_lo + P\_r \times (rp\_hi)^3) + &\\
-& & ex\_lo \times (1 + rp\_hi + \frac{1}{2}(rp\_hi)^2) +  &\\
-& & R5\_lo + R3\_lo + \epsilon_{-80} + \epsilon_{-106} 
-&  \mbox{\pref{chap3:exp:prop37}} \\
-
-&=& (R3\_hi + R3\_lo) + (R5\_hi + R5\_lo) + &\\
-& & ex\_hi \times (1 + rp\_lo + P\_r \times (rp\_hi)^3) + &\\
-& & ex\_lo \times (1 + rp\_hi + \frac{1}{2}(rp\_hi)^2) 
-+ \epsilon_{-80} + \epsilon_{-106} &\\
-
-&=& (R3\_hi + R3\_lo) + &\\
-& & ex\_hi \times (1 + rp\_lo + \frac{1}{2}(rp\_hi)^2 + P\_r \times (rp\_hi)^3) + &\\
-& & ex\_lo \times (1 + rp\_hi + \frac{1}{2}(rp\_hi)^2) 
-+ \epsilon_{-74} + \epsilon_{-79} 
-&  \mbox{\pref{chap3:exp:prop34}} \\
-
-&=& ex\_hi \times (1 + rp\_hi + rp\_lo + \frac{1}{2}(rp\_hi)^2 + P\_r \times (rp\_hi)^3) + &\\
-& & ex\_lo \times (1 + rp\_hi +          \frac{1}{2}(rp\_hi)^2) + &\\
-& & \epsilon_{-74} + \epsilon_{-79} 
-&  \mbox{\pref{chap3:exp:prop32}} \\
-\end{array}
-$$
-
-Which combine with property \pref{chap3:exp:reconstruction} gives us :
-
-$$
-\begin{array}{rcl}
-R11 + R8  
-&=& (ex\_hi + ex\_lo) . (1 +r + \frac{1}{2}.r^2 + r^3.P\_r)\\
-& & +\epsilon_{-73} + \epsilon_{-78} \\
-\end{array}
-$$
-By construction of values $(ex\_hi + ex\_lo)$, we have $(ex\_hi + ex\_lo) > \exp(-1) > 2^{-2}$
-then,
-
-\begin{prop}
- \label{chap3:exp:evalr11r8}
-$|R11 + R8| > 2^{-2}$
-
-and
-
-$
-\exp(x) = 2^k . (R11 + R8 + \epsilon_{-73} + \epsilon_{-78}).(1 + \epsilon_{-69}).(1 + \epsilon_{-109})
-$
-\end{prop}
-
- 
-\begin{landscape}
-
-\begin{figure}[ht] \begin{center}
-% 
-% Dessin xfig : magnification : 0.24 %
-% 
-    \input{fig_exp/reconstruction.pstex_t}
-    \caption{\'Etape de reconstruction}
-    \label{chap4:fig:reconstruction}
-\end{center}\end{figure}
-
-\end{landscape}
-
-
-
-
-\subsection{Test if correct rounding is possible}
-
-We now have to round correctly the result and multiply it by $2^{k}$,
-with $k$ an integer. This multiplication is exact, therefore we have :
-
-$$
-\begin{array}{rcl}
-\exp(x) &=& \circ \left( 2^k . (R11 + R8 + \epsilon_{-73} + \epsilon_{-78}).(1 + \epsilon_{-69}).(1 + \epsilon_{-109}) \right) \\
-        &=&  2^k . \circ \left((R11 + R8 + \epsilon_{-73} + \epsilon_{-78}).(1 + \epsilon_{-69}).(1 + \epsilon_{-109}) \right) \\
-\end{array}
-$$
-
-if the result do not represent a subnormalised number. Indeed, if the
-final result belongs to subnormalised numbers, then the precision of
-the results is less than the $53$ bits of a normalized number. Let's
-take an exemple. Let $a=1.75$ be a floating-point number exactly
-representable in double precision format (we have $\circ(a) = a$). Let
-multiply this number by $2^{-1074}$, the exact result is $1.75 \times
-2^{-1074}$ which is different of the result rounded to nearest in
-double precision $\circ(1.75 \times 2^{-1074})=2^{-1073}$.
-
-Then in the case the result represent a subnormal number, we have to use a special procedure.
-
-\subsection{Rounding to nearest}
-\begin{lstlisting}[caption={Test if rounding to nearest is possible}]
-static const union{int i[2]; double d;}
-#ifdef BIG_ENDIAN
- _two1000    = {0x7E700000, 0x00000000}, /*  1.07150860718626732095e301  */
- _twom1000   = {0x01700000, 0x00000000}, /*  9.33263618503218878990e-302 */
- _errn       = {0x3FF00080, 0x00000000}, /*  1.00012207031250000000e0    */
- _twom75     = {0x3B400000, 0x00000000}; /*  2.64697796016968855958e-23  */
-#else
- ...
-#endif
-#define two1000    _two1000.d
-#define twom1000   _twom1000.d
-#define errn       _errn.d
-#define twom75     _twom75.d
-
-int errd        = 71303168;                    /* 68 * 2^20 */  
-
-double R11_new, R11_err, R13, st2mem;
-int    exp_R11;
-
-union {int i[2]; long long int l; double d;} R12;
-
-
-/* Résult = (R11 + R8) */
-if (R11 == (R11 + R8 * errn)){             (*@ \label{exp:code:44} @*)
-  if (k > -1020){                          (*@ \label{exp:code:45} @*)
-    if (k < 1020){                        
-      HI(R11) += (k<<20);                 
-      return R11;
-    }else {
-      /* we are close to  + Inf */
-      HI(R11) += ((k-1000)<<20);           
-      return R11*two1000;                
-    }                                      (*@ \label{exp:code:46} @*)
-  }else {
-    /* We consider subnormal number */
-    HI(R11_new) = HI(R11)+((k+1000)<<20);  (*@ \label{exp:code:47} @*)
-    LO(R11_new) = LO(R11);
-    R12.d       = R11_new * twom1000;      (*@ \label{exp:code:48} @*)
-
-    HI(st2mem) = R12.i[HI];         (*@ \label{exp:code:49} @*)
-    LO(st2mem) = R12.i[LO];         (*@ \label{exp:code:50} @*)
-
-    R11_err -= st2mem * two1000;           (*@ \label{exp:code:51} @*)
-    HI(R13) = HI(R11_err) & 0x7fffffff;    (*@ \label{exp:code:52} @*)
-    LO(R13) = LO(R11_err);                 (*@ \label{exp:code:53} @*)
-
-    if (R13 == two_m75){                   (*@ \label{exp:code:54} @*)
-      exp_R11 = (HI(R11) & 0x7ff00000) - errd;
-      if ((HI(R8) & 0x7ff00000) < exp_R11){(*@ \label{exp:code:55} @*)
-        /* Difficult rounding ! */
-        sn_exp(x);
-      }
-      /* The error term is exactly 1/2 ulp */
-      if ((HI(R11_err) > 0) && (HI(R8) > 0)) R12.l +=1;   (*@ \label{exp:code:56} @*)
-      else
-      if ((HI(R11_err) < 0) && (HI(R8) < 0)) R12.l -=1;   (*@ \label{exp:code:57} @*)
-    }    
-    return R12.d;
-  }
-}else {
-  /* Challenging case */
-  sn_exp(x);
-}
-
-\end{lstlisting}
-
-
-\begin{preuve}
-\begin{longtable}[c]{@{line }p{0.08\textwidth}p{0.81\textwidth}}
-% en cas de cesure c'est ce que l'on place 
-% en debut de page
-\endhead
-% en fin de page
-\endfoot 
-% en fin de derniere page
-\endlastfoot 
-\ref{exp:code:44} &
-This test is used to know whether we can round the result or not, as shown in~ref{section:testrounding}.
-
-By using property \pref{chap3:exp:evalr11r8} we have :
-$$
-|(R11 + R8) \times 2^k - \exp(x)| \leq 2^{-68}
-$$
-where $x\in[A, B]$, that leads to $errn = 1+ 2^{-68} \times 2^{55} = 1 + 2^{-13}$.
-This test is true if we are able round correctly the result, else we need to call multiprecision procedure.
-\\
-\ref{exp:code:45}-\ref{exp:code:46}&
-We are able to round, now we need to perform the multiplication $R11 \times 2^k$ exactly.
-To keep good performance we do this multiplication by using integer addition on the exponent of $R11$. 
-However this operation is valide and exact, only if we do not create a subnormal or infinity number. This is the reason why we perform a test on the value of $k$.
-
-$(R11 + R8) > 2^{-2}$ then $2^{k}.(R11 + R8)$ will not lead to a subnormal number if  $k> -1020$.
-
-$(R11 + R8) < 2^{3}$ then $2^{k}.(R11 + R8)$ will not lead to an overflow if $k< 1020$.
-The we have $R11 = R11 \oplus R8$
-
-In the case, we may give an overflow as result, we make the value of $k$ smaller, by subtracting $1000$ to it that will prevent the apparition of exception cases during the multiplication by $k$. This result is exactly multiplies (powerof 2) by the floating-point number $twom1000=2^{-1000}$, and leave to the group composed of the system, compiler and processor overflows handling.
-\\
-\ref{exp:code:47}&
-The result mcan be a subnormal number. We need to use a specific test to check whether if we are able to round properly the result.
-$$
-R11 = R11 \times 2^{k+1000}
-$$
-\\
-\ref{exp:code:48}&
-In rounding to nearest we get :
-$$
-R12 = R11 \otimes 2^{-1000} = R11 \times 2^{-1000} + \epsilon_{-1075}
-$$
-The error terms $\epsilon_{-1075}$ come from the possible truncationwhen the result belong to subnormal number.
-\\
-\ref{exp:code:49},\ref{exp:code:50}&
-These lines prevent the compiler to perform ``dangerous'' optimizations, meanwhile prevent to have extra precision by forcing $R12$ to transit through memory. These lines could be removed for exemple by using gcc and the flag  {\tt -ffloat-store} that will have the same effect. However this flag force each floating-point instruction to transit through memory, and have as consequences to severely degrade performance of the resulting program. The solution to keep good performance is to manually force a data to transit through memory, in order to have an IEEE compliant behavior for subnormal number.
-\\
-\ref{exp:code:51}&
-Let
-$$
-R11\_err = R11 \ominus R12 \otimes 2^{1000}
-$$
-By the Sterbenz lemma, and by the fact that a multiplication by a power of 2 is exact we have :
-$$
-R11\_err = R11 - R12 \times 2^{1000}
-$$
-This operation will put within  $R11\_err$ the error done during the multiplication of $R11$ by $2^{-1000}$ (line \ref{exp:code:48}).
-\\
-\ref{exp:code:52},\ref{exp:code:53}&
-Remove the sign information of  $R11\_err$
-$$
-R13 = |R11\_err|
-$$
-\\
-\ref{exp:code:54}&
-Test if $R13$ is exactly equal to the absolute error (which is also the relative error) done during the rounding process, in rounding to nearest, whitin subnormal number, times $2^{1000}$ :
-  $$2^{-1075} \times 2^{1000} = 2^{-75}$$
-
-Now we want to prove that if error term is strictly less than $1/2 ulp (R12)$ then $R12$ correspond to the correct rounding of $R11 + R8$.
- 
-If $|R11\_err| < \frac{1}{2} ulp (R12)$ then
-
-$|R11\_err| \leq \frac{1}{2} ulp (R12) - ulp(R11)$ and $|R8| \leq \frac{1}{2} ulp (R11)$ therefore :
-
-$$
-|R11\_err + R8| \leq \frac{1}{2} ulp (R12) - ulp(R11) + \frac{1}{2} ulp(R11)
-$$
-then :
-$$
-|R11\_err + R8| < \frac{1}{2} ulp (R12) 
-$$
-
-In that case $R12$ represent the correct rounding of $R11 + R8$ if $|R11\_err| < \frac{1}{2} ulp (R12)$.
-
-
-
-However, if $|R11\_err| = \frac{1}{2} ulp (R12) = 2^{-75}$, during the multiplication $R11 \times 2^{-1000}$,  the result is rounded to odd/even due to the presence of an ambiguous value. It mean that $R12$ may not represent the rounding to nearest result of $R11+R8$, we need to perform a correction :
-
-
-\begin{itemize}
-\item 
-If $R8 > 0$, and $R11\_err = - \frac{1}{2} ulp (R12)$, then the round to odd/even was done on the correct side.
-\item 
-If $R8 > 0$, and $R11\_err = \frac{1}{2} ulp (R12)$, then the round to odd/even wasn't done on the correct side. We need to perform a correction by adding $1 ulp$ to $R12$ 
-(figure \ref{chap4:fig:rnd_to_nearest}, case a)
-\item 
-If $R8 < 0$, and $R11\_err = - \frac{1}{2} ulp (R12)$, then the round to odd/even wasn't done on the correct side. We need to perform a correction by subtracting $1 ulp$ to $R12$  
-(figure \ref{chap4:fig:rnd_to_nearest}, case b).
-
-
-\item 
-If $R8 < 0$, and $R11\_err = \frac{1}{2} ulp (R12)$, then the round to odd/even was done on the correct side.
-\end{itemize}
-
-\\
-\ref{exp:code:55}&
-When we are in presence of a consecutive sequence of  $0$ or $1$ straddling $R11$ and  $R8$, then the test done at line \ref{exp:code:44} will not detect a possible problem. This problem will arise only will subnormal number, when $R11\_err$ is close to $\frac{1}{2} ulp (R12)$. 
-
-Then we have to detect if in that case (subnormal, $|R11\_err| = \frac{1}{2} ulp(R12)$) we have enought precision to correctly round the result. We use a test similar to the one used to test wheteher we can round with rounding toward $\pm \infty$. Indeed, problematic cases arise when  $ \frac{1}{2} ulp(R12) - 2^{-68}.R11 \leq |R11\_err + R8| \leq \frac{1}{2} ulp(R12) + 2^{-68}.R11 ) $.
-\\
-\ref{exp:code:56},\ref{exp:code:57}&
-Test is we are in presence of one of the previous cases describe previously, and correct the result by adding or subtracting $1 ulp$ by using the ``continuity'' of the representation of floating-point number.
-\end{longtable}
-\end{preuve}
-
-%\begin{figure}[!htb]  
-%  \begin{center}
-%    \includegraphics[width=0.5\textwidth]{rnd_to_nearest_pp.eps}
-%   \end{center} 
-%\end{figure}
-
-%\begin{figure}[!htb]  
-%  \begin{center}
-%    \includegraphics[width=0.5\textwidth]{rnd_to_nearest_mm.eps}
-%  \end{center} 
-%\end{figure}
-
-\begin{figure}[ht] \begin{center}
-\input{fig_exp/rnd_to_nearest.pstex_t}
-\caption{Description of problem with rounding to nearest of a subnormal number.
-  \label{chap4:fig:rnd_to_nearest}}
-\end{center}\end{figure}
-
-
- 
-\subsection{Rounding toward $+ \infty$}
-\begin{lstlisting}[caption={Test if rounding toward $+ \infty$ is possible}]
-static const union{int i[2]; double d;}
-#ifdef BIG_ENDIAN
- _two1000    = {0x7E700000, 0x00000000}, /*  1.07150860718626732095e301  */
- _twom1000   = {0x01700000, 0x00000000}, /*  9.33263618503218878990e-302 */
-#else
- ...
-#endif
-#define two1000    _two1000.d
-#define twom1000   _twom1000.d
-
-
-int errd        = 71303168;                    /* 68 * 2^20 */  
-
-int    exp_R11;
-union {int i[2]; long long int l; double d;} R12;
-
-/* Result = (R11 + R8) */
-
-exp_R11 = (HI(R11) & 0x7ff00000) - errd;
-
-if ((HI(R8) & 0x7ff00000) > exp_R11){      (*@ \label{exp:code:pinf:0} @*)
-  /* We are able to round the result */
-  if (k > -1020){                          
-    if (k < 1020){                         
-      HI(R11) += (k<<20);                  
-    }else {
-      /* We are close to + Inf */
-      HI(R11) += ((k-1000)<<20);           
-      R11 *= two1000;
-    }
-    if (HI(R8) > 0){                       (*@ \label{exp:code:pinf:1} @*)
-      R12.d  = R11;
-      R12.l += 1;
-      R11    = R12.d;
-    }
-    return R11;
-  }else {
-    /* We are with subnormal number */
-    HI(R11) += ((k+1000)<<20);          
-    R12.d    = R11 * twom1000;              (*@ \label{exp:code:pinf:2} @*)
-
-    HI(st2mem) = R12.i[HI] ;     
-    LO(st2mem) = R12.i[LO]       
-
-    R11 -= st2mem * two1000;                (*@ \label{exp:code:pinf:3} @*)
-    if ((HI(R11) > 0)||((HI(R11) == 0)&&(HI(R8) > 0))) R12.l += 1;(*@ \label{exp:code:pinf:5} @*)
-
-    return R12.d;
-  }
-}else {
-  /* Difficult case */
-  su_exp(x);
-}
-\end{lstlisting}
-
-
-\begin{preuve}
-
-The program used to check whether correct rounding toward $+ \infty$ is possible is similar to the one used with rounding to nearest.
-
-\begin{longtable}[c]{@{line }p{0.08\textwidth}p{0.81\textwidth}}
-% en cas de cesure c'est ce que l'on place 
-% en debut de page
-\endhead
-% en fin de page
-\endfoot 
-% en fin de derniere page
-\endlastfoot 
-\ref{exp:code:pinf:0} & 
-This test is valid even if the final result is a subnormal number.
-\\
-
-\ref{exp:code:pinf:1} &
-We add $1 ulp$ to the result if $R8$ is positive. 
-\\
-
-\ref{exp:code:pinf:3} &
-Like for rounding to nearest, the quantity $R11$ represent the rounding error that come from the operation $R11* twom1000$ in line \ref{exp:code:pinf:2}.
-\\
-
-\ref{exp:code:pinf:5} &
-This test check whether the error from line \ref{exp:code:pinf:2} is strictly positive or if it is equal to zero and if $R8$ is strictly positive. If we are in one of these two cases, by definition of rounding toward $+ \infty$, we need to add $1 ulp$ to the result.
-\end{longtable}
-\end{preuve}
-
-
- 
-\subsection{Rounding toward $- \infty$}
-
-\begin{lstlisting}[caption={Test if rounding toward $- \infty$ is possible},firstnumber = 144]
-static const union{int i[2]; double d;}
-#ifdef BIG_ENDIAN
- _two1000    = {0x7E700000, 0x00000000}, /*  1.07150860718626732095e301  */
- _twom1000   = {0x01700000, 0x00000000}, /*  9.33263618503218878990e-302 */
-#else
- ...
-#endif
-#define two1000    _two1000.d
-#define twom1000   _twom1000.d
-
-int errd        = 71303168;                    /* 68 * 2^20 */  
-
-int    exp_R11;
-union {int i[2]; long long int l; double d} R12;
- 
-/* Résult = (R11 + R8) */
-
-exp_R11 = (HI(R11) & 0x7ff00000) - errd;
-
-if ((HI(R8) & 0x7ff00000) > exp_R11){
-  /* We are able to round the result */
-  if (k > -1020){                          
-    if (k < 1020){                         
-      HI(R11) += (k<<20);                  
-    }else {
-      /* We are close to + Inf */
-      HI(R11) += ((k-1000)<<20);           
-      R11 *= two1000;
-    }
-    if (HI(R8) > 0){
-      R12.d  = R11;
-      R12.l += 1;
-      R11    = R12.d;
-    }
-    return R11;
-  }else {
-    /* We are with subnormal number */
-    HI(R11) += ((k+1000)<<20);             
-    R12.d    = R11 * twom1000;             
-
-    HI(st2mem) = R12.i[HI];                  
-    LO(st2mem) = R12.i[LO];                  
-
-    R11 -= st2mem * two1000;               
-    if ((HI(R11) < 0)||((HI(R11) == 0)&&(HI(R8) < 0))) R12.l -= 1;
-
-    return R12.d;
-  }
-}else {
-  /* Difficult case */
-  su_exp(x);
-}
-\end{lstlisting}
-
-
-
-\begin{preuve}
-
-The program used to check whether correct rounding toward $- \infty$ is possible is similar to the previous one and it work for similar reasons.
-\end{preuve}
-
-
- 
-\subsection{Rounding toward $0$} 
-The program used to check whether correct rounding toward $0$ is possible is identical to the one used for rounding to $- \infty$ because $\exp(x)$ is a positive function.
-
-%%
-%% 
-%%
-\section{Accurate phase}
-\label{section:accurate_phase}
-When the previous computation failed, it mean that the rounding of the result is difficult to get. We need to use more accurate methods :
-\begin{itemize}
-\item
- $sn\_exp$ with rounding to nearest,
-\item
- $su\_exp$ with rounding toward $+\infty$,
-\item
- $sd\_exp$ with rounding toward $-\infty$,
-\end{itemize}
-
-These methods are based on SCS library \cite{SCSweb}, with $30$ bits of precision per digits and $8$ digits per vector. The guarantee precision with this format is $211$ bits at least. Even if there is no proof for these operators yet, the proof for correct rounding of the exponential only request the following property  that are easy to check and/or satisfy :
-
-\begin{propriete}(Addition)
-Let $a \boxplus b$ represent the multiprecision operation performing an addition between $a$ and $b$ with at least $210$ bits of precision for the result. Like for double precision floating point number, the scs addition may leads to a cancellation. We have :
-$$
-a+ b = (a \boxplus b).(1+\epsilon_{-211})
-$$
-\end{propriete}
-
-\begin{propriete}(Multiplication)
-Let $a \boxtimes b$ represent the multiprecision operation performing a multiplication between $a$ and $b$ with at least $210$ bits of precision for the result. This operation do not produce a cancellation.
-$$
-a\times b = (a \boxtimes b).(1+\epsilon_{-211})
-$$
-\end{propriete}
-
-
-
-\subsection{Overview of the algorithm}
-Here is the algorithm used for the second part of the evaluation :
+The following steps must still add the linear term $r_\hi$ of the
+polynomial ($p\left( r_\hi \right) = r_\hi + highPolyWithSquare$) and
+reconstruct the exponential as
+$$e^{x} = 2^M \cdot \left( tbl_{1\hi} + tbl_{1\mi} \right) \cdot
+\left( tbl_{2\hi} + tbl_{2\mi} \right) \cdot \left( 1 + r_\hi +
+highPolyWithSquare \right) \cdot \left( 1 + r_\mi \right) + \delta$$
+In order to allow for increasing speed by approximating different
+terms, they are implemented as this:
 \begin{enumerate}
-\item
-{\bf No special case handeling} \\
-For this part, we assume that test for special case handeling have been done.
-\item
-{\bf Range reduction} \\
-We compute the reduced argument $r$ and the integer $k$ such that :
-$$
-r = \frac{x - k . \ln(2)}{512}
-$$
-
-with
-$\frac{-\ln(2)}{1024} \leq r \leq \frac{-\ln(2)}{1024}$
-
-such that
-$$
-\exp(x) = \exp(r)^{512} \times 2^{k}
-$$
-
-
-\item
-{\bf Polynomial evaluation} \\
-We compute the polynom $P(r)$ of degree 10 :
-$$
-\exp(r) = (1 + r + P(r)).(1+ \epsilon_{-164})
-$$
-
-\item
-{\bf Powering the result} \\
-$\exp(r)^{512} = \left(\left(\left(\left(\left(\left(\left(\left(\exp(r)^2\right)^2\right)^2\right)^2\right)^2\right)^2\right)^2\right)^2\right)^2$
-
-
-
-\item
-{\bf Reconstruction} \\
-$$
-\exp(x) = \exp(r)^{512}. 2^{k} . (1+\epsilon)
-$$
-avec $|\epsilon| \leq 2^{-163} $
+\item The two table values $tbl_{1\hi} + tbl_{1\mi}$ and $tbl_{2\hi} +
+tbl_{2\mi}$ are multiplied using a double-double multiplication
+operator yielding to $tables_\hi + tables_\lo = \left( tbl_{1\hi} +
+tbl_{1\mi} \right) \cdot \left( tbl_{2\hi} + tbl_{2\mi} \right) \cdot
+\left( 1 + \epsilon \right)$.
+\item The term \\
+$\left( 1 + r_\hi + highPolyWithSquare \right) \cdot
+\left( 1 + r_\mi \right) =$ \\ $1 + r_\hi + highPolyWithSquare + r_\mi +
+r_\hi \cdot r_\mi + highPolyWithSquare \cdot r_\mi$ \\ is approximated
+by neglecting the quadratic terms. First $r_\hi$ and
+$highPolyWithSquare$ are added together in double precision. Their sum
+is then added to $r_\hi$ in double precision, too.  This yields to the
+intermediate value $t_9$. The addition with $1$ is not explicited.
+\item The multiplication $\left( tables_\hi + tables_\lo \right) \cdot
+\left( 1 + t_9 \right)$ is approximated by $tables_\hi + tables_\lo +
+tables_\hi \cdot t_9$. The multiplication $tables_\hi \cdot t_9$ is
+performed in double precision. It produces $t_{10}$.
+\item The addition $tables_\hi + tables_\lo + t_{10}$ is carried out
+in double-double precision. Its result $polyTbl_\hi + polyTbl_\mi$
+approximates finally
+$$polyTbl_\hi + polyTbl_\mi = \left( tbl_{1\hi} + tbl_{1\mi} \right)
+\cdot \left( tbl_{2\hi} + tbl_{2\mi} \right) \cdot \left( 1 + p\left(
+r_\hi \right) \right) \cdot \left( 1 + r_\mi \right) \cdot \left( 1 +
+\epsilon \right)$$
+for some relative error $\epsilon$.
 \end{enumerate}
+The steps explained above are implemented in the code as follows:
+\begin{lstlisting}[caption={Quick phase reconstruction},firstnumber=1]
+Mul22(&tablesh,&tablesl,tbl1h,tbl1m,tbl2h,tbl2m);
 
-We have choosen this evaluation scheme, because the reconstruction step use the squaring multiprecision operator. This operator facilitate the error computation and is very economic : its cost is $0.7$ times the one of a true multiprecision multiplication.
+t8 = rm + highPolyWithSquare;
+t9 = rh + t8;
 
-We will notice that there exist an alternative to the squaring solution. We can tabulate values $2^{\frac{N}{512}}$ for $N=1,2,\ldots,511$ and use the formulae $\exp(x) = \exp(r) \times 2^{N} \times 2^{\frac{M}{512}}$ with $k=M+N/512$. However we prefer the squaring method that do not request the storage of SCS number and the associated quantity of memory.
+t10 = tablesh * t9;
 
-
-
-\subsection{Function's call}
-With Lef\`evre worst cases on table makers dilemma we get the following theorem :
-
-\begin{theorem}(Correct rounding for the exponential)
-Let $y$ be the exact value of the exponential of a floating-point number in double precision $x$. Let $y^*$ be an approximation of $y$ such that the distance between $y$ and $y^*$ be bounded by $\epsilon$. Then if $\epsilon \leq 2^{-157}$, for each of the four rounding mode, rounding $y^*$ is equivalent to rounding $y$;
-\end{theorem}
-
-To round the multiprecision result in SCS format depending on the rounding mode, we use the following procedure (\texttt{scs\_get\_d}, \texttt{scs\_get\_d\_pinf}, \texttt{scs\_get\_d\_minf}). 
-
-\subsubsection{Rounding to nearest}
-
-\begin{lstlisting}[caption={Compute the rounding to nearest of the exponential in multiprecision},firstnumber=1]
-double sn_exp(double x){ 
-  scs_t res_scs;
-  scs_db_number res;
-
-  exp_SC(res_scs, x);
-  scs_get_d(&res.d, res_scs);  res.d = x;
-
-  return res.d;
-}
+Add12(t11,t12,tablesh,t10);
+t13 = t12 + tablesl;
+Add12(polyTblh,polyTblm,t11,t13);
 \end{lstlisting}
 
+The final result for the exponential is $e^x \approx 2^M \cdot \left(
+polyTbl_\hi + polyTbl_\mi \right)$.  On this value, a rounding test
+would have to be performed. Since gradual underflow is excluded by
+special case handling, the multiplication by $2^M$ is exact. In
+consequence, it is possible to do the rounding test on $polyTbl_\hi +
+polyTbl_\mi$ and to multiply then by $2^M$. This is the way chosen in
+the given implementation. See section \ref{sec:expfinalround}, page
+\pageref{sec:expfinalround}, for further details.
 
+\subsection{Accurate phase polynomial approximation and reconstruction}
+In accurate phase, $e^{r_\hi} - 1$ is approximated by a polynomial
+$p\left( r_\hi \right)$ of degree $7$. It has the following form:
+$$p\left( r_\hi \right) = r_\hi + \frac{1}{2} \cdot r_\hi^2 + r_\hi^3
+\cdot \left( \left( c_{3\hi} + c_{3\lo} \right) + r_\hi \cdot \left(
+\left( c_{4\hi} + c_{4\lo} \right) + r_\hi \cdot \left( c_5 + r_\hi
+\cdot \left( c_6 + r_\hi \cdot c_7 \right) \right) \right) \right)$$
+Coefficients $c_{3\hi} + c_{3\lo}$ and $c_{4\hi} + c_{4\lo}$ are
+stored as double-double numbers, coefficients $c_5$ through $c_7$ are
+stored in double precision.
 
-\subsubsection{Rounding toward $+ \infty$}
+For $r_\hi$ bounded by $\left \vert r_\hi \right \vert \leq 2^{-13}$,
+the relative approximation error $\epsilon_{\mbox{\tiny
+approxarghighaccu}} = \frac{p\left( r_\hi \right) - e^{r_\hi} +
+1}{e^{r_\hi} - 1}$ is bounded by $\left \vert \epsilon_{\mbox{\tiny
+approxarghighaccu}} \right \vert \leq 2^{-113}$.  For $r_\hi$ such
+that $\left \vert r_\hi \right \vert \leq 2^{-30}$,
+$\epsilon_{\mbox{\tiny approxarghighaccu}}$ is bounded by $\left \vert
+\epsilon_{\mbox{\tiny approxarghighaccu}} \right \vert \leq 2^{-160}$.
 
-\begin{lstlisting}[caption={Compute the rounding toward $+ \infty$ of the exponential in multiprecision},firstnumber=1]
-double su_exp(double x){ 
-  scs_t res_scs;
-  scs_db_number res;
-  
-  exp_SC(res_scs, x);
-  scs_get_d_pinf(&res.d, res_scs);
-  return res.d;
-}
+The polynomial $p\left( r_\hi \right)$ is evaluated as follows:
+\begin{enumerate}
+\item The high order terms of $p\left( r_\hi \right)$, $c_5 + r_\hi
+\cdot \left( c_6 + r_\hi \cdot c_7 \right)$ are evaluated in double
+precision using Horner's scheme.  The result of this evaluation is
+stored in $highPoly \approx c_5 + r_\hi \cdot \left( c_6 + r_\hi \cdot
+c_7 \right)$.
+\item The multiplication $r_\hi \cdot highPoly$ is implemented using
+an exact operator and yields to a double-double $t_{1\hi} +
+t_{1\lo}$. The following steps leading to $t_{4\hi} + t_{4\lo} \approx
+\left( c_{3\hi} + c_{3\lo} \right) + r_\hi \cdot \left( \left(
+c_{4\hi} + c_{4\lo} \right) + \left( t_{1\hi} + t_{1\lo} \right)
+\right)$ are implemented using double-double computations and Horner's
+scheme.
+\item The sum of the low order terms $r_\hi + \frac{1}{2} \cdot
+r_\hi^2$, stored in a non-overlapped triple-double $lowPoly_\hi +
+lowPoly_\mi + lowPoly_\lo$, is computed exactly as follows: first
+$r_\hi$ is squared exactly using an exact multiplication operator
+producing $rhSquare_\hi + rhSquare_\lo = r_\hi \cdot r_\hi$. Since for
+arguments $x$ to the exponential function such that $\left \vert x
+\right \vert \leq 2^{-55}$ rounding is trivial in all rounding modes,
+we can suppose that $\left \vert x \right > 2^{-55}$. In consequence,
+since $x$ is a double precision number, the reduced argument $r_\hi$
+is either equal to $0$ or greater in magnitude than $2^{-58}$. So both
+$rhSquare_\hi$ and $rhSquare_\lo$ are either exactly $0$ or greater in
+magnitude than $\left( 2^{-58} \right)^2 \cdot 2^{-53} =
+2^{-169}$. They are thus never subnormal.  Therefore the pairwise
+multiplication of $rhSquare_\hi + rhSquare_\lo$ by $\frac{1}{2}$
+yielding to $rhSquareHalf_\hi + rhSquareHalf_\lo = \frac{1}{2} \cdot
+r_\hi^2$ is exact. Since $r_\hi$ is such that $\left \vert r_\hi
+\right \vert \leq 2^{-13}$, $r_\hi + rhSquareHalf_\hi +
+rhSquareHalf_\lo$ can be considered as a partially overlapped
+triple-double number. The overlap bound is such that $\left \vert
+rhSquareHalf_\hi \right \vert \leq 2^{-12} \cdot \left \vert r_\hi
+\right \vert$ and $\left \vert rhSquareHalf_\lo \right \vert \leq
+2^{-53} \cdot \left \vert rhSquareHalf_\hi \right \vert$.  Thus it is
+possible to use the \Renormalize~ sequence
+\cite{Lauter2005LIP:tripledouble} to obtain a non-overlapped
+triple-double $lowPoly_\hi + lowPoly_\mi + lowPoly_\lo$ which is
+exactly equal to $r_\hi + \frac{1}{2} \cdot r_\hi^2$ because the
+renormalization operator is exact and all preceeding operations have
+been, too.
+\item An triple-double approximation to $r_\hi^3$, stored in
+$rhCube_\hi + rhCube_\mi + rhCube_\lo$ is computed by multiplying
+$r_\hi$ by the exact $rhSquare_\hi + rhSquare_\lo$ computed in the
+previous step. For this operation the \MulDT~ sequence is used.
+\item The approximation of the high order terms of the polynomial,
+$t_{4\hi} + t_{4\lo}$ is then multiplied by $rhCube_\hi + rhCube_\mi +
+rhCube_\lo$ using a triple-double multiplication operator. The result
+of this operation is added to $lowPoly_\hi + lowPoly_\mi +
+lowPoly_\lo$ in order to obtain a potentially overlapped triple-double
+$p_\hi + p_\mi + p_\lo$ approximating $p\left( r_\hi \right)$.
+\end{enumerate}
+All this steps are implemented by the following code:
+\begin{lstlisting}[caption={Accurate phase polynomial approximation},firstnumber=1]
+highPoly = accPolyC5 + rh * (accPolyC6 + rh * accPolyC7);
+
+Mul12(&t1h,&t1l,rh,highPoly);
+Add22(&t2h,&t2l,accPolyC4h,accPolyC4l,t1h,t1l);
+Mul22(&t3h,&t3l,rh,0,t2h,t2l);
+Add22(&t4h,&t4l,accPolyC3h,accPolyC3l,t3h,t3l);
+
+Mul12(&rhSquareh,&rhSquarel,rh,rh);
+Mul23(&rhCubeh,&rhCubem,&rhCubel,rh,0,rhSquareh,rhSquarel);
+
+rhSquareHalfh = 0.5 * rhSquareh;
+rhSquareHalfl = 0.5 * rhSquarel;  
+
+Renormalize3(&lowPolyh,&lowPolym,&lowPolyl,rh,rhSquareHalfh,rhSquareHalfl);
+
+Mul233(&highPolyMulth,&highPolyMultm,&highPolyMultl,t4h,t4l,rhCubeh,rhCubem,rhCubel);
+
+Add33(&ph,&pm,&pl,lowPolyh,lowPolym,lowPolyl,highPolyMulth,highPolyMultm,highPolyMultl);
+\end{lstlisting}
+For reconstructing $e^x$ out of the polynomial approximation of
+$e^{r_\hi}-1$, $e^{r_\mi}-1$, $e^{r_\lo}-1$ and the table values
+$tbl_{1\hi} + tbl_{1\mi} + tbl_{1\lo}$ and $tbl_{2\hi} + tbl_{2\mi} +
+tbl_{2\lo}$ the following term must be approximated:
+$$e^x \approx 2^M \cdot \left( tbl_{1\hi} + tbl_{1\mi} + tbl_{1\lo}
+\right) \cdot \left( tbl_{2\hi} + tbl_{2\mi} + tbl_{2\lo} \right)
+\cdot \left( 1 + \left( p_\hi + p_\mi + p_\lo \right) \right) \cdot
+\left( 1 + r_\mi \right) \cdot \left( 1 + r_\lo \right)$$ First, the
+following approximation is possible $$\left( 1 + \left( p_\hi + p_\mi
++ p_\lo \right) \right) \cdot \left( 1 + r_\mi \right) \cdot \left( 1
++ r_\lo \right) \approx 1 + \left( p_\hi + p_\mi + p_\lo + r_\mi +
+r_\lo + \left( r_\mi + r_\lo \right) \cdot \left( p_\hi + p_\mi
+\right) \right)$$ First an arithmetical approximation $fullPoly_\hi +
+fullPoly_\mi + fullPoly_\lo$ to $p_\hi + p_\mi + p_\lo + r_\mi + r_\lo
++ \left( r_\mi + r_\lo \right) \cdot \left( p_\hi + p_\mi \right)$ is
+computed as follows:
+\begin{enumerate}
+\item By means of an exact, unconditional addition, $p_\hi$ and
+$p_\mi$, which may be potentially overlapped because of being the
+higher significant parts of an overlapped triple-double, are
+renormalized. 
+\item They are then multiplied by the non-overlapping $r_\mi +
+r_\lo$ using a double-double multiplication operator. The result of
+this product is added to $r_\mi + r_\lo$ in double-double
+precision. 
+\item The result of this addition, $q_\hi + q_\lo$, approximates
+thus $r_\mi + r_\lo + \left( r_\mi + r_\lo \right) \cdot \left( p_\hi
++ p_\mi \right)$.
+\item The triple-double addition operator \AddDTT~ allows then for adding 
+$p_\hi + p_\mi + p_\lo$ to $q_\hi + q_\lo$ resulting in $fullPoly_\hi +
+fullPoly_\mi + fullPoly_\lo$.
+\end{enumerate}
+Then $1$ is added to $fullPoly_\hi + fullPoly_\mi + fullPoly_\lo$ by
+the following code sequence:
+\begin{lstlisting}[caption={Addition with $1$},firstnumber=1]
+Add12(polyAddOneh,t5,1,fullPolyh);
+Add12Cond(polyAddOnem,t6,t5,fullPolym);
+polyAddOnel = t6 + fullPolyl;
+\end{lstlisting}
+Since the \Add~ operator is exact, the round-off error of this adding
+of $1$ is equal to the round-off error in the last addition
+$polyAddOne_\lo = t_6 \oplus fullPoly_\lo$. In absolute value, it is
+always less than $2^{-53} \cdot \left \vert t_6 + fullPoly_\lo \right
+\vert$. Since $\left \vert r_\hi \right \vert \leq 2^{-12}$, one
+checks that $\frac{1}{2} < polyAddOne_\hi < 2$. So the relative error
+of this addition with $1$, $\epsilon_{\mbox{\tiny addOne}}$ is in
+magnitude less than $2^{-52} \cdot \left \vert t_6 + fullPoly_\lo
+\right \vert$. This is particularly important when considering high
+critical precision worst cases, see section \ref{sec:expaccuracy},
+page \pageref{sec:expaccuracy}.
+
+The result of the polynomial approximation, $$polyWithOne_\hi +
+polyWithOne_\mi + polyWithOne_\lo \approx e^{r_\hi} \cdot e^{r_\mi}
+\cdot e^{r_\lo}$$ is then multiplied in two steps first by $tbl_{1\hi}
++ tbl_{1\mi} + tbl_{2\lo}$ and then by $tbl_{2\hi} + tbl_{2\mi} +
+tbl_{2\lo}$ using each time the triple-double multiplication operator
+\MulTT. Remark that these multiplications are exact for arguments
+$\left \vert x \right \vert \leq 2^{-14}$ because in this case, $k=0$,
+$i_1 = 0$ and $i_2 = 0$ which implies that $tbl_{1\hi} = 1$,
+$tbl_{2\hi} = 1$ and $tbl_{i\mi} = 0$ and $tbl_{i\lo} = 0$. In fact
+machine multiplications by $1$ are always exact. 
+
+The final product of this multiplications may be overlapped and is
+therefore renormalized using the \Renormalize~ sequence. This yields
+to the non-overlapped triple-double $polyTbl_\hi + polyTbl_\mi +
+polyTbl_\lo$ approximating $\frac{e^x}{2^M}$.
+
+All these steps are implemented by the following code sequence:
+\begin{lstlisting}[caption={Accurate phase reconstruction},firstnumber=1]
+Add12(phnorm,pmnorm,ph,pm);
+Mul22(&rmlMultPh,&rmlMultPl,rm,rl,phnorm,pmnorm);
+Add22(&qh,&ql,rm,rl,rmlMultPh,rmlMultPl);
+
+Add233Cond(&fullPolyh,&fullPolym,&fullPolyl,qh,ql,ph,pm,pl);
+Add12(polyAddOneh,t5,1,fullPolyh);
+Add12Cond(polyAddOnem,t6,t5,fullPolym);
+polyAddOnel = t6 + fullPolyl;
+Mul33(&polyWithTbl1h,&polyWithTbl1m,&polyWithTbl1l,tbl1h,tbl1m,tbl1l,polyAddOneh,polyAddOnem,polyAddOnel);
+Mul33(&polyWithTablesh,&polyWithTablesm,&polyWithTablesl,
+	tbl2h,tbl2m,tbl2l,
+	polyWithTbl1h,polyWithTbl1m,polyWithTbl1l);
+
+Renormalize3(polyTblh,polyTblm,polyTbll,polyWithTablesh,polyWithTablesm,polyWithTablesl);
 \end{lstlisting}
 
+The multiplication of $polyTbl_\hi + polyTbl_\mi + polyTbl_\lo$ by
+$2^M$ and the final rounding will be discussed in the next section.
 
-
-\subsubsection{Rounding toward $- \infty$}
-
-\begin{lstlisting}[caption={Compute the rounding toward $- \infty$ of the exponential in multiprecision},firstnumber=1]
-double sd_exp(double x){ 
-  scs_t res_scs;
-  scs_db_number res;
-  
-  exp_SC(res_scs, x);
-  scs_get_d_minf(&res.d, res_scs);
-  return res.d;
-}
+\section{Final rounding}\label{sec:expfinalround}
+For both quick and accurate phase, final rounding is simple when the
+result cannot be underflowed. In this case, the final multiplication
+of $t_1 \cdot t_2 \cdot e^r$ by $2^M$ only affects the exponent of $t_1
+\cdot t_2 \cdot e^r$. So the rounding test and the final rounding (in
+quick and accurate phase) can be done on $t_1 \cdot t_2 \cdot e^r$
+before this value is multiplied by $2^M$. This rounding is a standard
+\crlibm~ rounding of respectively a double-double or a
+triple-double. Since $M$ might be as great as $M = 1024$ (whilst $t_1
+\cdot t_2 \cdot e^r < 1$ in this case, because overflow in the final
+result has been filtered out), $2^M$ may not be
+representable. Nevertheless it is possible not to representate
+$2^M$ explicitely in a variable and to replace the operation by the
+following sequence. We suppose that $polyTbl_\hi = \round \left( t_1
+\cdot t_2 \cdot e^r + \delta \right)$.
+\begin{lstlisting}[caption={Final multiplication by $2^M$},firstnumber=1]
+polyTblhdb.d = polyTblh;
+polyTblhdb.i[HI] += M << 20;
+return polyTblhdb.d;
 \end{lstlisting}
 
-
-
-\subsection{Software}
-The function $exp\_SC$ approximate the exponential of $x$ with $163$ bits of precision and put the result in $res\_scs$.
-
-\begin{lstlisting}[caption={Compute the exponential in multiprecision},firstnumber=1]
-void exp_SC(scs_ptr res_scs, double x){
-  scs_t sc1, red;
-  scs_db_number db;
-  int i, k;
-
-
-  /* db.d = x/512  (= 2^9)  */
-  
-  db.d = x;                                    (*@ \label{exp:mp:0} @*)
-  db.i[HI] -= (9 << 20);                (*@ \label{exp:mp:1} @*) 
-  scs_set_d(sc1, db.d);                        (*@ \label{exp:mp:2} @*)
-  
-  
-  DOUBLE2INT(k, (db.d * iln2_o512.d));         (*@ \label{exp:mp:3} @*) 
- 
-  /* 1) Range reduction */
-  
-  scs_set(red,     sc_ln2_o512_ptr_1);;        (*@ \label{exp:mp:4} @*)             
-  scs_set(red_low, sc_ln2_o512_ptr_2);         (*@ \label{exp:mp:4b} @*)      
-  if (k>0){
-    scs_mul_ui(red,      (unsigned int) k);
-    scs_mul_ui(red_low,  (unsigned int) k);
-  }else {
-    scs_mul_ui(red,      (unsigned int)(-k));
-    scs_mul_ui(red_low,  (unsigned int)(-k));
-    red->sign *= -1;
-    red_low->sign *=-1;
-  }                                            (*@ \label{exp:mp:5} @*)
-
-  scs_sub(red, sc1, red);                      (*@ \label{exp:mp:6} @*)
-  scs_sub(red, red, red_low);                  (*@ \label{exp:mp:6b} @*)
-
-  
-  /* 2) Polynomial evaluation */               (*@ \label{exp:mp:7} @*)
-   
-  scs_mul(res_scs, constant_poly_ptr[0], red);
-  for(i=1; i< 10; i++){                       
-    scs_add(res_scs, constant_poly_ptr[i], res_scs);
-    scs_mul(res_scs, red, res_scs);            
-  }
-  
-  scs_add(res_scs, SCS_ONE, res_scs);          
-  scs_mul(res_scs, red, res_scs);
-  scs_add(res_scs, SCS_ONE, res_scs);          (*@ \label{exp:mp:8} @*)  
-
-  /* 3) Powering the result exp(r)^512  */
-  
-  for(i=0; i<9; i++){                          (*@ \label{exp:mp:9} @*)
-    scs_square(res_scs, res_scs);
-  }
-
-  /* 4) Multiplication by 2^k */
-  
-  res_scs->index += (int)(k/30);               (*@ \label{exp:mp:10} @*)
-  if ((k%30) > 0) 
-    scs_mul_ui(res_scs, (unsigned int) (1<<((k%30))));
-  else if ((k%30) < 0){
-    res_scs->index --;
-    scs_mul_ui(res_scs, (unsigned int) (1<<((30+(k%30)))));
-  }                                            (*@ \label{exp:mp:11} @*)
-
-}
-
-\end{lstlisting}
-
-
-
-\begin{preuve}
-\begin{longtable}[c]{@{line }p{0.08\textwidth}p{0.81\textwidth}}
-% en cas de cesure c'est ce que l'on place 
-% en debut de page
-\endhead
-% en fin de page
-\endfoot 
-% en fin de derniere page
-\endlastfoot 
-\ref{exp:mp:0}& $db.d = x$
-\\
-\ref{exp:mp:1}& 
-This operation divide  $db.d$ by $512=2^9$ and is valid under the condition that $db.d$, and consequently $x$, do not represent a special values (subnormal, infinity, NaN). Condition that is satisfied because special case have been treated during the quick phase.
-
-\\
-\ref{exp:mp:2}& 
-$sc1$ is a $211$ bits multiprecision number such that :
-\begin{prop}
-  \label{chap3:exp:mp:prop0}
- $sc1=db.d = \frac{x}{512}$ exactly
-\end{prop}
-\\
-\ref{exp:mp:3}& $iln2\_o512.d$ is a double precision floating-point number such that :
-$iln2\_o512.d = \frac{512}{\ln{2}}(1 + \epsilon_{-54})$. This line put in $k$ the closest integer of $db.d \otimes \frac{512}{\ln{2}}$. We use the property of $DOUBLE2INT$ which convert a floating-point number in an integer with rounding to nearest.
-
-Moreover $k$ satisfy the following property :
-\begin{prop}
-  \label{chap3:exp:mp:prop1}
-  $$
-\lfloor \frac{x}{\ln 2} \rfloor  \leq k \leq   \lceil \frac{x}{\ln 2} \rceil
-   ~~~ \mbox{et} ~~~   -1075 \leq |k| \leq 1025
-$$
-\end{prop}
-And $k$ is a $11$ bits integer.
-\\
-\ref{exp:mp:4}, \ref{exp:mp:4b}&
-By construction we have :
-$$red + red\_low = \frac{\ln 2}{512}(1 + \epsilon_{-450})$$
-and $red$ is construct in order to make the multiplication of $red$ by $k$ exact if $|k| \leq 2^{11}$.
-
-\\
-\ref{exp:mp:5}&
-At the end of the test on $k$ we have : 
-$red + red\_low = k \otimes \frac{\ln 2}{512}(1 + \epsilon_{-450})$
-
-with $|k| < 2^{11}$, then :
-\begin{prop}
-  \label{chap3:exp:mp:prop2}
-$$red  + red\_low = k \times \frac{\ln 2}{512}(1 + \epsilon_{-411})$$
-\end{prop}
-\\
-\ref{exp:mp:6},\ref{exp:mp:6b}&
-By the properties \pref{chap3:exp:mp:prop0} and \pref{chap3:exp:mp:prop2} we have :
-\begin{prop}
-  \label{chap3:exp:mp:prop3}
-$red = \frac{x}{512} \ominus \left( k \times \frac{\ln 2}{512} \right) (1 + \epsilon_{-411})$
-\end{prop}
-
-In addition we have seen in the quick phase that at most $58$ bits could be cancelled, during this subtraction.
-\begin{prop}
-  \label{chap3:exp:mp:prop4}
-$|red| \leq \frac{\ln 2}{1024} \leq 2^{-10}$,
-
-$red = \frac{x}{512} - k \times \frac{\ln 2}{512}  + \epsilon_{-211} $
-\end{prop}
-\\
-\ref{exp:mp:7}-\ref{exp:mp:8}&
-We now perform the polynomial evaluation where the coefficient have the following properties.
-\begin{prop}
-  \label{chap3:exp:mp:prop5}
-$|constant\_poly\_ptr[0]=c_0| \leq 2^{-25}$, $|constant\_poly\_ptr[1]=c_1| \leq 2^{-21}$,
-$|constant\_poly\_ptr[2]=c_2| \leq 2^{-18}$, $|constant\_poly\_ptr[3]=c_3| \leq 2^{-15}$,
-$|constant\_poly\_ptr[4]=c_4| \leq 2^{-12}$, $|constant\_poly\_ptr[5]=c_5| \leq 2^{-9}$,
-$|constant\_poly\_ptr[6]=c_6| \leq 2^{-6}$,  $|constant\_poly\_ptr[7]=c_7| \leq 2^{-4}$,
-$|constant\_poly\_ptr[8]=c_8| \leq 2^{-2}$,  $|constant\_poly\_ptr[9]=c_9| \leq 2^{-1}$
-\end{prop}
-
-
-We have :
+If the result might be gradually underflowed but is not completely
+underflowed (i.e. not equal to $0$ or $0^+$ depending on the rounding
+mode), the quick phase is not used and the accurate phase is launched
+in any case. This does not sensibly affect performance. The
+triple-double result of the accurate phase, \texttt{polyTblh},
+\texttt{polyTblm} and \texttt{polyTbll}, where $polyTbl_\hi +
+polyTbl_\mi + polyTbl_\lo \approx t_1 \cdot t_2 \cdot e^r$, is
+multiplied by $2^M$ and rounded to double precision as follows:
 \begin{itemize}
-\item $P_0=c_1 \boxplus (red \boxtimes c_0)$   thus $|P_0| \leq 2^{-20}$ et $P_0 = c_1 + (red \times c_0 ) + \epsilon_{-231}$
-\item $P_1=c_2 \boxplus (red \boxtimes P_0)$   thus $|P_1| \leq 2^{-17}$ et $P_1 = c_2 + (red \times P_0 ) + \epsilon_{-228}$
-\item $P_2=c_3 \boxplus (red \boxtimes P_1)$   thus $|P_2| \leq 2^{-14}$ et $P_2 = c_3 + (red \times P_1 ) + \epsilon_{-225}$
-\item $P_3=c_4 \boxplus (red \boxtimes P_2)$   thus $|P_3| \leq 2^{-11}$ et $P_3 = c_4 + (red \times P_2 ) + \epsilon_{-222}$
-\item $P_4=c_5 \boxplus (red \boxtimes P_3)$   thus $|P_4| \leq 2^{-8}$ et $P_4 = c_5 + (red \times P_3 ) + \epsilon_{-219}$
-\item $P_5=c_6 \boxplus (red \boxtimes P_4)$   thus $|P_5| \leq 2^{-5}$ et $P_5 = c_6 + (red \times P_4 ) + \epsilon_{-216}$
-\item $P_6=c_7 \boxplus (red \boxtimes P_5)$   thus $|P_6| \leq 2^{-3}$ et $P_6 = c_7 + (red \times P_5 ) + \epsilon_{-214}$
-\item $P_7=c_8 \boxplus (red \boxtimes P_6)$   thus $|P_7| \leq 2^{-1}$ et $P_7 = c_8 + (red \times P_6 ) + \epsilon_{-212}$
-\item $P_8=c_9 \boxplus (red \boxtimes P_7)$   thus $|P_8| \leq 1 + 2^{-10} $ et $P_8 = c_9 + (red \times P_7 ) + \epsilon_{-211}$
-\item $P_9=1   \boxplus (red \boxtimes P_8)$   thus $|P_9| \leq 1 + 2^{-9}$ et $P_9 = 1   + (red \times P_8 ) + \epsilon_{-210}$
-\item $P_{10}=1   \boxplus (red \boxtimes P_9)$ thus $|P_{10}| \leq 1 + 2^{-8}$ et $P_{10} = 1   + (red \times P_9) + \epsilon_{-210}$
+\item $polyTbl_\hi$ is multiplied by $2^M$ in two steps: $2^M$ is not
+representable in double precision but $2^{-1000}$ and $2^{M+1000}$
+are. This multiplication generates a subnormal $t_4$, which prevents
+us from replacing it by an integer sequence manipulating the exponent
+of the numbers involved. We have $t_4 = \round \left( 2^M \cdot
+polyTbl_\hi\right) = 2^M polyTbl_\hi + \delta$ with $\left \vert
+\delta \right \vert \leq \frac{1}{2} \cdot \mUlp\left( \mbox{\small \it denorm} \right)
+= 2^{-1075}$.
+\item The obtained value $t_4$ is remultiplied by $2^{-M}$, once again
+in $2$ steps. This multiplication produces a normal number and is
+therefore exact: $t_6 = 2^{-M} \cdot \round\left( 2^M \cdot
+polyTbl_\hi \right) = polyTbl_\hi + 2^{-M} \cdot \delta$.
+\item Since $\left \vert M \right \vert \leq 1075$ and $\left \vert
+polyTbl_\hi \right \vert \leq 2$, one checks that 
+$$\frac{1}{2} \cdot polyTbl_\hi \leq t_6 \leq 2 \cdot polyTbl_\hi$$
+is verified. So the arithmetical substraction $t_7 = polyTbl_\hi \ominus t_6$ 
+is exact by Sterbenz' lemma and one obtains: 
+$$t_7 = 2^{-M} \cdot \left( 2^M \cdot polyTbl_\hi - \round \left( 2^M
+\cdot polyTbl_\hi \right) \right)$$
+We obtain therefore
+$$t_4 + 2^M \cdot \left( t_7 + polyTbl_\mi + polyTbl_\lo \right) = 
+2^M \cdot \left( polyTbl_\hi + polyTbl_\mi + polyTbl_\lo \right)$$
+Further, since the triple-double number
+$polyTbl_\hi + polyTbl_\mi + polyTbl_\lo$ is non-overlapping, we know that
+$$t_4 \in \left \lbrace r^-, r, r^+\right \rbrace$$
+with $r = \round \left( polyTbl_\hi + polyTbl_\mi + polyTbl_\lo \right)$.
+In addition, since the precision of a denormal is maximally $52$ bits and 
+that of a normal (like $polyTbl_\hi$) is $53$ bits, $t_7$ is either $0$ or 
+greater in magnitude than $polyTbl_\mi + polyTbl_\lo$. If this were not the case, 
+the triple-double would overlap. Thus $2^M \cdot \left( t_7 + polyTbl_\mi + polyTbl_\lo \right)$
+corresponds to the part of the high accuracy mantissa that is rounded off when 
+rounding to the subnormal and if $t_7$ is not zero, it contains at least the first bit that is rounded off.
 \end{itemize}
+The arithmetical steps mentioned are performed by the following code sequence:
+\begin{lstlisting}[caption={Underflowed final multiplication and rounding},firstnumber=1]
+/* Final rounding and multiplication with 2^M 
 
-Therefore :
-$$
-res\_scs = P_{10} + \epsilon_{-208}
-$$ 
+   We first multiply the highest significant byte by 2^M in two steps
+	and adjust it then depending on the lower significant parts.
 
-We build the polynom such that  
-$$\exp(r) = (1 + r + c_9. r^2 + \cdots + c_0 . r^{11}).(1 + \epsilon_{-164})$$
-Therefore
+	We cannot multiply directly by 2^M since M is less than -1022.
+	We first multiply by 2^(-1000) and then by 2^(M+1000).
 
-$|res\_scs| \leq 1 + 2^{-8}$
-with
+*/
 
-$\exp(red) = (res\_scs  + \epsilon_{-208}).(1 + \epsilon_{-164})$
-\\
+t3 = polyTblh * twoPowerM1000;
 
-\ref{exp:mp:9}&
-We perform a squaring of the result $9$ times, that correspond to powering the result to the power $512$. 
-At each iteration we perform a rounding error equal to $\epsilon_{-211}$.
-
-Finally :
-
-$|res\_scs| \leq  2^{3}$
-and
-
-$\exp(x) = 2^k. (res\_scs  + \epsilon_{-199}).(1 + \epsilon_{-164})$
-\\
-\ref{exp:mp:10}-\ref{exp:mp:11}&
-With these lines we perform the multiplication of $res\_scs$ by $2^k$. This multiplication is done by a shift on the index of $k/30$, where $30$ correspond to the number of bits used within a multiprecision number. This shift is exact. Then a multiplication of $res\_scs$ by $2$ to the power the rest of the euclidian division of $k$ by $30$ is done. At the end of these instructions we have :
-$$\exp(x) = (res\_scs).(1 + \epsilon_{-163})$$
-
-\\
-
-\end{longtable}
-\end{preuve}
+/* Form now twoPowerM with adjusted M */
+twoPowerMdb.i[LO] = 0;
+twoPowerMdb.i[HI] = (M + 2023) << 20;
 
 
+/* Multiply with the rest of M, the result will be denormalized */
+t4 = t3 * twoPowerMdb.d;
 
+/* For x86, force the compiler to pass through memory for having the right rounding */
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Analysis of the exponential}
-\label{section:exp_results}
+t4db.d = t4;   /* Do not #if-ify this line, we need the copy */
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
+t4db2.i[HI] = t4db.i[HI];
+t4db2.i[LO] = t4db.i[LO];
+t4 = t4db2.d;
+#endif
 
-\subsection{Test conditions}
+/* Remultiply by 2^(-M) for manipulating the rounding error and the lower significant parts */
+M *= -1;
+twoPowerMdb.i[LO] = 0;
+twoPowerMdb.i[HI] = (M + 23) << 20;
+t5 = t4 * twoPowerMdb.d;
+t6 = t5 * twoPower1000;
+t7 = polyTblh - t6;
+\end{lstlisting}
+One remarks that on $x86$ platforms, it is necessary to write $t_4$ to
+memory and to reread it from there in order overcome the inexistence
+of pseudosubnormals in the underlying $80$ bit register format.
 
-Table \ref{tbl:systems} lists the combinations of processor, OS and
-default \texttt{libm} used for our tests.
-\begin{table}[!htb]
+Depending on the rounding mode, $t_4$ is then adjusted to the correct
+rounding of \\$2^M \cdot \left( polyTbl_\hi + polyTbl_\mi + polyTbl_\lo
+\right)$ as follows:
+\begin{itemize}
+\item In round-to-nearest mode, the rounding decision when rounding to
+a subnormal is made at a constant value $\frac{1}{2} \cdot \mUlp\left(
+\mbox{\small \it denorm}\right) = 2^{-1075}$. 
+
+Rounding is simple for round-to-nearest when the mantissa does not
+contain a one following the last mantissa bit of the rounded
+result. In this case, the rounding downwards and thus equivalent to a
+truncation. Truncation to different lengths is associative. Omitting
+$polyTbl_\mi + polyTbl_\lo$ is a truncation. The rounding of $2^M
+\cdot polyTbl_\hi$ to a subnormal is correct as per the use of a IEEE
+754 operation. So $t_4$ already is equal to $\round\left( polyTbl_\hi
++ polyTbl_\mi + polyTbl_\lo \right)$.
+
+If the first bit following the last mantissa bit of the rounded result
+is a one, two cases must be considered: if the TMD's case is such that
+the next following mantissa one is contained in the bits of
+$polyTbl_\hi$ that are rounded of, the rounding $\round \left( 2^M
+\cdot polyTbl_\hi \right)$ is equivalent to the rounding $\round
+\left( 2^M \cdot \left( polyTbl_\hi + polyTbl_\mi + polyTbl_\lo
+\right) \right)$ because both roundings are upwards. So in this case,
+too, $t_4$ already contains the correct result. 
+
+In contrast, if the the TMD's case is such that the next following
+mantissa one (after the first one following the rounded mantissa) is
+only contained in $polyTbl_\mi + polyTbl_\lo$, the rounding direction
+of $\round \left( 2^M \cdot polyTbl_\hi \right)$ and $\round \left(
+2^M \cdot \left( polyTbl_\hi + polyTbl_\mi + polyTbl_\lo \right)
+\right)$ may be different.  As $t_7$ is the (scaled) correction of the
+roundoff of $\round \left( 2^M \cdot polyTbl_\hi \right)$ and greater
+in magnitude than $polyTbl_\mi + polyTbl_\lo$, its sign determines the
+rounding direction of the rounding $t_4 = \round \left( 2^M \cdot
+polyTbl_\hi \right)$. The sign of $polyTbl_\mi = \round \left(
+polyTbl_\hi + polyTbl_\lo \right)$ determines then that of the
+direction of \\$\round \left( 2^M \cdot \left( polyTbl_\hi + polyTbl_\mi
++ polyTbl_\lo \right) \right)$ and such whether $t_4$ must be adjusted
+by $\pm 1 \mUlp$.
+
+The algorithm is thus the following: $2^M \cdot t_7$ is compared to
+$\frac{1}{2} \cdot \mUlp\left( \mbox{\small \it denorm}\right)$ by
+comparing $t_7$ to $2^{-1075-M}$. This determines whether the rounding
+is easy and $t_4$ can be returned or whether an adjustment must be
+made. If the latter is the case, the signs of $t_7$ and $polyTbl_\hi$ 
+are examined and $t_4$ is adjusted. Since $e^x > 0 \mbox{~~} \forall x \in \R$,
+the adjustment of $t_4$ by $\pm \mUlp$ can be simplified.
+The code sequence below implements this:
+\begin{lstlisting}[caption={Rounding adjustment in round-to-nearest},firstnumber=1]
+/* The rounding decision is made at 1/2 ulp of a denormal, i.e. at 2^(-1075)
+	We construct this number and by comparing with it we get to know 
+	whether we are in a difficult rounding case or not. If not we just return 
+	the known result. Otherwise we continue with further tests.
+*/
+
+twoPowerMdb.i[LO] = 0;
+twoPowerMdb.i[HI] = (M - 52) << 20;
+
+if (ABS(t7) != twoPowerMdb.d) return t4;
+
+/* If we are here, we are in a difficult rounding case */
+
+/* We have to adjust the result iff the sign of the error on 
+	rounding 2^M * polyTblh (which must be an ulp of a denormal) 
+	and polyTblm +arith polyTbll is the same which means that 
+	the error made was greater than an ulp of an denormal.
+*/
+
+polyTblm = polyTblm + polyTbll;
+
+if (t7 > 0.0) {
+  if (polyTblm > 0.0) {
+	 t4db.l++;
+	 return t4db.d;
+  } else return t4;
+} else {
+  if (polyTblm < 0.0) {
+	 t4db.l--;
+	 return t4db.d;
+  } else return t4;
+}
+\end{lstlisting}
+\item In round-upwards mode, the rounding~~ $\roundup \left( polyTbl_\hi
++ polyTbl_\mi + polyTbl_\lo \right)$ is determined by $\round\left(
+polyTbl_\hi \right)$ and the rounding rest $2^M \cdot \left( t_7 +
+polyTbl_\mi + polyTbl_\lo \right)$. 
+
+If $t_7$ not equal to $0$, it is greater in magnitude than
+$polyTbl_\mi + polyTbl_\lo$. Thus the rounding direction of the
+to-nearest rounding $\round\left( polyTbl_\hi \right)$ is downwards if
+$t_7 + polyTbl_\mi + polyTbl_\lo$ is positive. In this case, an
+adjustment of $+ 1 \mUlp$ must be made on $t_4$.
+
+If $t_7$ is equal to $0$, the rounding $\round\left( polyTbl_\hi
+\right)$ was errorless and $t_4 = 2^M \cdot polyTbl_\hi$. So we get
+$$\roundup\left( 2^M \cdot \left( polyTbl_\hi + polyTbl_\mi +
+polyTbl_\lo \right) \right) = \roundup\left( t_4 + 2^M \cdot \left(
+polyTbl_\mi + polyTbl_\lo \right) \right)$$ Clearly, $2^M \cdot \left(
+polyTbl_\mi + polyTbl_\lo \right)$ is less than $\mUlp\left( t_4
+\right)$ because $polyTbl_\hi + polyTbl_\mi + polyTbl_\lo$ is
+non-overlapping. One can show that
+$$\roundup\left( x + \mu \right) = \roundup\left( x + \nu \right)$$ if
+$x \in \F$ and $\sgn\left( \mu \right) = \sgn\left( \nu \right)$,
+$\left \vert \mu \right \vert, \left \vert \nu \right \vert <
+\mUlp\left( x \right)$ and $\mu, \nu \in \R$
+\cite{Lauter2005LIP:tripledouble}.  Since the algebraic images of double
+arguments have been filtered out, it is thus possible to find $\mu \in \R$ such that
+with $\nu = 2^M \cdot \left( polyTbl_\mi + polyTbl_\lo \right)$ respectively 
+$\nu = \mUlp\left(t_4\right) + 2^M \cdot \left( polyTbl_\mi + polyTbl_\lo \right)$
+the following can be verified:
+$$\roundup \left( t_4 + 2^M \cdot \left( polyTbl_\mi + polyTbl_\lo
+\right) \right) = \left \lbrace \begin{array}{ll} t_4 & \mbox{ if }
+polyTbl_\mi + polyTbl_\lo < 0 \\ t_4^+ & \mbox{ otherwise} \end{array}
+\right.$$
+
+So it suffices to add $t_7$ and $polyTbl_\mi = \round\left(
+polyTbl_\mi + polyTbl\lo \right)$ together and to check for the sign
+of this sum. The rounding error of this operation may not affect the
+sign of its result. If the sign is positive, $+1 \mUlp$ is added 
+to $t_4$. The following code sequence realizes this:
+\begin{lstlisting}[caption={Rounding adjustment in round-upwards},firstnumber=1]
+/* The rounding can be decided using the sign of the arithmetical sum of the
+	round-to-nearest-error (i.e. t7) and the lower part(s) of the final result.
+	We add first the lower parts and add the result to the error in t7. We have to 
+	keep in mind that everything is scaled by 2^(-M).
+	t8 can never be exactly 0 since we filter out the cases where the image of the 
+	function is algebraic and the implementation is exacter than the TMD worst case.
+*/
+
+polyTblm = polyTblm + polyTbll;
+t8 = t7 + polyTblm;
+
+/* Since we are rounding upwards, the round-to-nearest-rounding result in t4 is 
+	equal to the final result if the rounding error (i.e. the error plus the lower parts)
+	is negative, i.e. if the rounding-to-nearest was upwards.
+*/
+
+if (t8 < 0.0) return t4;
+
+/* If we are here, we must adjust the final result by +1ulp 
+	Relying on the fact that the exponential is always positive, we can simplify this
+	adjustment 
+*/
+
+t4db.l++;
+return t4db.d;
+\end{lstlisting}
+\item Round-downwards mode is analogous to round-upwards mode with signs inverted.
+\item Round-towards-zero is equivalent to rounding downwards.
+\end{itemize}
+\section{Accuracy bounds}\label{sec:expaccuracy}
+In this section we give an overview on the error bound
+computation. The actual error bound proof is implemented using the
+Gappa tool.
+
+An implementation of the exponential function in double precision can
+be considered to be correctly rounding if the accuracy of the accurate
+phase is at least $113$ bits for arguments $x$ such that $\left \vert
+x \right \vert \geq 2^{-30}$ and at least $158$ bits for $2^{-54} \leq
+\left \vert x \right \vert < 2^{-30}$ -- provided that the rounding
+test after the quick phase is correct \cite{DinDefLau2004LIP}.
+
+In order to give a first error estimate, one can consider
+\begin{eqnarray*}
+\mbox{\tt exp(x)} & = & 2^M \cdot tbl_1 \cdot tbl_2 \cdot \left( 1 +
+p\left( r_\hi \right) \right) \cdot \left( 1 + r_\mi \right) \cdot
+\left( 1 + r_\lo \right) \cdot \left( 1 + \epsilon_{\mbox{\tiny
+arith}} \right) \\ & = & 2^M \cdot t_1 \cdot \left( 1 +
+\epsilon_{\mbox{\tiny tbl1}} \right) \cdot t_2 \left( 1 +
+\epsilon_{\mbox{\tiny tbl1}} \right) \cdot \\ & & \cdot \left( 1 +
+\left( e^{r_\hi} - 1 \right) \cdot \left( 1 + \epsilon_{\mbox{\tiny
+approxhigh}} \right) \right) \cdot \\ & & \cdot \left( 1 + \left(
+e^{r_\mi} - 1 \right) \cdot \left( 1 + \epsilon_{\mbox{\tiny
+approxmiddle}} \right) \right) \cdot \\ & & \cdot \left( 1 + \left(
+e^{r_\lo} - 1 \right) \cdot \left( 1 + \epsilon_{\mbox{\tiny
+approxlower}} \right) \right) \cdot \left( 1 + \epsilon_{\mbox{\tiny
+arith}} \right) \\ & = & 2^M \cdot t_1 \cdot t_2 \cdot e^{r_\hi +
+r_\mi + r_\lo} \cdot \\ & & \cdot \left( 1 + \epsilon_{\mbox{\tiny
+tbl1}} \right) \cdot \left( 1 + \epsilon_{\mbox{\tiny tbl2}} \right)
+\cdot \left( 1 + \epsilon_{\mbox{\tiny approxhigh}}^\prime \right)
+\cdot \left( 1 + \epsilon_{\mbox{\tiny approxmiddle}}^\prime \right)
+\cdot \left( 1 + \epsilon_{\mbox{\tiny approxlower}}^\prime \right)
+\cdot \left( 1 + \epsilon_{\mbox{\tiny arith}} \right) \\ & = & 2^M
+\cdot t_1 \cdot t_2 \cdot e^{\hat{r}} \cdot \\ & & \cdot \left( 1 +
+\epsilon_{\mbox{\tiny tbl1}} \right) \cdot \left( 1 +
+\epsilon_{\mbox{\tiny tbl2}} \right) \cdot \left( 1 +
+\epsilon_{\mbox{\tiny approxhigh}}^\prime \right) \cdot \left( 1 +
+\epsilon_{\mbox{\tiny approxmiddle}}^\prime \right) \cdot \left( 1 +
+\epsilon_{\mbox{\tiny approxlower}}^\prime \right) \cdot \left( 1 +
+\epsilon_{\mbox{\tiny arith}} \right) \cdot \left( 1 +
+\epsilon_{\mbox{\tiny argred}} \right) \\ & = & e^x \cdot \left( 1 +
+\epsilon \right)
+\end{eqnarray*}
+where $\epsilon_{\mbox{\tiny approxhigh}}^\prime =
+\epsilon_{\mbox{\tiny approxhigh}} - \frac{\epsilon_{\mbox{\tiny
+approxhigh}}}{e^{r_\hi}}$, $\epsilon_{\mbox{\tiny
+approxmiddle}}^\prime = \epsilon_{\mbox{\tiny approxmiddle}} -
+\frac{\epsilon_{\mbox{\tiny approxmiddle}}}{e^{r_\mi}}$ and
+$\epsilon_{\mbox{\tiny approxlower}}^\prime = \epsilon_{\mbox{\tiny
+approxlower}} - \frac{\epsilon_{\mbox{\tiny
+approxlower}}}{e^{r_\lo}}$.  The Gappa proof files integrate all these
+errors and allow for evaluating the relative arithmetical round-off
+error $\epsilon_{\mbox{\tiny arith}}$.
+
+%TODO: inserer les valeurs obtenues en Gappa pour les deux phases
+
+\section{Timings}\label{sec:exptiming}
+For evaluating the timings of the triple-double based implementation
+of the exponential function $e^x$, in comparison with other correctly
+rounded functions.  ``{\tt crlibm} portable using {\tt scslib}'' still
+stands for a logarithm implementation in {\tt crlibm} before the work
+on triple-double. The values are given in arbitrary units and obtained
+on a IBM Power 5 processor with gcc 3.3.3 on a Linux Kernel 2.6.5. The
+timings on other systems are comparable.
 \begin{center}
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{|c||c|c|c|}
-\hline
-Processor        & OS & compiler & default \texttt{libm} \\
-\hline
-\hline
-Pentium III      & Debian GNU/Linux & gcc-2.95          & \texttt{glibc}, derived from \texttt{fdlibm} \\ 
-\hline
-UltraSPARC IIi   & SunOS 5.8        & gcc-2.95          & \texttt{fdlibm} \\
-\hline
-Xeon (Pentium 4) & Debian GNU/Linux & gcc-2.95          & \texttt{glibc}, derived from \texttt{fdlibm}\\
-\hline
-PowerPC G4       & MacOS 10.2       & gcc-2.95          & Apple specific \\
-\hline
-Itanium          & Debian GNU/Linux & gcc-2.95, gcc-3.2 & Intel optimized \\
-\hline
+\begin{tabular}{|l|r|r|}
+ \hline
+  Library                       &     avg time  & max time \\
+ \hline
+ \hline
+ \texttt{MPFR}   &   2128    & 4908        \\ 
+ \hline
+ \texttt{crlibm} portable using \texttt{scslib}   &   44    & 1976        \\ 
+ \hline
+ \texttt{crlibm} portable using triple-double      &        39    & 258        \\ 
+ \hline
+ default \texttt{libm} (IBM's {\tt libultim})  &        34    & 221062      \\ 
+ \hline
 \end{tabular}
 \end{center}
-\caption{The systems tested
-  \label{tbl:systems}}
-\end{table}
+On average, our triple-double based implementation wins about $12\%$
+speed-up in comparison with the SCS based implementation. It is
+however slightly less performant than Ziv's library.
 
-The following presents tests
-performed under such conditions as to suppress most of the impact of
-the memory hierarchy: A small loops performs 10 identical calls to
-the function, and the minimum timing is reported, ensuring that both
-code and data have been loaded in the cache, and that interruptions by
-the operating system do not alter the timings.
-
-These timings are taken on random values between $-745$ and $+744$,
-which is the practical range for the exponential. We also report the
-timing for the worse case for the correct rounding in rounding to
-nearest mode of the exponential, which is
-$x=7.5417527749959590085206221e-10$.
-
-Our libray was tuned to take into account the adequation of the evaluation scheme to the memory hierarchies of current processors (our program for the exponential evaluation uses $2.8$Kbytes of table for the four rounding modes, whereas the one from \emph{fdlibm} use $13$Kbytes). However we do not have tested the impact over performance of this concern and is part of our futur works. 
-
-\subsection{Results}
-
-Tables \ref{tbl:exp_abstime} gives a summary of the timings of the
-various libraries. The \accurate\ phase is called about 2 times out of 100000.
-
-
-\begin{table}[!htb]
-\begin{center}
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{|l|r|r|r|}
-\hline
- \multicolumn{4}{|c|}{Pentium 4 Xeon / Linux Debian sarge / gcc 3.3}   \\ 
- \hline
- \hline
- \texttt{libm}           & 236          & 5528          &        365 \\ 
- \hline
-  \texttt{mpfr}          & 14636        & 204736        &      23299 \\ 
- \hline
-  \texttt{libultim}      & 44           & 3105632       &        210 \\ 
- \hline
- \texttt{crlibm}         & 316          & 41484         &        432 \\ 
- \hline
- \hline
-  \multicolumn{4}{|c|}{PowerPC G4 / MacOS X / gcc2.95}   \\
- \hline
-                         & min time      & max time      & avg time \\
- \hline
- \texttt{libm}           & 7            & 14            &         12 \\
- \hline
-  \texttt{mpfr}          & 972          & 2819          &       1367 \\
- \hline
-  \texttt{libultim}      & 8            & 169390        &         12 \\
- \hline
- \texttt{crlibm}         & 4            & 916           &         15 \\
- \hline
-\end{tabular}
-\end{center}
-\caption{Absolute timings for the exponential (arbitrary units)
-  \label{tbl:exp_abstime}}
-\end{table}
-
-
-
-
-
-\subsection{Analysis}
-
-\subsubsection*{Processor-specific libraries}
-Documentation\cite{HarKubStoTan99} from Intel labs claim to provide an
-exponential in only $48$ cycles. This performance is possible through
-the wide use of non portable tricks such as inverse approximation,
-fused multiply and add and double extended precision.  However, our
-tests show that the environmental cost (mainly the cost of a function
-call) is about $80$ clock cycles! Our tests have also shown that there
-exists a slower path that takes up to $2767$ clock cycles, which is $14$ times slower. This path
-seems to be taken very often since the average cost is $1.5$ times
-more expensive than the smallest  execution time.
-
-The same conclusion can be done for the mathematical library used on
-Ultra-SPARC IIi system, where there exists a path $13$ times slower
-than a normal execution.
-
-These two observations show that our two-step procedure, with a much
-slower second step, could be viable in the commercial world.
-
-The mathematical library used on the PowerPC G4 with gcc is the one
-from Apple. This library do not provide correct rounding and is $1.1$
-slower than the version provided with \emph{crlibm}. It is, however,
-the most accurate of the tested libraries.
-
-
-\subsubsection*{The cost of correct rounding}
-
-The \emph{libutlim} library provides correct rounding for an average
-cost between $0.9$ (on a Pentium III) and $1.8$ (on an Itanium) times
-the cost of the standard library. Our exponential give a result for an
-average cost between $0.91$ (on Power-PC) and $2.66$ (on Ultra-SPARC
-IIi) times the cost of the standard library, which is reasonable. On
-the other hand, MPFR provide correct rounding for an average cost
-between $13.5$ (on Power-PC) and $153$ (on Itanium) compared to the
-\emph{libm}. 
-
-The main advantage of \emph{crlibm} over \emph{libutlim} is the upper
-bound on the execution time. On our tests, this bound for
-\emph{crlibm} is $147$ times the average \emph{libm} cost, whereas for
-\emph{libtultim} this bound goes up to $14499$ times the average
-\emph{libm} cost. Our two steps strategy fully benefits from knowing
-bounds on correct rounding worst cases.
-
-We notice that our second step is in average $3$ times faster than the
-multiprecision library MPFR. It shows that our multiprecision
-operators from \emph{scslib}, hand tuned for $200$ bits of precision
-perfectly fulfill the performance requirement of the second step.
-
-
-\subsubsection*{Relations between the two steps of \emph{crlibm}}
-
-Our second phase is $30$ times slower than the first step and is
-called only once over $2^{13}$. The cost of the second step over the
-average cost is :
-
-$$
-\frac{1 \times (2^{13}-1) + 30 \times 1}{2^{13}} = 1.003540039
-$$
-which corresponds to a $0.35\%$ overhead. This small overhead in
-average  means that a possible performance improvement
-is to reduce the precision of the first step, and by the same way the
-number of instructions, to increase to number of time that the second
-step is called. It will also make the proof simpler.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Conclusion and perspectives}
-
-
- It is obvious from our performance measurements that our first step is
-too accurate and too slow for a balanced average time. We will take
-this experience into consideration when writing first steps for other
-functions. The IBM library seems to get a better balance although its
-second and later steps are much slower. Its code, unfortunately, is
-little documented and difficult to prove.
-
-Writing the proofs is a very time-consuming task, which could be
-partially automated for one step which is common to most function: The
-accumulation of error terms in order to compute the final error.
-
-
-
+Concerning worst case timing, the results are more striking and
+confirm the general results concering triple-double: the use of
+triple-double arithmetic instead of the SCS format allows for a
+speed-up of a factor of about $7.65$. In comparison with IBM's {\tt
+libultim} a performance gain of a factor $857$ is achieved. The timing
+difference between average and worst-case is decreased to a factor of
+about $6.6$.

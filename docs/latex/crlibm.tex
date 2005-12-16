@@ -66,6 +66,8 @@
 \newcommand{\Mul}{{\bf Mul12}}
 \newcommand{\MulDD}{{\bf Mul22}}
 \newcommand{\MulDTT}{{\bf Mul233}}
+\newcommand{\MulTT}{{\bf Mul33}}
+\newcommand{\Renormalize}{{\bf Renormalize3}}
 \newcommand{\mAdd}{\ensuremath{\mathbf{Add12}}}
 \newcommand{\mAddDD}{\ensuremath{\mathbf{Add22}}}
 \newcommand{\mAddDTT}{\ensuremath{\mathbf{Add233}}}
@@ -80,8 +82,7 @@
 \renewcommand{\succ}{\ensuremath{\mathrm{succ}}}
 \newcommand{\pred}{\ensuremath{\mathrm{pred}}}
 \newcommand{\xor}{\ensuremath{\mbox{ }\mathrm{XOR}\mbox{ }}}
-
- 
+\newcommand{\Ord}{\ensuremath{\mathcal{O}}} 
 
 
 
@@ -127,7 +128,7 @@
 
 
 \title{CR-LIBM\\A library of correctly rounded elementary functions in double-precision}
-\author{\mbox{Catherine Daramy-Loirat}, \mbox{David Defour}, \mbox{Florent~de~Dinechin},\\ \mbox{Matthieu Gallet}, \mbox{Nicolas Gast},  \mbox{Jean-Michel Muller}}
+\author{\mbox{Catherine Daramy-Loirat}, \mbox{David Defour}, \mbox{Florent~de~Dinechin},\\ \mbox{Matthieu Gallet}, \mbox{Nicolas Gast},  \mbox{Christoph Quirin Lauter}, \mbox{Jean-Michel Muller}}
 
 %% \abstract{
 %%   CRLibm is a mathematical library with correct rounding in
@@ -187,9 +188,9 @@ the code.
 \item The contributors of bits and pieces, Phil Defert and Eric
   McIntosh from CERN, Patrick Pelissier from \textsc{Inria}.
 \item All the people who have reported bugs, hoping that they continue
-  until they have to stop: Evgeny Gvozdev from Intel with special thanks, Christoph Lauter
-  from TUMünchen, Eric McIntosh from CERN, Patrick Pelissier and
-  Paul Zimmermann from \textsc{Inria} Lorraine.
+  until they have to stop: Evgeny Gvozdev from Intel with special
+  thanks, Eric McIntosh from CERN, Patrick Pelissier and Paul
+  Zimmermann from \textsc{Inria} Lorraine.
 \item William Kahan at UCBerkeley, Peter Markstein at HP, Neil Toda at
   Sun, Shane Story at Intel, and many others for interesting and
   sometimes heated discussions.
