@@ -1,0 +1,242 @@
+Some of \crlibm's functions need high precision square roots.  They
+are not intended to be used outside \crlibm. In particular, we do
+currently not guarantee the correct rounding of their results because
+this property is not needed for our purposes. Their implementation
+does not handle all possible special cases ($x < 0$, $\nan$, $\infty$
+etc.) neither.
+
+We currently provide two C macros computing the square root of a
+double precision argument either in double-double precision with at
+least $100$ correct bits (in faithful rounding) or in triple-double
+precision with an accuracy of at least $140$ bits (in faithful
+rounding). The corresponding macros are called \texttt{sqrt12} and
+\texttt{sqrt13}.
+
+The implementation of these macros was guided by the following
+principles:
+\begin{itemize}
+\item no dependency on other \texttt{libm}s, so avoidance of
+bootstrapping a Newton iteration by a double precision square root
+implemented elsewhere,
+\item high efficiency,
+\item a small memory footprint,
+\item the possible use of hardware support on some platforms in the
+future.
+\end{itemize}
+\subsubsection{Overview of the algorithm}
+The algorithm uses a combination of polynomial approximation and
+Newton iteration.
+
+After handling some special cases, the argument $x = 2^{E^\prime}
+\cdot m^\prime$ is reduced into its exponent $E^\prime$ stored in
+integer and its fractional part $m^\prime$ stored as a double
+precision number.  This argument reduction is obviously exact. The two
+values are then adjusted as follows:
+\vspace{-3mm}
+\begin{center}
+  \begin{tabular}{cc}
+    \begin{minipage}{60mm}
+      $$E = \left \lbrace \begin{array}{ll} E^\prime & \mbox{ if } \exists n \in \N \mbox{ . } E^\prime = 2n\\
+          E^\prime +1 & \mbox{ otherwise} \end{array} \right.$$
+    \end{minipage}
+    &
+    \begin{minipage}{60mm}
+      $$m = \left \lbrace \begin{array}{ll} m^\prime & \mbox{ if } \exists n \in \N \mbox{ . } E^\prime = 2n \\
+          \frac{m^\prime}{2} & \mbox{ otherwise } \end{array} \right.$$
+    \end{minipage}
+  \end{tabular}
+\end{center} 
+One easily checks that $\frac{1}{2} \leq m \leq 2$ and that $E$ is always even. Thus
+$$\sqrt{x} = \sqrt{2^E \cdot m} = 2^{\frac{E}{2}} \cdot \sqrt{m} =
+2^{\frac{E}{2}} \cdot m \cdot \frac{1}{\sqrt{m}}$$ The algorithm
+therefore approximates $\hat{r} = \frac{1}{\sqrt{m}}$ and reconstructs
+the square root by multiplying by $m$ and exactly by
+$2^{\frac{E}{2}}$.
+
+The reciprocal square root $\hat{r}$ is approximated in two
+steps. First, a polynomial approximation yields to $r_0 = \hat{r}
+\cdot \left( 1 + \epsilon_1 \right)$, which is exact to about $8$
+bits.  In a second step, this approximation is refined by a Newton
+iteration that approximately doubles its accuracy at each step. So for
+a double-double result, $4$ iterations are needed and for a
+triple-double result $5$.
+
+The initial polynomial approximation is less exact than the one
+provided by Itanium's \texttt{} operation, which allows for using this
+hardware assistance in the future.
+
+\subsubsection{Special case handling}
+The square root of a double precision number can never be
+subnormal. In fact, if $\sqrt{x} \leq 2^{-1021}$, $x = \sqrt{x}^2 \leq
+2^{-1042441}$, a value that is is not representable in double
+precision. 
+
+Concerning subnormals in argument, it to be mentioned that still
+$E^\prime$ and $m^\prime$ can be found such that $x = 2^{E^\prime}
+\cdot m$ exactly and $1 \leq m^\prime \leq 2$. Only the extraction
+sequence must be modified: $x$ is first multiplied by $2^{52}$ where
+$E^\prime$ is set to $-52$. The double number $x$ is thus no longer a
+subnormal an integer handling can extract its mantissa easily. The
+extraction of the exponent takes into account the preceeding bias of
+$E^\prime$. The case $x = 0$ is filtered out before. Obviously
+$\sqrt{0} = 0$ is returned for this argument.
+
+The special cases $x < 0$, $x = \pm \infty$ and $x = \nan$ are not
+handled since they can be easily excluded by the code using the square
+root macros.
+
+Special case handling is implemented as follows:
+\begin{lstlisting}[caption={Special case handling},firstnumber=1]
+/* Special case x = 0 */
+if (x == 0) {
+  *resh = x;
+  *resl = 0;
+} else {
+
+  E = 0;
+
+  /* Convert to integer format */
+  xdb.d = x;
+    
+  /* Handle subnormal case */
+  if (xdb.i[HI] < 0x00100000) {
+    E = -52;
+    xdb.d *= ((db_number) ((double) SQRTTWO52)).d; 	  /* make x a normal number */ 
+  }
+  
+  /* Extract exponent E and mantissa m */
+  E += (xdb.i[HI]>>20)-1023; 
+  xdb.i[HI] = (xdb.i[HI] & 0x000fffff) | 0x3ff00000;
+  m = xdb.d;
+  
+  /* Make exponent even */
+  if (E & 0x00000001) {
+    E++;
+    m *= 0.5;    /* Suppose now 1/2 <= m <= 2 */
+  }
+
+  /* Construct sqrt(2^E) = 2^(E/2) */
+  xdb.i[HI] = (E/2 + 1023) << 20;
+  xdb.i[LO] = 0;
+\end{lstlisting}
+
+\subsubsection{Polynomial approximation}
+The reciprocal square root $\hat{r} = \frac{1}{\sqrt{m}}$ is
+approximated in the domain $m \in \left[ \frac{1}{2}; 2 \right]$ by a
+polynomial $p\left( m \right) = \sum\limits_{i=0}^4 c_i \cdot m^i$ of
+degree $4$. The polynomial's coefficients $c_0$ through $c_4$ are
+stored in double precision.  The following values are used:
+\begin{eqnarray*}
+c_0 & = & 2.50385236695888790947606139525305479764938354492188 \\  
+c_1 & = & -3.29763389114324168005509818613063544034957885742188  \\
+c_2 & = & 2.75726076139124520736345402838196605443954467773438   \\
+c_3 & = & -1.15233725777933848632983426796272397041320800781250  \\
+c_4 & = & 0.186900066679800969104974228685023263096809387207031 
+\end{eqnarray*}
+
+The relative approximation error $\epsilon_{\mbox{\tiny approx}} =
+\frac{p\left( m\right) - \hat{r}}{\hat{r}}$ is bounded by $\left \vert
+\epsilon_{\mbox{\tiny approx}} \right \vert \leq 2^{-8.32}$ for $m \in
+\left[ \frac{1}{2}; 2 \right]$.
+
+The polynomial is evaluated in double precision using Horner's
+scheme. There may be some cancellation in the different steps but the
+relative arithmetical error $\epsilon_{\mbox{\tiny arithpoly}}$ is
+always less in magnitude than $2^{-30}$. This will be shown in more
+detail below.
+
+The code implementing the polynomial approximation reads:
+\begin{lstlisting}[caption={Polynomial approximation},firstnumber=1]
+r0 = SQRTPOLYC0 + m * (SQRTPOLYC1 + m * (SQRTPOLYC2 + m * (SQRTPOLYC3 + m * SQRTPOLYC4)));
+\end{lstlisting}
+So 4 double precision multiplications and 4 additions are needed for computing the
+initial approximation. They can be replaced by 4 FMA instructions, if available.
+
+\subsubsection{Double and double-double Newton iteration}
+The polynomial approximation is then refined using the following iteration scheme:
+$$r_{i+1} = \frac{1}{2} \cdot r_i \cdot (3 - m \cdot r_i^2)$$
+If the arithmetic operations were exact, one would obtain the following error estimate:
+\begin{eqnarray*}
+\epsilon_{i+1} & = & \frac{r_i - \hat{r}}{\hat{r}} \\ & = &
+\frac{\frac{1}{2} \cdot r_i \cdot \left(3 - m \cdot r_i^2\right) -
+\hat{r}}{\hat{r}} \\ 
+& = & \frac{\frac{1}{2} \cdot \hat{r} \cdot
+\left( 1 + \epsilon_i \right) \cdot \left( 3 - m \cdot \hat{r}^2 \cdot
+\left( 1 + \epsilon_i \right)^2 \right) - \hat{r}}{\hat{r}} \\
+& = & \frac{1}{2} \cdot \left( 1 + \epsilon_i \right) \cdot \left( 3 - m \cdot \frac{1}{m} \cdot \left( 1 + 
+\epsilon_i\right)^2 \right) - 1 \\
+& = & \frac{1}{2} \cdot \left( 1 + \epsilon_i \right) \cdot \left( 3 - 1 - 2 \cdot \epsilon_i - \epsilon_i^2  
+\right) - 1 \\
+& = & \left( 1 + \epsilon_i \right) \cdot \left( 1 - \epsilon_i - \frac{1}{2} \cdot \epsilon_i^2  
+\right) - 1 \\
+& = & 1 - \epsilon_i - \frac{1}{2} \cdot \epsilon_i^2 + \epsilon_i - \epsilon_i^2 - \frac{1}{2} \cdot \epsilon_i^3 - 1\\
+& = & - \frac{3}{2} \cdot \epsilon_i^2 - \frac{1}{2} \cdot \epsilon_i^3
+\end{eqnarray*}
+So the accuracy of the approximation of the reciprocal square root is doubled at each step.
+
+Since the initial accuracy is about $8$ bits, it is possible to iterate two times on pure double precision 
+without any considerable loss of accuracy. After the two iterations about $31$ bits will be correct.
+The macro implements therefore:
+\begin{lstlisting}[caption={Newton iteration - double precision steps},firstnumber=1]
+r1 = 0.5 * r0 * (3 - m * (r0 * r0));
+r2 = 0.5 * r1 * (3 - m * (r1 * r1));
+\end{lstlisting}
+For these two iterations, 8 double precision multiplications and 2 additions are needed.
+
+The next iteration steps must be performed in double-double precision
+because the $53$ bit mantissa of a double cannot contain the about
+$60$ bit exact value $m \cdot r_2^2 \approx 1$ before cancellation in
+the substraction with $3$ and the multiplication by $r_2$.
+
+In order to exploit maximally the parallelism in the iteration equation, we rewrite it as
+\begin{eqnarray*}
+r_{3} & = & \frac{1}{2} \cdot r_2 \cdot \left( 3 - m \cdot r_2^2 \right) \\
+& = & \left( r_2 + \frac{1}{2} \cdot r_2 \right) - \frac{1}{2} \cdot \left( m \cdot r_2 \right) \cdot 
+\left( r_2 \cdot r_2 \right)
+\end{eqnarray*}
+Since multiplications by integer powers of $2$ are exact, it is
+possible to compute $r_2 + \frac{1}{2} \cdot r_2$ exactly as a
+double-double. Concurrently it is possible to compute $m \cdot r_2$
+and $r_2 \cdot r_2$ exactly as double-doubles by means of an exact
+multiplication.  The multiplication $\left( m \cdot r_2 \right) \cdot
+\left( r_2 \cdot r_2 \right)$ is then implemented as a double-double
+multiplication.  The multiplication by $\frac{1}{2}$ of the value
+obtained is exact and can be performed pairwise on the
+double-double. A final double-double addition leads to $r_3 = \left(
+r_2 + \frac{1}{2} \cdot r_2 \right) - \frac{1}{2} \cdot \left( m \cdot
+r_2 \right) \cdot \left( r_2 \cdot r_2 \right)$. Here, massive
+cancellation is no longer possible since the values added are
+approximately $\frac{3}{2} \cdot r_2$ and $\frac{1}{2} \cdot r_2$.
+
+These steps are implemented as follows:
+\begin{lstlisting}[caption={Newton iteration - first double-double step},firstnumber=1]
+Mul12(&r2Sqh, &r2Sql, r2, r2);    Add12(r2PHr2h, r2PHr2l, r2, 0.5 * r2);
+Mul12(&mMr2h, &mMr2l, m, r2);
+Mul22(&mMr2Ch, &mMr2Cl, mMr2h, mMr2l, r2Sqh, r2Sql);
+
+MHmMr2Ch = -0.5 * mMr2Ch;
+MHmMr2Cl = -0.5 * mMr2Cl;
+
+Add22(&r3h, &r3l, r2PHr2h, r2PHr2l, MHmMr2Ch, MHmMr2Cl);
+\end{lstlisting}
+
+The next iteration step provides enough accuracy for a double-double result.
+
+TODO
+
+\begin{lstlisting}[caption={Newton iteration - second double-double step},firstnumber=1]
+Mul22(&r3Sqh, &r3Sql, r3h, r3l, r3h, r3l);
+Mul22(&mMr3Sqh, &mMr3Sql, m, 0, r3Sqh, r3Sql);  
+
+Mul22(&r4h, &r4l, r3h, r3l, 1, -0.5 * mMr3Sql);
+\end{lstlisting}
+
+
+\subsubsection{Triple-double Newton iteration}
+
+
+\subsubsection{Accuracy bounds}
+
+TODO: see possibly available Gappa files meanwhile
+
+
