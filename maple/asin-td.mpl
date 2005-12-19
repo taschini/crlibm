@@ -108,7 +108,7 @@ for i from 2 to (intervals-2) do
 od:
 printf("Using %d intervals with bounds:\n",intervals):
 for i from 0 to intervals do
-	printf("bound[%d] = %f\n",i,bound[i]):
+	printf("bound[%d] = %1.30e\n",i,bound[i]):
 od:
 printf("Using an extra bound for truncating the quick phase poly to degree %d in interval #0 for small args up to %f\n",
 	polyQuickDegreeExtra,extrabound);
@@ -127,6 +127,17 @@ for i from 2 to (intervals-1) do
 	mhe := ieeehexa(midpointFloat[i]):
 	printf("midpointFloat[%d] = %f (%s%s)\n",i,midpointFloat[i],mhe[1],mhe[2]):
 od:
+
+printf("The reduced argument z is therefore bounded by:\n"):
+printf("Interval 1: |z| < 2^(%f)\n",
+	log[2](abs(bound[1]))):
+for i from 2 to (intervals-1) do
+	printf("Interval %d: |z| < 2^(%f)\n",i,
+	log[2](max(abs(midpointFloat[i] - bound[i]),abs(midpointFloat[i] - bound[i+1])))):
+od:
+printf("Interval %d: |z| < 2^(%f)\n",intervals,
+	log[2](abs(1 - bound[intervals-1]))):
+
 
 
 printf("Using a %d degree polynomial for lowest interval (1) (accurate phase)\n",
