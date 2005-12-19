@@ -1,4 +1,143 @@
 \section{Overview of the algorithm}
+The arcsine $\arcsin\left( x \right) = \sum\limits_{i=0}^{\infty}
+\frac{\left( 2i - 1 \right)!!}{\left(2i+1\right) \cdot \left( 2i
+\right)!!} \cdot x^{2i+1}$ is defined on the domain $x \in \left[ -1;
+1 \right]$. It is a odd function: $\arcsin\left(-x\right) =
+-\arcsin\left( x \right)$. Its value in $0$ is $\arcsin\left( 0
+\right) = 0$. Its derivative tends to infinity when $x$ tends to $1$:
+$\lim\limits_{x \rightarrow 1} \left( \frac{d}{dx} \arcsin
+\right)\left(x\right) = \infty$; the function's value in $1$ is
+nevertheless finite: $\arcsin\left( 1 \right) = \frac{\pi}{2}$.  There
+is no simple additive or multiplicative decomposition of this
+function.
+
+A correctly rounded implementation of $\arcsin$ must provide an
+accuracy of at least $126$ bits for $\left \vert x \right \vert \leq
+2^{-18}$ and of at least $118$ bits for the rest of the definition
+domain in the accurate phase \cite{DinDefLau2004LIP}.
+
+The algorithm chosen principally consists of a piecewise polynomial
+approximation either of the function itself or of a asymptotic
+development of the function. More precisely, the following is done:
+\begin{itemize}
+\item Special cases, such as $\left \vert x \right \vert > 1$, $x = \pm \infty$, $x = \nan$, are handled.
+\item The sign of the argument $x$ is stripped off because
+$\arcsin\left(x\right) = \sgn\left(x\right) \cdot \arcsin\left( \left
+\vert x \right \vert \right)$. We will suppose in the following, that
+$x$ stands for a positive argument, $x \geq 0$.
+\item The argument is classified in one of $10$ subdomains of $\left[
+0; 1 \right]$.  This means an integer $i \in \left[0\dots9\right]$ is
+computed such that $x \in I_i$ where
+$$\bigcup\limits_{i=0}^9 I_i = \left[0; 1 \right]$$
+$$i \not= j \Rightarrow I_i \cap I_j = \emptyset$$
+$$i < j \Rightarrow \forall x_i \in I_i, x_j \in I_j \mbox{ . } x_i < x_j$$
+\item If $i = 0$, $\arcsin$ is directly approximated as 
+$$\arcsin\left( x \right) \approx x + x^3 \cdot p_0\left( x^2 \right)$$
+\item If $1 \leq i \leq 8$, an interval midpoint value $m_i
+\approx \frac{\inf I_i + \sup I_i}{2}$ is read in a table.  The function is
+then approximated as
+$$\arcsin\left( x \right) \approx \arcsin\left( m_i \right) +  \left(x - m_i \right) \cdot p_i\left( x - m_i \right)$$
+\item If $i = 9$, $\arcsin$ is approximated as 
+$$\arcsin\left( x \right) \approx p_9\left( 1 - x \right) \cdot \sqrt{2 - 2\cdot x} + \frac{\pi}{2}$$
+\end{itemize}
+The polynomials $p_i$, $1 \leq i \leq 8$, for the middle intervals are
+all of the same degree and, loaded from a table, can be evaluated in
+the same computation path. The polynomials $p_0$ and $p_9$ are of
+different degree. So there are three distinct paths in the code. In
+the following, they are referred to as the low, middle and high path.
+
+Concerning the quick and accurate phase of the implementation, it must
+mentioned that code and cache size considerations do not allow for
+using different coefficient tables for the quick phase polynomials
+$p_{i\mbox{\tiny ~quick}}$ as for the accurate phase polynomials
+$p_{i\mbox{\tiny ~accurate}}$ that are obviously longer must contain
+more accurately stored coefficients. So the quick phase polynomials are
+simply the accurate phase polynomials truncated to some degree and simplified 
+by omitting low significance components of the coefficients.
+
+The double precision midpoint values $m_i \in \F$ for the middle path
+intervals $I_i$, $1 \leq i \leq 8$, are chosen such that a
+double-double approximation $asinm_{i\hi} + asinm_{i\lo}$ of
+$\arcsin\left( m_i \right)$ is accurate to at least $121$ bits. This
+allows for saving up memory in the tables used.
+
+The intervals $I_i$ are not uniformly distributed. This has the
+disadvantage that the computation of $i$ cannot be done by simple
+bitmasks on the arcsine's argument $x$ but that a dichotomy must be
+performed. On the other hand, this is the only way of using
+polynomials for the same degree for all middle intervals without
+wasting accuracy for the lower ones. In fact, the derivative of
+$\arcsin$ grows over-polynomially, which means that the polynomial
+degrees must increase for equally sized reduced arguments in order to
+achieve the same approximation error. 
+
+The decomposition of the domain $\left[0;1\right]$ into the $I_i$s is
+relatively ad-hoc. The given implementation uses:
+$$I_i = \left[s_i;s_{i+1}\right]$$
+with
+\begin{eqnarray*}
+s_0 & = & 0 \\
+s_1 & = & 0.184999942779541015625  \\
+s_2 & = & 0.2997171878814697265625  \\
+s_3 & = & 0.40296268463134765625  \\
+s_4 & = & 0.4932067394256591796875  \\
+s_5 & = & 0.5696849822998046875  \\
+s_6 & = & 0.639662265777587890625  \\
+s_7 & = & 0.696256160736083984375 \\
+s_8 & = & 0.741760730743408203125  \\
+s_9 & = & 0.77999973297119140625  \\
+s_{10} & = & 1 
+\end{eqnarray*}
+One remarks that in order to simplify the dichotomy for computing $i$,
+the bounds of the intervals are chosen all such that the low order
+word of the double precision numbers they are stored in are $0$. See
+\ref{sec:asinargred}, page \pageref{sec:asinargred} for more precise
+considerations on that subject.
+
+Let be
+$$z_i = \left \lbrace \begin{array}{ll} x & \mbox{ if } i = 0 \\
+x - m_i & \mbox{ if } 1 \leq i \leq 8 \\
+1 - x & \mbox{ if } i = 9 \end{array} \right.$$
+This value $z_i$ is the argument to the polynomial $p_i$. With the given interval bounds, it is bounded by 
+
+$$\left \vert z_1 \right \vert  \leq  2^{-2.434403}$$
+$$\left \vert z_2 \right \vert  \leq  2^{-2.638419}$$
+$$\left \vert z_3 \right \vert  \leq  2^{-2.817391}$$
+$$\left \vert z_4 \right \vert  \leq  2^{-3.039782}$$
+$$\left \vert z_5 \right \vert  \leq  2^{-3.208009}$$
+$$\left \vert z_6 \right \vert  \leq  2^{-3.448784}$$
+$$\left \vert z_7 \right \vert  \leq  2^{-3.760206}$$
+$$\left \vert z_8 \right \vert  \leq  2^{-4.035253}$$
+$$\left \vert z_9 \right \vert  \leq  2^{-2.064195}$$
+$$\left \vert z_{10} \right \vert  \leq  2^{-2.184423}$$
+
+The degrees of the polynomials $p_i$ and the number of double (D),
+double-double (DD) and triple-double (TD) coefficients are listed below. Here the degree of the polynomial 
+is the highest exponent of the monomial whose coefficient is not equal to $0$. We repeat that the 
+$p_i$ are such that
+$$\arcsin\left( x \right) \approx x + x^3 \cdot p_0\left( x^2 \right)$$
+$$\arcsin\left( x \right) \approx \arcsin\left( m_i \right) + \left(x
+- m_i \right) \cdot p_i\left( x - m_i \right), \mbox{~~} 1 \leq i \leq
+8$$
+$$\arcsin\left( x \right) \approx p_9\left( 1 - x \right) \cdot \sqrt{2 - 2\cdot x} + \frac{\pi}{2}$$
+
+\begin{center}
+\begin{tabular}{|l|l|l|l|l|l|l|l|}
+\hline
+$i$ & quick phase & accurate phase & D quick & DD quick & D accur. & DD accur. & TD accur. \\
+\hline
+\hline
+$0$ & 8 & 17 & 5 & 4 & 7 & 6 & 5 \\ 
+\hline
+$1\dots8$ & 14 & 34 & 8 & 7 & 20 & 9 & 6 \\ 
+\hline
+$9$ & 17 & 28 & 10 & 8 & 12 & 9 & 8 \\ 
+\hline
+\end{tabular}
+\end{center}
+Remark that the listing does not account neither for the $8$
+double-double values representing approximations to $\arcsin\left( m_i
+\right)$ nor for the $8$ double precision numbers $m_i$.
 
 \section{Interval discrimination and argument reduction}\label{sec:asinargred}
 

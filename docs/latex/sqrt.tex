@@ -221,19 +221,100 @@ Add22(&r3h, &r3l, r2PHr2h, r2PHr2l, MHmMr2Ch, MHmMr2Cl);
 \end{lstlisting}
 
 The next iteration step provides enough accuracy for a double-double result.
+We rewrite the basic iteration equation once again as:
+\begin{eqnarray*}
+r_4 & = & \frac{1}{2} \cdot r_3 \cdot \left( 3 - m \cdot r_3^2 \right) \\
+& = & r_3 \cdot \left( \frac{3}{2} - \frac{1}{2} \cdot m \cdot r_3^2 \right) \\
+& = & r_3 \cdot \left( \frac{3}{2} - \frac{1}{2} \cdot \left( \left( m \cdot r_3^2 - 1 \right) + 1 \right) \right) \\
+& = & r_3 \cdot \left( 1 - \frac{1}{2} \cdot \left( m \cdot r_3^2 - 1 \right) \right)
+\end{eqnarray*}
+Further, we know that $r_3$, stored as a double-double, verifies $r_3
+= \hat{r} \cdot \left( 1 + \epsilon_3 \right)$ with $\left \vert
+\epsilon_3 \right \vert \leq 2^{-60}$. So we check that
+$$m \cdot r_3^2 = m \cdot \hat{r}^2 \cdot \left( 1 +
+\epsilon_3 \right)^2 = 1 + 2 \cdot \epsilon_3 + \epsilon_3^2$$
+Clearly, $\left \vert 2 \cdot \epsilon_3 + \epsilon_3^2 \right \vert <
+\frac{1}{2} \mUlp\left( 1 \right)$. So when squaring $r_{3\hi} + r_{3\lo}$ in double-double precision
+and multiplying it in double-double precision by $m$ produces a
+double-double $mMr3Sq_\hi + mMr3Sq_\lo = m \cdot \left( r_{3\hi} +
+r_{3\lo} \right)^2 \cdot \left( 1 + \epsilon \right)$, $\left \vert
+\epsilon \right \vert \leq 2^{-100}$ such that $mMr3Sq_\hi = 1$ in all
+cases.
 
-TODO
-
+So we can implement the iteration equation 
+$$r_4 = r_3 \cdot \left( 1 - \frac{1}{2} \cdot \left( m \cdot r_3^2 - 1 \right) \right)$$
+as follows:
 \begin{lstlisting}[caption={Newton iteration - second double-double step},firstnumber=1]
-Mul22(&r3Sqh, &r3Sql, r3h, r3l, r3h, r3l);
-Mul22(&mMr3Sqh, &mMr3Sql, m, 0, r3Sqh, r3Sql);  
+Mul22(&r3Sqh, &r3Sql, r3h, r3l, r3h, r3l); 
+Mul22(&mMr3Sqh, &mMr3Sql, m, 0, r3Sqh, r3Sql);
 
 Mul22(&r4h, &r4l, r3h, r3l, 1, -0.5 * mMr3Sql);
 \end{lstlisting}
+We since get $r_{4\hi} + r_{4\lo} = \hat{r} \cdot \left( 1 +
+\epsilon_4 \right)$ with $\left \vert \epsilon_4 \right \vert \leq
+2^{-102}$, the accuracy being limited by the accuracy of the last
+double-double multiplication operator.
 
+This approximation is than multiplied by $m$ in double-double
+precision, leading to an approximation $srtm_\hi + srtm_\lo = \sqrt{m}
+\cdot \left( 1 + \epsilon \right)$ with $\left \vert \epsilon \right \vert \leq
+2^{-100}$.
+
+Out of this value, the square root of the initial argument can be
+reconstructed by multiplying by $2^{\frac{E}{2}}$, which has already
+been stored in $xdb.d$. This multiplication is exact because it cannot
+produce a subnormal.
+
+These two steps are implemented as shown below:
+\begin{lstlisting}[caption={Multiplication $m \cdot \hat{r}$, reconstruction},firstnumber=1]
+Mul22(&srtmh,&srtml,m,0,r4h,r4l);
+
+/* Multiply componentwise by sqrt(2^E), which is an integer power of 2 that may not produce a subnormal */
+
+*resh = xdb.d * srtmh;
+*resl = xdb.d * srtml;
+\end{lstlisting}
 
 \subsubsection{Triple-double Newton iteration}
+For producing a triple-double approximate to $\hat{r}$ with an
+accuracy of at least $148$ bits, one more Newton iteration is
+needed. We apply the same equation as in the last double-double step,
+which reads:
+$$r_5 = r_4 \cdot \left( 1 - \frac{1}{2} \cdot \left( m \cdot r_4^2 -
+1 \right) \right)$$ Once again, the first component of the
+triple-double number holding an approximation to $m \cdot r_4^2$ is
+exactly equal to $1$. So by neglecting this component, we substract $1$ from it.
+Unfortunately, a renormalization step is needed after the multiplications for
+squaring $r_4$ and by $m$ because the values computed might be overlapped which would prevent us
+form substracting $1$ by neglecting a component.
 
+We implement thus:
+\begin{lstlisting}[caption={Newton iteration - triple-double step},firstnumber=1]
+Mul23(&r4Sqh, &r4Sqm, &r4Sql, r4h, r4l, r4h, r4l);                               
+Mul133(&mMr4Sqhover, &mMr4Sqmover, &mMr4Sqlover, m, r4Sqh, r4Sqm, r4Sql);        
+Renormalize3(&mMr4Sqh, &mMr4Sqm, &mMr4Sql, mMr4Sqhover, mMr4Sqmover, mMr4Sqlover);
+                                                                                                                 
+HmMr4Sqm = -0.5 * mMr4Sqm;                                                            
+HmMr4Sql = -0.5 * mMr4Sql;                                                            
+                                                                                        
+Mul233(&r5h,&r5m,&r5l,r4h,r4l,1,HmMr4Sqm,HmMr4Sql);                              
+\end{lstlisting}
+
+This approximation $r_{5\hi} + r_{5\mi} + r_{5\lo} = \hat{r} \cdot
+\left( 1 + \epsilon_5 \right)$, where $\left \vert \epsilon_5 \right
+\vert \leq 2^{-148}$ is then multiplied by $m$ in order to obtain a
+triple-double approximation of $\sqrt{m}$. Once renormalized result is
+exactly multiplied by $2^{\frac{E}{2}}$ stored in $xdb.d$.  We
+implement:
+\begin{lstlisting}[caption={Newton iteration - triple-double step},firstnumber=1]
+Mul133(&srtmhover, &srtmmover, &srtmlover,m,r5h,r5m,r5l);                     
+                                                                                     
+Renormalize3(&srtmh,&srtmm,&srtml,srtmhover,srtmmover,srtmlover);
+
+(*(resh)) = xdb.d * srtmh;
+(*(resm)) = xdb.d * srtmm;                                                         
+(*(resl)) = xdb.d * srtml;                                                         
+\end{lstlisting}
 
 \subsubsection{Accuracy bounds}
 
