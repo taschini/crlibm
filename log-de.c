@@ -1,6 +1,6 @@
 /* 
  *this function computes log, correctly rounded, 
- using experimental techniques based on  double-extended arithmetic
+ using  double-extended arithmetic
 
  THIS IS EXPERIMENTAL SOFTWARE
 
@@ -12,15 +12,10 @@ nor restoring.
  * Florent.de.Dinechin at ens-lyon.fr
  *
 
- To have it replace the crlibm log, do:
 
-on pentium, 
- gcc -DHAVE_CONFIG_H -I.  -fPIC  -O2 -c log-de.c;   mv log-de.o log_fast.o; make 
-
-
-
-
-on itanium, use icc 8.1 or higher. 
+This function compiles both on IA32 and IA64 architectures. On IA64,
+it needs icc 8.1 or higher, with the following flags (which should be
+set up by the autoconf).
 
 icc -DHAVE_CONFIG_H  -Qoption,cpp,--extended_float_types \
                     -IPF_fp_speculationsafe -c log-de.c;\

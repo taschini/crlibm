@@ -1,18 +1,12 @@
 /* 
  * This function computes log, correctly rounded, 
- * using experimental techniques based on triple double arithmetics
+ * using triple double arithmetics
 
- THIS IS EXPERIMENTAL SOFTWARE
- 
  *
  * Author :  Christoph Lauter
  * christoph.lauter at ens-lyon.fr
  *
 
- To have it replace the crlibm log, do:
-
- gcc -DHAVE_CONFIG_H -I.  -fPIC  -O2 -c log-td.c;   mv log-td.o log_fast.o; make 
- 
 */
 
 
