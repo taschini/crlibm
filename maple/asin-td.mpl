@@ -110,8 +110,8 @@ printf("Using %d intervals with bounds:\n",intervals):
 for i from 0 to intervals do
 	printf("bound[%d] = %1.30e\n",i,bound[i]):
 od:
-printf("Using an extra bound for truncating the quick phase poly to degree %d in interval #0 for small args up to %f\n",
-	polyQuickDegreeExtra,extrabound);
+printf("Using an extra bound for truncating the quick poly to deg. %d in interval #0 for small args up to %f (2^(%f))\n",
+	polyQuickDegreeExtra,extrabound,log[2](abs(extrabound)));
 
 printf("Computing Gal's accurate table values for interval midpoints\n"):
 for i from 2 to (intervals-1) do
