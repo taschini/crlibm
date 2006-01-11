@@ -133,7 +133,7 @@ printf("Interval 1: |z| < 2^(%f)\n",
 	log[2](abs(bound[1]))):
 for i from 2 to (intervals-1) do
 	printf("Interval %d: |z| < 2^(%f)\n",i,
-	log[2](max(abs(midpointFloat[i] - bound[i]),abs(midpointFloat[i] - bound[i+1])))):
+	log[2](max(abs(midpointFloat[i] - bound[i-1]),abs(midpointFloat[i] - bound[i])))):
 od:
 printf("Interval %d: |z| < 2^(%f)\n",intervals,
 	log[2](abs(1 - bound[intervals-1]))):
