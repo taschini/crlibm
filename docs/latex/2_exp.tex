@@ -208,12 +208,14 @@ exact value $x \cdot \frac{2^{12}}{\ln\left(2 \right)}$ is at least
 $51$ bits, an error is made not earlier than at the $19$th bit
 following the integer-fractional point. Thus
 $$\left \vert \frac{k - x \cdot \frac{2^{12}}{\ln\left(2
-\right)}}{x \cdot \frac{2^{12}}{\ln\left(2
-\right)}} \right \vert \leq \frac{1}{2} + 2^{-19}$$
-Therefore $\hat{r}^\prime$ is actually bounded by $\left \vert \hat{r}^\prime \right \vert \leq
+      \right)}}{x \cdot \frac{2^{12}}{\ln\left(2 \right)}} \right
+\vert \leq \frac{1}{2} + 2^{-19}$$ Therefore $\hat{r}^\prime$ is
+actually bounded by $\left \vert \hat{r}^\prime \right \vert \leq
 \frac{\ln\left( 2 \right)}{2^{12}} \cdot \left( \frac{1}{2} + 2^{-19}
-\right)$ instead of $\left \vert \hat{r} \right \vert \leq \frac{\ln\left( 2
-\right)}{2^{12}} \cdot \frac{1}{2}$. This difference can be neglected.
+\right)$ instead of $\left \vert \hat{r} \right \vert \leq
+\frac{\ln\left( 2 \right)}{2^{12}} \cdot \frac{1}{2}$. This difference
+can be taken into account in the error computation, and we may safely
+assume that its effects will be negligible.
 
 Note further that $k$ is computed exactly ($k = 0$) for $\left \vert x
 \right \vert \leq 2^{-14}$ because no Table Maker's Dilemma can no
@@ -840,7 +842,7 @@ t6 = t5 * twoPower1000;
 t7 = polyTblh - t6;
 \end{lstlisting}
 One remarks that on $x86$ platforms, it is necessary to write $t_4$ to
-memory and to reread it from there in order overcome the inexistence
+memory and to reread it from there in order to to overcome the inexistence
 of pseudosubnormals in the underlying $80$ bit register format.
 
 Depending on the rounding mode, $t_4$ is then adjusted to the correct

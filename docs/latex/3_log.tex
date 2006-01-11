@@ -1,16 +1,35 @@
+There are two versions of the logarithm.
+\begin{itemize}
+\item The first relies on 80-bit double-extended arithmetic, and is
+  well suited to IA32 and IA64 architectures which have hardware
+  support for such arithmetic. It computes the quick step in
+  double-extended arithmetic, and the accurate step in
+  double-double-extended arithmetic.
+\item The second relies only on double-precision arithmetic, and is
+  portable. It uses double-double for the quick step, and
+  triple-double for the accurate step.
+\end{itemize}
 
-\section{General outline of the algorithm\label{sec:outline}}
-The algorithm for the SCS-free, triple-double intermediate value based implementation of the logarithm is mainly due to 
+Both implementations use the same algorithm, which is detailed in
+\ref{sec:logoutline}. Sections \ref{sec:logdeproof} and
+\ref{sec:logtdproof} detail the proof of both implementations, and
+\ref{sec:logperf} give some performance results.
+
+
+\section{General outline of the algorithm\label{sec:logoutline}}
+The algorithm used is mainly due to 
 Wong and Goto\cite{WG94} and has been discussed further in \cite{Muller97}. In the case we are given here,
-both quick and accurate phase use principally the same algorithm however optimized for different accuracies.\\
+both quick and accurate phase use principally the same algorithm however optimized for different accuracies.
+
 The function's argument $x \in \F$ is first checked for special cases, such as $x\leq0$, $+\infty$, $\nan$ etc.
 These checks are mainly implemented using integer arithmetics and will be further explained in section
 \ref{subsec:reduction}. Then, the argument is reduced using integer arithmetics as follows:
 $$x = 2^{E^\prime} \cdot m$$
-where $E^\prime$ is the exponent of $x$ and $m$ a double corresponding to the mantissa of $x$. This 
-decomposition is done such that in any case, i.e. even if $x$ is underflowed, $1 \leq m < 2$. In the case
-of underflow, the exponent of $x$ is adjusted accordingly.
-This first argument reduction corresponds to the equality
+where $E^\prime$ is the exponent of $x$ and $m$ a double corresponding
+to the mantissa of $x$. This decomposition is done such that in any
+case, i.e. even if $x$ is subnormal, $1 \leq m < 2$. In the subnormal
+case, the exponent of $x$ is adjusted accordingly.  This first
+argument reduction corresponds to the equality
 $$\log\left( x \right) = E^\prime \cdot \log\left(2\right) + \log\left(m \right)$$
 Using this term directly would lead to catastrophic cancellation in the case where $E^\prime = -1$ and
 $m \approx 2$. To overcome this difficulty, a second adjustment is done as follows:
@@ -26,7 +45,8 @@ $m \approx 2$. To overcome this difficulty, a second adjustment is done as follo
           \frac{m}{2} & \mbox{ if } & m > \sqrt{2} \end{array} \right.$$
     \end{minipage}
   \end{tabular}
-\end{center} ~ \\
+\end{center} 
+
 The decision whether $m \leq \sqrt{2}$ or not is performed using integer arithmetics on 
 the high order bits of the mantissa $m$. The test is therefore not completely exact which is no
 disadvantage since, in any case, the bound $\sqrt{2}$ is somewhat arbitrary.\par
@@ -44,7 +64,8 @@ $$\log\left( y \right) = \log\left( 1 + z \right) - \log\left( r_i \right)$$
 Since $y = \frac{1}{r_i} + \delta$ the magnitude of $z$ is finally
 small enough (typically $\left \vert z \right \vert < 2^{-8}$) for
 approximating $\log\left(1+z\right)$ by a Remez polynomial
-$p\left(z\right)$. The values for $\log\left(r_i\right)$ are of course also tabulated.\\
+$p\left(z\right)$. The values for $\log\left(r_i\right)$ are of course also tabulated.
+
 It is important to notice that the reduction step 
 $$z = y \cdot r_i - 1$$ 
 can be implemented exactly which eases the correctness proof of the algorithm. This property will be proven in 
@@ -52,12 +73,14 @@ section \ref{subsec:reduction}. The reduced argument $z$ will
 be represented as a double-double number $z_\hi + z_\lo$ that will be fed into the polynomial approximation 
 algorithms of both quick and accurate phase. Each of these phases will take into account the lower significant value 
 $z_\lo$ for more or less 
-higher monomial degrees.\\
+higher monomial degrees.
+
 Both phases will finally reconstruct the function's value as follows:
 $$\log\left( x \right) \approx E \cdot \log\left( 2 \right) + p\left( z \right) - \log\left( r_i \right)$$
 using a double (respectively a triple for the accurate phase) double value for each 
 $\log\left( 2 \right)$ and $-\log\left( r_i \right)$. The computations necessary for performing this reconstruction
-are carried out in double-double arithmetics for the quick phase and triple-double for the accurate phase.\\~\par
+are carried out in double-double arithmetics for the quick phase and triple-double for the accurate phase.
+
 The quick phase uses a modified Remez polynomial of degree $7$ of the form
 $$p\left( z \right) = z - \frac{1}{2} \cdot z^2 + z^3 \cdot 
 \left( c_3 + z \cdot \left( c_4 + z \cdot \left( c_5 + z \cdot \left( c_6 + z \cdot c_7 \right) \right) \right) \right)$$
@@ -105,7 +128,8 @@ $$\epsilon_{\mbox{\tiny meth}} = \frac{p\left( z \right) - \log\left( 1 + z \rig
 is bounded by
 $$\left \vert \epsilon_{\mbox{\tiny meth}} \right \vert \leq  2^{-125}$$
 The polynomial is evaluated using double precision for $r\left( z \right)$, double-double arithmetic for
-$q\left( z \right)$ and a triple-double representation for $p\left( z \right)$ and the final reconstruction.\\
+$q\left( z \right)$ and a triple-double representation for $p\left( z \right)$ and the final reconstruction.
+
 The overall error 
 $$\epsilon_{\mbox{\tiny accurate}} = \frac{\left( log_\hi + log_\mi + log_\lo \right) - \log\left( x \right)}{\log\left( x \right)}$$
 is bounded by 
@@ -115,14 +139,18 @@ are obtained by reconstructing the logarithm as indicated by the parenthesis in 
 $$log_\hi + log_\mi + log_\lo = \left(E \cdot \left( log2_\hi + log2_\mi + log2_\lo \right) \right) + 
 \left( \left( p_\hi + p_\mi + p_\lo \right) + \left(logi_\hi + logi_\mi + logi_\lo \right) \right)$$
 where
-$log2_\hi + log2_\mi + log2_\lo \approx \log\left( 2 \right)$ and $logi_\hi + logi_\mi + logi_\lo \approx -\log\left(r_i \right)$.\\ ~ \par
+$log2_\hi + log2_\mi + log2_\lo \approx \log\left( 2 \right)$ and $logi_\hi + logi_\mi + logi_\lo \approx -\log\left(r_i \right)$.
+
 Since the critical accuracy of the double precision $\log$ function is $118$ bits according to 
 \cite{DinDefLau2004LIP}, rounding $\log_\hi + log_\mi + log_\lo \approx \log\left( x \right)$ to double precision is equivalent 
 to rounding the infinite precision value $\log\left( x \right)$ to double precision. 
 Using the final rounding sequences presented in \cite{Lauter2005LIP:tripledouble}, which are supposed to be correct, 
 the double precision value returned by the function is the correctly rounded double precision value of 
 $\log\left( x \right)$.
-\section{Correctness proof\label{sec:proof}}
+
+
+
+\section{Proof of correctness of the triple-double implementation \label{sec:logtdproof}}
 Proving that an implementation of an elementary function is correctly rounded means mainly proving two 
 bounds on the relative error $\epsilon_{\mbox{\tiny quick}}$ and $\epsilon_{\mbox{\tiny accurate}}$, using the appropriate lemma for proving the
 correctness of the rounding test and conluding by means of the theorem stating the critical accuracy of the 
@@ -229,7 +257,7 @@ intervall. So adding $1$ to the $\left(20 - 7 - 1\right)$ rightmost bit ($L = 7$
 So after execution of the line, {\tt index} contains the number of the intervall for the second argument reduction step 
 centered in $1$.
 \item line 29 through 31: The second adjustment to be made on $E^\prime$ and $m$ is the decision whether $m > \sqrt{2}$ as
-indicated in section \ref{sec:outline}. The high order word of $\sqrt{2}$ rounded to a double is {\tt 0x3ff6a09e}.
+indicated in section \ref{sec:logoutline}. The high order word of $\sqrt{2}$ rounded to a double is {\tt 0x3ff6a09e}.
 As one can simply verify, the value for {\tt index} calculated for this value is $53$. As the integer ordering and 
 the ordering of floating point numbers are compatible and as the computations for computing {\tt index} are monotone,
 {\tt index} being greater or equal than $53$ implies that the (normalized) mantissa of $x$ is greater than 
@@ -272,7 +300,8 @@ yri_\hi & = & \circ\left( y \cdot r_i \right) \\
 & = & 1 + 2^{-8} \\
 & < & 2
 \end{eqnarray*}
-since the rounding function $\circ$ is monotonic and the accuracy of the format is greater than $9$ bits.\\
+since the rounding function $\circ$ is monotonic and the accuracy of the format is greater than $9$ bits.
+
 The other way round, we get
 \begin{eqnarray*}
 yri_\hi & = & \circ \left( y \cdot r_i \right) \\
@@ -280,9 +309,11 @@ yri_\hi & = & \circ \left( y \cdot r_i \right) \\
 & = & 1 - 2^{-8} \\
 & > & \frac{1}{2}
 \end{eqnarray*}
-for the same reasons.\\
+for the same reasons.
+
 Thus $z_\hi + z_\lo = y \cdot r_i$ exactly. Since the previous phases of the argument reduction were all exact, the reduced argument
-verifies $x = 2^{E} \cdot y$ exactly.\\~\par
+verifies $x = 2^{E} \cdot y$ exactly.
+
 Still in this section, let us show that neither the reduced argument of the logarithm function nor its result may be
 a sub-normal double number. The first property has already been assured by special case handling as shown above. The 
 latter can be proven as follows: the $\log\left( x \right)$ function has one zero for $x = 1$ and only one. 
@@ -366,7 +397,8 @@ zhSquare_\hi & = & \circ \left( z_\hi \cdot z_\hi \right) \\
 zhSquare_\lo & = & z_\hi \cdot z_\hi - zhSquare_\hi 
 \end{eqnarray*}
 where $z_\hi = \circ \left( z \right)$.
-Let us suppose that $z \not = 0$. Otherwise all values are equal to $0$ and we can conclude.\\
+Let us suppose that $z \not = 0$. Otherwise all values are equal to $0$ and we can conclude.
+
 Let us first show that $\left \vert zhSquare_\hi \right \vert$ is greater than $2^{54}$ times the smallest normal. 
 Let us therefore suppose that this
 is not the case, i.e. $\left \vert zhSquare_\hi \right \vert < 2^{-948}$. Since the rounding function is monotonic,
@@ -374,17 +406,20 @@ this implies that $\left \vert z_\hi \right \vert \leq 2^{-424}$. For the same r
 $\left \vert z \right \vert \leq 2^{-424}$. As we have $z = y \cdot r_i - 1$, clearly neither $y$ nor $r_i$ can be exactly $1$. 
 If this were the case for both, we would obtain $z=0$ which we excluded; if there were one of them only that was
 exactly $1$, the other being a floating point number in the intervall $\left[ 0.5; 1.5 \right]$, 
-the resulting inegality $\left \vert z \right \vert \geq 2^{-53}$ which would be contradictory.\\
+the resulting inegality $\left \vert z \right \vert \geq 2^{-53}$ which would be contradictory.
+
 Otherwise, since we know that $1 - 2^{-8} \leq y \cdot r_i \leq 1 + 2^{-8}$ and since the precision of all formats used is greater than 
 $9$, the hypothesis that $1 - 2^{-424} \leq y \cdot r_i \leq 1 + 2^{-424}$ and $y \cdot r_i \not = 0$ 
 would imply that the infinite precision mantissa of 
 $y \cdot r_i$ contains a $1$ weighted with $2^0$ and a $1$ weighted with less than $2^{-424}$. So its length would be greater than
 $423$ bits. As it is the product of two floating point numbers which have $52$ and $23$ significant bits, there
-cannot be a $1$ weighted with less than $76$ if there is a $1$ weighted with $2^0$ which is the case. Contradiction. \\
+cannot be a $1$ weighted with less than $76$ if there is a $1$ weighted with $2^0$ which is the case. Contradiction. 
+
 So $-0.5 \cdot zhSquare_\hi$ is not underflowed. Additionally, with a similar argument, since {\tt zh} is a double precision
 number, $zhSquare_\lo$ is either $0$ or greater in magnitude than $2^{-53} \cdot \left \vert zhSquare_\hi \right \vert$ which is
 $2^{52}$ times greater in magnitude than the smallest normal. So $zhSquare_\lo$ is either $0$ or $2$ times greater in
-magnitude than the smallest normal. \\
+magnitude than the smallest normal. 
+
 So, the floating point multiplication of $zhSquare_\hi$ and $zhSquare_\lo$ with $-0.5$ can be considered to be exact.
 \item {\tt (T2hl - T2) / T2 in [-1b-103,1b-103]} which means that 
 $$\left \vert \frac{T2hl - T2}{T2} \right \vert \leq 2^{-103}$$ is verified as $T2hl$ and $T2$ are defined as follows:
@@ -584,7 +619,8 @@ which will be expressed in Gappa syntax as follows:
 \end{lstlisting}
 The Gappa proof files still make the hypothesis that two of the multiplications in the accurate phase code can be 
 considered to be 
-exact. This property must therefore be shown in a paper proof in the following. \\
+exact. This property must therefore be shown in a paper proof in the following. 
+
 The first of these multiplications is the following sequence:
 \begin{lstlisting}[caption={Multiplication of triple-double $\circ\left( Z \cdot Z \right)$ by $-\frac{1}{2}$},firstnumber=99]
   zSquareHalfh = zSquareh * -0.5;
@@ -621,7 +657,8 @@ In consequence, we obtain
 $$\left \vert zSquare_\hi \right \vert \geq \frac{1}{2} \cdot \left \vert ZSquarehml \right \vert$$
 and thus
 $$\left \vert zSquare_\hi \right \vert \geq 2^{-156}$$ under the hypothesis that it is not exactly zero.
-So $zSquareHalf_\hi = -\frac{1}{2} \cdot zSquare_\hi$ will never be underflowed.\\
+So $zSquareHalf_\hi = -\frac{1}{2} \cdot zSquare_\hi$ will never be underflowed.
+
 Let us now show first that the operations for computing $zSquareHalf_\mi$ and $zSquareHalf_\lo$ cannot both be
 inexact. We will use the fact that $\left \vert zSquare_\lo \right \vert \leq 2^{-53} \cdot \left \vert zSquare_\mi \right \vert$.
 Suppose first that 
@@ -629,13 +666,15 @@ $$zSquareHalf_\mi \gets - \frac{1}{2} \otimes zSquare_\mi$$ is inexact. So $\lef
 in consequence $\left \vert zSquare_\lo \right \vert < 2^{-1022-53}$. Note that the inegality is strict. 
 Since the least (in magnitude) representable denormalized double precision floating point number is $2^{-52} \cdot 2^{-1023}$,
 $zSquare_\lo = 0$ in this case. So $$zSquareHalf_\lo \gets - \frac{1}{2} \otimes zSquare_\lo$$ is exact because trivially, a 
-multiplication with $0$ is exact. \\
+multiplication with $0$ is exact. 
+
 Suppose now that $$zSquareHalf_\lo \gets - \frac{1}{2} \otimes zSquare_\lo$$ is inexact. 
 So $\left \vert zSquare_\lo \right \vert < 2^{-1022}$. Further, the least significant bit of the mantissa of $zSquare_\lo$ is 
 $1$ because otherwise, a bit-shift in its mantissa by 1 would be an exact operation. 
 Thus $\left \vert zSquare_\lo \right \vert \geq 2^{-52} \cdot 2^{-1023}$ and $\left \vert zSquare_\mi \right \vert \geq 2^{-1022}$. So
 $$zSquareHalf_\mi \gets - \frac{1}{2} \otimes zSquare_\mi$$ cannot be inexact because in this case we would have 
-$\left \vert zSquare_\mi \right \vert < 2^{-1022}$. \\
+$\left \vert zSquare_\mi \right \vert < 2^{-1022}$. 
+
 So, in any case, if ever $zSquareHalf_\mi + zSquareHalf_\lo$ are not exactly 
 $-\frac{1}{2} \cdot \left( zSquare_\mi + zSquare_\lo \right)$, the error made will be $\frac{1}{2} \cdot d$
 in magnitude, where $d = 0^+$ is the smallest representable denormalized non-zero double. So we can note down in this case
@@ -648,7 +687,8 @@ $$\left \vert \frac{\delta}{-\frac{1}{2} \cdot \left( zSquare_\hi + zSquare_\mi 
 So we get
 $$ZSquareHalfhml = - \frac{1}{2} \cdot ZSquarehml \cdot \left(1 + \epsilon\right)$$
 with
-$\left \vert \epsilon \right \vert \leq 2^{-919}$ \\
+$\left \vert \epsilon \right \vert \leq 2^{-919}$ 
+
 In contrast, since we know that $\left \vert Z \right \vert \leq 2^{-8}$
 thus that $\left \vert Z^2 \right \vert \leq 2^{-16}$ but that $\left \vert Z^2 \right \vert \geq 2^{-154}$, we can
 assume that the infinite precision mantissa of $Z^2$ can always be written exactly with at most $154 - 16 = 138 < 149$ 
@@ -669,7 +709,8 @@ in magnitude by $1024=2^{10}$ and since $log2_\hi$, $log2_\mi$ are stored with a
 the multiplications in these components are exact. The constant $log2_\lo$ is not stored with $11$ trailing bits at zero
 but it could be because we will be just supposing the bound $\left \vert \epsilon_{Log2hml} \right \vert \leq 2^{-3 \cdot 53 + 33} = 2^{-126}$ for
 $$\epsilon_{Log2hml} = \frac{log2_\hi + log2_\mi + log2_\lo - \log\left( 2 \right)}{\log\left( 2 \right)}$$
-So the multiplication is not exact in itself but the final result is exacter than the bound we are using for it.\\
+So the multiplication is not exact in itself but the final result is exacter than the bound we are using for it.
+
 Let us finally just recall the Maple code for computing the constants:
 \begin{lstlisting}[caption={Maple code for computing $Log2hml$},firstnumber=21]
 log2acc := log(2):
@@ -677,7 +718,8 @@ log2h := round(log2acc * 2**(floor(-log[2](abs(log2acc))) + (53 - 11))) / 2**(fl
 log2m := round((log2acc - log2h) * 2**(floor(-log[2](abs((log2acc - log2h)))) + (53 - 11))) / 2**(floor(-log[2](abs((log2acc - log2h)))) + (53 - 11)):
 log2l := log2acc - (log2h + log2m):
 \end{lstlisting}
-So the multiplication can be considered to be exact as long the less accurate bound for $\epsilon_{Log2hml}$ is used. \\ ~ \\
+So the multiplication can be considered to be exact as long the less accurate bound for $\epsilon_{Log2hml}$ is used. 
+
 Let us know analyse the bounds that we can give for the maximal overlap of the components of the triple-double numbers
 in the logarithm implementation. For doing this, we will assign each triple-double number in the code an overlap bound as 
 follows. Call the number in consideration e.g. $a_\hi + a_\mi + a_\lo$. So we will give the bounds expressed like this:
@@ -770,7 +812,8 @@ All other bounds can be verified the same way using the theorems given in \cite{
 Since we have computed the overlap bounds for the different triple-double operands in the code, we can now 
 calculate the accuracy bounds for the operations. Doing this is only possible with the knowledge of the
 overlap of the operations because all accuracy bound theorems given in \cite{Lauter2005LIP:tripledouble} are parameterized with this 
-overlap expressions. \\
+overlap expressions. 
+
 Let us first give a list of the accuracy of the different basic operations which is not exhaustive with regard to
 its lack of listing almost all preconditions on the sequences required for theorems to hold. We refrain from explicitely 
 verifying each of this preconditions in this document as this is only fastidious work but not of special interest. 
@@ -907,7 +950,12 @@ by the use of the critical accuracy of the double precision natural logarithm fu
 $118$ bits\cite{DinDefLau2004LIP}, we can consider the implementation to be correctly rounding under the hypothesis
 that the final rounding sequence used is exact and correct. Since we suppose this -- a correctness proof can be 
 found in \cite{Lauter2005LIP:tripledouble} -- the correctly rounding property is verified.
-\section{Performance results}
+
+
+\section{Proof of correctness of the double-extended implementation \label{sec:logdeproof}}
+
+
+\section{Performance results\label{sec:logperf}}
 The given implementation of the natural logarithm function aims at
 being both portable and more performant than the previous
 implementations using the SCS libary for the accurate phase.  This
