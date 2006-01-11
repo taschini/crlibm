@@ -1,5 +1,7 @@
 # Usage: You need to set the constants. Running the log-de.mpl Maple script
 # should create the required sed files and give the command to run.
+# Example   sed -f ../maple/TEMPLOG/log-de_0.sed log-de.gappa | ~/gappa/src/gappa 
+
 
 # NOTATION CONVENTION 
 # Variables that correspond to double-precision variables in the code begin with a small letter
@@ -7,75 +9,94 @@
 # Variables that will be replaced with Maple-computed constants begin with an underscore
 # Otherwise avoid underscores as they are painful to carry on to LaTeX :)
 
-# polynomial coefficients, computed by Maple
-c1 = <float64ne>(_c1);
-c2 = <float64ne>(_c2);
-c3 = <float64ne>(_c3);
-c4 = <float64ne>(_c4);
-c5 = <float64ne>(_c5);
-c6 = <float64ne>(_c6);
-c7 = <float64ne>(_c7);
-log2h = <float64ne>(_log2h);
-log2  = <float64ne>(_log2l);
-r     = <float64ne>(_r);
-logirh = <float64ne>(_logirh);
-logirl = <float64ne>(_logirl);
+@IEEEdouble = float<ieee_64,ne>;
+@IEEEext = float<x86_80,ne>;
 
-E=1;  # TODO paper proof that E=1 is the worst case
+# polynomial coefficients, computed by Maple
+c1 = IEEEext(_c1);
+c2 = IEEEext(_c2);
+c3 = IEEEext(_c3);
+c4 = IEEEext(_c4);
+c5 = IEEEext(_c5);
+c6 = IEEEext(_c6);
+c7 = IEEEext(_c7);
+log2h = IEEEext(_log2h);
+log2l  = IEEEext(_log2l);
+r     = IEEEext(_r);
+logirh = IEEEext(_logirh);
+logirl = IEEEext(_logirl);
 
 
 # Transcription of the code, NOT using FMA
-z2  <float80ne>= z*z;    
-p67 <float80ne>= c6 + z*c7;       
-p45 <float80ne>= c4 + z*c5;      
-p23 <float80ne>= c2 + z*c3;    
-p01 <float80ne>= logirh + z*c1;
-z4  <float80ne>= z2*z2;  
-p47 <float80ne>= p45 + z2*p67;    
-p03 <float80ne>= p01 + z2*p23; 
-p07 <float80ne>= p03 + z4*p47;
-log <float80ne>= p07 + E*log2h;
+z2   IEEEext= z*z;    
+p67  IEEEext= c6 + z*c7;       
+p45  IEEEext= c4 + z*c5;      
+p23  IEEEext= c2 + z*c3;    
+p01  IEEEext= logirh + z*c1;
+z4   IEEEext= z2*z2;  
+p47  IEEEext= p45 + z2*p67;    
+p03  IEEEext= p01 + z2*p23; 
+p07  IEEEext= p03 + z4*p47;
+logz IEEEext= p07 + E*log2h;
 
+#---------- What this code is supposed to approximate
 # Exact mathematical definition of the log
-Log = Log1pz + Logir + E*Log2;
+Mlogz = Log1pz + Logir + E*Mlog2;
 
 #############   Now come auxiliary definitions
+Log2hl = log2h + log2l;
+Logirhl = logirh + logirl;
 
 # Give the polynomial in Estrin form (no need to transcribe the intermediate steps)
-# Since the argument reduction is exact, z=Z.
-Z2 = z*z;
-Z4 = Z2*Z2;
-P07  =  ( (logirh+z*c1) + Z2*(c2+z*c3) )     + Z4*( (c4+z*c5) + Z2*(c6+z*c7)  ); 
+# Since the argument reduction is exact, Mz = z.
+Mz2 = z*z;
+Mz4 = Mz2*Mz2;
+P07  =  ( (logirh+z*c1) + Mz2*(c2+z*c3) )     + Mz4*( (c4+z*c5) + Mz2*(c6+z*c7)  ); 
 
-# Useless definition, except for debugging the proof
-P07R =  ( (logirh+z*c1) + z2*(c2+z*c3) )     + z4*( (c4+z*c5) + z2*(c6+z*c7)  ); 
-
-ALog = P07 + E*Log2;
+Alogz = P07 + E*Mlog2;
 
 
-PolyLog1pz = z*c1 + Z2*(c2+z*c3) + Z4*( (c4+z*c5) + Z2*(c6+z*c7)  );
 
+PolyLog1pz = z*c1 + Mz2*(c2+z*c3) + Mz4*( (c4+z*c5) + Mz2*(c6+z*c7)  );
+
+epsilon = (logz - Mlogz)/Mlogz;
+epsilon1 = (logz - Alogz)/Alogz;
+epsilon2 = (Alogz - Mlogz)/Mlogz;
 
 {
-    z in [-_zmax, _zmax] 
-/\  (log2h + log2l) - Log2    in [-1b-129, 1b-129]  # TODO give exact value, just for cleanness   
-/\  (logirh + logirl) - Logir in [-1b-129, 1b-129]  # idem. This is true but needs a proof out of Gappa
+(E in [1,61]) # \/ E in [-1024,-1])
+/\    z in [-_zmax, _zmax] 
+/\  Log2hl - Mlog2    in [-1b-129, 1b-129] 
+/\  Logirhl - Logir in [-1b-129, 1b-129]  
 #/\  (PolyLog1pz - Log1pz)/Log1pz in [-_epsilonApproxQuick, _epsilonApproxQuick]
 /\  (PolyLog1pz - Log1pz) in [-_deltaApproxQuick, _deltaApproxQuick]
 ->
-(log - Log)/Log in ? # [-1b-62, 1b-62]
-/\ log-Log in ?
-/\ log in ?
+epsilon in ? #[-1b-62, 1b-62]
+/\ logz-Mlogz in ?
+/\ Mlogz in ?
+/\ epsilon1 in ?
+/\ epsilon2 in ?
 }
 
-
 # Trivialities
-Log2  -> (log2h + log2l) - ((log2h + log2l) - Log2);
+logirh - Logir ->  (logirh +logirl -Logir) - logirl;
+log2h-Mlog2  -> ((log2h + log2l) - Mlog2) - log2l;
+Mlog2  -> (log2h + log2l) - ((log2h + log2l) - Mlog2);
 Logir -> logirh + ((logirl - (logirh +logirl -Logir)));
-Log   -> ALog - (ALog-Log);
+Mlogz   -> Alogz - (Alogz-Mlogz);
 
-log - Log -> (log - ALog) + (ALog - Log);
 
-# A complex rule obtained by substituting by hand the definitions of ALog and Log until they could be usefully aligned.
-ALog - Log ->  (logirh-Logir) + (PolyLog1pz  - Log1pz) ;
+#logz - Mlogz -> (logz - Alogz) + (Alogz - Mlogz); 
+epsilon -> epsilon1 + epsilon2 + epsilon1*epsilon2;
 
+
+epsilon2 ->  ((logirh-Logir) + (PolyLog1pz  - Log1pz))    / Mlogz;
+
+# argl, oublie l'erreur d'arrondi au debut d'epsilon1
+epsilon1 -> ((p07 - P07)/(E * Mlog2) + (log2h - Mlog2)/Mlog2) / (1 + P07 / (E * Mlog2));
+
+Alogz - Mlogz -> (logirh-Logir) + (PolyLog1pz  - Log1pz);
+
+#Log1pz  -> (Log1pz - PolyLog1pz) + PolyLog1pz;  
+
+#Logir ->   (Logir - Logirhl) + Logirhl;  
