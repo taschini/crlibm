@@ -1,4 +1,4 @@
-\section{Overview of the algorithm}
+\section{Overview of the algorithm\label{sec:asin-overview}}
 The arcsine $\arcsin\left( x \right) = \sum\limits_{i=0}^{\infty}
 \frac{\left( 2i - 1 \right)!!}{\left(2i+1\right) \cdot \left( 2i
 \right)!!} \cdot x^{2i+1}$ is defined on the domain $x \in \left[ -1;
@@ -50,7 +50,7 @@ Concerning the quick and accurate phase of the implementation, it must
 mentioned that code and cache size considerations do not allow for
 using different coefficient tables for the quick phase polynomials
 $p_{i\mbox{\tiny ~quick}}$ as for the accurate phase polynomials
-$p_{i\mbox{\tiny ~accurate}}$ that are obviously longer must contain
+$p_{i\mbox{\tiny ~accurate}}$ that are obviously longer and must contain
 more accurately stored coefficients. So the quick phase polynomials are
 simply the accurate phase polynomials truncated to some degree and simplified 
 by omitting low significance components of the coefficients.
@@ -73,20 +73,20 @@ achieve the same approximation error.
 
 The decomposition of the domain $\left[0;1\right]$ into the $I_i$s is
 relatively ad-hoc. The given implementation uses:
-$$I_i = \left[s_i;s_{i+1}\right]$$
+$$I_i = \left[bound_i;bound_{i+1}\right]$$
 with
 \begin{eqnarray*}
-s_0 & = & 0 \\
-s_1 & = & 0.184999942779541015625  \\
-s_2 & = & 0.2997171878814697265625  \\
-s_3 & = & 0.40296268463134765625  \\
-s_4 & = & 0.4932067394256591796875  \\
-s_5 & = & 0.5696849822998046875  \\
-s_6 & = & 0.639662265777587890625  \\
-s_7 & = & 0.696256160736083984375 \\
-s_8 & = & 0.741760730743408203125  \\
-s_9 & = & 0.77999973297119140625  \\
-s_{10} & = & 1 
+bound_0 & = & 0 \\
+bound_1 & = & 0.184999942779541015625  \\
+bound_2 & = & 0.2997171878814697265625  \\
+bound_3 & = & 0.40296268463134765625  \\
+bound_4 & = & 0.4932067394256591796875  \\
+bound_5 & = & 0.5696849822998046875  \\
+bound_6 & = & 0.639662265777587890625  \\
+bound_7 & = & 0.696256160736083984375 \\
+bound_8 & = & 0.741760730743408203125  \\
+bound_9 & = & 0.77999973297119140625  \\
+bound_{10} & = & 1 
 \end{eqnarray*}
 One remarks that in order to simplify the dichotomy for computing $i$,
 the bounds of the intervals are chosen all such that the low order
@@ -101,20 +101,21 @@ x - m_i & \mbox{ if } 1 \leq i \leq 8 \\
 This value $z_i$ is the argument to the polynomial $p_i$. With the given interval bounds, it is bounded by 
 
 $$\left \vert z_1 \right \vert  \leq  2^{-2.434403}$$
-$$\left \vert z_2 \right \vert  \leq  2^{-2.638419}$$
-$$\left \vert z_3 \right \vert  \leq  2^{-2.817391}$$
-$$\left \vert z_4 \right \vert  \leq  2^{-3.039782}$$
-$$\left \vert z_5 \right \vert  \leq  2^{-3.208009}$$
-$$\left \vert z_6 \right \vert  \leq  2^{-3.448784}$$
-$$\left \vert z_7 \right \vert  \leq  2^{-3.760206}$$
-$$\left \vert z_8 \right \vert  \leq  2^{-4.035253}$$
-$$\left \vert z_9 \right \vert  \leq  2^{-2.064195}$$
+$$\left \vert z_2 \right \vert  \leq  2^{-4.123846}$$
+$$\left \vert z_3 \right \vert  \leq  2^{-4.275849}$$
+$$\left \vert z_4 \right \vert  \leq  2^{-4.470024}$$
+$$\left \vert z_5 \right \vert  \leq  2^{-4.708807}$$
+$$\left \vert z_6 \right \vert  \leq  2^{-4.836970}$$
+$$\left \vert z_7 \right \vert  \leq  2^{-5.143210}$$
+$$\left \vert z_8 \right \vert  \leq  2^{-5.457845}$$
+$$\left \vert z_9 \right \vert  \leq  2^{-5.708811}$$
 $$\left \vert z_{10} \right \vert  \leq  2^{-2.184423}$$
 
 The degrees of the polynomials $p_i$ and the number of double (D),
-double-double (DD) and triple-double (TD) coefficients are listed below. Here the degree of the polynomial 
-is the highest exponent of the monomial whose coefficient is not equal to $0$. We repeat that the 
-$p_i$ are such that
+double-double (DD) and triple-double (TD) coefficients stored in the
+table are listed below. Here the degree of the polynomial is the
+highest exponent of the monomial whose coefficient is not equal to
+$0$. We repeat that the $p_i$ are such that
 $$\arcsin\left( x \right) \approx x + x^3 \cdot p_0\left( x^2 \right)$$
 $$\arcsin\left( x \right) \approx \arcsin\left( m_i \right) + \left(x
 - m_i \right) \cdot p_i\left( x - m_i \right), \mbox{~~} 1 \leq i \leq
@@ -129,9 +130,9 @@ $i$ & quick phase & accurate phase & D quick & DD quick & D accur. & DD accur. &
 \hline
 $0$ & 8 & 17 & 5 & 4 & 7 & 6 & 5 \\ 
 \hline
-$1\dots8$ & 14 & 34 & 8 & 7 & 20 & 9 & 6 \\ 
+$1\dots8$ & 13 & 34 & 8 & 6 & 20 & 9 & 6 \\ 
 \hline
-$9$ & 17 & 28 & 10 & 8 & 12 & 9 & 8 \\ 
+$9$ & 18 & 28 & 10 & 8 & 12 & 9 & 8 \\ 
 \hline
 \end{tabular}
 \end{center}
@@ -139,13 +140,453 @@ Remark that the listing does not account neither for the $8$
 double-double values representing approximations to $\arcsin\left( m_i
 \right)$ nor for the $8$ double precision numbers $m_i$.
 
-\section{Interval discrimination and argument reduction}\label{sec:asinargred}
+Taking into account also these values, the overall table size for both
+quick and accurate phase is 4640 bytes. Some additional values, for
+example the triple-double $PiHalf_\hi + PiHalf_\mi + PiHalf_\lo
+\approx \frac{\pi}{2}$, interval bounds or table indices, are directly
+compiled into the code. Their overall size is 100 bytes.
+
+\section{Special case handling, interval discrimination and argument reduction}\label{sec:asinargred}
+As already mentioned, $\arcsin$ is only defined on the domain $\left[
+  -1; 1 \right]$. For other arguments, including $\pm \infty$ and
+$\nan$, $\nan$ must be returned. This is implemented in the code as
+follows: the sign of $x$ is stripped off by integer computations and
+stored in variable {\tt sign}. Than, $\left \vert x \right \vert$ is
+compared to $1$ by integer comparisons.
+\begin{lstlisting}[caption={Handling special cases - definition domain},firstnumber=1]
+/* Transform the argument into integer */
+xdb.d = x;
+
+/* Special case handling */
+
+/* Strip off the sign of argument x */
+if (xdb.i[HI] & 0x80000000) sign = -1; else sign = 1;
+xdb.i[HI] &= 0x7fffffff;
+
+/* asin is defined on -1 <= x <= 1, elsewhere it is NaN */
+if ((xdb.i[HI] > 0x3ff00000) || ((xdb.i[HI] == 0x3ff00000) && (xdb.i[LO] != 0x00000000))) {
+  return (x-x)/0.0;    /* return NaN */
+}
+\end{lstlisting}
+
+Concerning subnormals in argument and in result of the function, the
+following is to be mentioned.  The Taylor series of $\arcsin$
+developed in $0$ is $$\arcsin\left( x \right) = x \cdot \left( 1 +
+\frac{1}{6} \cdot x^2 + \sum\limits_{n=2}^\infty \frac{\left( 2n - 1
+\right)!!}{\left(2n\right)!! \cdot \left( 2n + 1 \right)} \cdot
+x^{2n}\right)$$ It is easy to check that $\sum\limits_{n=2}^\infty
+\frac{\left( 2n - 1 \right)!!}{\left(2n\right)!! \cdot \left( 2n + 1
+\right)} \cdot x^{2n} < \frac{1}{3} \cdot x^2$ for $\left \vert x
+\right \vert < \frac{1}{2}$. So for $\left \vert x \right \vert \leq
+2^{-28}$, one gets $\arcsin\left( x \right) \leq x \cdot \left( 1 +
+\frac{1}{2} \cdot x^2 \right) \leq x \cdot \left( 1 + 2^{-57} \right)
+< x + \frac{1}{2} \mUlp\left(x\right)$. So the rounding can be decided
+without even computing the cubic term of the Taylor
+development. Thus subnormals in argument and in result can be avoided
+by performing a simple test on the absolute value of $x$. In
+particular, since $\sum\limits_{n=1}^\infty \frac{\left( 2n - 1
+\right)!!}{\left(2n\right)!! \cdot \left( 2n + 1 \right)} \cdot
+x^{2n}$ is an even function, the sign of the truncation rest is known,
+which allows for simplifications in the directed rounding modes. Here,
+only some special care is needed for the case where $x$ is exactly
+equal to $0$.  
+
+The test and the rounding are implemented as follows. Let us first
+consider the round-to-nearest case:
+\begin{lstlisting}[caption={Handling special cases - rounding (to nearest)},firstnumber=1]
+if (xdb.i[HI] < 0x3e300000) {
+  return x;
+}
+\end{lstlisting}
+In the round-upward case, a correction of $x$ is potentially
+necessary. We implement:
+\begin{lstlisting}[caption={Handling special cases - rounding (upwards)},firstnumber=1]
+/* If x == 0 then we got the algebraic result arcsin(0) = 0
+   If x < 0 then the truncation rest is negative but less than 
+   1 ulp; we round upwards by returning x
+*/
+if (x <= 0) return x;
+/* Otherwise the rest is positive, less than 1 ulp and the
+   image is not algebraic 
+   We return x + 1ulp
+*/
+xdb.l++;
+return xdb.d;
+\end{lstlisting}
+The other directed rounding cases are analogous to the round-upwards
+case.
+
+For the discrimination of the argument $\left \vert x \right \vert$ in
+the 10 possible approximation intervals $I_i$, the following technique
+is used. The intervals at the definition domain borders $I_0$ and
+$I_9$ are first filtered out by tests checking the high order word of
+$x$ against the corresponding bounds. If $x$ is found to be in one of
+these two intervals, the function is approximated in quick and if
+needed in accurate phase and the correctly rounded value is
+returned. In any case, the two intervals have particular properties in
+comparison to the other 8 middle intervals, so this technique should
+not be considered as a performance disadvantage. The polynomial
+coefficients' indices in the main coefficient table are fixed in this
+case and directly compiled into the code via macros.
+
+If $x$ does not fall in one of the both border intervals $I_0$ and
+$I_9$, the corresponding interval $I_i$, $1 \leq i \leq 8$ is computed
+by a 3-level dichotomy on the bounds $bound_2 \dots bound_8$.  Its
+result is not a number $i$ in $1 \leq i \leq 8$ but an index {\tt i}
+to the main coefficient table. Beginning at the point indexed, the
+table reads the midpoint value $m_i$ and the polynomial coefficients
+for the corresponding interval $I_i$. 
+
+The correponding code is the following:
+\begin{lstlisting}[caption={Interval discrimination},firstnumber=1]
+/* Recast x */
+x = xdb.d;
+
+/* Find correspondant interval and compute index to the table
+   We start by filtering the two special cases around 0 and 1
+*/
+
+if (xdb.i[HI] < BOUND1) {
+
+(*@-- Compute quick and potentially accurate phase polynomial approximation $p_0$ and return --@*)
+
+}
+
+if (xdb.i[HI] > BOUND9) {
+
+(*@-- Reduce the argument, compute quick and potentially accurate
+phase approximation using $p_9$, reconstruct and return --@*)
+}
+
+/* General 8 main intervals 
+   We can already suppose that BOUND1 <= x <= BOUND9
+*/
+
+if (xdb.i[HI] < BOUND5) {
+  if (xdb.i[HI] < BOUND3) {
+    if (xdb.i[HI] < BOUND2) i = TBLIDX2; else i = TBLIDX3;
+  } else {
+    if (xdb.i[HI] < BOUND4) i = TBLIDX4; else i = TBLIDX5;
+  }
+} else {
+  if (xdb.i[HI] < BOUND7) {
+    if (xdb.i[HI] < BOUND6) i = TBLIDX6; else i = TBLIDX7;
+  } else {
+    if (xdb.i[HI] < BOUND8) i = TBLIDX8; else i = TBLIDX9;
+  }
+}
+
+(*@-- Reduce the argument, compute quick and potentially accurate~
+phase polynomial approximation $p_i$ and return --@*)
+\end{lstlisting}
+
+In the case of $x$ being classified in either the middle or the higher
+intervals $I_i$, $1 \leq i \leq 9$, an argument reduction is to be
+performed. Let us consider it first for the high path interval $I_9$
+and then for the middle path intervals $I_i$, $1 \leq i \leq 8$. In
+both cases, we will show that the argument reduction is mathematically
+exact and that it may not produce a subnormal different from $0$.
+
+In the high path, we know that $1 \geq x > bound_9 > 0.77$. The
+argument reduction to be performed is $z = 1 - x$. Since $\frac{1}{2}
+\leq x \leq 2$ is verified, we can implement it exactly thanks to
+Sterbenz' lemma. If $x$ is exactly equal to $1$ is produces exactly
+$0$. Otherwise, it may not produce a subnormal, because $x \leq 1 -
+\frac{1}{2} \cdot \mUlp\left( 1 \right) \leq 1 - 2^{-53}$. Thus $z = 1
+- x > 2^{-53} > 2^{-1021}$.
+
+In the middle path intervals, the argument reduction to be performed
+is $z_i = x - m_i$. Since $\left \vert z \right \vert \leq 0.058$ and
+$x \geq 0.18$, Sterbenz' lemma is verified in each interval $I_i$ and
+we can still implement the argument reduction exactly in double
+precision arithmetic. Since, $x > 0.18 > \frac{1}{8}$, a similar
+argument as the one given above shows that the result of the reduction
+is either exactly $0$ or a non-subnormal double precision number.
+
+The value $m_i$ is read in the main table at the index {\tt i}
+computed by the interval discrimination phase. We implement thus:
+\begin{lstlisting}[caption={Argument reduction},firstnumber=1]
+/* Argument reduction 
+   i points to the interval midpoint value in the table
+*/
+z = x - tbl[i];
+\end{lstlisting}
+
+Concerning the higher path interval $I_9$ where $\arcsin$ is
+approximated as
+$$\arcsin\left( x \right) \approx p_9\left( 1 - x \right) \cdot
+\sqrt{2 - 2\cdot x} + \frac{\pi}{2}$$ let us remark that $2 - 2\cdot x
+= 2 \cdot z$ can also be computed exactly. Trivially, since $z$ less
+than $2^{1023}$, the multiplication by a positive integer power of $2$
+is errorfree. If $z$ is not exactly $0$, its result may not be
+subnormal because $z$ cannot.
+
+Since the argument reduction has been shown to be exact, its result
+can clearly be reused in the accurate phase.
 
 \section{Polynomial approximation and reconstruction}\label{sec:asinpolynomial}
-
 \subsection{Quick phase polynomial approximation and reconstruction}\label{subsec:asinquickpolynomial}
+As already mentioned, the quick phase polynomials $p_{i\mbox{\tiny ~quick}}$ 
+are truncated versions of the accurate phase polynomials
+$p_{i\mbox{\tiny ~accurate}}$ with coefficients rounded from
+triple-double to double-double or from double-double to double. This
+means simply that not all coefficients are read and used.
+\subsubsection{Low path - interval $I_0$}
+The polynomial $p_{0\mbox{\tiny ~quick}}$ approximates $\arcsin$ in the interval $I_0$ as follows:
+$$\arcsin\left( x \right) \approx x + x^3 \cdot p_{0\mbox{\tiny ~quick}}\left( x^2 \right)$$
+It is of degree $8$ with $5$ double-double and $4$ double precision
+coefficients. 
 
-\subsection{Accurate phase polynomial approximation and reconstruction}\label{subsec:asinaccpolynomial}
+For arguments $\left \vert x \right \vert \leq 2^{-10}$, the
+polynomial needs not be evaluated fully to provide enough accuracy. 
+Here, only its constant and linear term are evaluated. So we get in this case
+$$\arcsin\left( x \right) \approx x + x^3 \cdot \left( \left( c_{0\hi} + c_{0\lo} \right) + 
+  x^2 \cdot \left( c_{1\hi} + c_{1\lo} \right) \right)$$ This special
+path yields to a significant performance gain on average. In fact,
+since floating point numbers are not equispaced but distributed
+logarithmatically around $0$, speeding up a function for low arguments
+is worth it.
+
+The square of $x$, $x^2$ can be computed exactly by use of a \Mul~
+sequence, which will produce a double-double $xSq_\hi + xSq_\lo =
+x^2$. The polynomial $p_{0\mbox{\tiny ~quick}}\left( xSq_\hi + xSq_\lo
+\right)$ is evaluated using Horner's scheme and neglecting $xSq_\lo$
+for the $8$ higher degree coefficients if these need to be evaluated. 
+
+The double-double precision Horner steps are implemented the
+double-double multiply-and-add macros \MulAddDD~ and \MulAddDdD~ (see
+section \ref{sec:double-double-horner}, page
+\pageref{sec:double-double-horner}). It is easy to check that the
+preconditions on the arguments of these macros are verified: $x^2$ is
+bounded by $x^2 \leq \left(2^{-2.434403}\right)^2 \leq 2^{-4}$ in this
+path. Further, in the order of the Horner evaluation, the coefficients
+$c_i$ of the polynomial are stricly increasing in magnitude and all
+less than $1$.  Concerning the accuracy of this operations, see
+section \ref{sec:asinaccuracy}, page \pageref{sec:asinaccuracy}.
+
+Including the test $\left \vert x \right \vert \stackrel{?}{\leq} 2^{-10}$, the code computing 
+an approximation $t_{5\hi} + t_{5\lo} \approx p_{0\mbox{\tiny ~quick}}\left( x^2 \right)$ reads:
+\begin{lstlisting}[caption={Low path quick phase polynomial approximation (higher degrees)},firstnumber=1]
+Mul12(&xSqh,&xSql,x,x);
+
+tmp4 = tbl[3];
+tmp5 = tbl[4];
+t4h = tmp4;
+t4l = tmp5;
+if (xdb.i[HI] > EXTRABOUND) {
+  /* Double precision evaluation */
+  highPoly = tbl[15] + xSqh * (tbl[17] + xSqh * (tbl[19] + xSqh * (tbl[21] + xSqh * tbl[23])));
+
+  /* Double-double precision evaluation */
+  Mul12(&tt1h,&tt1l,xSqh,highPoly);
+  Add22(&t1h,&t1l,tbl[12],tbl[13],tt1h,tt1l);
+  
+  MulAdd212(&t2h,&t2l,tbl[9],tbl[10],xSqh,t1h,t1l);
+  MulAdd212(&t3h,&t3l,tbl[6],tbl[7],xSqh,t2h,t2l);
+  MulAdd22(&t4h,&t4l,tmp4,tmp5,xSqh,xSql,t3h,t3l);
+}
+
+MulAdd22(&t5h,&t5l,tbl[0],tbl[1],xSqh,xSql,t4h,t4l);
+\end{lstlisting}
+Once $t_{5\hi} + t_{5\lo}$ are computed, they must be multiplied by
+$x^3$ and the result must be added to $x$.  The value $x^3$ is
+computed approximatively as a double-double $xCube_\hi + xCube_\lo$ by
+multiplying $x$ by $xSq_\hi + xSq_\lo = x^2$. This value $xCube_\hi +
+xCube_\lo$ is than multiplied by $t_{5\hi} + t_{5\lo}$, yielding to
+$tt_{6\hi} + tt_{6\lo}$. The last addition implying $x$ and $tt_{6\hi}
++ tt_{6\lo}$ is implemented in an ad-hoc way by means of two exact
+additions and a double precision addition on the lower part of the
+addition of the higher significant parts. The code reads:
+\begin{lstlisting}[caption={Low path quick phase polynomial approximation (lower degrees)},firstnumber=1]
+Mul122(&xCubeh,&xCubel,x,xSqh,xSql);
+Mul22(&tt6h,&tt6l,xCubeh,xCubel,t5h,t5l);
+
+Add12(tmp1,tmp2,x,tt6h);
+tmp3 = tmp2 + tt6l;
+Add12(polyh,polyl,tmp1,tmp3);
+\end{lstlisting} 
+The obtained polynomial approximation value is then multiplied by the
+sign of $x$ the argument reduction had stripped off and the rounding
+test is performed.  If it fails, the accurate phase is launched; see
+section \ref{sec:asinacculowpath}, page \pageref{sec:asinacculowpath},
+for its implementation.  The code for the last steps in
+round-to-nearest mode is given below. The code for the direct rounding
+modes is analogous. One remarks that the rounding test constants,
+computed by the corresponding Maple scripts in function of the
+relative error bounds to be shown in section \ref{sec:asinaccuracy},
+page \pageref{sec:asinaccuracy}, are stored also in double precision
+and also read from the main table.
+\begin{lstlisting}[caption={Low path quick phase rounding test},firstnumber=1]
+/* Multiply by sign */
+asinh = sign * polyh;
+asinm = sign * polyl;
+
+/* Rounding test 
+   The RN rounding constant is at tbl[34]
+*/
+if(asinh == (asinh + (asinm * tbl[34]))) 
+  return asinh;
+
+/* Launch accurate phase */
+\end{lstlisting} 
+
+\subsubsection{Middle path - interval $I_i$, $1 \leq i \leq 8$}
+In the quick phase middle path, i.e. for arguments $x \in I_i$, $1
+\leq i \leq 8$, $\arcsin$ is approximated by the polynomial
+$p_{i\mbox{\tiny ~quick}}$ as follows:
+$$\arcsin\left( x \right) \approx \arcsin\left( m_i \right) + z_i \cdot p_{i\mbox{\tiny ~quick}}\left( z_i \right)$$
+where $z_i = x - m_i$ is a double precision number.  Further an
+approximation $asm_{i\hi} + asm_{i\lo}$ to $\arcsin\left( m_i \right)$
+is used. It is read in the main table at {\tt tbl[i+1]} and {\tt
+  tbl[i+2]} where {\tt i} is the index computed at the interval
+discrimination phase.  The polynomial $p_{i\mbox{\tiny ~quick}}$ is of
+degree $13$ with $6$ double-double and $8$ double coefficients.  It is
+always evaluated completely by means of Horner's scheme. Once again,
+the \MulAddDdD~ operator allows for evaluating the $5$ last
+double-double steps. The first double-double step is evaluated in a
+more ad-hoc way because of the entering only double precision current
+intermediate result. The preconditions for the \MulAddDdD~ operator
+can again be checked easily: $z_i$ is bounded in magnitude by
+$2^{-4.123846}$, the coefficients increase in the order of Horner's
+scheme evaluation and are all less than $1$. So in each step, the
+product of $z_i$ and the current value is less than $\frac{1}{4}$ the
+next coefficient as asked for by the precondition.  The multiplication
+of the result of the polynomial $p_{i\mbox{\tiny ~quick}}$ by $z_i$
+and the addition of $asm_{i\hi} + asm_{i\lo}$ can also be considered
+as a Horner step and are therefore implemented using the \MulAddDdD~
+macro, too. 
+
+The corresponding evaluation code reads thus:
+\begin{lstlisting}[caption={Middle path quick phase polynomial approximation},firstnumber=1]
+highPoly = tbl[i+21] + z * (tbl[i+23] + z * (tbl[i+25] + z * (
+           tbl[i+27] + z * (tbl[i+29] + z * (tbl[i+31] + z * ( 
+           tbl[i+33] + z *  tbl[i+35]))))));
+  
+Mul12(&tt1h,&tt1l,z,highPoly);
+Add22(&t1h,&t1l,tbl[i+18],tbl[i+19],tt1h,tt1l);
+
+MulAdd212(&t2h,&t2l,tbl[i+15],tbl[i+16],z,t1h,t1l);
+MulAdd212(&t3h,&t3l,tbl[i+12],tbl[i+13],z,t2h,t2l);
+MulAdd212(&t4h,&t4l,tbl[i+9],tbl[i+10],z,t3h,t3l);
+MulAdd212(&t5h,&t5l,tbl[i+6],tbl[i+7],z,t4h,t4l);
+MulAdd212(&t6h,&t6l,tbl[i+3],tbl[i+4],z,t5h,t5l);
+MulAdd212(&polyh,&polyl,tbl[i+1],tbl[i+2],z,t6h,t6l);
+\end{lstlisting} 
+One remarks that in this case, since the polynomial evaluation code is
+the same for all intervals $I_i$, $1 \leq i \leq 8$, the coefficients
+read in the table are not at fixed indices but indexed by {\tt i},
+value computed in the interval discrimination phase. 
+
+The result of this approximation whose accuracy will be analysed in
+section \ref{sec:asinaccuracy}, page \pageref{sec:asinaccuracy}, is
+then multiplied by the sign of the the original argument and submitted
+to the rounding test whose rounding constant is read in the main table
+dependingly on the interval $I_i$. The corresponding code for
+round-to-nearest is given below. The directed rounding cases are
+analogous.
+\begin{lstlisting}[caption={Middle path quick phase rounding test},firstnumber=1]
+asinh = sign * polyh;
+asinm = sign * polyl;
+
+/* Rounding test 
+   The RN rounding constant is at tbl[i+59]
+*/
+if(asinh == (asinh + (asinm * tbl[i+59]))) 
+  return asinh;
+
+/* Launch accurate phase */
+\end{lstlisting} 
+
+\subsubsection{High path - interval $I_9$}
+In the high path $\arcsin$ is approximated as 
+$$\arcsin\left( x \right) \approx p_{9\mbox{\tiny ~quick}}\left( z \right) \cdot \sqrt{2 \cdot z} + \frac{\pi}{2}$$
+Herein, $z = 1 - x$ is the exactly computed double precision reduced
+argument. The constant $\frac{\pi}{2}$ is approximated by the
+double-double number $PiHalf_\hi + PiHalf_\mi = \frac{\pi}{2} \cdot
+\left( 1 + \epsilon \right)$ with $\left \vert \epsilon \right \vert
+\leq 2^{-109}$. It has already been shown that $z$ and $twoZ = 2 \cdot
+z$ can be computed exactly. The square root $\sqrt{2 \cdot z}$ is
+approximated in double-double precision using the \SqrtD~ macro
+operator described in section \ref{subsection:sqrt}, page
+\pageref{subsection:sqrt}. 
+
+The polynomial $p_{9\mbox{\tiny ~quick}}$ has degree $18$ with $9$
+double-double and $10$ double precision coefficients. Its constant
+term is exactly $-1$, so this coefficient is not stored in the table.
+It is always evaluated completely. Horner's scheme is used and
+implemented by means of the \MulAddDdD~ operator whose precodnitions
+can once again easily be verified by an analogous argument as the one
+given above for low and middle paths. 
+
+The corresponding code reads:
+\begin{lstlisting}[caption={High path quick phase polynomial approximation},firstnumber=1]
+highPoly = tbl[TBLIDX10+24] + z * (tbl[TBLIDX10+26] + z * (tbl[TBLIDX10+28] + z * (
+           tbl[TBLIDX10+30] + z * (tbl[TBLIDX10+32] + z * (tbl[TBLIDX10+34] + z * (
+           tbl[TBLIDX10+36] + z * (tbl[TBLIDX10+38] + z * (tbl[TBLIDX10+40] + z * 
+           tbl[TBLIDX10+42]))))))));
+
+Mul12(&tt1h,&tt1l,z,highPoly);
+Add22(&t1h,&t1l,tbl[TBLIDX10+21],tbl[TBLIDX10+22],tt1h,tt1l);
+
+MulAdd212(&t2h,&t2l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],z,t1h,t1l);
+MulAdd212(&t3h,&t3l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],z,t2h,t2l);
+MulAdd212(&t4h,&t4l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],z,t3h,t3l);
+MulAdd212(&t5h,&t5l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],z,t4h,t4l);
+MulAdd212(&t6h,&t6l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],z,t5h,t5l);
+MulAdd212(&t7h,&t7l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],z,t6h,t6l);
+MulAdd212(&t8h,&t8l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],z,t7h,t7l);
+MulAdd212(&polyh,&polyl,-1,0,z,t8h,t8l);
+\end{lstlisting} 
+
+The result $poly_\hi + poly_\lo$ of the polynomial approximation is
+multiplied by $sqrtz_\hi + sqrtz_\lo$, the double-double approximation
+of $\sqrt{2 \cdot z}$ by the double-double multiplication
+operator \MulDD~ and then added to $PiHalf_\hi + PiHalf_\mi$ using the
+double-double addition operator \AddDD. In this addition no
+catastrophic cancellation can occur: since $x > 0.78 >
+\frac{\sqrt{2}}{2}$ in this interval, the result of the addition, a
+good approximation to $\arcsin\left( x \right)$ will always be greater
+than $\frac{\pi}{4}$ as per the monotony of arcsine.  So $pTimesS_\hi
++ pTimesS_\lo \approx p_{9\mbox{\tiny ~quick}}\left( z \right) \cdot
+\sqrt{2 \cdot z}$ will always be less than $\frac{1}{2} \cdot \left(
+  PiHalf_\hi + PiHalf_\mi \right)$. In this argumentation,
+approximation errors can be neglected since the bound to be shown is
+not tight at all.
+
+The corresponding implementation is the following:
+\begin{lstlisting}[caption={High path: square root extraction and reconstruction},firstnumber=1]
+twoZ = 2 * z;
+sqrt12(&sqrtzh,&sqrtzl,twoZ);                                                         
+
+/* Multiply p(z) by sqrt(2*z) and add Pi/2 */
+
+Mul22(&pTimesSh,&pTimesSl,polyh,polyl,sqrtzh,sqrtzl);                    
+Add22(&allh,&alll,PIHALFH,PIHALFM,pTimesSh,pTimesSl);       
+\end{lstlisting} 
+
+In this path, too, the obtained result is multiplied by the sign which
+had stripped off from the function's argument $x$ and submitted to the
+rounding test using a rounding constant read in the main table. The
+code reads for round-to-nearest mode:
+\begin{lstlisting}[caption={Multiplication of the function's sign, rounding test (round-to-nearest)},firstnumber=1]
+asinh = sign * allh;
+asinm = sign * alll;
+
+/* Rounding test 
+   The RN rounding constant is at tbl[TBLIDX10+54]
+*/
+if(asinh == (asinh + (asinm * tbl[TBLIDX10+54]))) 
+  return asinh;
+
+/* Launch accurate phase */
+\end{lstlisting} 
+\subsection{Accurate phase polynomial approximation and reconstruction}\label{subsec:asinaccupolynomial}
+
+\subsubsection{Low path - interval $I_0$\label{sec:asinacculowpath}}
+
+\subsubsection{Middle path - interval $I_i$, $1 \leq i \leq 8$}
+
+\subsubsection{High path - interval $I_9$}
 
 \section{Accuracy bounds}\label{sec:asinaccuracy}
 

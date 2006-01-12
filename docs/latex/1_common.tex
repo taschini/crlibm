@@ -375,8 +375,86 @@ double-double. In this case we use \texttt{Mul22} with one of the
 arguments set to zero, which only performs one useless multiplication
 by zero and one useless addition: a specific procedure is not needed.
 
+\subsection{Double-double Horner step procedures\label{sec:double-double-horner}}
 
+\subsubsection{The multiply-and-add operator \MulAddDdD}
 
+\begin{algorithm}[\MulAddDdD] \label{MulAddDdDref} ~ \\
+{\bf In:} a double-double number $c_\hi + c_\lo$, a double precision number $a$ and 
+a double-double number $b_\hi + b_\lo$ \\
+{\bf Out:} a double-double number $r_\hi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert b_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert b_\hi \right \vert \\
+\left \vert c_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert c_\hi \right \vert \\
+\left \vert a \cdot \left( b_\hi + b_\lo \right) \right \vert & \leq & 2^{-2} \cdot \left \vert c_\hi + c_\lo \right \vert 
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left(t_1, t_2 \right) \gets \mMul\left( a , b_\hi \right)$ \\
+$\left(t_3, t_4 \right) \gets \mAdd\left( c_\hi , t_1 \right)$ \\
+$t_5 \gets b_\lo \otimes a$ \\
+$t_6 \gets c_\lo \oplus t_2$ \\
+$t_7 \gets t_5 \oplus t_6$ \\
+$t_8 \gets t_7 \oplus t_4$ \\
+$\left(r_\hi, r_\lo \right) \gets \mAdd\left( t_3 , t_8 \right)$ \\
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{MulAddDdDref} \MulAddDdD\label{theoMulAddDdDref}] ~ \\
+Let be $c_\hi + c_\lo$, $a$ and $b_\hi + b_\lo$ the 
+arguments of algorithm \ref{MulAddDdDref} \MulAddDdD~ verifying the given 
+preconditions.\\
+So the following egality will hold for the returned values $r_\hi$ and $r_\lo$ 
+$$r_\hi + r_\lo = \left( \left( c_\hi + c_\lo \right) + a \cdot \left( b_\hi + b_\lo \right) \right) \cdot 
+\left( 1 + \epsilon \right)$$
+where $\epsilon$ is bounded by:
+$$\left \vert \epsilon \right \vert \leq 2^{-100}$$
+The returned values $r_\hi$ and $r_\lo$ will not overlap at all.
+\end{theorem}
+
+\subsubsection{The multiply-and-add operator \MulAddDD}
+
+\begin{algorithm}[\MulAddDD] \label{MulAddDDref} ~ \\
+{\bf In:} three double-double numbers $c_\hi + c_\lo$, $a_\hi + a_\lo$ and 
+$b_\hi + b_\lo$ \\
+{\bf Out:} a double-double number $r_\hi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert a_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert b_\hi \right \vert \\
+\left \vert c_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert c_\hi \right \vert \\
+\left \vert \left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\lo \right) \right \vert & 
+\leq & 2^{-2} \cdot \left \vert c_\hi + c_\lo \right \vert 
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left(t_1, t_2 \right) \gets \mMul\left( a_\hi , b_\hi \right)$ \\
+$\left(t_3, t_4 \right) \gets \mAdd\left( c_\hi , t_1 \right)$ \\
+$t_5 \gets a_\hi \otimes b_\lo$ \\
+$t_6 \gets a_\lo \otimes b_\hi$ \\
+$t_7 \gets t_2 \oplus c_\lo$ \\
+$t_8 \gets t_4 \oplus t_7$ \\
+$t_9 \gets t_5 \oplus t_6$ \\
+$t_{10} \gets t_8 \oplus t_9$ \\
+$\left(r_\hi, r_\lo \right) \gets \mAdd\left( t_3 , t_{10} \right)$ \\
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{MulAddDDref} \MulAddDD\label{theoMulAddDDref}] ~ \\
+Let be $c_\hi + c_\lo$, $a_\hi + a_\lo$ and $b_\hi + b_\lo$ the 
+arguments of algorithm \ref{MulAddDDref} \MulAddDD~ verifying the given 
+preconditions.\\
+So the following egality will hold for the returned values $r_\hi$ and $r_\lo$ 
+$$r_\hi + r_\lo = \left( \left( c_\hi + c_\lo \right) + 
+\left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\lo \right) \right) \cdot 
+\left( 1 + \epsilon \right)$$
+where $\epsilon$ is bounded by:
+$$\left \vert \epsilon \right \vert \leq 2^{-100}$$
+The returned values $r_\hi$ and $r_\lo$ will not overlap at all.
+\end{theorem}
 
 \subsection{Multiplication of a double-double by an integer}
 
@@ -393,7 +471,7 @@ are detailed and proven in \cite{Lauter2005LIP:tripledouble}.
 
 \subsection{The addition operator \AddTT}
 \begin{algorithm}[\AddTT] \label{addTTref} ~ \\
-{\bf In:} two triple-double numbers, $a_\hi + a_\mi + a_\lo$ et $b_\hi + b_\mi + b_\lo$ \\
+{\bf In:} two triple-double numbers, $a_\hi + a_\mi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ \\
 {\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
 {\bf Preconditions on the arguments:}
 \begin{eqnarray*}
@@ -424,7 +502,7 @@ $\left( r_\mi, r_\lo \right) \gets \mAdd\left( t_7, t_8 \right)$
 Let be $a_\hi + a_\mi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ the triple-double
 arguments of algorithm \ref{addTTref} \AddTT~ verifying the given 
 preconditions.\\
-So the following egality will hold for the returned values $r_\hi$, $r_\mi$ et $r_\lo$ 
+So the following egality will hold for the returned values $r_\hi$, $r_\mi$ and $r_\lo$ 
 $$r_\hi + r_\mi + r_\lo = \left(\left(a_\hi + a_\mi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
 where $\epsilon$ is bounded by:
 $$\left \vert \epsilon \right \vert \leq 2^{-\min\left(\alpha_o + \alpha_u,\beta_o + \beta_u\right) - 47} + 
@@ -460,7 +538,7 @@ $\left( r_\mi, r_\lo \right) \gets \mAdd\left( t_4, t_7 \right)$ \\
 \begin{theorem}[Relative error of algorithm \ref{addDTTref} \AddDTT] ~ \\
 Let be $a_\hi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ the values taken in argument of algorithm \ref{addDTTref} \AddDTT. 
 Let the preconditions hold for this values.\\
-So the following holds for the values returned by the algorithm $r_\hi$, $r_\mi$ et $r_\lo$ 
+So the following holds for the values returned by the algorithm $r_\hi$, $r_\mi$ and $r_\lo$ 
 $$r_\hi + r_\mi + r_\lo = \left(\left(a_\hi + a_\mi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
 where $\epsilon$ is bounded by
 $$\left \vert \epsilon \right \vert \leq 2^{-\beta_o - \beta_u - 52} + 2^{-\beta_o - 104} + 2^{-153}$$
@@ -497,7 +575,7 @@ So the following holds for the values returned $r_\hi$, $r_\mi$ and $r_\lo$:
 $$r_\hi + r_\mi + r_\lo = \left(\left(a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
 where $\epsilon$ is bounded as follows:
 $$\left \vert \epsilon \right \vert \leq 2^{-149}$$
-The values returned $r_\mi$ and $r_\lo$ will not overlap at all and the overlap of $r_\hi$ et $r_\mi$ will be bounded as
+The values returned $r_\mi$ and $r_\lo$ will not overlap at all and the overlap of $r_\hi$ and $r_\mi$ will be bounded as
 follows:
 $$\left \vert r_\mi \right \vert \leq 2^{-48} \cdot \left \vert r_\hi \right \vert$$
 \end{theorem}
@@ -560,7 +638,7 @@ $$\gamma \geq \min\left( 48, \beta_o - 4, \beta_o + \beta_u - 4 \right)$$
 \begin{itemize}
 \item $x_\hi$ and $x_\mi$ as well as $x_\mi$ and $x_\lo$ do not overlap
 \item $x_\mi = \circ \left( x_\mi + x_\lo \right)$
-\item $x_\hi \not = 0$, $x_\mi \not = 0$ et $x_\lo \not = 0$  
+\item $x_\hi \not = 0$, $x_\mi \not = 0$ and $x_\lo \not = 0$  
 \item $\circ \left( x_\hi + x_\mi \right) \not \in \left \lbrace x_\hi^-, x_\hi, x_\hi^+ \right \rbrace \Rightarrow 
 \left \vert \left( x_\hi + x_\mi \right) - \circ\left( x_\hi + x_\mi \right) \right \vert \not = 
 \frac{1}{2} \cdot \mUlp\left( \circ \left( x_\hi + x_\mi \right) \right)$
