@@ -34,6 +34,7 @@ for i from 1 to intervals do
 	polyQuick[i] := 1:
 od:
 epsAccurateSpecial := 0.5:
+epsQuickExtra := 0.5:
 
 lowestIntervalMax := 0.185:
 highestIntervalMin := 0.78:
