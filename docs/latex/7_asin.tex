@@ -362,7 +362,8 @@ bounded by $x^2 \leq \left(2^{-2.434403}\right)^2 \leq 2^{-4}$ in this
 path. Further, in the order of the Horner evaluation, the coefficients
 $c_i$ of the polynomial are stricly increasing in magnitude and all
 less than $1$.  Concerning the accuracy of this operations, see
-section \ref{sec:asinaccuracy}, page \pageref{sec:asinaccuracy}.
+section \ref{subsec:asinquickphaseaccu}, page
+\pageref{subsec:asinquickphaseaccu}.
 
 Including the test $\left \vert x \right \vert \stackrel{?}{\leq} 2^{-10}$, the code computing 
 an approximation $t_{5\hi} + t_{5\lo} \approx p_{0\mbox{\tiny ~quick}}\left( x^2 \right)$ reads:
@@ -413,9 +414,10 @@ for its implementation.  The code for the last steps in
 round-to-nearest mode is given below. The code for the direct rounding
 modes is analogous. One remarks that the rounding test constants,
 computed by the corresponding Maple scripts in function of the
-relative error bounds to be shown in section \ref{sec:asinaccuracy},
-page \pageref{sec:asinaccuracy}, are stored also in double precision
-and also read from the main table.
+relative error bounds to be shown in section
+\ref{subsec:asinquickphaseaccu}, page
+\pageref{subsec:asinquickphaseaccu}, are stored also in double
+precision and also read from the main table.
 \begin{lstlisting}[caption={Low path quick phase rounding test},firstnumber=1]
 /* Multiply by sign */
 asinh = sign * polyh;
@@ -478,12 +480,12 @@ read in the table are not at fixed indices but indexed by {\tt i},
 value computed in the interval discrimination phase. 
 
 The result of this approximation whose accuracy will be analysed in
-section \ref{sec:asinaccuracy}, page \pageref{sec:asinaccuracy}, is
-then multiplied by the sign of the the original argument and submitted
-to the rounding test whose rounding constant is read in the main table
-dependingly on the interval $I_i$. The corresponding code for
-round-to-nearest is given below. The directed rounding cases are
-analogous.
+section \ref{subsec:asinquickphaseaccu}, page
+\pageref{subsec:asinquickphaseaccu}, is then multiplied by the sign of
+the the original argument and submitted to the rounding test whose
+rounding constant is read in the main table dependingly on the
+interval $I_i$. The corresponding code for round-to-nearest is given
+below. The directed rounding cases are analogous.
 \begin{lstlisting}[caption={Middle path quick phase rounding test},firstnumber=1]
 asinh = sign * polyh;
 asinm = sign * polyl;
@@ -581,18 +583,333 @@ if(asinh == (asinh + (asinm * tbl[TBLIDX10+54])))
 /* Launch accurate phase */
 \end{lstlisting} 
 \subsection{Accurate phase polynomial approximation and reconstruction}\label{subsec:asinaccupolynomial}
+As already mentioned, in the accurate phase, the polynomials
+$p_{i\mbox{\tiny ~accurate}}$ for the different intervals $I_i$ whose
+coefficient are stored in the main table, are evaluated completely.
+This evaluation is done in double, double-double and triple-double
+precision using mainly Horner's scheme.
+
+The accurate phase is implemented in three different {\tt C} functions
+corresponding to the low, middle and high paths. These functions
+return a triple-double approximate $asin_\hi + asin_\mi + asin_\lo$ to
+$\arcsin$ which is accurate enough that the correct rounded result for
+$\arcsin$ is obtained when rounding the approximate.  The final
+rounding for itself is implemented in the four functions containing
+the quick phase code and the call to the accurate phase for the four
+possible rounding modes. In round-to-nearest mode, for the high path
+the code reads:
+\begin{lstlisting}[caption={Final rounding of the accurate phase result (RN)},firstnumber=1]
+/* Launch accurate phase */
+
+asin_accurate_higher(&asinh,&asinm,&asinl,z,sign);
+
+ReturnRoundToNearest3(asinh,asinm,asinl); 
+\end{lstlisting}
+For the other rounding modes and evaluation paths the code is
+completely analogous.
 
 \subsubsection{Low path - interval $I_0$\label{sec:asinacculowpath}}
+For the low path, the polynomial $p_{0\mbox{\tiny ~accurate}}$
+approximates $\arcsin$ as follows:
+$$\arcsin\left( x \right) \approx x + x^3 \cdot p_{0\mbox{\tiny ~accurate}}\left( x^2 \right)$$
+is of degree $17$ with $7$ double precision coefficients and Horner
+steps, $6$ double-double coefficients and steps and $5$ triple-double
+coefficients and steps. It reuses the value $xSq_\hi + xSq_\lo = x^2$
+which has already been computed in the quick phase. The lower
+significant term $xSq_\lo$ is neglected for the first $8$ double
+precision (and early double-double precision) steps. The double-double
+Horner steps are implemented using the \MulAddDD~ sequence. The
+triple-double steps used separate \AddTT~ and \MulTT~ macros. The
+value $x^3$ is computed out of $x$ and $x^2$ in triple-double
+precision using the \MuldDT~ operator. It is multiplied by the
+polynomial's result in triple-double by a \MulTT. The resulting
+triple-double is added to $x$ using the \AdddTT~ macro.
+
+In addition to the final renormalization which is needed before
+correct rounding to double precision is performed, one intermediate
+renormalization is necessary. Otherwise overlap in the triple-double
+intermediate values would deteriorate the accuracy to much. See
+section \ref{subsec:asinaccuratephaseaccu}, page
+\pageref{subsec:asinaccuratephaseaccu} for the overlap bounding.
+
+The code of the low path accurate phase polynomial approximation is
+the following:
+\begin{lstlisting}[caption={Low path accurate phase polynomial approximation},firstnumber=1]
+highPoly = tbl[28] + xSqh * (tbl[29] + xSqh * (tbl[30] + xSqh * (tbl[31] + xSqh * (tbl[32] + xSqh * tbl[33]))));
+
+/* Double-double computations */
+
+Mul12(&tt1h,&tt1l,xSqh,highPoly);
+Add22(&t1h,&t1l,tbl[27],0,tt1h,tt1l);
+
+MulAdd22(&t2h,&t2l,tbl[25],tbl[26],xSqh,xSql,t1h,t1l);
+MulAdd22(&t3h,&t3l,tbl[23],tbl[24],xSqh,xSql,t2h,t2l);
+MulAdd22(&t4h,&t4l,tbl[21],tbl[22],xSqh,xSql,t3h,t3l);
+MulAdd22(&t5h,&t5l,tbl[19],tbl[20],xSqh,xSql,t4h,t4l);
+MulAdd22(&t6h,&t6l,tbl[17],tbl[18],xSqh,xSql,t5h,t5l);
+MulAdd22(&t7h,&t7l,tbl[15],tbl[16],xSqh,xSql,t6h,t6l);
+
+/* Triple-double computations */
+
+Mul23(&tt8h,&tt8m,&tt8l,xSqh,xSql,t7h,t7l);                            
+Add33(&t8h,&t8m,&t8l,tbl[12],tbl[13],tbl[14],tt8h,tt8m,tt8l);          
+Mul233(&tt9h,&tt9m,&tt9l,xSqh,xSql,t8h,t8m,t8l);                       
+Add33(&t9h,&t9m,&t9l,tbl[9],tbl[10],tbl[11],tt9h,tt9m,tt9l);           
+Mul233(&tt10h,&tt10m,&tt10l,xSqh,xSql,t9h,t9m,t9l);                    
+Add33(&t10h,&t10m,&t10l,tbl[6],tbl[7],tbl[8],tt10h,tt10m,tt10l);       
+Mul233(&tt11hover,&tt11mover,&tt11lover,xSqh,xSql,t10h,t10m,t10l);     
+
+Renormalize3(&tt11h,&tt11m,&tt11l,tt11hover,tt11mover,tt11lover);      
+
+Add33(&t11h,&t11m,&t11l,tbl[3],tbl[4],tbl[5],tt11h,tt11m,tt11l);       
+Mul233(&tt12h,&tt12m,&tt12l,xSqh,xSql,t11h,t11m,t11l);                 
+Add33(&t12h,&t12m,&t12l,tbl[0],tbl[1],tbl[2],tt12h,tt12m,tt12l);       
+
+Mul123(&xCubeh,&xCubem,&xCubel,x,xSqh,xSql);                           
+
+Mul33(&tt13h,&tt13m,&tt13l,xCubeh,xCubem,xCubel,t12h,t12m,t12l);       
+Add133(&t13h,&t13m,&t13l,x,tt13h,tt13m,tt13l);                         
+
+Renormalize3(&polyh,&polym,&polyl,t13h,t13m,t13l);                     
+*asinh = sign * polyh;
+*asinm = sign * polym;
+*asinl = sign * polyl;
+\end{lstlisting} 
 
 \subsubsection{Middle path - interval $I_i$, $1 \leq i \leq 8$}
+For the middle path for $x \in I_i$, $1 \leq i \leq 8$, we use the
+following polynomial approximation by $p_{i \mbox{\tiny ~accurate}}$:
+$$\arcsin\left( x \right) \approx \left( asm_{i\hi} + asm_{i\lo} \right) + 
+z_i \cdot p_{i \mbox{\tiny ~accurate}}\left( z_i\right)$$ where $z_i =
+x - m_i$ and $asm_{i\hi} + asm_{i\lo} = \arcsin\left( m_i \right)
+\cdot \left( 1 + \epsilon \right)$ with $\left \vert \epsilon \right
+\vert \leq 2^{-121}$ by construction of $m_i$. 
+
+The polynomial $p_{i \mbox{\tiny ~accurate}}$ is of degree $34$. In
+order of decreasing monomial degrees, its coefficients are stored on
+$20$ double precision numbers, $9$ double-double precision numbers and
+$6$ triple-double precision numbers. It is completely evaluated using
+Horner's scheme using the same intermediate precision for the
+computation as the one used for the coefficients. The last
+multiplication by $z$ and the addition of $asm_{i\hi} + asm_{i\lo}$
+can be considered as an additional Horner step and is of course
+performed in triple-double precision.
+
+The double-double precision steps are implemented using the
+\MulAddDdD~ macro. The triple-double steps use separate addition and
+multiplication operators. In particular, \AddTT~ and \MuldTT~ come at
+hand. Overall, two triple-double renormalizations are necessary: one
+before final rounding can be performed and one other for avoiding a
+too great overlap in the components of the intermediate triple-double
+values. See section \ref{subsec:asinaccuratephaseaccu}, page
+\pageref{subsec:asinaccuratephaseaccu} for the overlap bounding.
+
+The coefficients of the polynomial $p_{i \mbox{\tiny ~accurate}}$ and
+the value $asm_{i\hi} + asm_{i\lo}$ are read in the main table using
+the index {\tt i} computated at the interval discrimination phase. The
+reduced argument $z_i$ has already been computed exactly at the quick
+phase and can be reused.
+
+The implementation of the accurate phase middle path polynomial approximation reads:
+\begin{lstlisting}[caption={Middle path accurate phase polynomial approximation},firstnumber=1]
+highPoly = tbl[i+39] + z * (tbl[i+40] + z * (tbl[i+41] + z * (tbl[i+42] + z * (
+           tbl[i+43] + z * (tbl[i+44] + z * (tbl[i+45] + z * (tbl[i+46] + z * (
+           tbl[i+47] + z * (tbl[i+48] + z * (tbl[i+49] + z * (tbl[i+50] + z * (
+           tbl[i+51] + z * (tbl[i+52] + z * (tbl[i+53] + z * (tbl[i+54] + z * (
+           tbl[i+55] + z * (tbl[i+56] + z * (tbl[i+57] + z * tbl[i+58]))))))))))))))))));
+
+
+/* Double-double computations */
+
+Mul12(&tt1h,&tt1l,z,highPoly);
+Add22(&t1h,&t1l,tbl[i+37],tbl[i+38],tt1h,tt1l);
+
+MulAdd212(&t2h,&t2l,tbl[i+35],tbl[i+36],z,t1h,t1l);
+MulAdd212(&t3h,&t3l,tbl[i+33],tbl[i+34],z,t2h,t2l);
+MulAdd212(&t4h,&t4l,tbl[i+31],tbl[i+32],z,t3h,t3l);
+MulAdd212(&t5h,&t5l,tbl[i+29],tbl[i+30],z,t4h,t4l);
+MulAdd212(&t6h,&t6l,tbl[i+27],tbl[i+28],z,t5h,t5l);
+MulAdd212(&t7h,&t7l,tbl[i+25],tbl[i+26],z,t6h,t6l);
+MulAdd212(&t8h,&t8l,tbl[i+23],tbl[i+24],z,t7h,t7l);
+MulAdd212(&t9h,&t9l,tbl[i+21],tbl[i+22],z,t8h,t8l);
+
+/* Triple-double computations */
+
+Mul123(&tt10h,&tt10m,&tt10l,z,t9h,t9l);                                    
+Add33(&t10h,&t10m,&t10l,tbl[i+18],tbl[i+19],tbl[i+20],tt10h,tt10m,tt10l);  
+Mul133(&tt11h,&tt11m,&tt11l,z,t10h,t10m,t10l);                             
+Add33(&t11h,&t11m,&t11l,tbl[i+15],tbl[i+16],tbl[i+17],tt11h,tt11m,tt11l);  
+Mul133(&tt12h,&tt12m,&tt12l,z,t11h,t11m,t11l);                             
+Add33(&t12h,&t12m,&t12l,tbl[i+12],tbl[i+13],tbl[i+14],tt12h,tt12m,tt12l);  
+Mul133(&tt13hover,&tt13mover,&tt13lover,z,t12h,t12m,t12l);                 
+
+Renormalize3(&tt13h,&tt13m,&tt13l,tt13hover,tt13mover,tt13lover);          
+
+Add33(&t13h,&t13m,&t13l,tbl[i+9],tbl[i+10],tbl[i+11],tt13h,tt13m,tt13l);   
+Mul133(&tt14h,&tt14m,&tt14l,z,t13h,t13m,t13l);                             
+Add33(&t14h,&t14m,&t14l,tbl[i+6],tbl[i+7],tbl[i+8],tt14h,tt14m,tt14l);     
+Mul133(&tt15h,&tt15m,&tt15l,z,t14h,t14m,t14l);                             
+Add33(&t15h,&t15m,&t15l,tbl[i+3],tbl[i+4],tbl[i+5],tt15h,tt15m,tt15l);     
+Mul133(&tt16h,&tt16m,&tt16l,z,t15h,t15m,t15l);                             
+Add233(&t16h,&t16m,&t16l,tbl[i+1],tbl[i+2],tt16h,tt16m,tt16l);             
+
+Renormalize3(&polyh,&polym,&polyl,t16h,t16m,t16l);                         
+*asinh = sign * polyh;
+*asinm = sign * polym;
+*asinl = sign * polyl;
+\end{lstlisting} 
 
 \subsubsection{High path - interval $I_9$}
+On the high path interval $I_9$, computing the approximation for
+$\arcsin$ means evaluating the polynomial $p_{9 \mbox{\tiny~accurate}}\left( z \right)$ 
+and calculating a triple-double approximation to $\sqrt{2 \cdot z}$ 
+where $z$ is the reduced argument. The function can then be 
+reconstructed as follows:
+$$\arcsin\left( x \right) \approx p_{9 \mbox{\tiny~accurate}}\left( z \right) \cdot \sqrt{2\cdot z} + 
+\left( PiHalf_\hi + PiHalf_\mi + PiHalf_\lo \right)$$ where
+$PiHalf_\hi + PiHalf_\mi + PiHalf_\lo = \frac{\pi}{2} \cdot \left( 1 +
+  \epsilon \right)$, $\left \vert \epsilon \right \vert \leq 2^{-164}$
+
+The polynomial $p_{9 \mbox{\tiny~accurate}}\left( z \right)$ is of
+degree $28$ with $12$ double precision, $9$ double-double precision
+and $8$ triple-double precision coefficients. The intermediate
+precisions used correspond to the precision the coefficients are
+stored in. The polynomial is completely evaluated in Horner's scheme.
+Once again, for doing so, the \MulAddDdD~ macro is used for the
+double-double steps whilst the triple-double stage is implemented by
+means of separate additions and multiplications mainly expressed with
+\AddTT~ and \MuldTT~ operators. 
+
+The square root extraction yielding to the triple-double approximate
+$sqrtz_\hi + sqrtz_\mi + sqrtz_\lo = \sqrt{2 \cdot z } \cdot
+\left( 1 + \epsilon \right)$ is implemented using the \SqrtT~ macro.
+Unfortunately, this means recomputing some steps of the square root
+extraction already computed in the quick phase in the \SqrtD~ macro.
+The choice made is motivated by implementatory reasons.
+
+The multiplication of the polynomial's value and of the square root is
+performed in triple-double precision by means of the \MulTT~ macro.
+The following addition with the triple-double approximate of
+$\frac{\pi}{2}$ is implemented using the \AddTT~ operator. 
+
+Overall, three renormalizations are needed. One of them renormalizes
+the final result, two allow for sufficient overlap bounding. Remark
+that the square root extraction by \SqrtT~ comprises an additional
+renormalization; see section \ref{subsection:sqrt}, page
+\pageref{subsection:sqrt} for further details.  The overlap bounds
+will be given in section \ref{subsec:asinaccuratephaseaccu}, page
+\pageref{subsec:asinaccuratephaseaccu}.
+
+The code implementing this accurate phase path is the following:
+\begin{lstlisting}[caption={High path accurate phase polynomial approximation},firstnumber=1]
+highPoly = tbl[TBLIDX10+42] + z * (tbl[TBLIDX10+43] + z * (tbl[TBLIDX10+44] + z * (
+           tbl[TBLIDX10+45] + z * (tbl[TBLIDX10+46] + z * (tbl[TBLIDX10+47] + z * (
+           tbl[TBLIDX10+48] + z * (tbl[TBLIDX10+49] + z * (tbl[TBLIDX10+50] + z * (
+           tbl[TBLIDX10+51] + z * (tbl[TBLIDX10+52] + z *  tbl[TBLIDX10+53]))))))))));
+
+/* Double-double computations */
+
+Mul12(&tt1h,&tt1l,z,highPoly);
+Add22(&t1h,&t1l,tbl[TBLIDX10+40],tbl[TBLIDX10+41],tt1h,tt1l);
+
+MulAdd212(&t2h,&t2l,tbl[TBLIDX10+38],tbl[TBLIDX10+39],z,t1h,t1l);
+MulAdd212(&t3h,&t3l,tbl[TBLIDX10+36],tbl[TBLIDX10+37],z,t2h,t2l);
+MulAdd212(&t4h,&t4l,tbl[TBLIDX10+34],tbl[TBLIDX10+35],z,t3h,t3l);
+MulAdd212(&t5h,&t5l,tbl[TBLIDX10+32],tbl[TBLIDX10+33],z,t4h,t4l);
+MulAdd212(&t6h,&t6l,tbl[TBLIDX10+30],tbl[TBLIDX10+31],z,t5h,t5l);
+MulAdd212(&t7h,&t7l,tbl[TBLIDX10+28],tbl[TBLIDX10+29],z,t6h,t6l);
+MulAdd212(&t8h,&t8l,tbl[TBLIDX10+26],tbl[TBLIDX10+27],z,t7h,t7l);
+MulAdd212(&t9h,&t9l,tbl[TBLIDX10+24],tbl[TBLIDX10+25],z,t8h,t8l);
+
+/* Triple-double computations */
+
+Mul123(&tt10h,&tt10m,&tt10l,z,t9h,t9l);                                                        
+Add33(&t10h,&t10m,&t10l,tbl[TBLIDX10+21],tbl[TBLIDX10+22],tbl[TBLIDX10+23],tt10h,tt10m,tt10l); 
+Mul133(&tt11h,&tt11m,&tt11l,z,t10h,t10m,t10l);                                                 
+Add33(&t11h,&t11m,&t11l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],tbl[TBLIDX10+20],tt11h,tt11m,tt11l); 
+Mul133(&tt12h,&tt12m,&tt12l,z,t11h,t11m,t11l);                                                 
+Add33(&t12h,&t12m,&t12l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],tbl[TBLIDX10+17],tt12h,tt12m,tt12l); 
+Mul133(&tt13h,&tt13m,&tt13l,z,t12h,t12m,t12l);                                                 
+Add33(&t13hover,&t13mover,&t13lover,
+                        tbl[TBLIDX10+12],tbl[TBLIDX10+13],tbl[TBLIDX10+14],tt13h,tt13m,tt13l); 
+
+Renormalize3(&t13h,&t13m,&t13l,t13hover,t13mover,t13lover);                                    
+
+Mul133(&tt14h,&tt14m,&tt14l,z,t13h,t13m,t13l);                                                 
+Add33(&t14h,&t14m,&t14l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tbl[TBLIDX10+11],tt14h,tt14m,tt14l);  
+Mul133(&tt15h,&tt15m,&tt15l,z,t14h,t14m,t14l);                                                 
+Add33(&t15h,&t15m,&t15l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tbl[TBLIDX10+8],tt15h,tt15m,tt15l);    
+Mul133(&tt16h,&tt16m,&tt16l,z,t15h,t15m,t15l);                                                 
+Add33(&t16h,&t16m,&t16l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tbl[TBLIDX10+5],tt16h,tt16m,tt16l);     
+Mul133(&tt17hover,&tt17mover,&tt17lover,z,t16h,t16m,t16l);                                     
+
+Renormalize3(&tt17h,&tt17m,&tt17l,tt17hover,tt17mover,tt17lover);                              
+
+Add33(&t17h,&t17m,&t17l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tbl[TBLIDX10+2],tt17h,tt17m,tt17l);    
+
+Mul133(&tt18h,&tt18m,&tt18l,z,t17h,t17m,t17l);                                                 
+Add133(&polyh,&polym,&polyl,-1,tt18h,tt18m,tt18l);                                             
+
+/* Compute sqrt(2*z) as a triple-double */
+
+twoZ = 2 * z;
+sqrt13(&sqrtzh,&sqrtzm,&sqrtzl,twoZ);                                                           
+
+/* Multiply p(z) by sqrt(2*z) and add Pi/2 */
+
+Mul33(&pTimesSh,&pTimesSm,&pTimesSl,polyh,polym,polyl,sqrtzh,sqrtzm,sqrtzl);                    
+Add33(&allhover,&allmover,&alllover,PIHALFH,PIHALFM,PIHALFL,pTimesSh,pTimesSm,pTimesSl);        
+
+/* Renormalize and multiply by sign */
+Renormalize3(&allh,&allm,&alll,allhover,allmover,alllover);                                     
+*asinh = sign * allh;
+*asinm = sign * allm;
+*asinl = sign * alll;
+\end{lstlisting} 
 
 \section{Accuracy bounds}\label{sec:asinaccuracy}
 
-\section{Timings}\label{sec:asintiming}
+\subsection{Quick phase accuracy}\label{subsec:asinquickphaseaccu}
+
+TODO: see possibly available Gappa files meanwhile
+
+
+\subsection{Accurate phase accuracy}\label{subsec:asinaccuratephaseaccu}
+
+TODO: see possibly available Gappa files meanwhile
+
+
+\section{Timings and memory consumption}\label{sec:asintimingmemory}
+The given implementation of the arcsine uses tables and constants that
+consume 4740 bytes of memory. This values are fully shared between
+quick and accurate phase. The code size, including the tables, is
+about 22 kbytes when compiled to PowerPC machine code. The quick phase
+code for one rounding mode needs about 1.5 kbytes without the table.
+This means that there are about 12 kbytes of code for the accurate
+phase, which is shared between all rounding modes.
+
+Concerning the timing, we compare our implementation to IBM's {\tt
+  libultim} and to MPFR. The values are given in arbitrary units and
+obtained on a IBM Power 5 processor with gcc 3.3.3 on a Linux Kernel
+2.6.5. The timings on other systems are comparable.
+\begin{center}
+\begin{tabular}{|l|r|r|}
+ \hline
+  Library                       &     avg time  & max time \\
+ \hline
+ \hline
+ \texttt{MPFR}   &   6322    & 83415        \\ 
+ \hline
+ \texttt{crlibm} portable using triple-double      &        45    & 300        \\ 
+ \hline
+ default \texttt{libm} (IBM's {\tt libultim})  &        23    & 206239      \\ 
+ \hline
+\end{tabular}
+\end{center}
+It is worth mentioning that IBM's library uses about 20 kbytes of
+tables for its mere quick phase.
 
 %%% Local Variables: 
 %%% mode: latex
-%%% TeX-master: "crlibm"
+%%% TeX-master: "crlibm" 
 %%% End: 

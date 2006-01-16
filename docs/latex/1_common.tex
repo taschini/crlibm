@@ -370,10 +370,41 @@ double mh, ml;
 Note that the bulk of this algorithm is a \texttt{Mul12(mh,ml,xh,yh)}.
 Of course there is a conditional version of this procedure but we have not needed it so far.
 
-Our algorithms will sometimes need to multiply a double by a
-double-double. In this case we use \texttt{Mul22} with one of the
-arguments set to zero, which only performs one useless multiplication
-by zero and one useless addition: a specific procedure is not needed.
+%Our algorithms will sometimes need to multiply a double by a
+%double-double. In this case we use \texttt{Mul22} with one of the
+%arguments set to zero, which only performs one useless multiplication
+%by zero and one useless addition: a specific procedure is not needed.
+
+
+\subsection{The multiplication procedure \MuldDD}
+\begin{algorithm}[\MuldDD] \label{muldDDref} ~ \\
+{\bf In:} a double precision number $a$ and a double-double number $b_\hi + b_\lo$ \\
+{\bf Out:} a double-double number $r_\hi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert b_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert b_\hi \right \vert 
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{60mm}
+$\left( t_1, t_2 \right) \gets \mMul\left( a, b_\hi \right)$ \\
+$t_3 \gets a \otimes b_\lo$ \\
+$t_4 \gets t_2 \oplus t_3$ \\
+$\left( r_\hi, r_\lo \right) \gets \mAdd\left( t_1, t_4 \right)$ \\
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{muldDDref} \MuldDD] ~ \\
+Let be $a$ and $b_\hi + b_\lo$ the values taken by 
+the arguments of algorithm \ref{muldDDref} \MuldDD \\
+So the following holds for the values returned $r_\hi$ and $r_\lo$:
+$$r_\hi + r_\lo = 
+\left( a \cdot \left( b_\hi + b_\lo \right)\right) \cdot 
+\left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded as follows:
+$$\left \vert \epsilon \right \vert \leq 2^{-102}$$
+The values returned $r_\hi$ and $r_\lo$ will not overlap at all. 
+\end{theorem}
 
 \subsection{Double-double Horner step procedures\label{sec:double-double-horner}}
 
@@ -466,8 +497,43 @@ trigonometric argument reduction (chapter \ref{chap:log}, p.
 
 \section{Common C procedures for triple-double arithmetic\label{section:commonCtripledouble}}
 
-These procedures are used tor reach accuracies of about 150 bits. They
+These procedures are used to reach accuracies of about 150 bits. They
 are detailed and proven in \cite{Lauter2005LIP:tripledouble}.
+ 
+
+\begin{algorithm}[Renormalization] \label{renormalg}~\\
+{\bf In: $a_\hi, a_\mi, a_\lo \in \F$} verifying the following preconditions:\\
+{\bf Preconditions: }
+\begin{itemize}
+\item None of the numbers $a_\hi, a_\mi, a_\lo$ is subnormal
+\item $a_\hi$ et $a_\mi$ do not overlap in more than $51$ bits
+\item $a_\mi$ et $a_\lo$ do not overlap in more than $51$ bits
+\end{itemize}
+which means formally:
+\begin{eqnarray*}
+\left \vert a_\mi \right \vert & \leq & 2^{-2} \cdot \left \vert a_\hi \right \vert \\
+\left \vert a_\lo \right \vert & \leq & 2^{-2} \cdot \left \vert a_\mi \right \vert \\
+\left \vert a_\lo \right \vert & \leq & 2^{-4} \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+{\bf Out: $r_\hi, r_\mi, r_\lo \in \F$}
+\begin{eqnarray*}
+\left(t_{1\hi}, t_{1\lo}\right) & \gets & \mAdd\left(a_\mi,a_\lo\right) \\
+\left(r_\hi, t_{2\lo}\right) & \gets & \mAdd\left(a_\hi, t_{1\hi}\right) \\
+\left(r_\mi, r_\lo\right) & \gets & \mAdd\left(t_{2\lo}, t_{1\lo}\right)
+\end{eqnarray*}
+\end{algorithm}
+\begin{theorem}[Correctness of the renormalization algorithm \ref{renormalg} \Renormalize] ~\\
+For all arguments verifying the preconditions of procedure \Renormalize, 
+the values returned 
+$r_\hi$, $r_\mi$ and $r_\lo$ will not overlap 
+unless they are all equal to $0$ and their sum will be exactly the sum of the
+values in argument $a_\hi$, $a_\mi$ et $a_\lo$.
+This implies:
+$$\left \vert r_\mi \right \vert \leq 2^{-52} \cdot \left \vert r_\hi \right \vert$$
+$$\left \vert r_\lo \right \vert \leq 2^{-53} \cdot \left \vert r_\mi \right \vert$$
+\end{theorem}
+
+
 
 \subsection{The addition operator \AddTT}
 \begin{algorithm}[\AddTT] \label{addTTref} ~ \\
@@ -547,6 +613,109 @@ $$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right
 with
 $$\gamma \geq \min\left( 45, \beta_o - 4, \beta_o + \beta_u - 2 \right)$$
 \end{theorem}
+
+\subsection{The addition operator \AdddTT}
+\begin{algorithm}[\AdddTT] \label{adddTTref} ~ \\
+{\bf In:} a double precision number $a$ and a triple-double number $b_\hi + b_\mi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert b_\hi \right \vert & \leq & 2^{-2} \cdot \left \vert a \right \vert \\
+\left \vert b_\mi \right \vert & \leq & 2^{-\beta_o} \cdot \left \vert b_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-\beta_u} \cdot \left \vert b_\mi \right \vert 
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( r_\hi, t_1 \right) \gets \mAdd\left( a, b_\hi \right)$ \\
+$\left( t_2, t_3 \right) \gets \mAdd\left( t_1, b_\mi \right)$ \\
+$t_4 \gets t_3 \oplus b_\lo$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAdd\left( t_2, t_4 \right)$ \\
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{adddTTref} \AdddTT] ~ \\
+Let be $a$ and $b_\hi + b_\mi + b_\lo$ the values taken in argument of algorithm \ref{adddTTref} \AdddTT. 
+Let the preconditions hold for this values.\\
+So the following holds for the values returned by the algorithm $r_\hi$, $r_\mi$ and $r_\lo$ 
+$$r_\hi + r_\mi + r_\lo = \left(a + \left( b_\hi + b_\mi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded by
+$$\left \vert \epsilon \right \vert \leq 2^{-\beta_o - \beta_u - 52} + 2^{-154}$$
+The values $r_\mi$ and $r_\lo$ will not overlap at all and the overlap of $r_\hi$ and $r_\mi$ will be bounded by:
+$$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right \vert$$
+with
+$$\gamma \geq \min\left( 47, \beta_o - 2, \beta_o + \beta_u - 1 \right)$$
+\end{theorem}
+
+\subsection{The multiplication procedure \MulTT}
+\begin{algorithm}[\MulTT] \label{mulTTref} ~ \\
+{\bf In:} two triple-double numbers $a_\hi + a_\mi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert a_\mi \right \vert & \leq & 2^{-\alpha_o} \cdot \left \vert a_\hi \right \vert \\
+\left \vert a_\lo \right \vert & \leq & 2^{-\alpha_u} \cdot \left \vert a_\mi \right \vert \\
+\left \vert b_\mi \right \vert & \leq & 2^{-\beta_o} \cdot \left \vert b_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-\beta_u} \cdot \left \vert b_\mi \right \vert 
+\end{eqnarray*}
+with
+\begin{eqnarray*}
+\alpha_o & \geq & 2 \\
+\alpha_u & \geq & 2 \\
+\beta_o & \geq & 2 \\
+\beta_u & \geq & 2 
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{60mm}
+$\left( r_\hi, t_1 \right) \gets \mMul\left( a_\hi, b_\hi \right)$ \\
+$\left( t_2, t_3 \right) \gets \mMul\left( a_\hi, b_\mi \right)$ \\
+$\left( t_4, t_5 \right) \gets \mMul\left( a_\mi, b_\hi \right)$ \\
+$\left( t_6, t_7 \right) \gets \mMul\left( a_\mi, b_\mi \right)$ \\
+$t_8 \gets a_\hi \otimes b_\lo$ \\
+$t_9 \gets a_\lo \otimes b_\hi$ \\
+$t_{10} \gets a_\mi \otimes b_\lo$ \\
+$t_{11} \gets a_\lo \otimes b_\mi$ \\
+$t_{12} \gets t_8 \oplus t_9$ \\
+$t_{13} \gets t_{10} \oplus t_{11}$ \\
+$\left( t_{14}, t_{15} \right) \gets \mAdd\left( t_1, t_6 \right)$ \\
+$t_{16} \gets t_7 \oplus t_{15}$ \\
+$t_{17} \gets t_{12} \oplus t_{13}$ \\
+$t_{18} \gets t_{16} \oplus t_{17}$ \\
+$\left( t_{19}, t_{20} \right) \gets \mAdd\left( t_{14}, t_{18} \right)$ \\
+$\left( t_{21}, t_{22} \right) \gets \mAddDD\left( t_2, t_3, t_4, t_5 \right)$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAddDD\left( t_{21}, t_{22}, t_{19}, t_{20} \right)$ 
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{mulTTref} \MulTT] ~ \\
+Let be $a_\hi + a_\mi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ the values taken by 
+the arguments of algorithm \ref{mulTTref} \MulTT \\
+So the following holds for the values returned $r_\hi$, $r_\mi$ and $r_\lo$:
+$$r_\hi + r_\mi + r_\lo = 
+\left(\left(a_\hi + a_\mi + a_\lo \right) \cdot \left( b_\hi + b_\mi + b_\lo \right)\right) \cdot 
+\left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded as follows:
+\begin{eqnarray*}
+\left \vert \epsilon \right \vert & \leq & 2^{-151} \\
+& + & 2^{-99-\alpha_o} \\
+& + & 2^{-99-\beta_o} \\
+& + & 2^{-49-\alpha_o-\alpha_u} \\
+& + & 2^{-49-\beta_o-\beta_u} \\
+& + & 2^{-50-\alpha_o-\beta_o-\beta_u} \\
+& + & 2^{-50-\alpha_o-\alpha_u-\beta_o} \\
+& + & 2^{-101-\alpha_o-\beta_o} \\
+& + & 2^{-52-\alpha_o-\alpha_u-\beta_o-\beta_u}
+\end{eqnarray*}
+The values returned $r_\mi$ and $r_\lo$ will not overlap at all and the overlap of $r_\hi$ and $r_\mi$ will be bounded as
+follows:
+$$\left \vert r_\mi \right \vert \leq 2^{-\gamma_o} \cdot \left \vert r_\hi \right \vert$$
+with
+$$\gamma_o \geq \min\left( 48, \alpha_o-4, \beta_o-4,\alpha_o+\alpha_u-4,\beta_o+\beta_u-4,\alpha_o+\alpha_o-4 \right)$$
+\end{theorem}
+
+
+
 \subsection{The multiplication procedure \MulDT}
 \begin{algorithm}[\MulDT] \label{mulDTref} ~ \\
 {\bf In:} two double-double numbers $a_\hi + a_\lo$ and $b_\hi + b_\lo$ \\
@@ -626,6 +795,80 @@ $r_\hi$ and $r_\mi$:
 $$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right \vert$$
 where
 $$\gamma \geq \min\left( 48, \beta_o - 4, \beta_o + \beta_u - 4 \right)$$
+\end{theorem}
+
+\subsection{The multiplication procedure \MuldTT}
+\begin{algorithm}[\MuldTT] \label{muldTTref} ~ \\
+{\bf In:} a double number $a$  and a triple-double number $b_\hi + b_\mi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert b_\mi \right \vert & \leq & 2^{-\beta_o} \cdot \left \vert b_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-\beta_u} \cdot \left \vert b_\mi \right \vert 
+\end{eqnarray*}
+with
+\begin{eqnarray*}
+\beta_o & \geq & 2 \\
+\beta_u & \geq & 2 
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{60mm}
+$\left( r_\hi, t_2 \right) \gets \mMul\left( a, b_\hi \right)$ \\
+$\left( t_3, t_4 \right) \gets \mMul\left( a, b_\mi \right)$ \\
+$t_5 \gets a \otimes b_\lo$ \\
+$\left( t_9, t_7 \right) \gets \mAdd\left( t_2, t_3 \right)$ \\
+$t_8 \gets t_4 \oplus t_5$ \\
+$t_{10} \gets t_7 \oplus t_8$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAdd\left( t_9, t_{10} \right)$ 
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{muldTTref} \MuldTT] ~ \\
+Let be $a$ and $b_\hi + b_\mi + b_\lo$ the values in argument of algorithm \ref{muldTTref} \MuldTT~ such that 
+the given preconditions hold.\\
+So the following will hold for the values $r_\hi$, $r_\mi$ and $r_\lo$ returned
+$$r_\hi + r_\mi + r_\lo = \left( a \cdot \left( b_\hi + b_\mi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded as follows:
+$$\left \vert \epsilon \right \vert \leq 2^{-101 - \beta_o} + 2^{-49 - \beta_o - \beta_u} + 2^{-156}$$
+The values $r_\mi$ and  $r_\lo$ will not overlap at all and the following bound will be verified for the overlap of 
+$r_\hi$ and $r_\mi$:
+$$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right \vert$$
+where
+$$\gamma \geq \min\left( 47, \beta_o - 5, \beta_o + \beta_u - 5 \right)$$
+\end{theorem}
+
+\subsection{The multiplication procedure \MuldDT}
+\begin{algorithm}[\MuldDT] \label{muldDTref} ~ \\
+{\bf In:} a double number $a$  and a double-double number $b_\hi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert b_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert b_\hi \right \vert 
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{60mm}
+$\left( r_\hi, t_1 \right) \gets \mMul\left( a, b_\hi \right)$ \\
+$\left( t_2, t_3 \right) \gets \mMul\left( a, b_\lo \right)$ \\
+$\left( t_5, t_4 \right) \gets \mAdd\left( t_1, t_2 \right)$ \\
+$t_6 \gets t_3 \otimes t_4$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAdd\left( t_5, t_6 \right)$ 
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{muldDTref} \MuldDT] ~ \\
+Let be $a$ and $b_\hi + b_\lo$ the values in argument of algorithm \ref{muldDTref} \MuldDT~ such that 
+the given preconditions hold.\\
+So the following will hold for the values $r_\hi$, $r_\mi$ and $r_\lo$ returned
+$$r_\hi + r_\mi + r_\lo = \left( a \cdot \left( b_\hi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded as follows:
+$$\left \vert \epsilon \right \vert \leq 2^{-154}$$
+The values $r_\mi$ and  $r_\lo$ will not overlap at all and the following bound will be verified for the overlap of 
+$r_\hi$ and $r_\mi$:
+$$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right \vert$$
+where
+$$\gamma \geq 47$$
 \end{theorem}
 
 
