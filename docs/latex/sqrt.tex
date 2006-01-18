@@ -8,7 +8,7 @@ etc.) neither.
 We currently provide two C macros computing the square root of a
 double precision argument either in double-double precision with at
 least $100$ correct bits (in faithful rounding) or in triple-double
-precision with an accuracy of at least $140$ bits (in faithful
+precision with an accuracy of at least $146$ bits (in faithful
 rounding). The corresponding macros are called \SqrtD~ and
 \SqrtT.
 
@@ -277,7 +277,7 @@ Mul22(&srtmh,&srtml,m,0,r4h,r4l);
 
 \subsubsection{Triple-double Newton iteration}
 For producing a triple-double approximate to $\hat{r}$ with an
-accuracy of at least $148$ bits, one more Newton iteration is
+accuracy of at least $147$ bits, one more Newton iteration is
 needed. We apply the same equation as in the last double-double step,
 which reads:
 $$r_5 = r_4 \cdot \left( 1 - \frac{1}{2} \cdot \left( m \cdot r_4^2 -
@@ -302,7 +302,7 @@ Mul233(&r5h,&r5m,&r5l,r4h,r4l,1,HmMr4Sqm,HmMr4Sql);
 
 This approximation $r_{5\hi} + r_{5\mi} + r_{5\lo} = \hat{r} \cdot
 \left( 1 + \epsilon_5 \right)$, where $\left \vert \epsilon_5 \right
-\vert \leq 2^{-148}$ is then multiplied by $m$ in order to obtain a
+\vert \leq 2^{-147}$ is then multiplied by $m$ in order to obtain a
 triple-double approximation of $\sqrt{m}$. Once renormalized result is
 exactly multiplied by $2^{\frac{E}{2}}$ stored in $xdb.d$.  We
 implement:

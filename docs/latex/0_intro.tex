@@ -379,9 +379,9 @@ Error terms to consider are the following:
 
 The \texttt{crlibm} library currently offers accurate parts for the exponential,
 logarithm in radix $2$, $10$ and $e$, sine, cosine, tangent,
-arctangent, plus trigonometric argument reduction. The quick part and
+arctangent, arcsine, plus trigonometric argument reduction. The quick part and
 its proof have been written for the exponential, natural logarithm,
-sine, cosine tangent, arctangent, and the hyperbolic sine and cosine
+sine, cosine tangent, arctangent, arcsine, and the hyperbolic sine and cosine
 thus far.
 
 The correct rounding property is fully proven (the worst-case required
@@ -408,8 +408,8 @@ function):
     $\sinh$ & $\mathbb{F}$  \\
     \hline
     $\sin$  & $[-\pi/2, \pi/2]$  \\
-    % \hline
-    % $\arcsin$  & $[-\sin(2), \sin(2)]$  \\
+    \hline
+    $\arcsin$  & $\mathbb{F}$  \\
     \hline
     $\cos$  & $[-2, 2]$  \\
     \hline
