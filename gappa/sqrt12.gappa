@@ -1,0 +1,183 @@
+#@ -Eprecision=108
+
+# In this Gappa file, the mathematical values are not
+# marked with a leading M but with a leading E (for exact)
+# The reason is that we have already variables starting
+# with the letter M
+
+
+# Rounding operators and sequences definition
+
+@double = float<ieee_64,ne>;
+@Add22 = add_rel<102>;
+@Mul22 = mul_rel<102>;
+
+
+# Instantiating of constants
+SQRTPOLYC0 = double(_SQRTPOLYC0);
+SQRTPOLYC1 = double(_SQRTPOLYC1);
+SQRTPOLYC2 = double(_SQRTPOLYC2);
+SQRTPOLYC3 = double(_SQRTPOLYC3);
+SQRTPOLYC4 = double(_SQRTPOLYC4);
+
+
+# Definition of what is a sqrt 
+# We start with the reciprocal square root. The square root is its reciprocal. 
+# The reduced argument m is the square of its root.
+
+ESqrtm = 1 / ERecSqrtm;
+m = ESqrtm * ESqrtm;
+ERecM = 1 / m;
+
+# Translation of the code
+r0 double= SQRTPOLYC0 + m * (SQRTPOLYC1 + m * (SQRTPOLYC2 + m * (SQRTPOLYC3 + m * SQRTPOLYC4)));
+
+r1 double= (1/2) * r0 * (3 - m * (r0 * r0));
+r2 double= (1/2) * r1 * (3 - m * (r1 * r1));
+
+R2Sqhl = r2 * r2;
+R2PHr2hl = (3/2) * r2;
+
+MMr2hl = m * r2;
+
+MMr2Chl = Mul22(MMr2hl, R2Sqhl);
+
+MHmMr2Chl = -(1/2) * MMr2Chl;
+
+R3hl = Add22(R2PHr2hl, MHmMr2Chl);
+
+R3Sqhl = Mul22(R3hl,R3hl);
+
+MMr3Sqhl = Mul22(m,R3Sqhl);
+
+# The next translation of the code is correct only if we can prove that 
+# mMr3Sqh is exactly 1 in each case
+# We show this below
+
+T1 = 1 + -(1/2) * (MMr3Sqhl - 1);                    
+
+R4hl = Mul22(R3hl,T1);
+
+Srtmhl = Mul22(m,R4hl);
+
+# Show that mMr3Sqh is exactly 1 in each case
+# We round the double-double result MMr3Sqhl to double 
+# precision and show that the result is in the singleton
+# interval [1,1]
+
+mMr3Sqh = double(MMr3Sqhl);
+
+# Mathematical equivalents (marked with E for exact)
+
+Er0 = SQRTPOLYC0 + m * (SQRTPOLYC1 + m * (SQRTPOLYC2 + m * (SQRTPOLYC3 + m * SQRTPOLYC4)));
+
+Er1 = (1/2) * Er0 * (3 - m * (Er0 * Er0));
+Er2 = (1/2) * Er1 * (3 - m * (Er1 * Er1));
+
+#Definition of the errors
+
+epsilon = (Srtmhl - ESqrtm) / ESqrtm;
+
+epsilonApproxMath0 = (Er0 - ERecSqrtm) / ERecSqrtm;
+epsilonApproxMath1 = (Er1 - ERecSqrtm) / ERecSqrtm;
+epsilonApproxMath2 = (Er2 - ERecSqrtm) / ERecSqrtm;
+
+epsilonApproxArith0 = (r0 - ERecSqrtm) / ERecSqrtm;
+epsilonApproxArith1 = (r1 - ERecSqrtm) / ERecSqrtm;
+epsilonApproxArith2 = (r2 - ERecSqrtm) / ERecSqrtm;
+epsilonApproxArith3 = (R3hl - ERecSqrtm) / ERecSqrtm;
+epsilonApproxArith4 = (R4hl - ERecSqrtm) / ERecSqrtm;
+
+epsilon0 = (r0 - Er0) / Er0;
+epsilon1 = (r1 - Er1) / Er1;
+epsilon2 = (r2 - Er2) / Er2;
+
+epsilon3 = ((R2PHr2hl + MHmMr2Chl) - ERecSqrtm) / ERecSqrtm;
+epsilon4 = ((R3hl * T1) - ERecSqrtm) / ERecSqrtm;
+
+epsilon5 = ((T1 - 3/2) - (-1/2 * m * R3hl * R3hl)) / (-1/2 * m * R3hl * R3hl);
+epsilon6 = (MMr3Sqhl - (m * (R3hl * R3hl))) / (m * (R3hl * R3hl));
+
+epsilon7 = (R3Sqhl - ERecM) / ERecM;
+epsilon8 = (MMr3Sqhl - 1) / 1;
+
+epsilon9 = ((R3hl * R3hl) - ERecM) / ERecM;
+epsilon10 = ((m * R3Sqhl) - 1) / 1;
+
+epsilon11 = ((m * R4hl) - ESqrtm) / ESqrtm;
+
+epsilonOp0 = (MMr2Chl - (MMr2hl * R2Sqhl)) / (MMr2hl * R2Sqhl);
+epsilonOp1 = (R3hl - (R2PHr2hl + MHmMr2Chl)) / (R2PHr2hl + MHmMr2Chl);
+epsilonOp2 = (R3Sqhl - (R3hl * R3hl)) / (R3hl * R3hl);
+epsilonOp3 = (MMr3Sqhl - (m * R3Sqhl)) / (m * R3Sqhl);
+epsilonOp4 = (R4hl - (R3hl * T1)) / (R3hl * T1);
+epsilonOp5 = (Srtmhl - (m * R4hl)) / (m * R4hl);
+
+
+#Logical implication to prove
+
+{
+(
+   ERecSqrtm in [_ERecSqrtmMin,_ERecSqrtmMax]
+/\ epsilonApproxMath0 in [-_epsilonApprox,_epsilonApprox]
+)
+->
+(
+   epsilon in [-1b-100,1b-100]               # Accuracy bound
+/\ mMr3Sqh in [1,1]                          # For showing that mMr3Sqh is always equal to 1 (see above)
+)
+}
+
+# Hints for bounding the variables in the code (not the errors)
+
+Er0 -> ERecSqrtm * epsilonApproxMath0 + ERecSqrtm;
+Er1 -> ERecSqrtm * epsilonApproxMath1 + ERecSqrtm;
+Er2 -> ERecSqrtm * epsilonApproxMath2 + ERecSqrtm;
+
+r0 -> Er0 * epsilon0 + Er0;
+r1 -> Er1 * epsilon1 + Er1;
+r2 -> Er2 * epsilon2 + Er2;
+
+(R2PHr2hl + MHmMr2Chl) -> ERecSqrtm * epsilon3 + ERecSqrtm;
+
+MMr3Sqhl -> 1 + epsilon8;
+
+
+# Hints for the Newton iteration
+
+epsilonApproxMath1 -> -3/2 * epsilonApproxMath0 * epsilonApproxMath0 - 
+                      1/2 * epsilonApproxMath0 * epsilonApproxMath0 * epsilonApproxMath0;
+
+epsilonApproxMath2 -> -3/2 * epsilonApproxMath1 * epsilonApproxMath1 - 
+                      1/2 * epsilonApproxMath1 * epsilonApproxMath1 * epsilonApproxMath1;
+
+
+# Hints for the Newton iteration with integrated arithmetical errors
+
+epsilon3 -> -3/2 * epsilonApproxArith2 * epsilonApproxArith2 
+            -1/2 * epsilonApproxArith2 * epsilonApproxArith2 * epsilonApproxArith2 
+            -1/2 * epsilonOp0 
+            -3/2 * epsilonApproxArith2 * epsilonOp0 
+            -3/2 * epsilonApproxArith2 * epsilonApproxArith2 * epsilonOp0
+            -1/2 * epsilonApproxArith2 * epsilonApproxArith2 * epsilonApproxArith2 * epsilonOp0;
+
+epsilon5 -> epsilon6;
+
+epsilon4 -> -3/2 * epsilonApproxArith3 * epsilonApproxArith3
+            -1/2 * epsilonApproxArith3 * epsilonApproxArith3 * epsilonApproxArith3
+            -1/2 * epsilon5
+            -3/2 * epsilon5 * epsilonApproxArith3
+            -3/2 * epsilon5 * epsilonApproxArith3 * epsilonApproxArith3
+            -1/2 * epsilon5 * epsilonApproxArith3 * epsilonApproxArith3 * epsilonApproxArith3;
+
+epsilon9 -> 2 * epsilonApproxArith3 + epsilonApproxArith3 * epsilonApproxArith3;
+
+epsilon10 -> epsilon7;
+
+epsilon11 -> epsilonApproxArith4;
+
+# Meta-Hints
+
+r0 ~ Er0;
+r1 ~ Er1;
+r2 ~ Er2;
