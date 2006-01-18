@@ -44,6 +44,10 @@ Optimisation stuff
 Write TD versions of: csh, trigo
 Write DE versions of: exp, csh, trigo
 
+
+Use technique in paper by Karp and Markstein for sqrt12 and sqrt13
+
+
 Interval stuff
 --------------
 Write interval functions for each CR function
