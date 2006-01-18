@@ -13,11 +13,17 @@ mkdir("TEMPSQRT"):
 
 polyDegree := 4:
 
+ERecSqrtmMin := 0.707:
+ERecSqrtmMax := 1.4143:
+
+xErrMin := evalf((1/(ERecSqrtmMax^2))):
+xErrMax := evalf((1/(ERecSqrtmMin^2))):
+
 printf("Using a %d degree polynomial for computing the iteration seed\n",polyDegree);
 
 polyExact := numapprox[minimax](1/sqrt(x),x=1/2..2,[polyDegree,0],1,'err'):
 poly := poly_exact(polyExact):
-eps := numapprox[infnorm]((poly*sqrt(x))-1,x=1/2..2):
+eps := numapprox[infnorm]((poly*sqrt(x))-1,x=xErrMin..xErrMax):
 
 printf("Relative approximation error eps = 2^(%f)\n",log[2](abs(eps))):
 
@@ -40,6 +46,9 @@ filename:="TEMPSQRT/sqrt.sed":
 fd:=fopen(filename, WRITE, TEXT):
 
 fprintf(fd, "s/_epsilonApprox/%1.50e/g\n",eps):
+fprintf(fd, "s/_ERecSqrtmMin/%1.50e/g\n",ERecSqrtmMin):
+fprintf(fd, "s/_ERecSqrtmMax/%1.50e/g\n",ERecSqrtmMax):
+
 
 for i from 0 to polyDegree do
    fprintf(fd, "s/_SQRTPOLYC%d/%1.50e/g\n",i,coeff(poly,x,i)):
