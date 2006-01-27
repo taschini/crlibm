@@ -1,16 +1,25 @@
-# Usage: You need to set the constants. Running the log-de.mpl Maple script
+# Usage: This files builds an error computation for one index value
+#only. To get a complete proof you need to run it through gappa for all
+#the possible values of the constants.
+
+# Running the ../maple/log-de.mpl Maple script
 # should create the required sed files and give the command to run.
-# Example   sed -f ../maple/TEMPLOG/log-de_0.sed log-de.gappa | ~/gappa/src/gappa 
+# Example   sed -f ../maple/TEMPLOG/log-de_1.sed ../gappa/log-de.gappa | ~/gappa/src/gappa 
 
 
 # NOTATION CONVENTION 
+# Variables that will be replaced with Maple-computed constants begin with an underscore
 # Variables that correspond to double-precision variables in the code begin with a small letter
 # Other variables begin with a capital letter.
-# Variables that will be replaced with Maple-computed constants begin with an underscore
-# Otherwise avoid underscores as they are painful to carry on to LaTeX :)
+
+#This is to prevent a warning 
+#@ -Wno-dichotomy-failure
 
 @IEEEdouble = float<ieee_64,ne>;
 @IEEEext = float<x86_80,ne>;
+
+# This is to tell Gappa that E is an integer.
+E=int<ne>(dummyE);
 
 # polynomial coefficients, computed by Maple
 c1 = IEEEext(_c1);
@@ -55,48 +64,50 @@ P07  =  ( (logirh+z*c1) + Mz2*(c2+z*c3) )     + Mz4*( (c4+z*c5) + Mz2*(c6+z*c7) 
 
 Alogz = P07 + E*Mlog2;
 
-
-
 PolyLog1pz = z*c1 + Mz2*(c2+z*c3) + Mz4*( (c4+z*c5) + Mz2*(c6+z*c7)  );
 
 epsilon = (logz - Mlogz)/Mlogz;
-epsilon1 = (logz - Alogz)/Alogz;
-epsilon2 = (Alogz - Mlogz)/Mlogz;
+
 
 {
-(E in [1,61]) # \/ E in [-1024,-1])
+(
+|E| in [1,1024]
 /\    z in [-_zmax, _zmax] 
 /\  Log2hl - Mlog2    in [-1b-129, 1b-129] 
 /\  Logirhl - Logir in [-1b-129, 1b-129]  
 #/\  (PolyLog1pz - Log1pz)/Log1pz in [-_epsilonApproxQuick, _epsilonApproxQuick]
 /\  (PolyLog1pz - Log1pz) in [-_deltaApproxQuick, _deltaApproxQuick]
 ->
-epsilon in ? #[-1b-62, 1b-62]
-/\ logz-Mlogz in ?
-/\ Mlogz in ?
-/\ epsilon1 in ?
-/\ epsilon2 in ?
+epsilon in [-1b-62, 1b-62]
+)
+
+/\
+
+(
+E in [0,0]
+/\    z in [-_zmax, _zmax] 
+/\  Log2hl - Mlog2    in [-1b-129, 1b-129] 
+/\  Logirhl - Logir in [-1b-129, 1b-129]  
+#/\  (PolyLog1pz - Log1pz)/Log1pz in [-_epsilonApproxQuick, _epsilonApproxQuick]
+/\  (PolyLog1pz - Log1pz) in [-_deltaApproxQuick, _deltaApproxQuick]
+->
+epsilon in [-1b-61, 1b-61]
+)
+
 }
 
-# Trivialities
+logz ~ Alogz;
+Alogz ~ Mlogz;
+
+
+# Trivialities which cannot be expressed using ~
 logirh - Logir ->  (logirh +logirl -Logir) - logirl;
 log2h-Mlog2  -> ((log2h + log2l) - Mlog2) - log2l;
 Mlog2  -> (log2h + log2l) - ((log2h + log2l) - Mlog2);
 Logir -> logirh + ((logirl - (logirh +logirl -Logir)));
 Mlogz   -> Alogz - (Alogz-Mlogz);
 
-
-#logz - Mlogz -> (logz - Alogz) + (Alogz - Mlogz); 
-epsilon -> epsilon1 + epsilon2 + epsilon1*epsilon2;
-
-
-epsilon2 ->  ((logirh-Logir) + (PolyLog1pz  - Log1pz))    / Mlogz;
-
-# argl, oublie l'erreur d'arrondi au debut d'epsilon1
-epsilon1 -> ((p07 - P07)/(E * Mlog2) + (log2h - Mlog2)/Mlog2) / (1 + P07 / (E * Mlog2));
-
 Alogz - Mlogz -> (logirh-Logir) + (PolyLog1pz  - Log1pz);
 
-#Log1pz  -> (Log1pz - PolyLog1pz) + PolyLog1pz;  
-
-#Logir ->   (Logir - Logirhl) + Logirhl;  
+epsilon $ E;
+epsilon $ z;
