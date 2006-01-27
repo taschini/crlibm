@@ -216,23 +216,23 @@ fprintf(fd, "GAPPA=~/gappa/src/gappa\n"):
 fprintf(fd, "# Test all the possible table value for E=1\n"):
 fprintf(fd, "for num in `seq 0 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo $num, E=1:\n"):
-fprintf(fd, "  sed -f ../maple/TEMPLOG/log-de_$num.sed log-de.gappa | $GAPPA \n"):
+fprintf(fd, "  sed -f ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de.gappa | $GAPPA \n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fprintf(fd, "# For the case E=0 we first handle the cases 0 and %d using log-de-E0-logir0.gappa\n", 2^L):
 fprintf(fd, "echo 0 and %d, E=0:\n", 2^L):
-fprintf(fd, "sed -f ../maple/TEMPLOG/log-de_0.sed log-de-E0-logir0.gappa | $GAPPA \n"):
+fprintf(fd, "sed -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de-E0-logir0.gappa | $GAPPA \n"):
 fprintf(fd, "# then the other cases where logirh <> 0\n"):
 fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo $num, E=0:\n"):
-fprintf(fd, "  sed -f  ../maple/TEMPLOG/log-de_$num.sed log-de-E0.gappa | $GAPPA\n"):
+fprintf(fd, "  sed -f  ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de-E0.gappa | $GAPPA\n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 fclose(fd):
 
 printf("************ DONE TEMPLOG/run-log-de-proof.sh ************\n"):
-printf("Now you should go to ../gappa and run\n"):
-printf(" sh TEMPLOG/run-log-de-proof.sh  2>../maple/TEMPLOG/Gappa.out\n"):
+printf("Now you should run (from the maple/ directory) \n"):
+printf(" sh TEMPLOG/run-log-de-proof.sh  2> TEMPLOG/Gappa.out\n"):
 printf("  (You probably need to edit the path to the gappa executable within run-log-de-proof.sh)\n"):
 printf("Then look at TEMPLOG/Gappa.out. It shouldn't contain 'no proof'.\nThis means that everything is OK.\n\n"):
 
