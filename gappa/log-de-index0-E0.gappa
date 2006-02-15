@@ -1,0 +1,195 @@
+# Usage: This files builds an error computation for one index value
+#only. To get a complete proof you need to run it through gappa for all
+#the possible values of the constants.
+
+# Running the ../maple/log-de.mpl Maple script
+# should create the required sed files and give the command to run.
+# Example    sed -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de-logir0-E0.gappa | $GAPPA 
+
+
+
+# NOTATION CONVENTION 
+# Variables that will be replaced with Maple-computed constants begin with an underscore
+# Variables that correspond to double-precision variables in the code begin with a small letter
+# variable eps_xxx denote the relative rounding error of the last machine operation that computes xxx
+
+@IEEEdouble = float<ieee_64,ne>;
+@IEEEext = float<x86_80,ne>;
+
+
+# polynomial coefficients, computed by Maple
+#c1 = IEEEext(_c1);
+c2 = IEEEext(_c2);
+c3 = IEEEext(_c3);
+c4 = IEEEext(_c4);
+c5 = IEEEext(_c5);
+c6 = IEEEext(_c6);
+c7 = IEEEext(_c7);
+log2h = IEEEext(_log2h);
+log2l  = IEEEext(_log2l);
+#r     = IEEEext(_rval);
+#logirh = IEEEext(_logirh);
+#logirl = IEEEext(_logirl);
+
+
+# Transcription of the code, NOT using FMA
+
+#TODO reinsert logirh and Elog2
+z2   IEEEext= z*z;    
+p67  IEEEext= c6 + z*c7;       
+p45  IEEEext= c4 + z*c5;      
+p23  IEEEext= c2 + z*c3;    
+#p01  IEEEext=  z;
+z4   IEEEext= z2*z2;  
+p47  IEEEext= p45 + z2*p67;    
+p03  IEEEext= z + z2*p23; # suppressed by hand the exact additions of 0 
+logz IEEEext= p03 + z4*p47;
+
+#---------- What this code is supposed to approximate
+# Exact mathematical definition of the log
+Mlogz = Log1pz;
+
+#############   Now come auxiliary definitions
+
+# Give the polynomial in Estrin form (no need to transcribe the intermediate steps)
+# Since the argument reduction is exact, Mz = z.
+Mz2 = z*z;
+Mz4 = Mz2*Mz2;
+Mz3 = z*z*z;
+Mz5 = z*z*z*z*z;
+Mz6 = z*z*z*z*z*z;
+eps_z2 = (z2 - z*z)/(z*z);
+eps_z4 = (z4 - z2*z2)/(z2*z2);
+t3 = IEEEext(z*c3);
+t5 = IEEEext(z*c5);
+t7 = IEEEext(z*c7);
+t23 = IEEEext(z2*p23);
+t47 = IEEEext(z4*p47);
+t67 = IEEEext(z2*p67);
+eps_t3 = (t3 - z*c3)/(z*c3);
+eps_t5 = (t5 - z*c5)/(z*c5);
+eps_t7 = (t7 - z*c7)/(z*c7);
+eps_t23 = (t23 - z2*p23)/(z2*p23);
+eps_t67 = (t67 - z2*p67)/(z2*p67);
+eps_t47 = (t47 - z4*p47)/(z4*p47);
+eps_p03 = (p03 - (z+t23)) / (z+t23);
+eps_p23 = (p23 - (c2 + t3)) / (c2 + t3);
+eps_p45 = (p45 - (c4 + t5)) / (c4 + t5);
+eps_p67 = (p67 - (c6 + t7)) / (c6 + t7);
+eps_p47 = (p47 - (p45 + t67)) / (p45 + t67);
+eps_logz = (logz - (p03 + t47))/(p03 + t47);
+
+# The following are just for lightening notations
+eps2_z4 = (1+eps_z2)*(1+eps_z2)*(1+eps_z4)-1;
+eps2_p67 = (1+eps_z2)*(1+eps_p67) -1;
+eps2_p47 = (1+eps2_z4)*(1+eps_p47) -1;
+
+PolyLog1pz = z + Mz2*(c2+z*c3) + Mz4*( (c4+z*c5) + Mz2*(c6+z*c7)  );
+
+epsilon = (logz - Mlogz)/Mlogz;
+
+epsilon_approx = (PolyLog1pz - Log1pz)/Log1pz;
+epsilon_round = (logz-PolyLog1pz)/PolyLog1pz;
+
+{
+    z in [1b-100, _zabsmax] 
+/\  epsilon_approx in [-_epsilonApproxQuick, _epsilonApproxQuick]
+/\  (PolyLog1pz - Log1pz) in [-_deltaApproxQuick, _deltaApproxQuick]
+->
+epsilon in [-1b-61, 1b-61]
+}
+
+epsilon -> epsilon_approx + epsilon_round + epsilon_approx*epsilon_round;
+
+#We need to factor z by using : 
+(logz-PolyLog1pz)/PolyLog1pz   ->   ((logz/z) - PolyLog1pz/z) / (PolyLog1pz/z);
+# Here the denominator will be bound properly:
+PolyLog1pz/z  -> 1 + z*(c2+z*c3) + z*z*z*( (c4+z*c5) + z*z*(c6+z*c7) ) ;
+# so all we have is to cancel as much as possible from the numerator.
+# As all the polynomials come close to zero, we do this by forcing appearance of rel error
+
+# (1) logz = IEEEext(p03 + t47).   Since p03+t47 comes close to zero, force appearance of relative error
+logz/z   ->   (1+  (IEEEext(p03 + t47) - (p03 + t47))/(p03 + t47) ) * ((p03 + t47)/z) ;
+#                   ------------------rel error-----------------      --closer to PolyLog1pz/z---  
+
+# Now if we try to print out the rel error above, it  is undefined. 
+# This is because Gappa is not able to prove that  p03+t47 does not contain 0. 
+# So the first job is to get a better enclosure of p03+t47, without 0.
+
+# First get a good enclosure on p03 (so that it does not contain zero): same process as (1)
+p03 ->  (1+ eps_p03) * (z+t23);
+# Again, the relative error above exists only if z+t23 does not contain 0
+z+t23-> z*(1+t23/z); 
+# now we force the relative error of the rounding of t23
+t23/z  -> eps_t23 * ((z2/z)*p23) + (z2/z)*p23;
+z2/z -> ( (z2 - z*z)/(z*z) ) * z + z;  # that's eps_z2
+# Now p03 is OK, but p03 + t47 still contains 0: rewrite it, first by rewriting t47:
+t47  -> (1 + eps_t47) * (z4*p47) ;
+# now we may rewrite p03+t47, with the purpose to factor z
+p03+t47 -> z*(    (1+eps_p03)*(1+t23/z) + (1+eps_t47)*(z4*p47/z)); 
+# remains to bound z4*p47/z, a piece of cake (we even recycle z2/z)
+z4*p47/z -> (1 + (IEEEext(z2*z2) - z2*z2)/(z2*z2)) * p47*z2*(z2/z) ; 
+
+
+# At this point the relative error in (1) exists at last. Beside we have almost built a good approx of:
+(p03+t47)/z -> (1+eps_p03)*(1+t23/z) + (1+eps_t47)*(z4*p47/z) ;
+# The previous gives a bound of 2^-8 for the approximation error. Let us refine it.
+# Replacing the terms with the best expression we have for them gives: 
+(logz-PolyLog1pz)/PolyLog1pz   ->   
+      (  (1+ eps_logz)*(  (1+eps_p03)*(1+t23/z) 
+                        + (1+eps_t47)*(z4*p47/z) ) 
+       - (1 + z*(c2+z*c3) + z*z*z*( (c4+z*c5) + z*z*(c6+z*c7) ))
+      ) / (PolyLog1pz/z);
+# We develop and simplify the logz/z part of the expression in Maple using expand(). Need to set: interface(prettyprint=0);
+#expand( (1+ eps_logz)*(  (1+eps_p03)*(1+t23/z)  + (1+eps_t47)*(z4*p47/z) ));
+# Then we may cancel the 1s. 
+# Then we regroup the next significant terms:  t23/z - z*(c2+z*c3), and  
+# (also  add parentheses around (z4*p47/z) and (t23/z) so that the remainder is bound properly using previous hints) 
+(logz-PolyLog1pz)/PolyLog1pz   ->   
+      ( 
+         (t23/z - z*(c2+z*c3))
+	+((z4*p47/z) - z*z*z*( (c4+z*c5) + z*z*(c6+z*c7)))  
+        + (eps_p03 + eps_p03*(t23/z) +  + (z4*p47/z)*eps_t47+eps_logz+eps_logz*(t23/z)
+            + eps_logz*eps_p03 + eps_logz*eps_p03*(t23/z) + eps_logz*(z4*p47/z) + eps_logz*(z4*p47/z)*eps_t47 )  
+      ) / (PolyLog1pz/z);
+# A quick check gives a bound of 2^-62 for the third term (sum of epsilons), which is OK for now. 
+# Now let us work on this next significant term, starting with the expression we already have for t23/z:
+t23/z - z*(c2+z*c3) -> eps_t23 * ((z2/z)*p23) + ( (z2/z)*p23   - z*(c2+z*c3)) ;
+#                      ----------small-------
+# insert rel error of p23, and replace z2/z with the hint already given, then simplify and look for the most significant term : 
+# expand((eps_z2 * z + z) * (1+eps_p23)*(c2+t3)    - z*(c2+z*c3));
+(z2/z)*p23  - z*(c2+z*c3)   ->  (z*t3 - z*z*c3) + eps_z2*z*c2 + eps_z2*z*t3 + eps_z2*z*eps_p23*c2 + eps_z2*z*eps_p23*t3 +  z*eps_p23*c2 + z*eps_p23*t3  ;
+(z*t3 - z*z*c3) -> z*(z*c3*eps_t3);
+
+# At this point we have a bound of 2^-71 for t23/z - z*(c2+z*c3), perfect. 
+
+# Let us attack (z4*p47/z) - z*z*z*( (c4+z*c5) + z*z*(c6+z*c7)) (currently 2^-25 -- interval arithmetic on z^3)
+
+# Rewrite z4 as z2*z2*(1+eps_z4), then inside this rewrite z2 as z*z*(1+eps_z2).
+z4/z -> z*z*z + z*z*z*((1+eps_z2)*(1+eps_z2)*(1+eps_z4) -1); #OK
+# Also rewrite p47 all the way down : we get
+# p47 -> (1+eps_p47)*(p45 + (1+eps_t67)*(z2*p67));
+# p45 -> (1+eps_p45)*(c4+(1+eps_t5)*(z*c5));
+# z2*p67 -> (1+eps_z2)*z*z*(1+eps_p67)*(c6+(1+eps_t7)*(c7*z));
+# Putting together:
+(z4*p47/z) - z*z*z*( (c4+z*c5) + z*z*(c6+z*c7)) ->  
+   z*z*z*(  (1+eps2_p47)*(((1+eps_p45)*(c4+(1+eps_t5)*(z*c5))) + (1+eps_t67)*(z*z*(1+eps2_p67)*(c6+(1+eps_t7)*c7*z))) - c4 - z*c5 - z*z*(c6+z*c7)) ;
+
+# Needed if less than 256 Mo RAM
+#@ -Wno-hint-difference -Wno-null-denominator
+
+# This last hint is computed by one expand() and one collect(,z) in maple
+ (1+eps2_p47)*(((1+eps_p45)*(c4+(1+eps_t5)*(z*c5))) + (1+eps_t67)*(z*z*(1+eps2_p67)*(c6+(1+eps_t7)*c7*z))) - c4 -  z*c5 - z*z*(c6+z*c7)  -> 
+(eps2_z4*c7*eps_t7+eps2_z4*eps2_p67*c7+c7*eps_t7+eps2_z4*c7+eps2_p67*c7+eps2_p67*c7*eps_t7+eps2_z4*eps2_p67*c7*eps_t7+eps_t67*
+c7+eps_p47*c7+eps_t67*c7*eps_t7+eps_p47*c7*eps_t7+eps_p47*eps_t67*c7+eps2_z4*eps_p47*c7+eps2_z4*eps_t67*c7+eps_t67*eps2_p67*c7
++eps_p47*eps2_p67*c7+eps_p47*eps_t67*c7*eps_t7+eps2_z4*eps_p47*c7*eps_t7+eps2_z4*eps_p47*eps_t67*c7+eps2_z4*eps_t67*c7*eps_t7+
+eps_t67*eps2_p67*c7*eps_t7+eps2_z4*eps_p47*eps2_p67*c7+eps_p47*eps2_p67*c7*eps_t7+eps_p47*eps_t67*eps2_p67*c7+eps2_z4*eps_t67*
+eps2_p67*c7+eps2_z4*eps_p47*eps_t67*c7*eps_t7+eps2_z4*eps_p47*eps2_p67*c7*eps_t7+eps2_z4*eps_p47*eps_t67*eps2_p67*c7+eps2_z4*
+eps_p47*eps_t67*eps2_p67*c7*eps_t7+eps_p47*eps_t67*eps2_p67*c7*eps_t7+eps2_z4*eps_t67*eps2_p67*c7*eps_t7)*Mz3+(eps_t67*
+eps2_p67*c6+eps_p47*eps2_p67*c6+eps_p47*c6+eps2_z4*eps_p47*c6+eps_p47*eps_t67*eps2_p67*c6+eps_t67*c6+eps2_z4*eps_p47*eps2_p67*
+c6+eps2_p67*c6+eps2_z4*eps_t67*eps2_p67*c6+eps2_z4*eps_p47*eps_t67*eps2_p67*c6+eps2_z4*eps_t67*c6+eps2_z4*eps_p47*eps_t67*c6+
+eps2_z4*c6+eps2_z4*eps2_p67*c6+eps_p47*eps_t67*c6)*Mz2+(eps2_z4*eps_p47*eps_p45*c5+c5*eps_t5+eps2_z4*eps_p45*c5*eps_t5+eps_p47
+*c5+eps_p45*c5+eps_p47*eps_p45*c5+eps_p45*c5*eps_t5+eps_p47*eps_p45*c5*eps_t5+eps_p47*c5*eps_t5+eps2_z4*eps_p47*c5+eps2_z4*
+eps_p45*c5+eps2_z4*eps_p47*eps_p45*c5*eps_t5+eps2_z4*eps_p47*c5*eps_t5+eps2_z4*c5*eps_t5+eps2_z4*c5)*z+eps_p47*c4+eps2_z4*
+eps_p45*c4+eps2_z4*eps_p47*c4+eps2_z4*c4+eps_p47*eps_p45*c4+eps2_z4*eps_p47*eps_p45*c4+eps_p45*c4
+; 
