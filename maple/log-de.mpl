@@ -227,59 +227,45 @@ fprintf(fd, "#!/bin/sh\n"):
 fprintf(fd, "# You probably need to edit the path to the gappa executable\n"):
 fprintf(fd, "GAPPA=~/gappa/src/gappa\n"):
 
-fprintf(fd, "# Accurate phase, case E=0, logir=0\n"):
-fprintf(fd, "  echo 0, E=0:\n"):
-fprintf(fd, "sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de-acc-logir0-E0.gappa | $GAPPA \n"):
+fprintf(fd, "echo Accurate phase, case E=0, index=0:\n"):
+fprintf(fd, "sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de-acc-index0-E0.gappa | $GAPPA \n"):
 
-fprintf(fd, "# Accurate phase, case E!=0, logir=0\n"):
-fprintf(fd, "echo 0, E!=0:\n"):
-fprintf(fd, "sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de-acc-logir0-EN.gappa | $GAPPA \n"):
+fprintf(fd, "echo Accurate phase, case E!=0, index=0\n"):
+fprintf(fd, "sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de-acc-index0-E1N.gappa | $GAPPA \n"):
 
-fprintf(fd, "# Accurate phase, case E=0, logir!=0\n"):
 fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
-fprintf(fd, "  echo $num, E=0:\n"):
-fprintf(fd, "  sed -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de-acc-logirN-E0.gappa | $GAPPA \n"):
+fprintf(fd, "  echo Accurate phase, case E=0, index=$num\n"):
+fprintf(fd, "  sed -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de-acc-index1N-E0.gappa | $GAPPA \n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
 
-fprintf(fd, "# Accurate phase, case E!=0, logir!=0\n"):
 fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
-fprintf(fd, "  echo $num, E!=0:\n"):
-fprintf(fd, "  sed -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de-acc-logirN-EN.gappa | $GAPPA \n"):
+fprintf(fd, "  echo Accurate phase, case E!=0, index = $num\n"):
+fprintf(fd, "  sed -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de-acc-index1N-E1N.gappa | $GAPPA \n"):
 fprintf(fd, "  echo\n"):
-fprintf(fd, "done\n"):
-
-if(0) then
+fprintf(fd, "done\n\n"):
 
 
+fprintf(fd, "echo Quick phase, case E=0, index=0\n"):
+fprintf(fd, "sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de-index0-E0.gappa | $GAPPA \n"):
 
-fprintf(fd, "# Quick phase E=0, logir!=0\n"):
+fprintf(fd, "echo Quick phase, case E!=0, index=0\n"):
+fprintf(fd, "sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de-index0-E1N.gappa | $GAPPA \n"):
+
+
 fprintf(fd, "for num in `seq 0 %d`; do\n", 2^L-1):
-fprintf(fd, "  echo $num, E=0:\n"):
-fprintf(fd, "  sed -f ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de.gappa | $GAPPA \n"):
+fprintf(fd, "  echo Quick phase, for all E,  index=$num \n"):
+fprintf(fd, "  sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de-index1N-E0N.gappa | $GAPPA \n"):
 fprintf(fd, "  echo\n"):
 fprintf(fd, "done\n"):
-
-fprintf(fd, "# For the case E=0 we first handle the cases 0 and %d using log-de-E0-logir0.gappa\n", 2^L):
-fprintf(fd, "echo 0 and %d, E=0:\n", 2^L):
-fprintf(fd, "sed -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de-E0-logir0.gappa | $GAPPA \n"):
-fprintf(fd, "# then the other cases where logirh <> 0\n"):
-fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
-fprintf(fd, "  echo $num, E=0:\n"):
-fprintf(fd, "  sed -f  ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de-E0.gappa | $GAPPA\n"):
-fprintf(fd, "  echo\n"):
-fprintf(fd, "done\n"):
-fi:
 
 fclose(fd):
 
-printf("************ DONE TEMPLOG/run-log-de-proof.sh ************\n"):
-printf("Now you should run (from the maple/ directory) \n"):
-printf(" sh TEMPLOG/run-log-de-proof.sh  2> TEMPLOG/Gappa.out\n"):
+printf("\n************ DONE TEMPLOG/run-log-de-proof.sh ************\n"):
+printf("Now you should run \n"):
+printf(" sh ../gappa/run-log-de-proof.sh  2> ../maple/TEMPLOG/Gappa.out\n"):
 printf("  (You probably need to edit the path to the gappa executable within run-log-de-proof.sh)\n"):
-printf("Then look at TEMPLOG/Gappa.out. It shouldn't contain 'no proof'.\nThis means that everything is OK.\n\n"):
-
-
+printf("Then look at TEMPLOG/Gappa.out. It shouldn't contain 'some enclosures were not satisfied'.\n If it does, report it !\n"):
 
 
 printf("----DONE---\n") :
