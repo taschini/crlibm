@@ -76,7 +76,7 @@ EXTRA_DIST = VERSION TODO\
 	gappa/log-de-acc-index0-E0.gappa    gappa/log-de-index0-E0.gappa \
 	gappa/log-de-acc-index0-E1N.gappa   gappa/log-de-index0-E1N.gappa \
 	gappa/log-de-acc-index1N-E0.gappa   gappa/log-de-index1N-E0N.gappa \
-	gappa/log-de-acc-index1N-E1N.gappa \
+	gappa/log-de-acc-index1N-E1N.gappa  gappa/log-de.README \
 	gappa/log-td.gappa gappa/log-td-E0.gappa gappa/log-td-E0-logir0.gappa \
 	gappa/log-td-accurate.gappa gappa/log-td-accurate-E0.gappa gappa/log-td-accurate-E0-logir0.gappa \
 	gappa/exp-td-accurate1.gappa gappa/exp-td-accurate2.gappa gappa/exp-td-accurate3.gappa gappa/exp-td-accurate4.gappa gappa/exp-td-proof.sh \
