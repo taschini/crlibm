@@ -1,10 +1,7 @@
-# Usage: This files builds an error computation for one index value
-#only. To get a complete proof you need to run it through gappa for all
-#the possible values of the constants.
+# Usage: This files builds an error computation for the case when both the
+# index and the exponent are zero.
 
-# Running the ../maple/log-de.mpl Maple script
-# should create the required sed files and give the command to run.
-# Example    sed -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de-logir0-E0.gappa | $GAPPA 
+# sed -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de-index0-E0.gappa | $GAPPA 
 
 
 
@@ -12,6 +9,10 @@
 # Variables that will be replaced with Maple-computed constants begin with an underscore
 # Variables that correspond to double-precision variables in the code begin with a small letter
 # variable eps_xxx denote the relative rounding error of the last machine operation that computes xxx
+
+#  Remove the following line when editing this file, to get back the warnings (all the current ones are harmless)
+#@ -Wno-hint-difference -Wno-null-denominator
+# Remark: asking for  warnings resuires at least 512MB of memory
 
 @IEEEdouble = float<ieee_64,ne>;
 @IEEEext = float<x86_80,ne>;
@@ -34,7 +35,7 @@ log2l  = IEEEext(_log2l);
 
 # Transcription of the code, NOT using FMA
 
-#TODO reinsert logirh and Elog2
+# We have removed logirh and Elog2
 z2   IEEEext= z*z;    
 p67  IEEEext= c6 + z*c7;       
 p45  IEEEext= c4 + z*c5;      
@@ -91,8 +92,10 @@ epsilon = (logz - Mlogz)/Mlogz;
 epsilon_approx = (PolyLog1pz - Log1pz)/Log1pz;
 epsilon_round = (logz-PolyLog1pz)/PolyLog1pz;
 
+# The theorem. Remark that the case z=0 has to be proven by hand (fortunately it is easy)
+
 {
-    z in [1b-100, _zabsmax] 
+    (z in [1b-200, _zabsmax] \/ z in [-_zabsmax, -1b-200])  
 /\  epsilon_approx in [-_epsilonApproxQuick, _epsilonApproxQuick]
 /\  (PolyLog1pz - Log1pz) in [-_deltaApproxQuick, _deltaApproxQuick]
 ->
@@ -175,8 +178,6 @@ z4/z -> z*z*z + z*z*z*((1+eps_z2)*(1+eps_z2)*(1+eps_z4) -1); #OK
 (z4*p47/z) - z*z*z*( (c4+z*c5) + z*z*(c6+z*c7)) ->  
    z*z*z*(  (1+eps2_p47)*(((1+eps_p45)*(c4+(1+eps_t5)*(z*c5))) + (1+eps_t67)*(z*z*(1+eps2_p67)*(c6+(1+eps_t7)*c7*z))) - c4 - z*c5 - z*z*(c6+z*c7)) ;
 
-# Needed if less than 256 Mo RAM
-#@ -Wno-hint-difference -Wno-null-denominator
 
 # This last hint is computed by one expand() and one collect(,z) in maple
  (1+eps2_p47)*(((1+eps_p45)*(c4+(1+eps_t5)*(z*c5))) + (1+eps_t67)*(z*z*(1+eps2_p67)*(c6+(1+eps_t7)*c7*z))) - c4 -  z*c5 - z*z*(c6+z*c7)  -> 

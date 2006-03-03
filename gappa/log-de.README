@@ -23,3 +23,7 @@ evaluation. This is something nobody would attempt without machine
 assistance.
 
 The same holds for log-de-acc, but without the Estrin bravery.
+
+Note that some of these files forget the case z=0. It is easy the prove by
+hand that the Estrin evaluation, in this case, returns logir+E*log2 (with
+roundings on logir, log2, the + and the *), which is accurate enough.

@@ -14,7 +14,11 @@
 # Variables that correspond to double-precision variables in the code begin with a small letter
 # Other variables begin with a capital letter.
 
-#This is to prevent a warning 
+#  Remove the following line when editing this file, to get back the warnings (all the current ones are harmless)
+#@ -Wno-hint-difference -Wno-null-denominator
+# Remark: asking for  warnings resuires at least 512MB of memory
+
+#This is to prevent another warning which might let you think Gappa failed when it eventually succeeds. 
 #@ -Wno-dichotomy-failure
 
 @IEEEdouble = float<ieee_64,ne>;
@@ -78,10 +82,9 @@ epsilon = (logz - Mlogz)/Mlogz;
 {
 (
 |E| in [1,1024]
-/\    |z| in [1b-66000, _zabsmax] 
+/\  |z| in [1b-200, _zabsmax] 
 /\  Log2hl - Mlog2    in [-1b-129, 1b-129] 
 /\  Logirhl - Logir in [-1b-129, 1b-129]  
-#/\  (PolyLog1pz - Log1pz)/Log1pz in [-_epsilonApproxQuick, _epsilonApproxQuick]
 /\  (PolyLog1pz - Log1pz) in [-_deltaApproxQuick, _deltaApproxQuick]
 ->
 epsilon in [-1b-62, 1b-62]
@@ -94,7 +97,6 @@ E in [0,0]
 /\    z in [-_zabsmax, _zabsmax] 
 /\  Log2hl - Mlog2    in [-1b-129, 1b-129] 
 /\  Logirhl - Logir in [-1b-129, 1b-129]  
-#/\  (PolyLog1pz - Log1pz)/Log1pz in [-_epsilonApproxQuick, _epsilonApproxQuick]
 /\  (PolyLog1pz - Log1pz) in [-_deltaApproxQuick, _deltaApproxQuick]
 ->
 epsilon in [-1b-61, 1b-61]

@@ -6,7 +6,11 @@
 # should create the required sed files and give the command to run.
 # Example   sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_1.sed ../gappa/log-de-accurate.gappa | ~/gappa/src/gappa 
 
-#This is to prevent a warning 
+#  Remove the following line when editing this file, to get back the warnings (all the current ones are harmless)
+#@ -Wno-hint-difference -Wno-null-denominator
+# Remark: asking for  warnings resuires at least 512MB of memory
+
+#This is to prevent another warning which might let you think Gappa failed when it eventually succeeds. 
 #@ -Wno-dichotomy-failure
 
 # Rounding operators and sequences definition
@@ -131,7 +135,7 @@ epspolyApprox=(PolyLog1pz - Log1pz)/Log1pz;
 
 {
    |E| in [1,1024]
-/\    |z| in [1b-66000, _zabsmax] 
+/\    |z| in [1b-200, _zabsmax] 
 /\  log2 - Mlog2    in [-1b-129, 1b-129] 
 /\  logir - Mlogir in [-1b-129, 1b-129]  
 /\  (PolyLog1pz - Log1pz)/Log1pz in [-_epsilonApproxAccurate, _epsilonApproxAccurate]
