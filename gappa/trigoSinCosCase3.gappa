@@ -31,15 +31,15 @@ sal = IEEEdouble(_sal);
 # The variables used here:
 # x input
 # My perfect reduced argument
-# Ydd = yh+yl, his distance to My is specified as an hypothesis 
+# Yhl = yh+yl, his distance to My is specified as an hypothesis 
 # Mts perfect ts
 # Mtc perfect tc
 # Msinx exact result for sin(x)
 # Msina, Mcosa perfect sin(kPi/256) and cos(kPi/256)
 
 
-yh = IEEEdouble(Ydd);
-yl = Ydd - yh;
+yh = IEEEdouble(Yhl);
+yl = Yhl - yh;
 
 #######################################################################
 
@@ -107,8 +107,8 @@ Mcosx =  Mcosy * Mcosa  -  Msiny * Msina;
 # yh2 is an approximation to :
 My2 = My*My;
 # through three layers: 
-# 1/    Ydd=yh+hl = My +/- delta_ArgRed  : in the hypotheses below
-# 2/    yh = Ydd - yl                       : already written
+# 1/    Yhl=yh+hl = My +/- delta_ArgRed  : in the hypotheses below
+# 2/    yh = Yhl - yl                       : already written
 # 3/    rounding error in the mult          : already written       
 
 #-------------------------------------
@@ -142,12 +142,12 @@ CosReconstrExact = PolyCosY * Mcosa  -  PolySinY * Msina ;
 
 #-------------------------------------
 # The reconstruction approximates the following
-SinReconstrNoRound = Ydd*(1 + ts)*(cah+cal) + (1 + tc)*(sah+sal);
-# where Ydd is an approximation to Y
+SinReconstrNoRound = Yhl*(1 + ts)*(cah+cal) + (1 + tc)*(sah+sal);
+# where Yhl is an approximation to Y
 #       ts is an approximation to Mts
 #       tc is an approximation to Mtc : all already described
 # All what we still need to express is that the actual computation will neglect some terms
-CosReconstrNoRound = ( (1 + tc) * (cah+cal)   -  Ydd * (1 + ts)  * (sah+sal) );
+CosReconstrNoRound = ( (1 + tc) * (cah+cal)   -  Yhl * (1 + ts)  * (sah+sal) );
 
 #-------------------------------------
 # tloSin2 is an approximation to TloSin2NoRound (because of rounding error in the operations, already described) 
@@ -165,9 +165,9 @@ NeglectedCosTerms = CosReconstrNoRound - (thiCos + TloCos2NoRound);
 ###########################################################################################
 #  The theorem to prove
 {
-#    (Ydd in [-_ymaxCase3, -1b-200]    \/   Ydd in [-1b-200, _ymaxCase3])                            # computed by Maple
-     Ydd in [-_ymaxCase3, _ymaxCase3]                            # computed by Maple
- /\ Ydd - My in         [-_delta_ArgRed,  _delta_ArgRed]                         # computed by Maple
+#    (Yhl in [-_ymaxCase3, -1b-200]    \/   Yhl in [-1b-200, _ymaxCase3])                            # computed by Maple
+     Yhl in [-_ymaxCase3, _ymaxCase3]                            # computed by Maple
+ /\ Yhl - My in         [-_delta_ArgRed,  _delta_ArgRed]                         # computed by Maple
  /\ PolySinY - Msiny in [-_delta_approx_Sin_Case3,  _delta_approx_Sin_Case3]     # computed by Maple
  /\ PolyCosY - Mcosy in [-_delta_approx_Cos_Case3,  _delta_approx_Cos_Case3]     # computed by Maple
  /\ Msina-sah-sal in [-1b-104, 1b-104] 
@@ -191,8 +191,8 @@ Mcosx -> ResCoshilo - (ResCoshilo - Mcosx);
 Msina -> sah + sal + (Msina - sah - sal);
 Mcosa -> cah + cal + (Mcosa - cah - cal);
 
-# To get bounds on My, try Ydd
-My ->  Ydd - (Ydd - My); 
+# To get bounds on My, try Yhl
+ My ->  Yhl - (Yhl - My); 
 
 # One layer of approx error, and one layer of rounding error for Msiny and Mcosy
 1 + tc - Mcosy   ->   (1 + tc - PolyCosY) + (PolyCosY - Mcosy);
@@ -210,7 +210,7 @@ ResCoshilo - CosReconstrNoRound -> (ResCoshilo - (thiCos + TloCos2NoRound)) - (C
 
 
 
-Ydd*(1 + ts)*(cah+cal) - PolySinY * Mcosa ->  (Ydd*(1 + ts)- PolySinY)*(cah+cal) -  PolySinY*(Mcosa - cah - cal) ;
+Yhl*(1 + ts)*(cah+cal) - PolySinY * Mcosa ->  (Yhl*(1 + ts)- PolySinY)*(cah+cal) -  PolySinY*(Mcosa - cah - cal) ;
 (1 + tc) * (cah+cal) - PolyCosY * Mcosa   ->  ((1 + tc)- PolyCosY) * (cah+cal)   - PolyCosY * (Mcosa - cah -cal);
 (1 + tc)*(sah+sal) -   PolyCosY * Msina   ->  ((1 + tc)- PolyCosY) * (sah+sal)   - PolyCosY * (Msina - sah -sal);
 

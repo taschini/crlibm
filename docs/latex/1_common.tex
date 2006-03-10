@@ -1201,11 +1201,11 @@ Let $y$ be a real number, and  $\maxeps$, $e$, $y_h$ and $y_l$ be
   \begin{itemize}
   \item $y_h=y_h\oplus y_l$
   \item none of $y_h$ and $y_l$ is a  NaN or $\pm \infty$,
-  \item $|y_h|\ge 2^{-1022+53}$ (i.e. $\frac{1}{2}\ulp(y_h)$ is not subnormal), 
+  \item $|y_h|\ge 2^{-1022+52}$ (i.e. $\frac{1}{4}\ulp(y_h)$ is not subnormal), 
   \item $|y_h+y_l - y| <\maxeps.|y|$ (i.e. the total relative error of
     $y_h+yl$ with respect to $y$ is bounded by $\maxeps$),
-  \item $0<\maxeps \le 2^{-53-k}$ with $2\le k \le 52$ integer,
-  \item $e\ge 1+  \dfrac{2^{53+k+1}\maxeps}{(2^{k}-1)(1-2^{-53})}$.
+  \item $0<\maxeps \le 2^{-53-k}$ with $ k \ge 3$ integer,
+  \item TODO: wrong $e\ge 1+  \dfrac{2^{53+k+1}\maxeps}{(2^{k}-1)(1-2^{-53})}$.
 \end{itemize}
 
 The following test determines whether $y_h$ is the
@@ -1227,55 +1227,79 @@ else /* more accuracy is needed, launch accurate phase */
   
   We want to prove is that if the test is true, then $y_h = \round(y)$.
 
+
+  First some lemmata.
+
   Let us note $u=\ulp(y_h)$. By definition of the \ulp\ of a normal
   number, we have $y_h \in [2^{52}u, (2^{53}-1)u]$.
 
-  From the first hypothesis we have $y_l\le\frac{1}{2}u$.
-
-  Therefore  $y_h+y_l \le (2^{53}-1)u + \frac{1}{2}u\ <\ 2^{53}u$.
+  From the first hypothesis we have 
+  \begin{equation}
+    y_l\le\frac{1}{2}u 
+    \label{eq:prooftest1}
+  \end{equation}
+  Therefore  $y_h+y_l \le (2^{53}-1)u + \frac{1}{2}u\ <\ 2^{53}u$:
+  \begin{equation}
+    y_h+y_l < 2^{53}u
+    \label{eq:prooftest2}
+  \end{equation}
 
   Since $1+\epsilon>\frac{1}{2}$, we also have
   $y=\frac{y_h+y_l}{1+\epsilon} < 2^{54}u$. 
 
-  From $\maxeps<2^{-55}$ (fifth hypothesis) we derive $\maxeps y <
-  2^{-55}y < \frac{1}{2}u$, which in turn implies $y<2^{53}u$ (as  
-  $y < y_h + y_l +\maxeps y < (2^{53}-1)u +\frac{1}{2}u
-  +\frac{1}{2}u$).
+  From $\maxeps<2^{-53-k}$ (fifth hypothesis) and $y < 2^{54}u$ we derive  
+  \begin{equation}
+    \maxeps y < 2^{-k+1}u
+    \label{eq:prooftest3}
+  \end{equation}
+  and $k>2$ gives $\maxeps y < 2^{-1}u$ which in turn implies   
+  $y < y_h + y_l +\maxeps y < (2^{53}-1)u +\frac{1}{2}u +\frac{1}{2}u$ :
+  \begin{equation}
+    y<2^{53}u .
+    \label{eq:prooftest4}
+  \end{equation}
 
-  First we consider the case when $y_h$ is not a power of two.  In
+  First we consider the (general) case when $y_h$ is not a power of two.  In
   this case we will prove that if the test is true, then
   $||y_l|-\frac{1}{2}u| > 2^{53}\maxeps u > \maxeps y$, which implies
   that we are not in a difficult case for correct rounding to the
   nearest, so $y_h = \round(y)$.
 
-  Consider the case when $y_l$ is positive:  $0\le y_l \le \frac{1}{2}u$.
+  We consider only the case when $y_l$ is positive (the other case is
+  symmetrical): $0\le y_l \le \frac{1}{2}u$.
 
-  If $0 \le y_l < (\frac{1}{2} - \frac{1}{2^{k+1}})u$, then since
-  $\maxeps<2^{-53-k}$ we are in an easy case for rounding to the
-  nearest, and $y_h = \round(y)$ regardless of the result of the test.
+  The easy case is when we have $y_h = \round(y)$ regardless of the
+  result of the test. This is true as soon as $y_l$ is sufficiently
+  distant from $u/2$. More specifically, if $0 \le y_l < u/2 -
+  2^{-k+1}u$, we rewrite $y_h+y_l-y=\epsilon y$ as $y-y_h = y_l
+  - \epsilon y < u/2 - 2^{-k+1}u - \epsilon y $. Since
+  $\epsilon < \maxeps$ and $\maxeps y < 2^{-k+1}u$ from
+  (\ref{eq:prooftest3}), we get $y-y_h < u/2$, therefore $y_h
+  = \round(y)$.
 
   Now consider the case when $y_l \ge (\frac{1}{2} -
-  \frac{1}{2^{k+1}})u$.  Remark that the condition $|y_h|\ge
-  2^{-1022+53}$ ensures that $\frac{1}{2}u$ is a normal number, so in
+  \frac{1}{2^{k-1}})u$.  The condition $|y_h|\ge
+  2^{-1022+52}$ ensures that $\frac{1}{4}u$ is a normal number, and now $y_l > u/4$, so  in
   this case $y_l$ is a normal number. As $e>1$ this ensures that
   $$y_l\times e(1-2^{-53})\ \le\ y_l \otimes e\ \le\ y_l\times e(1+2^{-53})$$
 
-
-  Suppose that the test is true ($y_h \oplus y_l \otimes e = y_h$). 
-  With IEEE-54 compliant rounding to
-  nearest, this implies $|y_l \otimes e|
-  \le \frac{1}{2}u$, which in turn implies $|y_l \times e|
-  (1-2^{-53}) \le \frac{1}{2}u$, as $y_l$ is a normal number and $e>1$. 
+  Suppose that the test is true ($y_h \oplus y_l \otimes e = y_h$).
+  With IEEE-54 compliant rounding to nearest, this implies $|y_l
+  \otimes e| \le \frac{1}{2}u$, which in turn implies $|y_l \times e|
+  (1-2^{-53}) \le \frac{1}{2}u$, as $y_l$ is a normal number and
+  $e>1$.
   
-  We get $y_l \times (1+e-1)(1-2^{-53}) \le \frac{1}{2}u$, or
+  We get $y_l e (1-2^{-53}) \le \frac{1}{2}u$, or (using $y_l \ge (\frac{1}{2} -
+  \frac{1}{2^{k-1}})u$)
   \begin{equation}
-  \frac{1}{2}u - y_l \ge y_l (e-1)(1-2^{-53})\label{eq:prooftestRN2}
+  \frac{1}{2}u - y_l \ge (\frac{1}{2} -
+  \frac{1}{2^{k-1}})u (e(1-2^{-53})-1) \label{eq:prooftestRN2}
   \end{equation}  
 
-(\ref{eq:prooftestRN2}) implies
-    $\frac{1}{2}u - y_l \ge \frac{2^{k}-1}{2^{k+1}} (e-1)(1-2^{-53}) >
-    2^{53}\maxeps u$, from $e\ge 1+
-    \frac{2^{53+k+1}\maxeps}{(2^{k}-1)(1-2^{-53})}$.
+  The condition that $e$ has to fullfil (last hypothesis) was designed
+  so that (\ref{eq:prooftestRN2}) implies $\frac{1}{2}u - y_l >
+  2^{53}\maxeps u > \maxeps y$: therefore $y_h$ is the correctly
+  rounded to the nearest of $y$.
 
   The case when $y_l$ is negative is similar.
 

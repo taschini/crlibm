@@ -33,10 +33,12 @@ icc -DHAVE_CONFIG_H  -Qoption,cpp,--extended_float_types \
 #include "log-de.h"
 
 
-
 static void log_accurate(double_ext* prh, double_ext* prl, double_ext z, int E, int index) {
 
-double_ext  th, tl, eh,el, t;
+double_ext  eh,el,  t13, t12, t11, t10, t9, t8, 
+  p7h,p7l, t7h,t7l, t6h,t6l, t5h,t5l, t4h,t4l, 
+  t3h,t3l, t2h,t2l, t1h,t1l, t0h,t0l;
+/* Many temporary because single assignment form is nicer for Gappa */
 
 #if !(defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
   double_ext c1h,c2h,c3h,c4h,c5h,c6h,c7h,c8h,c9h,c10h,c11h,c12h,c13h,c14h,c15h;
@@ -52,28 +54,29 @@ double_ext  th, tl, eh,el, t;
 
  
   PREFETCH_POLY_ACCURATE;
-  t = c14h;
-  t = c13h + z*t;
-  t = c12h + z*t;
-  t = c11h + z*t;
-  t = c10h + z*t;
-  t = c9h  + z*t;
-  t = c8h  + z*t;
-  Mul12_ext(&th, &tl,   z, t);
-  Add22_ext(&th, &tl,   th,tl, c7h,c7l);
-  FMA22_ext(&th, &tl,   z,0,   t,0,      c7h,c7l);
-  FMA22_ext(&th, &tl,   z,0,   th,tl,    c6h,c6l);
-  FMA22_ext(&th, &tl,   z,0,   th,tl,    c5h,c5l);
-  FMA22_ext(&th, &tl,   z,0,   th,tl,    c4h,c4l);
-  FMA22_ext(&th, &tl,   z,0,   th,tl,    c3h,c3l);
-  FMA22_ext(&th, &tl,   z,0,   th,tl,    c2h,c2l);
-  FMA22_ext(&th, &tl,   z,0,   th,tl,    c1h,c1l);
-  FMA22_ext(&th, &tl,   z,0,   th,tl,    argredtable[index].logirh, argredtable[index].logirl);
+  t13 = c13h + z*c14h;
+  t12 = c12h + z*t13;
+  t11 = c11h + z*t12;
+  t10 = c10h + z*t11;
+  t9 = c9h  + z*t10;
+  t8 = c8h  + z*t9;
+#if 1 /* This is faster on PIII. Your mileage may vary */
+  Mul12_ext(&p7h, &p7l,   z, t8);
+  Add22_ext(&t7h, &t7l,   p7h,p7l, c7h,c7l);
+#else
+  FMA22_ext(&t7h, &t7l,   z,0,   t8,0,    c7h,c7l);
+#endif
+  FMA22_ext(&t6h, &t6l,   z,0,   t7h,t7l,    c6h,c6l);
+  FMA22_ext(&t5h, &t5l,   z,0,   t6h,t6l,    c5h,c5l);
+  FMA22_ext(&t4h, &t4l,   z,0,   t5h,t5l,    c4h,c4l);
+  FMA22_ext(&t3h, &t3l,   z,0,   t4h,t4l,    c3h,c3l);
+  FMA22_ext(&t2h, &t2l,   z,0,   t3h,t3l,    c2h,c2l);
+  FMA22_ext(&t1h, &t1l,   z,0,   t2h,t2l,    c1h,c1l);
+  FMA22_ext(&t0h, &t0l,   z,0,   t1h,t1l,    argredtable[index].logirh, argredtable[index].logirl);
   
   Mul22_ext(&eh, &el,   log2h,log2l, E, 0);
-  Add22_ext(prh, prl,   eh,el,  th,tl);
+  Add22_ext(prh, prl,   eh,el,  t0h,t0l);
 }
-
 
 
 

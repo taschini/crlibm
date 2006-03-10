@@ -122,7 +122,7 @@ extern double exp2_rd(double); /* toward -inf */
 extern double exp2_ru(double); /* toward +inf */ 
 
 /*  pow 
- extern double pow_rn(double, double); /* to nearest */
+ extern double pow_rn(double, double); */
 
 
 #if defined (__cplusplus)
