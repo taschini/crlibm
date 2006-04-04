@@ -229,24 +229,32 @@ printf("Computing polynomials for interval %d ([%f;%f])\n",intervals,bound[inter
 
 
 g := unapply(((arcsin(1 - x) - Pi/2)/sqrt(2*x)),x):
-f := unapply(convert(series(((g(x)+1)/x),x=0,polyAccurateDegreeHighest*3),polynom),x):
+f := unapply(convert(series(((g(x)+1)/x),x=0,polyAccurateDegreeHighest*4),polynom),x):
 
 
-polyAccuExact[intervals] := numapprox[minimax](f(x),x=(1-bound[intervals])..(1-bound[intervals-1]),
-						[polyAccurateDegreeHighest,0],1,'err')*x-1:
+polyAccuExact[intervals] := numapprox[minimax](f(x),x=(1-bound[intervals]+2^(-53))..(1-bound[intervals-1]),
+						[polyAccurateDegreeHighest-1,0],1,'err')*x-1:
 
 polyAccurate[intervals] := poly_exact32(polyAccuExact[intervals],polyAccurateTDCoeffsHighest,polyAccurateDDCoeffsHighest):
 
 
 epsAccurate[intervals] := numapprox[infnorm](((unapply(polyAccurate[intervals],x)(x)/g(x))-1), 
-					x=(1-bound[intervals]+2^(-54))..(1-bound[intervals-1])):
+					x=(1-bound[intervals]+2^(-53))..(1-bound[intervals-1])):
 
 
 polyQuickExact[intervals] := truncPoly(polyAccuExact[intervals],polyQuickDegreeHighest):
 polyQuick[intervals] := poly_exact2(polyQuickExact[intervals],polyQuickDDCoeffsHighest):
 
 epsQuick[intervals] := numapprox[infnorm](((unapply(polyQuick[intervals],x)(x)/g(x))-1), 
-					x=(1-bound[intervals]+2^(-54))..(1-bound[intervals-1])):
+					x=(1-bound[intervals]+2^(-53))..(1-bound[intervals-1])):
+
+printf("Checking if the polynomial for interval %d is exactly -1 in z = %f...\n",intervals,1-bound[intervals]);
+
+if (unapply(polyAccurate[intervals],x)(1-bound[intervals]) = -1) then
+	printf("  Check passed!\n"):
+else
+	printf("  Check failed!\n"):
+end if:
 
 end if:
 
