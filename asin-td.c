@@ -202,7 +202,7 @@ void asin_accurate_higher(double *asinh, double *asinm, double *asinl, double z,
   double tt18h, tt18m, tt18l, polyh, polym, polyl;
   double sqrtzh, sqrtzm, sqrtzl, twoZ, pTimesSh, pTimesSm, pTimesSl;
   double allhover, allmover, alllover, allh, allm, alll;
-  double t13hover, t13mover, t13lover, tt17hover, tt17mover, tt17lover;
+  double tt13hover, tt13mover, tt13lover, tt16hover, tt16mover, tt16lover;
 
 #if EVAL_PERF
   crlibm_second_step_taken++;
@@ -275,36 +275,34 @@ void asin_accurate_higher(double *asinh, double *asinm, double *asinl, double z,
   Add33(&t11h,&t11m,&t11l,tbl[TBLIDX10+18],tbl[TBLIDX10+19],tbl[TBLIDX10+20],tt11h,tt11m,tt11l);  /* 134 - 32/53 */
   Mul133(&tt12h,&tt12m,&tt12l,z,t11h,t11m,t11l);                                                  /* 132 - 27/53 */
   Add33(&t12h,&t12m,&t12l,tbl[TBLIDX10+15],tbl[TBLIDX10+16],tbl[TBLIDX10+17],tt12h,tt12m,tt12l);  /* 124 - 22/53 */
-  Mul133(&tt13h,&tt13m,&tt13l,z,t12h,t12m,t12l);                                                  /* 122 - 17/53 */
-  Add33(&t13hover,&t13mover,&t13lover,
-                          tbl[TBLIDX10+12],tbl[TBLIDX10+13],tbl[TBLIDX10+14],tt13h,tt13m,tt13l);  /* 114 - 12/53 */
+  Mul133(&tt13hover,&tt13mover,&tt13lover,z,t12h,t12m,t12l);                                      /* 122 - 17/53 */
 
-  Renormalize3(&t13h,&t13m,&t13l,t13hover,t13mover,t13lover);                                     /* infty - 52/53 */
+  Renormalize3(&tt13h,&tt13m,&tt13l,tt13hover,tt13mover,tt13lover);                               /* infty - 52/53 */
 
-  Mul133(&tt14h,&tt14m,&tt14l,z,t13h,t13m,t13l);                                                  /* 154 - 47/53 */
-  Add33(&t14h,&t14m,&t14l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tbl[TBLIDX10+11],tt14h,tt14m,tt14l);   /* 144 - 42/53 */
-  Mul133(&tt15h,&tt15m,&tt15l,z,t14h,t14m,t14l);                                                  /* 142 - 37/53 */
-  Add33(&t15h,&t15m,&t15l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tbl[TBLIDX10+8],tt15h,tt15m,tt15l);     /* 134 - 32/53 */
-  Mul133(&tt16h,&tt16m,&tt16l,z,t15h,t15m,t15l);                                                  /* 132 - 27/53 */
-  Add33(&t16h,&t16m,&t16l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tbl[TBLIDX10+5],tt16h,tt16m,tt16l);     /* 124 - 22/53 */ 
-  Mul133(&tt17hover,&tt17mover,&tt17lover,z,t16h,t16m,t16l);                                      /* 122 - 17/53 */
+  Add33(&t13h,&t13m,&t13l,tbl[TBLIDX10+12],tbl[TBLIDX10+13],tbl[TBLIDX10+14],tt13h,tt13m,tt13l);  /* 149 - 47/53 */
+  Mul133(&tt14h,&tt14m,&tt14l,z,t13h,t13m,t13l);                                                  /* 147 - 42/53 */
+  Add33(&t14h,&t14m,&t14l,tbl[TBLIDX10+9],tbl[TBLIDX10+10],tbl[TBLIDX10+11],tt14h,tt14m,tt14l);   /* 139 - 37/53 */
+  Mul133(&tt15h,&tt15m,&tt15l,z,t14h,t14m,t14l);                                                  /* 137 - 32/53 */
+  Add33(&t15h,&t15m,&t15l,tbl[TBLIDX10+6],tbl[TBLIDX10+7],tbl[TBLIDX10+8],tt15h,tt15m,tt15l);     /* 129 - 27/53 */
+  Mul133(&tt16hover,&tt16mover,&tt16lover,z,t15h,t15m,t15l);                                      /* 127 - 22/53 */
 
-  Renormalize3(&tt17h,&tt17m,&tt17l,tt17hover,tt17mover,tt17lover);                               /* infty - 52/53 */
+  Renormalize3(&tt16h,&tt16m,&tt16l,tt16hover,tt16mover,tt16lover);                               /* infty - 52/53 */
 
-  Add33(&t17h,&t17m,&t17l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tbl[TBLIDX10+2],tt17h,tt17m,tt17l);     /* 149 - 47/53 */
-
-  Mul133(&tt18h,&tt18m,&tt18l,z,t17h,t17m,t17l);                                                  /* 147 - 42/53 */
-  Add133(&polyh,&polym,&polyl,-1,tt18h,tt18m,tt18l);                                              /* 146 - 40/53 */
+  Add33(&t16h,&t16m,&t16l,tbl[TBLIDX10+3],tbl[TBLIDX10+4],tbl[TBLIDX10+5],tt16h,tt16m,tt16l);     /* 149 - 47/53 */
+  Mul133(&tt17h,&tt17m,&tt17l,z,t16h,t16m,t16l);                                                  /* 147 - 42/53 */
+  Add33(&t17h,&t17m,&t17l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tbl[TBLIDX10+2],tt17h,tt17m,tt17l);     /* 139 - 37/53 */
+  Mul133(&tt18h,&tt18m,&tt18l,z,t17h,t17m,t17l);                                                  /* 137 - 32/53 */
+  Add133(&polyh,&polym,&polyl,-1,tt18h,tt18m,tt18l);                                              /* 136 - 30/53 */
 
   /* Compute sqrt(2*z) as a triple-double */
 
   twoZ = 2 * z;
-  sqrt13(&sqrtzh,&sqrtzm,&sqrtzl,twoZ);                                                           /* 135 - 52/53 */
+  sqrt13(&sqrtzh,&sqrtzm,&sqrtzl,twoZ);                                                           /* 146 - 52/53 */
 
   /* Multiply p(z) by sqrt(2*z) and add Pi/2 */
 
-  Mul33(&pTimesSh,&pTimesSm,&pTimesSl,polyh,polym,polyl,sqrtzh,sqrtzm,sqrtzl);                    /* 138 - 36/53 */
-  Add33(&allhover,&allmover,&alllover,PIHALFH,PIHALFM,PIHALFL,pTimesSh,pTimesSm,pTimesSl);        /* 133 - 31/53 */
+  Mul33(&pTimesSh,&pTimesSm,&pTimesSl,polyh,polym,polyl,sqrtzh,sqrtzm,sqrtzl);                    /* 128 - 26/53 */
+  Add33(&allhover,&allmover,&alllover,PIHALFH,PIHALFM,PIHALFL,pTimesSh,pTimesSm,pTimesSl);        /* 126 - 21/53 */
 
   /* Renormalize and multiply by sign */
   Renormalize3(&allh,&allm,&alll,allhover,allmover,alllover);                                     /* infty - 52/53 */
@@ -417,7 +415,7 @@ double asin_rn(double x) {
     ReturnRoundToNearest3(asinh,asinm,asinl); 
   }
 
-  if (xdb.i[HI] > BOUND9) {
+  if (xdb.i[HI] >= BOUND9) {
     /* Special interval BOUND9..1
        We use an asymptotic development of arcsin in sqrt(1 - x)
     */
@@ -475,6 +473,7 @@ double asin_rn(double x) {
     /* Rounding test 
        The RN rounding constant is at tbl[TBLIDX10+54]
     */
+
     if(asinh == (asinh + (asinm * tbl[TBLIDX10+54]))) 
       return asinh;
 
