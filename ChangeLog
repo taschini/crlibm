@@ -1,11 +1,12 @@
-Summary of changes between version 0.10 and version 0.8
+Summary of changes between version 0.11 and version 0.8
 ==========================================================
 <Christoph Lauter>
-	Added fast log2 and log10 using triple double (log2-td.*, log10-td.*)
+	Added asin, log2 and log10 using triple double (log2-td.*, log10-td.*)
 	Triple-double versions of exp and log (exp-td.*, log-td.*)
 <Florent de Dinechin>
 	log-de, using double-extended, much faster on IA32 and IA64
 	Cleaning up, autotoolization of the new functions
+	Proofs using the Gappa tool
 	
 Summary of changes between version 0.8 and version 0.8beta4
 ==========================================================

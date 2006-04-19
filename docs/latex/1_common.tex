@@ -1203,7 +1203,7 @@ Let $y$ be a real number, and  $\maxeps$, $e$, $y_h$ and $y_l$ be
   \item none of $y_h$ and $y_l$ is a  NaN or $\pm \infty$,
   \item $|y_h|\ge 2^{-1022+52}$ (i.e. $\frac{1}{4}\ulp(y_h)$ is not subnormal), 
   \item $|y_h+y_l - y| <\maxeps.|y|$ (i.e. the total relative error of
-    $y_h+yl$ with respect to $y$ is bounded by $\maxeps$),
+    $y_h+y_l$ with respect to $y$ is bounded by $\maxeps$),
   \item $0<\maxeps \le 2^{-53-k}$ with $ k \ge 3$ integer,
   \item TODO: wrong $e\ge 1+  \dfrac{2^{53+k+1}\maxeps}{(2^{k}-1)(1-2^{-53})}$.
 \end{itemize}

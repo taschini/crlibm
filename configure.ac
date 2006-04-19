@@ -44,12 +44,12 @@ ia64)
 esac;
 
 
-AC_CONFIG_SRCDIR([exp_accurate.c])
+AC_CONFIG_SRCDIR([crlibm.h])
 AC_PROG_MAKE_SET
 
 dnl Check for compiler
 
-AC_PROG_CC(gcc-4.0 gcc-3.4 gcc-3.3 gcc-3.2 gcc icc cc)
+AC_PROG_CC(gcc icc cc)
 
 # Try to set compiler flags to get floating point arithmetics 
 # to work

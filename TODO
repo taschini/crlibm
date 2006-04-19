@@ -1,5 +1,10 @@
 TODO before 0.11 release (will we call it 1.0?)
 
+Serious bugs
+------------
+The theorem that computes the rounding constants is wrong. The
+constants themselves are probably OK.
+
 Proof stuff
 -----------
 Write proofs for log2-td, log10-td
@@ -15,10 +20,9 @@ Check .mpl with underscored variables (some versions of Maple don't like them)
 Replace calls to expSCS in csh.c with calls to functions in exp-td
 Check icc 9
 At the moment, on itanium/icc, log-de only compiles without -mp-std=c99, and 4 of the other ones only compile with these options.
-Solution: add FMADE macros everywhere FMA intended
+Solution: check recent icc first. Then add FMADE macros everywhere FMA intended
 add make timings
-On x86, the test procedure is unfair to the default libm : it should put the processor back to its default state.
-
+On x86, the test procedure is unfair to the default libm : it should put the processor back to its default state.  ? Seems OK to me. Which test procedure ?
 
 Autotest stuff
 --------------

@@ -1,11 +1,13 @@
 /* 
- *this function computes atan correctly rounded to the nearest, 
+ *
+THIS CODE IS BROKEN. DO NOT USE.
+
+ this function computes atan correctly rounded to the nearest, 
  using experimental techniques based on  double-extended arithmetic
 
- THIS IS EXPERIMENTAL SOFTWARE
-
-In particular it changes rounding modes all the time without warning
-nor restoring.
+It used to work, honest, but changes in the crlibm framework have
+broken it. It should be merged some day with atan-itanium, but this is
+not high on the agenda.
  
  *
  * Author : Nicolas Gast, Florent de Dinechin
@@ -22,9 +24,9 @@ nor restoring.
 #include <stdlib.h>
 #include <crlibm.h>
 #include <crlibm_private.h>
-#include "double-extended.h"
+#include <double-extended.h>
 
-#define debug 1 /*Warning : turning debugging on seems to change the final result */
+#define debug 0 /*Warning : turning debugging on seems to change the final result */
 #define DEBUG 0
 #define NICOLASTEST 0
 
@@ -145,10 +147,27 @@ extern double atan_rn(double x) {
     
     }
   
-  TEST_AND_RETURN_RN2(atan, sign*atan, 0x7fe);
-  /* or : 
-  TEST_AND_RETURN_RN_ZIV(sign*atan, 1.003);
-  */
+  /* We do not use the macro of double-extended.h because we want to
+     compute in parallel the rounding test and the product sign*atan */
+
+#if 1
+  DE_TEST_AND_RETURN_RN(sign*atan, ACCURATE_TO_62_BITS);
+
+#else
+{                                                           
+  db_ext_number _z;   double _yd, retval;   
+  int _lo;                                                  
+  int _mask=ACCURATE_TO_62_BITS;                        
+  _z.d = atan; retval= sign*atan;                                              
+  _yd = (double) atan;                                        
+  _lo = _z.i[DE_MANTISSA_LO] &(_mask);                      
+  if((_lo!=(0x3ff&(_mask))) && (_lo!= (0x400&(_mask)))) {   
+    BACK_TO_DOUBLE_MODE;                                    
+    return retval;                                             
+  }                                                         
+}
+#endif
+  
    {
 
     /*Second step, double-double  */
@@ -173,7 +192,7 @@ extern double atan_rn(double x) {
       
       if (i==61) 
         {
-          Add12_ext( xmBihi , xmBilo , x , -arctan_table[61][B]);
+          Add12_ext( &xmBihi , &xmBilo , x , -arctan_table[61][B]);
         }
       else 
         {
@@ -227,7 +246,7 @@ extern double atan_rn(double x) {
 		    (coef_poly[7][0]+Xred2hi*
 		     (coef_poly[8][0]))));
       
-      Add12_ext(qhi,qlo, coef_poly[4][0],q);
+      Add12_ext(&qhi,&qlo, coef_poly[4][0],q);
 #if debug
   printf(" xred2   =   %1.50Le + %1.50Le\n", Xred2hi, Xred2lo);
   printf(" qhi+qlo0=   %1.50Le + %1.50Le\n",qhi, qlo);
@@ -247,7 +266,7 @@ extern double atan_rn(double x) {
 #endif
 
       /* The sequence in the TOMS paper */
-      Add12_ext (atanhi,atanlo,x,qhi);
+      Add12_ext (&atanhi,&atanlo,x,qhi);
       atanlo += qlo;
     }
 #if debug

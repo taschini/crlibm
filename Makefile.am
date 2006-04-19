@@ -70,6 +70,7 @@ EXTRA_DIST = VERSION TODO\
 	maple/log2-td.mpl maple/log10-td.mpl \
 	maple/trigo.mpl maple/atan.mpl \
 	maple/asin-td.mpl \
+	maple/sqrt.mpl \
 	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
 	gappa/trigoTanCase2.gappa \
 	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
