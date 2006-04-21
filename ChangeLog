@@ -1,7 +1,18 @@
-Summary of changes between version 0.11 and version 0.8
+Summary of changes between version 0.11beta1 and version 0.10beta
 ==========================================================
 <Christoph Lauter>
-	Added asin, log2 and log10 using triple double (log2-td.*, log10-td.*)
+	Added asin
+	More Gappa
+<Florent de Dinechin>
+        Correction of a serious bug (found by Paul Zimmermann) 
+  	  in the computation of rounding constants. 
+	  (Fortunately the bug was in the proof, the code was OK)
+	More Gappa proofs
+	
+Summary of changes between version 0.10beta and version 0.8
+==========================================================
+<Christoph Lauter>
+	Added log2 and log10 using triple double (log2-td.*, log10-td.*)
 	Triple-double versions of exp and log (exp-td.*, log-td.*)
 <Florent de Dinechin>
 	log-de, using double-extended, much faster on IA32 and IA64

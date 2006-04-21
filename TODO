@@ -2,8 +2,7 @@ TODO before 0.11 release (will we call it 1.0?)
 
 Serious bugs
 ------------
-The theorem that computes the rounding constants is wrong. The
-constants themselves are probably OK.
+None left so far
 
 Proof stuff
 -----------
