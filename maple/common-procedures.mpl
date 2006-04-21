@@ -323,11 +323,20 @@ end proc:
 
 #---------------------------------------------------------------------
 # Computes the constant for the round-to-nearest test.
-# delta is the overall relative error of the approximation scheme
-compute_rn_constant := proc(delta)
-  local k:
-  k := trunc(-log2(delta)) - 53:
-  nearest(  1+ 2**(-52) + (2**(54+k)*delta)  /  ( (2**k-1) * (1-2**(-53)) )  ):
+# epsilon is the overall relative error of the approximation scheme
+# See the documentation for the explanation of these formulae
+compute_rn_constant := proc(epsilon)
+  local k, constGenCase, constPowerOf2:
+  k := trunc(-log[2](epsilon)) - 53:
+  constGenCase :=
+    (1 +     2**54*epsilon / (1 +  2**(-k+1) ) )  / (1-2**(-53))  :
+  constPowerOf2 :=
+    (1 +    (2**54 + 1/4) * (epsilon / (1-epsilon)) / (1 + 2**(-k+2)) )   / (1-2**(-53))  :
+  # round up
+  print("Constante, cas général "): print(constGenCase):
+  print("Constante, puiss de 2  "): print(constPowerOf2):
+
+  roundUp( max(constGenCase, constPowerOf2)) :
 end proc:
 
 
@@ -345,10 +354,10 @@ local xb,xs,s,e,m:
 end proc:
 
 #---------------------------------------------------------------------
-# Computes the floating point successor of x 
+# Computes the floating point successor of x
 succDouble:=proc(x)
 local s,he,hexcat,hehi,helo,castx,shex,neg;
-he := ieeehexa(x); 
+he := ieeehexa(x);
 hehi:= op(1, he);
 helo:= op(2, he);
 hexcat := cat(hehi, helo);
