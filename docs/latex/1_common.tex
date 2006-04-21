@@ -1205,7 +1205,11 @@ Let $y$ be a real number, and  $\maxeps$, $e$, $y_h$ and $y_l$ be
   \item $|y_h+y_l - y| <\maxeps.|y|$ (i.e. the total relative error of
     $y_h+y_l$ with respect to $y$ is bounded by $\maxeps$),
   \item $0<\maxeps \le 2^{-53-k}$ with $ k \ge 3$ integer,
-  \item TODO: wrong $e\ge 1+  \dfrac{2^{53+k+1}\maxeps}{(2^{k}-1)(1-2^{-53})}$.
+  \item $e\ge 
+  (1-2^{-53})^{-1}\left(
+     1+ \dfrac{2^{54}\maxeps}{1 - \maxeps - 2^{-k+1}}
+    \right)
+\quad $ and $\quad e\le 2$.
 \end{itemize}
 
 The following test determines whether $y_h$ is the
@@ -1221,149 +1225,213 @@ else /* more accuracy is needed, launch accurate phase */
 
 \begin{proof}
 
+%  \paragraph{Sketch of the proof} 
+
   Remark that the condition $|y_h|\ge 2^{-1022+53}$ implies that $y_h$
-  is a normal number. We will assume that $y\ge0$ (so $y_h\ge0$), as
-  the other case is symmetric.
-  
-  We want to prove is that if the test is true, then $y_h = \round(y)$.
+  is a normal number. 
+
+  The implication we need to prove is: if the test is true, then $y_h
+  = \round(y)$ (failure of the test does not necessary mean that $y_h
+  \ne \round(y)$). 
+
+  Let us note $u=\ulp(y_h)$ and consider only the case when $y_h$ is
+  positive (as the other case is symmetrical). 
+
+  We have
+  to consider separately the following two cases.\\
+  \begin{tabular}{c||c}
+
+    \begin{minipage}[t]{7.5cm}
+      \textbf{If $y_h$ is not a power of two or $y_l\ge 0$}    
+
+       In this case we will always assume that $y_l\ge 0$, as the case
+      $y_l\le 0$ is symmetrical when $y_h$ is not a power of two.
+   \end{minipage}
+    &
+    \begin{minipage}[t]{7.5cm}
+      \textbf{If $y_h$ is a power of two and $y_l<0$}
+    \end{minipage}
+\end{tabular}\\  
+\begin{tabular}{c||c}
+    \begin{minipage}[t]{7.5cm}
+            
+      To prove that $y_h = \round(y)$, it is enough to prove that
+      $|y_h-y|\le u/2$. As $|y_h+y_l - y| <\maxeps.|y|$ (fourth
+      hypothesis) it is enough to prove that $u/2-y_l > \maxeps y$.
+
+      By definition of the \ulp\ of a positive normal
+      number, we have $y_h \in [2^{52}u, (2^{53}-1)u]$.
+
+    \end{minipage}
+  &
+  \begin{minipage}[t]{7.5cm}
+
+    To prove that $y_h = \round(y)$, it is enough to prove that
+    $|y_h-y|\le u/4$. As $y_l\le 0$, we have $y\le y_h$ and $|y_h-y| =
+    y-y_h$.
+
+    From fourth hypothesis, it is enough to prove that $u/4 + y_l >
+    \maxeps y$.
+    
+    By our definition of the \ulp\ of a normal
+    number, we have $y_h = 2^{52}u$ in this case.
+  \end{minipage}
+\end{tabular}\\  
+\begin{tabular}{c||c}
+    \begin{minipage}[t]{7.5cm}
+
+      From the first hypothesis we have 
+      \begin{equation}
+        y_l\le\frac{1}{2}u 
+        \label{eq:prooftest1}
+      \end{equation}
+      
+      Therefore $y_h+y_l \le (2^{53}-1)u + \frac{1}{2}u$, and\\
+      $y < (y_h+y_l)/(1-\maxeps)$. Hence \\
+        $y <\ \dfrac{2^{53}-\frac{1}{2}}{1-\maxeps}  u$
+        
+      As a consequence, since $\maxeps \le 2^{-56}$, 
+      \begin{equation}
+        y < 2^{53}  u
+        \label{eq:prooftest3}
+      \end{equation}
+    \end{minipage}
+  &
+  \begin{minipage}[t]{7.5cm}
+
+    We have $y_h = 2^{52}u$ and $y_l\le 0$, therefore\\ $y_h+y_l \le
+    2^{52}u$, and
+    \begin{equation}
+      y < \frac{2^{52}u}{1-\maxeps}
+      \label{eq:prooftest3p2}
+    \end{equation}
+  \end{minipage}
+\end{tabular}\\  
+\begin{tabular}{c||c}
+    \begin{minipage}[t]{7.5cm}
+      The easy case is when we have $y_h = \round(y)$ regardless of
+      the result of the test. This is true as soon as $y_l$ is
+      sufficiently distant from $u/2$. More specifically, if $0 \le
+      y_l < \left(\frac{1}{2} - 2^{-k}\right)u$, we combine (\ref{eq:prooftest3}) with
+      the fifth hypothesis to get $\maxeps y < 2^{-k}u$. From $y_l <
+      \left(\frac{1}{2} - 2^{-k}\right)u$ we deduce\\ 
+      $u/2 -y_l > 2^{-k}u  >  \maxeps y$,
+      which proves that $y_h=\round(y)$.
+    \end{minipage}
+  &
+  \begin{minipage}[t]{7.5cm}
+    The easy case is when we have $y_h = \round(y)$ regardless of the
+    result of the test. This is true as soon as $y_l$ is sufficiently
+    distant from $-u/4$. More specifically, if $ - \left(\frac{1}{4} -
+      \frac{2^{-k-1}}{1-\maxeps}\right)u < y_l \le 0 $, after combining
+    (\ref{eq:prooftest3p2}) with the fifth hypothesis to get $\maxeps
+    y < \frac{2^{-k-1} u}{1-\maxeps}$,  we deduce\\
+    $y_l + \frac{u}{4}> \frac{2^{-k-1}}{1-\maxeps}u > \maxeps y$, which proves that
+    $y_h=\round(y)$.
+  \end{minipage}
+\end{tabular}\\  
+\begin{tabular}{c||c}
+
+    \begin{minipage}[t]{7.5cm}
+      Now consider the case when $y_l \ge \left(\frac{1}{2} -
+        2^{-k}\right)u$.  The condition $|y_h|\ge 2^{-1022+52}$
+      ensures that $u/4$ is a normal number, and now $y_l > u/4$, so
+      in this case $y_l$ is a normal number. As $1<e\le 2$, the result
+      is also normal, therefore
+      $$y_l\times e(1-2^{-53})\ \le\ y_l \otimes e\ \le\ y_l\times e(1+2^{-53})$$
+      
+    \end{minipage}
+  &
+  \begin{minipage}[t]{7.5cm}
 
 
-  First some lemmata.
+      Now consider the case when $-y_l \ge \left(\frac{1}{4} -
+      \frac{2^{-k-1}}{1-\maxeps}\right)u$.  The condition $|y_h|\ge 2^{-1022+52}$
+      ensures that $u/8$ is a normal number, and now $y_l > u/8$, so
+      in this case $y_l$ is a normal number. As $1<e\le 2$, the result
+      is also normal, therefore
+      $$-y_l\times e(1-2^{-53})\ \le\ -y_l \otimes e\ \le\ -y_l\times e(1+2^{-53})$$
 
-  Let us note $u=\ulp(y_h)$. By definition of the \ulp\ of a normal
-  number, we have $y_h \in [2^{52}u, (2^{53}-1)u]$.
-
-  From the first hypothesis we have 
-  \begin{equation}
-    y_l\le\frac{1}{2}u 
-    \label{eq:prooftest1}
-  \end{equation}
-  Therefore  $y_h+y_l \le (2^{53}-1)u + \frac{1}{2}u\ <\ 2^{53}u$:
-  \begin{equation}
-    y_h+y_l < 2^{53}u
-    \label{eq:prooftest2}
-  \end{equation}
-
-  Since $1+\epsilon>\frac{1}{2}$, we also have
-  $y=\frac{y_h+y_l}{1+\epsilon} < 2^{54}u$. 
-
-  From $\maxeps<2^{-53-k}$ (fifth hypothesis) and $y < 2^{54}u$ we derive  
-  \begin{equation}
-    \maxeps y < 2^{-k+1}u
-    \label{eq:prooftest3}
-  \end{equation}
-  and $k>2$ gives $\maxeps y < 2^{-1}u$ which in turn implies   
-  $y < y_h + y_l +\maxeps y < (2^{53}-1)u +\frac{1}{2}u +\frac{1}{2}u$ :
-  \begin{equation}
-    y<2^{53}u .
-    \label{eq:prooftest4}
-  \end{equation}
-
-  First we consider the (general) case when $y_h$ is not a power of two.  In
-  this case we will prove that if the test is true, then
-  $||y_l|-\frac{1}{2}u| > 2^{53}\maxeps u > \maxeps y$, which implies
-  that we are not in a difficult case for correct rounding to the
-  nearest, so $y_h = \round(y)$.
-
-  We consider only the case when $y_l$ is positive (the other case is
-  symmetrical): $0\le y_l \le \frac{1}{2}u$.
-
-  The easy case is when we have $y_h = \round(y)$ regardless of the
-  result of the test. This is true as soon as $y_l$ is sufficiently
-  distant from $u/2$. More specifically, if $0 \le y_l < u/2 -
-  2^{-k+1}u$, we rewrite $y_h+y_l-y=\epsilon y$ as $y-y_h = y_l
-  - \epsilon y < u/2 - 2^{-k+1}u - \epsilon y $. Since
-  $\epsilon < \maxeps$ and $\maxeps y < 2^{-k+1}u$ from
-  (\ref{eq:prooftest3}), we get $y-y_h < u/2$, therefore $y_h
-  = \round(y)$.
-
-  Now consider the case when $y_l \ge (\frac{1}{2} -
-  \frac{1}{2^{k-1}})u$.  The condition $|y_h|\ge
-  2^{-1022+52}$ ensures that $\frac{1}{4}u$ is a normal number, and now $y_l > u/4$, so  in
-  this case $y_l$ is a normal number. As $e>1$ this ensures that
-  $$y_l\times e(1-2^{-53})\ \le\ y_l \otimes e\ \le\ y_l\times e(1+2^{-53})$$
-
+  \end{minipage}
+  \\
+    \begin{minipage}[t]{7.5cm}
   Suppose that the test is true ($y_h \oplus y_l \otimes e = y_h$).
   With IEEE-54 compliant rounding to nearest, this implies $|y_l
-  \otimes e| \le \frac{1}{2}u$, which in turn implies $|y_l \times e|
-  (1-2^{-53}) \le \frac{1}{2}u$, as $y_l$ is a normal number and
-  $e>1$.
-  
-  We get $y_l e (1-2^{-53}) \le \frac{1}{2}u$, or (using $y_l \ge (\frac{1}{2} -
-  \frac{1}{2^{k-1}})u$)
-  \begin{equation}
-  \frac{1}{2}u - y_l \ge (\frac{1}{2} -
-  \frac{1}{2^{k-1}})u (e(1-2^{-53})-1) \label{eq:prooftestRN2}
-  \end{equation}  
+  \otimes e| \le \dfrac{u}{2}$, which in turn implies \\ $y_l \times e
+  (1-2^{-53}) \le \dfrac{u}{2}$ (as $y_l$ is a normal number and
+  $1<e\le 2$). This is rewritten
+  $$ \frac{u}{2} -y_l\ \ge \ y_l \left(e\left(1-2^{-53}\right) -1\right) $$
+    \end{minipage}
+  &
+  \begin{minipage}[t]{7.5cm}
+  Suppose that the test is true ($y_h \oplus y_l \otimes e = y_h$).
+  For this value of $y_h$ and this sign of $y_l$, this implies $|y_l
+  \otimes e| \le \dfrac{u}{4}$, which in turn implies \\ $-y_l \times e
+  (1-2^{-53}) \le \dfrac{u}{4}$.
 
-  The condition that $e$ has to fullfil (last hypothesis) was designed
-  so that (\ref{eq:prooftestRN2}) implies $\frac{1}{2}u - y_l >
-  2^{53}\maxeps u > \maxeps y$: therefore $y_h$ is the correctly
-  rounded to the nearest of $y$.
+  This is rewritten
+  $$ \frac{u}{4}  + y_l\ \ge \ - y_l \left(e\left(1-2^{-53}\right) - 1\right) $$
+  \end{minipage}
+\end{tabular}\\  
+\begin{tabular}{c||c}
 
-  The case when $y_l$ is negative is similar.
+  \begin{minipage}[t]{7.5cm}
+    Using $y_l \ge
+    (\frac{1}{2} - 2^{-k})u$,  we get \\
+  $$ \frac{u}{2} -y_l\ \ge \ \left(\frac{1}{2} - 2^{-k}\right)u \left(e\left(1-2^{-53}\right) -1\right) $$
+    \end{minipage}
+  &
+  \begin{minipage}[t]{7.5cm}
+    Using  $-y_l \ge \left(\frac{1}{4} -
+      \frac{2^{-k-1}}{1-\maxeps}\right)u$,  we get \\
+  $$ \frac{u}{4} + y_l\ \ge \ \left(\frac{1}{4} - \frac{2^{-k-1}}{1-\maxeps} \right)u \left(e\left(1-2^{-53}\right) -1\right) $$
+  \end{minipage}
+\end{tabular}\\  
+\begin{tabular}{c||c}
+    \begin{minipage}[t]{7.5cm}
+      We want to ensure that $\dfrac{u}{2} -y_l \ge \maxeps y$, we will
+      again use (\ref{eq:prooftest3}) and ensure that $\dfrac{u}{2} -y_l \ge
+      2^{53} \maxeps u$. This provides the condition that must be
+      fullfilled by $e$ for the theorem to hold in this case: we need
 
-  Now consider the (very rare) case when $y_h$ is a power of two. $y_h=2^{52}u$.
+$$\left(\frac{1}{2} - 2^{-k}\right)u \left(e(1-2^{-53}) -1\right)
+\ \ge \ 2^{53} \maxeps u $$
+    \end{minipage}
+  &
+  \begin{minipage}[t]{7.5cm}
+      To ensure that $\dfrac{u}{4} + y_l \ge \maxeps y$, we 
+      again use (\ref{eq:prooftest3p2}) and ensure that $\dfrac{u}{4} + y_l \ge
+      \dfrac{2^{52}u}{1-\maxeps}  \maxeps $. This provides the condition that must be
+      fullfilled by $e$ for the theorem to hold in this case: we need
+
+$$\left(\frac{1}{4} - \frac{2^{-k-1}}{1-\maxeps} \right)u \left(e(1-2^{-53}) -1\right)
+\ \ge \ \dfrac{2^{52}u}{1-\maxeps}  \maxeps $$
+  \end{minipage}
+\end{tabular}\\  
+\begin{tabular}{c||c}
+    \begin{minipage}[t]{7.5cm}
+  rewritten as:
+
+  $$  e\ge 
+   (1-2^{-53})^{-1}\left(
+     1+ \dfrac{2^{54}\maxeps}{1 - 2^{-k+1}}
+     \right)   $$
+    \end{minipage}
+  &
+  \begin{minipage}[t]{7.5cm}
+  rewritten as:
+
+  $$  e\ge 
+   (1-2^{-53})^{-1}\left(
+     1+ \dfrac{2^{54}\maxeps}{1 - \maxeps - 2^{-k+1}}
+     \right)   $$
+  \end{minipage}
+  \\
+\end{tabular}\\
+
+Taking for contraint on $e$ the max of these values completes the proof of the theorem.
 
 \end{proof}
-
-
-
-
-The following theorem must be used where and when it cannot be proven
-statically that $|y_h|\ge 2^{-1022+53}$. The test itself doesn't
-change, only the way the constant $e$ is computed changes. 
-
-\begin{theorem}[Correct rounding of a double-double to the nearest double, general case]
-\label{th:roundingRN2}
-~\\
-  Let $y$ and $\maxeps$ be real numbers, and $e$, $y_h$ and $y_l$ be
-  floating-point numbers such that 
-  \begin{itemize}
-  \item $y_h=y_h\oplus y_l$,
-  \item none of $y_h$ and $y_l$ is a  NaN  or $\pm \infty$,
-  \item $|y_h+y_l - y| <\maxeps.|y|$,
-  \item $0<\maxeps \le 2^{-53-k}$ with $k\ge 2$ integer,
-  \item $e\ge 1+  \dfrac{2^{53+k+2}\maxeps}{2^{k}-1}$.
-\end{itemize}
-
-The following test determines whether $y_h$ is the
-  correctly rounded value of $y$ in  round to nearest mode.
-
-\begin{lstlisting}[firstnumber=1]
-if( (*@$y_h$@*) == ((*@$y_h$@*) + ((*@$y_l$@*)*e)) )
-  return (*@$y_h$@*);
-else /* more accuracy is needed, launch accurate phase */
-\end{lstlisting}
-\end{theorem}
-
-\begin{proof}
-  First note that the theorem holds if $y_h$ is a subnormal: In this
-  case $y_l$ is zero, so the correctly rounded result is $y_h$. And in
-  this case, the test is always true since $y_l$ is zero.
-
-  The difficult case is when $y_h$ is normal, but $y_l$ is subnormal.
-  The proof is identical to that of the previous theorem, with the
-  exception that we cannot ensure anymore that $y_l$ will not be a
-  subnormal.  Therefore the relative error on $y_l\times e$ may be as
-  high as $\frac{1}{2}$, and the condition on $e$ is reinforced
-  accordingly. 
-\end{proof}
-
-Note that this theorem has very rarely to be used: in most cases when
-the function may come close to subnormals, the correctly rounded
-result can be deduced directly from the input without any computation
-and rounding test. Typical are the sine and tangent function:
-mathematically, they go through zero an infinite number of times, but
-we are able to prove that for floating-point arguments they never
-approach subnormals except in $[-\pi/4, \pi/4]$. And on this interval,
-their Taylor expansions ensure that returning $x$ returns the
-correctly rounded value of the function. This is detailed in
-Chapter~\ref{chap:trigo}.
-
-Indeed, the only function for which Theorem~\ref{th:roundingRN2} has
-been used so far is the exponential function.
-
 
 
 \subsubsection*{Notes}
@@ -1371,8 +1439,14 @@ been used so far is the exponential function.
 \begin{itemize}
 \item In general we will target values of $\maxeps$ in the order of
   $2^{-53-10}$ to balance the execution times of the quick and
-  accurate phases. In this case, using the first theorem almost divides
-  by two the frequency of calls to the accurate phase. 
+  accurate phases.
+
+\item A similar theorem could be written for $y_h$ subnormal. In most
+  cases, there will be a property such as $\round(f(x))=x$, deduced
+  from the Taylor theorem. For the rare functions that come close to
+  zero without such a property (an example is \texttt{exp}), it is
+  simpler and safer to launch the accurate phase systematically in
+  this case.
 
 \item These theorems are not proven for $y_h = \pm \infty$ (an
   implementation would depend on the correct behaviour of the
@@ -1394,10 +1468,9 @@ In both cases, returning a value close to infinity won't require a
 rounding test.
 
 
-\item It is not obvious that a fused multiply-and-add may be used for
-  the computation of $y_h+y_l\times e$, but the proof should be easy
-  to adapt to this (more accurate) operation (TODO).
-
+\item A fused multiply-and-add should probably not be used for the
+  computation of $y_h+y_l\times e$. Studying this question is on the
+  TODO list.
 
 \end{itemize}
 
