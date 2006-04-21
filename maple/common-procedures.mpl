@@ -328,15 +328,7 @@ end proc:
 compute_rn_constant := proc(epsilon)
   local k, constGenCase, constPowerOf2:
   k := trunc(-log[2](epsilon)) - 53:
-  constGenCase :=
-    (1 +     2**54*epsilon / (1 -  2**(-k+1) ) )  / (1-2**(-53))  :
-  constPowerOf2 :=
-    (1 +    (2**54 + 1/4) * (epsilon / (1-epsilon)) / (1 - 2**(-k+2)) )   / (1-2**(-53))  :
-  # round up
-  #print("Constante, cas général "): print(constGenCase):
-  #print("Constante, puiss de 2  "): print(constPowerOf2):
-
-  roundUp( max(constGenCase, constPowerOf2)) :
+  (1 +     2**54*epsilon / (1 - epsilon - 2**(-k+1) ) )  / (1-2**(-53))
 end proc:
 
 
