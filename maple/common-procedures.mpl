@@ -106,7 +106,7 @@ sgn,exponent,mantissa;
 end:
 
 #---------------------------------------------------------------------
-# ieeedoubleRD converts a number to IEEE double format rounding upwards.
+# ieeedoubleRD converts a number to IEEE double format rounding downwards.
 # returns sign (-1 or 1), exponent between -1022 and 1023, mantissa as a fraction between 0.5 and 1.
 ieeedoubleRD:=proc(xx)
 local x, sgn, logabsx, exponent, mantissa, infmantissa,powermin,powermax,expmin,expmax,expmiddle,powermiddle;
