@@ -1,0 +1,3280 @@
+\documentclass[a4paper,10pt,twoside]{article}
+
+\usepackage{a4wide}
+\usepackage[latin1]{inputenc} 
+\usepackage[T1]{fontenc} 
+\usepackage{url}
+
+\usepackage{amstext,latexsym,amsfonts,amssymb}
+
+
+
+
+\newcommand{\http}{http://}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{algorithm}[theorem]{Algorithm}
+\newenvironment{proof}[1][Proof]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newcommand{\qed}{\nobreak \ifvmode \relax \else \ifdim \lastskip<1.5em \hskip-\lastskip
+\hskip1.5em plus0em minus0.5em \fi \nobreak \vrule height0.75em width0.5em depth0.25em\fi}
+\newcommand{\N}{\ensuremath{\mathbb {N}}}
+\newcommand{\Z}{\ensuremath{\mathbb {Z}}}
+\newcommand{\F}{\ensuremath{\mathbb {F}}}
+\newcommand{\R}{\ensuremath{\mathbb {R}}}
+\newcommand{\hi}{\ensuremath{\mathit{h}}}
+\newcommand{\mi}{\ensuremath{\mathit{m}}}
+\newcommand{\lo}{\ensuremath{\mathit{l}}}
+\newcommand{\E}{\ensuremath{\mathcal{E}}}
+\newcommand{\ouvguill}{``} 
+\newcommand{\fermguill}{''}
+\newcommand{\Add}{{\bf Add12}}
+\newcommand{\AddDD}{{\bf Add22}}
+\newcommand{\AddDTT}{{\bf Add233}}
+\newcommand{\AddTT}{{\bf Add33}}
+\newcommand{\MulDT}{{\bf Mul23}}
+\newcommand{\Mul}{{\bf Mul12}}
+\newcommand{\MulDD}{{\bf Mul22}}
+\newcommand{\MulDTT}{{\bf Mul233}}
+\newcommand{\mAdd}{\ensuremath{\mathbf{Add12}}}
+\newcommand{\mAddDD}{\ensuremath{\mathbf{Add22}}}
+\newcommand{\mAddDTT}{\ensuremath{\mathbf{Add233}}}
+\newcommand{\mAddTT}{\ensuremath{\mathbf{Add33}}}
+\newcommand{\mMul}{\ensuremath{\mathbf{Mul12}}}
+\newcommand{\mMulDD}{\ensuremath{\mathbf{Mul22}}}
+\newcommand{\mMulDT}{\ensuremath{\mathbf{Mul23}}}
+\newcommand{\mMulDTT}{\ensuremath{\mathbf{Mul233}}}
+\newcommand{\mUlp}{\ensuremath{\mathrm{ulp}}}
+\newcommand{\nan}{\ensuremath{\mathrm{NaN}}}
+\newcommand{\sgn}{\ensuremath{\mathrm{sgn}}}
+\renewcommand{\succ}{\ensuremath{\mathrm{succ}}}
+\newcommand{\pred}{\ensuremath{\mathrm{pred}}}
+\newcommand{\xor}{\ensuremath{\mbox{ }\mathrm{XOR}\mbox{ }}}
+\renewcommand{\epsilon}{\varepsilon}
+
+
+
+\title{Basic building blocks\\for a triple-double intermediate format\\{\small (corrected version)}}
+
+\author{Christoph Quirin Lauter}  
+
+\date{\today}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+The implementation of correctly rounded elementary functions needs high
+intermediate accuracy before final rounding. This accuracy can be provided by (pseudo-)
+expansions of size three, i.e. a triple-double format. 
+
+The report presents all basic operators for such a format. Triple-double numbers can be
+redundant. A renormalization procedure is presented and proven. Elementary functions' 
+implementations need addition and multiplication sequences. These operators must take 
+operands in double, double-double and triple-double format. The results must be accordingly
+in one of the formats. Several procedures are presented. Proofs are given for their 
+accuracy bounds.
+
+Intermediate triple-double results must finally be correctly rounded to double precision. 
+Two effective rounding sequences are presented, one for round-to-nearest mode, one for 
+the directed rounding modes. Their complete proofs constitute half of the report. 
+\end{abstract}
+
+
+\section{Introduction}
+The implementation of correctly rounded double precision elementary functions needs high accuracy intermediate 
+formats \cite{Muller97,Defour-thesis,crlibmweb,DinDefLau2004LIP}. To give an order of magnitude, in most cases
+$120$ bits of intermediate accuracy are needed for assuring the correct rounding property \cite{DinDefLau2004LIP}.
+In contrast, the native IEEE 754 double precision format offers $53$ bits of accuracy. Well-know techniques
+allow to double this accuracy \cite{Dek71}. Nevertheless the resulting accuracy, $106$ bits, is not sufficient. 
+Tripling it would be enough.\par
+Using expansions of floating point numbers allows to expand still more the accuracy of a native floating point type.
+An expansion is a non-evaluated sum of some floating point numbers in a floating  
+point format \cite{Finot-thesis, Pri91, She97}. However the techniques for manipulating general expansions presented
+in literature are too costly for the implementation of elementary functions.\par
+In this report, we are going to consider expansions of three double
+precision floating point numbers, i.e. we are going to investigate on a triple
+double format. In our case, we will hence manipulate floating
+point numbers $(x_\hi + x_\mi + x_\lo)$ with $x_\hi, x_\mi, x_\lo \in \F$.\par
+After making some definitions and an analysis of a procedure that we call
+renormalization, we will consider addition and multiplication procedures for
+triple-double numbers. These will also comprise operations linking the triple
+double format with the native double and a double-double format.\par
+In the end,
+we will present and prove in particular two final rounding sequences for correctly
+rounding a triple-double number to the base double format.
+\section{Definitions}
+It will be necessary to define a normal form of a triple-double number
+because it is clear that the triple-double floating point format - or that of
+(pseudo-)expansions in general - is redundant: there exist numbers 
+$\hat{x}$ such that there are different triplets $(x_\hi ,x_\mi ,x_\lo ) \in \F^3$ 
+such that $\hat{x} = x_\hi + x_\mi + x_\lo$. It is easy to see that a
+representation in such a format is unique if the numbers forming the expansion
+are ordered by decreasing 0 and if the latter are such that there is
+no (binary) digit represented by two bits of the significands of two different
+numbers of the expansion. The sign bit has in this case the same role as an
+additional bit of the significant \cite{Finot-thesis}.\par
+As we will see, the need for a normal form for each triple-double number is
+not directly motivated by needs of the addition and multiplication operators
+we will have to define. As long as the latter operate correctly, i.e. between
+known error bounds, on numbers whose representation in a triple-double format is not unique, we are not
+obliged to recompute normal forms. On the other hand, when we want to round
+down such a higher precision number to a native double (in one of the
+different rounding modes), a normal form will be needed. If we could not
+provide one, we would assist to a explosion of different cases to be handled
+by the rounding sequence.\\
+Let us first define some notations that are needed for the analysis of numerical algorithms like 
+the ones that we are going to consider. 
+\begin{definition}[Predecessor and successor of a floating point number] \label{predsuccdef} ~\\
+Let be $x \in \F$ a floating point number. Let be $<$ the total ordering on $\F$. \\
+If $x$ is positive or zero we will design by $x^+$ the direct successor of $x$ in $\F$ with regard to $<$ 
+and we will notate $x^-$ its predecessor.\\
+If $x$ is negative we will design by $x^-$ the successor and by $x^+$ the predecessor of $x$.\\
+In any case, we will design by $\succ\left( x \right)$ the successor of $x$ in $\F$ with regard to $<$ and 
+$\pred\left(x\right)$ its predecessor.
+\end{definition}
+This definition \ref{predsuccdef} is inspired by \cite{Defour-thesis}.
+\begin{definition}[Unit on the last place -- the $\mUlp$~ function] \label{defulp} ~ \\ 
+Let be $x \in \F$ a double precision number and let be $x^+$ its
+successor (resp. predecessor if $x$ is negative). \\
+So
+$$\mUlp \left( x \right) = \left \lbrace 
+                   \begin{array}{lll} x^+ - x & \mbox{ if } & x \geq 0 \mbox{ and } x^+ \not = + \infty \\ 
+                     2 \cdot \mUlp\left( \frac{x}{2} \right) & \mbox{ if } & x \not = + \infty \mbox{ but } x^+ = + \infty\\
+                     \mUlp \left( -x \right) & \mbox{ if } & x < 0 \end{array} \right.$$ 
+\end{definition}  
+This definition is inspired by \cite{Defour-thesis}, too. Compare \cite{Muller05INRIA} 
+for further research on the subject of the $\mUlp$~ function.\\~\par
+Concerning the overlap we define finally:
+\begin{definition}[Overlap]\label{defoverlap}~\\
+Let $x_\hi, x_\lo \in \F$ be two non-subnormal double precision numbers. \\
+We will say that $x_\hi$ and $x_\lo$ overlap iff
+$$\left \vert x_\lo \right \vert \geq \mUlp\left( \left \vert x_\hi \right 
+\vert \right)$$~\\
+Let be $x_\hi, x_\mi, x_\lo \in \F$ the components of a triple-double
+number. We will suppose that they are not subnormals.\\
+So, we will say that there is overlap iff 
+$x_\hi$ and $x_\mi$ or $x_\mi$ and $x_\lo$ or $x_\hi$ and $x_\lo$ overlap.
+\end{definition}
+\begin{definition}[Normal form]~\\
+Let be $x_\hi, x_\mi, x_\lo \in \F$ three non-subnormal floating point numbers
+forming the triple-double number $x_\hi + x_\mi + x_\lo$. \\
+We will say that $x_\hi + x_\mi + x_\lo$ are in normal form iff there is no
+overlap between its components.
+Further, we will say that $x_\hi + x_\mi + x_\lo$ is normalised.
+\end{definition} \par
+Having made this definition, let us remark that it is deeply inspired by our
+direct needs and not by abstract analysises on how to represent real
+numbers. Anyway, the fact that an expansion is not overlapping is not a
+sufficient condition for its representing an unique floating point number.\par
+The implementation of addition and multiplication operators will be finally be
+based on computations on the components of the operands (or partial products
+in the case of a multiplication) followed by a final summing up for
+regaining the triple-double base format. As we do not statically know the
+magnitudes of the triple-double operands and its components, we will not be
+able to guarantee that in any case there will not be any overlap in the
+result. On the other hand, we strive to develop a renormalization sequence for
+recomputing normal forms. These will be handy, as we already said, for the
+final rounding and, if needed, i.e. if sufficiently good static bounds can not
+be given, before handing over a result as an operand to a following operation. 
+Such a renormalization sequence must guarantee that for each triple-double in
+argument (if needed verifying some preconditions on an initial overlap), the
+triple-double number returned will be normalised and that the sum of the
+components for the first number is exactly the same as the one of the
+components of the latter.\par
+\begin{definition}[The \Add~ algorithm] \label{adddef} ~ \\
+Let {\bf A} be an algorithm taking as arguments two double precision numbers $x,y \in \F$ and
+returning two double precision floating point numbers $r_\hi, r_\lo \in \F$.\\
+We will call {\bf A} the \Add~ algorithm iff it verifies that\\
+\begin{itemize}
+\item $\forall x,y \in \F. r_\hi + r_\lo = x + y$
+\item $\forall x,y \in \F. \left \vert r_\lo \right \vert \leq 2^{-53} \cdot \left \vert r_\hi \right \vert$
+\item $r_\hi = \circ\left( x + y \right)$ \\
+$r_\lo = x + y - r_\hi$
+\end{itemize} ~\\
+i.e. iff it makes an exact addition of two floating point numbers such that
+the components of the double-double expansion in result are non-overlapping
+and if the most significant one is the floating point number nearest to the
+sum of the numbers in argument.
+\end{definition} 
+\begin{definition}[The \Mul~ algorithm] \label{muldef} ~ \\
+Let {\bf A} be an algorithm taking as arguments two double precision numbers $x,y \in \F$ and
+returning two double precision floating point numbers $r_\hi, r_\lo \in \F$.\\
+We will call {\bf A} the \Mul~ algorithm iff it verifies that\\
+\begin{itemize}
+\item $\forall x,y \in \F. r_\hi + r_\lo = x \cdot y$
+\item $\forall x,y \in \F. \left \vert r_\lo \right \vert \leq 2^{-53} \cdot \left \vert r_\hi \right \vert$
+\item $r_\hi = \circ\left( x \cdot y \right)$ \\
+$r_\lo = x \cdot y - r_\hi$
+\end{itemize} ~\\
+i.e. iff it makes an exact multiplication of two floating point numbers such that
+the components of the double-double expansion in result are non-overlapping
+and if the most significant one is the floating point number nearest to the
+sum of the numbers in argument.
+\end{definition}
+We will pass over the existence proof of such algorithms. Consult \cite{Dek71} on this subject. \par
+Let us now give some main lemmas that can be deduced from the definition \ref{defulp} of the 
+$\mUlp$~ function. 
+\begin{lemma}[The $\mUlp$~ functions with regard to upper bounds] \label{ulpmajor} ~ \\
+Let be $x_\hi$ and $x_\lo$ two non-subnormal floating point numbers. \\
+So
+$$\left \vert x_\lo \right \vert < \mUlp\left( x_\hi \right) \Rightarrow
+\left \vert x_\lo \right \vert \leq 2^{-52} \cdot \left \vert x_\hi \right \vert$$
+\end{lemma}
+\begin{proof} ~ \\
+Let us suppose that $\left \vert x_\lo \right \vert < \mUlp\left(x_\hi
+\right)$ and that 
+$\left \vert x_\lo \right \vert > 2^{-52} \cdot \left \vert x_\hi \right \vert$.\\
+So we get the following inequality
+$$2^{-52} \cdot \left \vert x_\hi \right \vert < \mUlp\left( x_\hi \right)$$
+Without loss of generality, let us suppose now that 
+$x_\hi > 0$ and that $x_\hi^+ \not = + \infty$ where $x_\hi^+$ is the
+successor of 
+$x_\hi$ in the ordered set of floating point numbers.\\
+So we know by the definition of non-subnormal floating point number in double
+precision that there exists
+$m \in \N$ and $e \in \Z$ such that
+$x_\hi = 2^e \cdot m$ with $2^{52} \leq m < 2^{53}$. Anyway, one can check that
+$$x_\hi^+ = \left \lbrace \begin{array}{lll} 2^e \cdot \left(m + 1 \right) & \mbox{ if } & m+1 < 2^{53} \\
+                                             2^{e+1} \cdot 2^{52} & \mbox{ otherwise} & \end{array} \right.$$
+So 2 cases must be treated separately:\\~\\
+{\bf 1st case: $x_\hi^+ = 2^e \cdot \left( m + 1 \right)$} \\ 
+So we get
+\begin{eqnarray*}
+2^e \cdot \left( m + 1 \right) - 2^e \cdot m & > & 2^{-52} \cdot 2^e \cdot m \\
+1 & > &  2^{-52} \cdot m 
+\end{eqnarray*}
+In contrast, $m \geq 2^{52}$, so we obtain the strict inequality $1 > 1$
+which contradicts the hypotheses. \\~\\
+{\bf 2nd case: $x_\hi^+ = 2^{e+1} \cdot 2^{52}$} \\ 
+In this case, we know that $m=2^{53} - 1$. \\
+We can deduce that 
+\begin{eqnarray*}
+2^{e+1} \cdot 2^{52} - 2^e \cdot \left( 2^{53} - 1\right) & > & 2^{-52} \cdot 2^e \cdot \left( 2^{53} - 1 \right) \\
+1 & > &  2 - 2^{-52}
+\end{eqnarray*}
+This last inequality is a direct contradiction with the hypotheses.\qed
+\end{proof}
+\begin{lemma}[Commutativity of the $x^+$ and $x^-$ operators with unary $-$] \label{commut} ~ \\
+Let be $x \in \F$ a positive floating point number.\\
+So, 
+$$\left( - x\right)^+ = -\left(x^+\right)$$
+and
+$$\left( - x\right)^- = -\left(x^-\right)$$
+\end{lemma}
+\begin{proof} ~ \\
+Since the set of the floating point numbers is symmetrical around $0$, we get
+$$\left( -x\right)^+ = \pred\left( -x \right) = -\succ\left( x \right) = - \left(x^+\right)$$
+and
+$$\left( -x\right)^- = \succ\left( -x \right) = -\pred\left( x \right) = - \left(x^-\right)$$\qed
+\end{proof}
+\begin{lemma}[$x^+$ and $x^-$ for an integer power of $2$] \label{poweroftwo} ~ \\
+Let be $x \in \F$ a non-subnormal floating point number such that it exists $e \in \Z$ such that
+$$x=\pm2^e \cdot 2^p$$
+where $p \geq 2$ is the format's precision.\\
+So,
+$$x - x^-= \frac{1}{2} \cdot \left( x^+ - x \right)$$
+\end{lemma}
+\begin{proof} ~\\
+If $x > 0$, we get
+$$x - x^- = 2^e \cdot 2^p - 2^{e-1} \cdot \left( 2^{p+1} - 1 \right) = 2^{e-1}$$
+and
+$$x^+ - x = 2^e \cdot \left( 2^p + 1 \right) - 2^e \cdot 2^p = 2^e$$
+If $x$ is negative it suffices to apply lemma \ref{commut}.\qed
+\end{proof}
+\begin{lemma}[$x^+$ and $x^-$ for a float different from an integer power of $2$] \label{notpoweroftwo} ~\\
+Let be $x \in \F$ a non-subnormal floating point number such that it does not exist any $e \in \Z$ 
+such that $$x=\pm2^e \cdot 2^p$$
+where $p \geq 2$ is the format's precision.\\
+So,
+$$x - x^- = x^+ - x$$
+\end{lemma}
+\begin{proof} ~ \\
+If $x > 0$ we know that there exist $e \in \Z$ and $m \in \N$ such that
+$$x = 2^e \cdot m$$
+with
+$$2^p < m < 2^{p-1}$$
+because $x$ is not exactly an integer power of $2$. \\
+Further, one checks that 
+$$x^+ = 2^e \cdot \left( m + 1 \right)$$
+even if $m = 2^{p-1} -1$ and that 
+$$x^- = 2^e \cdot \left( m - 1 \right)$$
+because the lower bound given for $m$ is strict. \\
+So one gets
+\begin{eqnarray*}
+x - x^- & = & 
+2^e \cdot m - 2^e \cdot \left(m - 1 \right) \\
+& = & 2^e \\
+& = & 2^e \cdot \left( m + 1 \right) - 2^e \cdot m \\
+& = & x^+ - x
+\end{eqnarray*}
+If $x$ is negative it suffices to apply lemma \ref{commut}.\qed
+\end{proof}
+\begin{lemma}[Factorized integer powers of $2$ and the operators $x^+$ and $x^-$] \label{multhalf} ~\\
+Let be $x \in \F$ a non-subnormal floating point number such that $\frac{1}{2} \cdot x$ is still not subnormal.\\
+So,
+$$\left(\frac{1}{2} \cdot x \right)^+ = \frac{1}{2} \cdot x^+$$
+and
+$$\left(\frac{1}{2} \cdot x \right)^- = \frac{1}{2} \cdot x^-$$
+\end{lemma}
+\begin{proof} ~ \\
+Without loss of generality let us suppose that $x$ is positive. Otherwise we easily apply lemma \ref{commut}. \\
+So, if $x$ can be written $x = 2^e \cdot m$ with $m + 1 \leq 2^{p+1}$ where $p$ is the precision then
+$$\left( \frac{1}{2} \cdot x \right)^+ = \left( 2^{e-1} \cdot m \right)^+ = 2^{e-1} \cdot \left(m+1\right) = \frac{1}{2} \cdot x^+$$
+Otherwise, 
+$$\left( \frac{1}{2} \cdot x \right)^+ = \left( 2^{e-1} \cdot \left( 2^{p+1} -1 \right) \right)^+ 
+= 2^{e-1+1} \cdot 2^p = \frac{1}{2} \cdot x^+$$
+One can check that one obtains a completely analogous result for $x^-$.\qed
+\end{proof}
+\begin{lemma}[Factor $3$ of an integer power of $2$ in argument of the $x^+$ operator] \label{succtroisfoispuissdeux} ~ \\
+Let be $x \in \F$ a positive floating point number such that $x$ is not subnormal, $x^+$ and $\left( 3 \cdot x \right)^+$ 
+are different from $+\infty$, and that $\exists e \in \Z \mbox{ . } x = 2^e \cdot 2^p$ where $p \geq 3$ is the precision
+of the format $\F$.\\
+So the following equation holds
+$$\left( 3 \cdot x \right)^+ + \mUlp\left( x \right) = 3 \cdot x^+$$
+\end{lemma}
+\begin{proof} ~ \\
+We can easily check the following 
+\begin{eqnarray*}
+\left( 3 \cdot x \right)^+ + \mUlp\left( x \right) & = & \left( 3 \cdot x \right) + \left( x^+ - x \right) \\
+& = & \left( 3 \cdot 2^e \cdot 2^p \right)^+ + \left( 2^e \cdot 2^p \right)^+ - 2^e \cdot 2^p \\
+& = & \left( \left( 2 + 1 \right) \cdot 2^e \cdot 2^p \right)^+ + 2^e \cdot \left( 2^p + 1 \right) - 2^e \cdot 2^p \\
+& = & \left( 2 \cdot 2^e \cdot 2^p + 2 \cdot \frac{1}{2} \cdot 2^e \cdot 2^p \right)^+ + 2^e \\
+& = & \left( 2^{e+1} \cdot \left( 2^p + 2^{p-1} \right) \right)^+ + 2^e \\
+& = & 2^{e+1} \cdot \left( 2^p + 2^{p-1} + 1 \right) + 2^e \\
+& = & 2^{e+1} \cdot \left( 2^p + 2^{p-1} \right) + 2^{e+1} + 2^e \\
+& = & 2^{e+1} \cdot \left( 2^p + 2^{p-1} \right) + 3 \cdot 2^e \\
+& = & 3 \cdot 2^e \cdot 2^p + 3 \cdot 2^e \\
+& = & 3 \cdot 2^e \cdot \left( 2^p + 1 \right) \\
+& = & 3 \cdot \left( 2^e \cdot 2^p \right)^+ \\
+& = & 3 \cdot x^+ 
+\end{eqnarray*}
+\qed
+\end{proof}
+\begin{lemma}[Monotony of the $\mUlp$ function] \label{ulpmonoton} ~ \\
+The $\mUlp$ function is monotonic for non-subnormal positive floating point numbers and it is monotonic for non-subnormal 
+negative floating point numbers, i.e. 
+$$\forall x,y \in \F \mbox{ . } denorm < x \leq y \Rightarrow \mUlp\left( x \right) \leq \mUlp\left( y \right)$$
+$$\lor$$
+$$\forall x,y \in \F \mbox{ . } x \leq y < -denorm \Rightarrow \mUlp\left( x \right) \geq \mUlp\left( y \right)$$
+where $denorm$ is the greatest positive subnormal.
+\end{lemma}
+\begin{proof} ~ \\
+As a matter of fact it suffices to show that the $\mUlp$ function is monotonic for non-subnormal floating point numbers 
+and to apply its definition \ref{defulp} for the negative case.\\
+Let us suppose so that we have two floating point numbers $x, y \in \F$ such that $denorm < x < y$. 
+Without loss of generality we suppose that $x^+ \not = + \infty$ and that 
+$y^+ \not = + \infty$. Otherwise we apply definition \ref{defulp} of the $\mUlp$ function and lemma \ref{multhalf}.\\
+So we get
+$$\mUlp\left( y \right) - \mUlp\left( x \right) = y^+ - y - x^+ + x$$
+It suffices now to show that 
+$$y^+ - x^+ - y + x \geq 0$$
+We can suppose that we would have
+\begin{eqnarray*}
+x & = & 2^{e_x} \cdot m_x \\
+y & = & 2^{e_y} \cdot m_y 
+\end{eqnarray*}
+with $e_x, e_y \in \Z$, $2^p \leq m_x, m_y < 2^{p+1} - 1$.\\
+Since $y > x$, we clearly see that
+$$\left( e_y, m_y \right) \geq_{\mbox{lex}} \left( e_x, m_x \right)$$ \\
+So four different cases are possible:
+\begin{enumerate}
+\item \begin{eqnarray*}
+x^+ & = & 2^{e_x} \cdot \left( m_x + 1 \right) \\
+y^+ & = & 2^{e_y} \cdot \left( m_y + 1 \right)
+\end{eqnarray*}
+Hence
+\begin{eqnarray*}
+y^+ - x^+ - y + x & = & 2^{e_y} \cdot \left( m_y + 1 \right) - 2^{e_x} \cdot \left( m_x + 1 \right) - 2^{e_y} \cdot m_y + 2^{e_x} \cdot m_x \\
+& = & 2^{e_y} - 2^{e_x} \\
+& \geq & 0
+\end{eqnarray*}
+\item \begin{eqnarray*}
+x^+ & = & 2^{e_x} \cdot \left( m_x + 1 \right) \\
+y^+ & = & 2^{e_y+1} \cdot 2^p
+\end{eqnarray*}
+which yields to
+\begin{eqnarray*}
+y^+ - x^+ - y + x & = & 2^{e_y+1} \cdot 2^p - 2^{e_x} \cdot \left( m_x + 1 \right) - 2^{e_y} \cdot \left( 2^{p+1} - 1 \right) + 2^{e_x} \cdot m_x \\
+& = & 2^{e_y} - 2^{e_x} \\
+& \geq & 0
+\end{eqnarray*}
+\item \begin{eqnarray*}
+x^+ & = & 2^{e_x+1} \cdot 2^p \\
+y^+ & = & 2^{e_y} \cdot \left( m_y  + 1 \right)
+\end{eqnarray*}
+One checks that
+\begin{eqnarray*}
+y^+ - x^+ - y + x & = & 2^{e_y} \cdot \left( m_y + 1 \right) - 2^{e_x+1} \cdot 2^p - 2^{e_y} \cdot m_y + 2^{e_x} \cdot \left( 2^{p+1} - 1 \right) \\
+& = & 2^{e_y} - 2^{e_x} \\
+& \geq & 0
+\end{eqnarray*}
+\item \begin{eqnarray*}
+x^+ & = & 2^{e_x+1} \cdot 2^p \\
+y^+ & = & 2^{e_y+1} \cdot 2^p
+\end{eqnarray*}
+Thus
+\begin{eqnarray*}
+y^+ - x^+ - y + x & = & 2^{e_y+1} \cdot 2^p - 2^{e_x+1} \cdot 2^p - 2^{e_y} \cdot \left( 2^{p+1} - 1 \right) + 2^{e_x} \cdot \left( 2^{p-1} - 1\right) \\
+& = & 2^{e_y} - 2^{e_x} \\
+& \geq & 0
+\end{eqnarray*}
+\end{enumerate}
+This finishes the proof.\qed
+\end{proof}
+\section{A normal form and renormalization procedures}
+Let us now analyse a renormalization algorithm. We will prove its
+correctness be a series of lemmas and a final theorem. \\
+Let be the following procedure:
+\begin{algorithm}[Renormalization] \label{renorm}~\\
+{\bf In: $a_\hi, a_\mi, a_\lo \in \F$} verifying the following preconditions:\\
+{\bf Preconditions: }
+\begin{itemize}
+\item None of the numbers $a_\hi, a_\mi, a_\lo$ is subnormal
+\item $a_\hi$ and $a_\mi$ do not overlap in more than $51$ bits
+\item $a_\mi$ and $a_\lo$ do not overlap in more than $51$ bits
+\end{itemize}
+which means formally:
+\begin{eqnarray*}
+\left \vert a_\mi \right \vert & \leq & 2^{-2} \cdot \left \vert a_\hi \right \vert \\
+\left \vert a_\lo \right \vert & \leq & 2^{-2} \cdot \left \vert a_\mi \right \vert \\
+\left \vert a_\lo \right \vert & \leq & 2^{-4} \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+{\bf Out: $r_\hi, r_\mi, r_\lo \in \F$}
+\begin{eqnarray*}
+\left(t_{1\hi}, t_{1\lo}\right) & \gets & \mAdd\left(a_\mi,a_\lo\right) \\
+\left(r_\hi, t_{2\lo}\right) & \gets & \mAdd\left(a_\hi, t_{1\hi}\right) \\
+\left(r_\mi, r_\lo\right) & \gets & \mAdd\left(t_{2\lo}, t_{1\lo}\right)
+\end{eqnarray*}
+\end{algorithm}
+Consult also \cite{Finot-thesis} on the subject of this algorithm.
+Let us give now some lemmas on the properties of the values returned by 
+algorithm \ref{renorm} and on the intermediate ones.
+\begin{lemma}[Exact sum] \label{exact} ~\\
+For each triple-double number $a_\hi + a_\mi + a_\lo$, algorithm \ref{renorm} 
+returns a triple-double number $r_\hi + r_\mi + r_\lo$ such that
+$$a_\hi + a_\mi + a_\lo = r_\hi + r_\mi + r_\lo$$
+\end{lemma}
+\begin{proof} ~\\
+This fact is a trivial consequence of the properties of the \Add~ algorithm. \qed
+\end{proof}
+\begin{lemma}[Rounding of the middle component] \label{properties}~\\
+For each triple-double number $a_\hi + a_\mi + a_\lo$, algorithm \ref{renorm} 
+returns a triple-double number $r_\hi + r_\mi + r_\lo$ such that
+$$r_\mi = \circ \left( r_\mi + r_\lo \right)$$
+The same way, the intermediate and final value will verify the following properties:
+\begin{eqnarray*}
+t_{1\hi} & = & \circ \left( a_\mi + a_\lo \right) \\
+r_\hi & = & \circ \left( a_\hi + t_{1\hi} \right) \\
+\left \vert t_{1\lo} \right \vert & \leq & 2^{-53} \cdot \left \vert t_{1\hi} \right \vert \\ 
+\left \vert t_{2\lo} \right \vert & \leq & 2^{-53} \cdot \left \vert r_\hi \right \vert \\ 
+\end{eqnarray*}
+In particular, $r_\mi$ will not be equal to $0$ if $r_\lo$ is not equal to $0$.
+\end{lemma}
+\begin{proof} ~\\
+This fact is a trivial consequence of the properties of the \Add~ algorithm. \qed
+\end{proof}
+\begin{lemma}[Upper bounds] \label{major}~\\
+For all arguments of algorithm \ref{renorm}, 
+the intermediate and final values 
+$t_{1\hi}$, $t_{1\lo}$, $t_{2\lo}$ and $r_\mi$
+can be bounded upwards as follows:
+\begin{eqnarray*}
+\left \vert t_{1\hi} \right \vert & \leq & 2^{-1} \cdot \left \vert a_\hi \right \vert \\
+\left \vert t_{1\lo} \right \vert & \leq & 2^{-54} \cdot \left \vert a_\hi \right \vert \\
+\left \vert t_{2\lo} \right \vert & \leq & 2^{-52} \cdot \left \vert a_\hi \right \vert \\
+\left \vert t_\mi \right \vert & \leq & 2^{-51} \cdot \left \vert a_\hi \right \vert 
+\end{eqnarray*}
+\end{lemma}
+\begin{proof} ~\\
+\begin{enumerate}
+\item {\bf Upper bound for $\left \vert t_{1\hi} \right \vert$:}\\
+We have supposed that 
+\begin{eqnarray*}
+\left \vert a_\mi \right \vert & \leq & 2^{-2} \cdot \left \vert a_\hi \right \vert \\
+\left \vert a_\lo \right \vert & \leq & 2^{-4} \cdot \left \vert a_\hi \right \vert 
+\end{eqnarray*}
+So we can check that
+\begin{eqnarray*}
+\left \vert t_{1\hi} \right \vert & \leq & \left \vert a_\mi \right \vert + \left \vert a_\lo \right \vert + 
+2^{-54} \cdot \left \vert a_\hi \right \vert\\
+& \leq & 2^{-2} \cdot \left \vert a_\hi \right \vert + 2^{-4} \cdot \left \vert a_\hi \right \vert + 
+2^{-54} \cdot \left \vert a_\hi \right \vert \\
+& \leq & 2^{-1} \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+\item {\bf Upper bound for $\left \vert t_{1\lo} \right \vert$:}\\
+Using the properties of the \Add~ algorithm we can get to know that
+$$\left \vert t_{1\lo} \right \vert \leq 2^{-53} \cdot \left \vert t_{1\hi} \right \vert$$
+which yields finally to
+$$\left \vert t_{1\lo} \right \vert \leq 2^{-54} \cdot \left \vert a_\hi \right \vert$$
+\item {\bf Upper bound for $\left \vert t_{2\lo} \right \vert$:}
+\begin{eqnarray*}
+\left \vert t_{2\lo} \right \vert & \leq & 2^{-53} \cdot \left \vert r_\hi \right \vert \\
+& \leq & 2^{-53} \cdot \circ \left( \left \vert a_\hi \right \vert + \left \vert t_{1\hi} \right \vert \right) \\
+& \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert + 2^{-53} \cdot \left \vert t_{1\hi} \right \vert + 2^{-106} \cdot \left \vert a_\hi \right \vert +
+2^{-106} \cdot \left \vert t_{1\hi} \right \vert \\
+& \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert + 2^{-54} \cdot \left \vert a_\hi \right \vert + 2^{-106} \cdot \left \vert a_\hi \right \vert +
+2^{-107} \cdot \left \vert a_\hi \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+\item {\bf Upper bound for $\left \vert r_\mi \right \vert$:}
+\begin{eqnarray*}
+\left \vert r_\mi \right \vert & \leq & \left \vert t_{2\lo} \oplus t_{1\lo} \right \vert \\
+& \leq & \left \vert t_{2\lo} \right \vert + \left \vert t_{1\lo} \right \vert + 2^{-53} \cdot \left \vert t_{2\lo} + t_{1\lo} \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert a_\hi \right \vert + 2^{-54} \cdot \left \vert a_\hi \right \vert + 2^{-105} \cdot \left \vert a_\hi \right \vert +
+2^{-107} \cdot \left \vert a_\hi \right \vert \\
+& \leq & 2^{-51} \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+\end{enumerate} ~ \qed
+\end{proof}
+\begin{lemma}[Special case for $r_\hi = 0$] \label{specialcaseinzero}~\\
+For all arguments verifying the preconditions of algorithm \ref{renorm}, 
+$r_\hi$ will not be equal to $0$ if $r_\mi$ is not equal to $0$. \\
+Formally:
+$$r_\hi = 0 \Rightarrow r_\mi = 0$$
+\end{lemma}
+\begin{proof} ~\\
+Let us suppose that $r_\hi = 0$ and that $r_\mi \not = 0$. So we get
+\begin{eqnarray*}
+\left \vert r_\hi \right \vert & = & \left \vert \circ \left( a_\hi + t_{1\hi} \right) \right \vert \\
+& \geq & \left \vert \circ \left( 2^{-1} \cdot a_\hi \right) \right \vert \\
+& = & 2^{-1} \left \vert a_\hi \right \vert
+\end{eqnarray*}
+because we have already shown that $$\left \vert t_{1\hi} \right \vert \leq 2^{-1} \cdot \left \vert a_\hi \right \vert$$
+So for $r_\hi$ being equal to $0$, $a_\hi$ must be equal to $0$.\\
+In contrast, this yields to $t_{1\hi} = 0$ because $$r_\hi = \circ \left( 0 + t_{1\hi} \right) = t_{1\hi}$$
+This implies that $t_{1\lo} = 0$ because of the properties of the \Add~
+procedure. 
+The same way, we get $t_{2\lo} = 0$.\\
+We can deduce from this that
+$$0 \not = r_\mi = \circ \left( 0 + 0 \right) = 0$$ which is a contradiction.\qed
+\end{proof}
+\begin{lemma}[Lower bound for $\left \vert r_\hi \right \vert$] \label{minor}~\\
+For all arguments verifying the preconditions of algorithm \ref{renorm}, 
+the final result
+$r_\hi$
+can be bounded in magnitude as follows:
+$$\left \vert r_\hi \right \vert \geq 2^{-1} \cdot \left \vert a_\hi \right \vert$$
+\end{lemma}
+\begin{proof} ~\\
+We have that 
+$$r_\hi = a_\hi \oplus t_{1\hi}$$
+Clearly, if $a_\hi$ and $t_{1\hi}$ have the same sign, we get
+$$\left \vert r_\hi \right \vert \geq \left \vert a_\hi \right \vert \geq 2^{-1} \cdot \left \vert a_\hi \right \vert$$
+Otherwise - $a_\hi$ and $t_{1\hi}$ are now of the opposed sign - we have
+already seen that 
+$$\left \vert t_{1\hi} \right \vert \leq 2^{-1} \cdot \left \vert a_\hi \right \vert$$
+So, in this case, too, we get
+$$\left \vert r_\hi \right \vert \geq 2^{-1} \cdot \left \vert a_\hi \right \vert$$ \qed
+\end{proof}
+\begin{corollary}[Additional property on the \Add~procedure] \label{addsupp} ~\\
+Let be $r_\hi$ and $r_\lo$ two double precision floating point numbers returned
+by the \Add~ procedure. \\
+So
+$$\left \vert r_\lo \right \vert \leq \frac{1}{2} \cdot \mUlp\left( r_\hi \right)$$
+\end{corollary}
+\begin{proof} ~\\
+By the definition \ref{adddef} of the \Add~ procedure, we have
+$r_\hi + r_\lo = x + y$ and $r_\hi = \circ \left( x + y \right)$ and $r_\lo = x+y -r_\lo$.
+Thus the number $r_\lo = \left( x + y \right) - \circ \left( x + y \right) = 
+\left( x + y \right) - \left( x \oplus y \right)$ is the absolute error of correctly 
+rounded IEEE 754 addition. It is bounded by $\frac{1}{2} \cdot \mUlp\left( r_\hi \right)$ which
+gives us the desired result.\qed
+\end{proof}
+\begin{theorem}[Correctness of the renormalization algorithm \ref{renorm}] ~\\
+For all arguments verifying the preconditions of procedure \ref{renorm}, 
+the values returned 
+$r_\hi$, $r_\mi$ and $r_\lo$ will not overlap 
+unless they are all equal to $0$ and their sum will be exactly the sum of the
+values in argument $a_\hi$, $a_\mi$ and $a_\lo$.
+\end{theorem}
+\begin{proof} ~ \\
+The fact that the sum of the values returned is exactly equal to the sum of
+the values in argument has already been proven by lemma \ref{exact}.\\
+Without loss of generality, we will now suppose that neither $r_\hi$ nor
+$r_\mi$ will be $0$ in which case all values returned would be equal to $0$ 
+as we have shown it by lemmas \ref{specialcaseinzero} and \ref{properties}.\\
+Using lemma \ref{properties}, we know already that $r_\mi$ and $r_\lo$ do not
+overlap. 
+Let us show now that $r_\hi$ and $r_\mi$ do not overlap 
+by proving that the following inequality is true
+$$\left \vert r_\mi \right \vert \leq \frac{3}{4} \cdot \mUlp\left( r_\hi
+\right) < \mUlp\left( r_\hi \right)$$ 
+There are two different cases to be treated. \\ ~ \\
+{\bf 1st case: $t_{2\lo} = 0$} \\
+We know that  
+$$r_\mi = \circ \left( t_{2\lo} + t_{1\lo} \right) = \circ \left( 0 + t_{1\lo} \right) = t_{1\lo}$$
+When showing lemma \ref{major}, we have already proven that
+$$\left \vert t_{1\lo} \right \vert \leq 2^{-54} \cdot \left \vert a_\hi \right \vert$$
+Using lemma \ref{minor}, we therefore know that
+$$\left \vert r_\mi \right \vert \leq 2^{-53} \cdot \left \vert r_\hi \right \vert$$
+which is the result we wanted to prove.\\ ~ \\
+{\bf 2nd case: $t_{2\lo} \not = 0$} \\
+Still using lemma \ref{major}, we have shown that
+$$\left \vert t_{1\hi} \right \vert \leq 2^{-1} \cdot \left \vert a_\hi \right \vert$$
+In consequence, when the IEEE 754 \cite{IEEE754} addition $r_\hi = a_\hi \oplus t_{1\hi}$ is
+ported out, the rounding will be done at a bit of weight heigher than one 
+$\mUlp\left(t_{1\hi} \right)$ because $t_{2\lo}$ is strictly greater than $0$
+and because $a_\hi$ and $t_{1\hi}$ 
+do not completely overlap. Therefore we can check that
+$$\left \vert t_{2\lo} \right \vert \geq \mUlp\left( t_{1\hi} \right)$$
+With the result of lemma \ref{major} we already mentioned, we can deduce that  
+$$\left \vert t_{2\lo} \right \vert \leq \frac{1}{2} \cdot \mUlp\left( t_{1\hi} \right) \leq \frac{1}{2} \cdot \left \vert t_{2\lo} \right \vert$$
+So one can verify the following upper bound using among others lemma \ref{addsupp}:
+\begin{eqnarray*}
+\left \vert r_\mi \right \vert & = & \left \vert \circ \left(t_{2\lo} + t_{1\lo} \right) \right \vert \\
+& \leq & \circ \left( \frac{3}{2} \cdot \left \vert t_{2\lo} \right \vert \right) \\
+& \leq & \circ \left( \frac{3}{4} \cdot \mUlp \left( r_\hi \right) \right) \\
+& = & \frac{3}{4} \cdot \mUlp \left( r_\hi \right)
+\end{eqnarray*}
+One remarks that the last simplification is correct here because $\mUlp$ is
+always equal to an integer power of $2$ and because the precision of a double
+is greater than $4$ bits.\qed
+\end{proof} 
+\section{Operators on double-double numbers}
+Since we dispose now of a renormalization procedure which is effective and
+proven, we can now consider the different addition and multiplication
+operators we need. They will surely work finally on expansions of size $3$,
+but the double-double format \cite{Dek71} must be analysed, too, because it is at the base
+of the triple-double format. We already mentioned that on definition and
+analysis of this operators, we need not care such a lot of the overlap in the
+components of a triple-double number any more: as long as the overlap does
+not make us loose a too much of the final accuracy because several bits of the
+\ouvguill significand\fermguill~ are represented twice, overlap is not of an
+issue for intermediate values. At the end of triple-double computations, it
+will be sufficient to apply once the renormalization procedure. In order to
+measure the consequences of an overlap in the operands on final accuracy and
+in order to be able to follow the increase of the overlap during computations
+in triple-double, we will indicate for each operator which produces a triple
+double result or which takes a triple-double operand not only a bound for
+relative and absolute rounding errors but also a bound for the maximal overlap
+of the values returned. All this bounds will be parameterised by a variable
+representing the maximal overlap of the triple-double arguments. 
+\subsection{The addition operator \AddDD}
+Let us analyse first the following addition procedure:
+\begin{algorithm}[\AddDD] \label{addDDref} ~ \\
+{\bf In:} two double-double numbers, $a_\hi + a_\lo$ and $b_\hi + b_\lo$ \\
+{\bf Out:} a double-double number $r_\hi + r_\lo$ \\
+{\bf Preconditions on the arguments:} $$\left \vert a_\lo \right \vert \leq 2^{-53} \cdot \left \vert a_\hi \right \vert$$
+                                $$\left \vert b_\lo \right \vert \leq 2^{-53} \cdot \left \vert b_\hi \right \vert$$ 
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{50mm}
+$t_1 \gets a_\hi \oplus b_\hi$ \\
+{\bf if} $\left \vert a_\hi \right \vert \geq \left \vert b_\hi \right \vert$ {\bf then} 
+\begin{center}
+\begin{minipage}[b]{40mm}
+$t_2 \gets a_\hi \ominus t_1$ \\
+$t_3 \gets t_2 \oplus b_\hi$ \\
+$t_4 \gets t_3 \oplus b_\lo$ \\
+$t_5 \gets t_4 \oplus a_\lo$ 
+\end{minipage}
+\end{center}
+{\bf else} 
+\begin{center}
+\begin{minipage}[b]{40mm}
+$t_2 \gets b_\hi \ominus t_1$ \\
+$t_3 \gets t_2 \oplus a_\hi$ \\
+$t_4 \gets t_3 \oplus a_\lo$ \\
+$t_5 \gets t_4 \oplus b_\lo$ 
+\end{minipage}
+\end{center}
+{\bf end if} \\
+$\left( r_\hi, r_\lo \right) \gets \mAdd\left( t_1, t_5 \right)$
+\end{minipage}
+\end{center}
+\end{algorithm}
+Compare \cite{crlibmweb} concerning algorithm \ref{addDDref}.
+\begin{theorem}[Relative error of algorithm \ref{addDDref} \AddDD~ without
+    occurring of cancellation\label{theoAddDDref}] ~ \\
+Let be $a_\hi + a_\lo$ and $b_\hi + b_\lo$ the double-double arguments of algorithm \ref{addDDref} \AddDD.\\
+If $a_\hi$ and $b_\hi$ have the same sign, so we know that
+$$r_\hi + r_\lo = \left(\left(a_\hi + a_\lo \right) + \left( b_\hi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded as follows:
+$$\left \vert \epsilon \right \vert \leq 2^{-103,5}$$
+\end{theorem}
+\begin{proof} \label{AddDDpreuve} ~ \\
+Since the algorithm \AddDD~ ends by a call to the \Add~ procedure, it suffices
+to show that
+$$t_1 + t_5 = \left(\left(a_\hi + a_\lo \right) + \left( b_\hi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+Further, since the two branches of the algorithm are symmetrical, we can
+suppose that $\left \vert a_\hi \right \vert \geq \left \vert b_\hi \right \vert$
+and consider only one branch without loss of generality.
+Finally, we remark that the following lines of the \AddDD~ procedure
+constitute a non-conditional \Add~ with arguments $a_\hi$ and
+$b_\hi$ and the result $t_1 + t_3$:
+\begin{center}
+\begin{minipage}[b]{50mm}
+$t_1 = a_\hi \oplus b_\hi$ \\
+$t_2 = a_\hi \ominus t_1$ \\
+$t_3 = t_2 \oplus b_\hi$ 
+\end{minipage}
+\end{center}
+Thus, we get
+\begin{eqnarray*}
+t_5 & = & t_4 \oplus a_\lo \\
+& = & \left( t_4 + a_\lo \right) \cdot \left( 1 + \epsilon_1 \right) \\
+& = & \left( \left( t_3 + bl \right) \cdot \left( 1 + \epsilon_2 \right) + a_\lo \right) \cdot \left( 1 + \epsilon_1 \right) \\
+& = & t_3 + a_\lo + b_\lo + \delta
+\end{eqnarray*}
+with
+$$\delta = t_3\cdot\epsilon_2 + b_\lo\cdot\epsilon_2 + t_3\cdot\epsilon_1 + b_\lo\cdot\epsilon_1 + t_3\cdot\epsilon_2\cdot\epsilon_2 
++ b_\lo\cdot\epsilon_2\cdot\epsilon_2 + a_\lo\cdot\epsilon_1$$
+For giving an upper bound for $\left \vert \delta \right \vert$, let us first
+give an upper bound for $\left \vert t_3 \right \vert$, $\left \vert a_\lo \right \vert$ and
+$b_\lo$ as function of $\left \vert a_\hi + b_\hi \right \vert$ using the
+following bounds that we know already:
+\begin{eqnarray*}
+\left \vert a_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert b_\hi \right \vert \\
+\left \vert t_3 \right \vert & \leq & 2^{-53} \cdot \left \vert t_1 \right \vert 
+\end{eqnarray*}
+We get therefore
+\begin{eqnarray*}
+\left \vert t_3 \right \vert & \leq & 2^{-53} \cdot \left \vert t_1 \right \vert \\
+& = & 2^{-53} \cdot \left \vert a_\hi \oplus b_\hi \right \vert \\
+& \leq & 2^{-53} \cdot \left \vert a_\hi + b_\hi \right \vert + 2^{-106} \cdot \left \vert a_\hi + b_\lo \right \vert 
+\end{eqnarray*}
+and than
+\begin{eqnarray*}
+\left \vert a_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert \\
+& \leq & 2^{-53} \cdot \left \vert a_\hi + b_\hi \right \vert 
+\end{eqnarray*}
+The last bound is verified because we suppose that $a_\hi$ and $b_\hi$ have the
+same sign. \\
+Finally, since $\left \vert a_\hi \right \vert \geq \left \vert b_\hi \right \vert$, 
+\begin{eqnarray*}
+\left \vert b_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert b_\hi \right \vert \\
+& \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert \\
+& \leq & 2^{-53} \cdot \left \vert a_\hi + b_\hi \right \vert 
+\end{eqnarray*} 
+Thus we get for $\left \vert \delta \right \vert$:
+\begin{eqnarray*}
+\left \vert \delta \right \vert & \leq & \left \vert a_\hi + b_\hi \right \vert \cdot \left(
+                                         2^{-106} + 2^{-159} + 2^{-106} + 2^{-106} + 2^{-159} + 
+                                         2^{-106} + 2^{-159} + 2^{-212} + 2^{-212} + 2^{-106} \right) \\
+& \leq & \left \vert a_\hi + b_\hi \right \vert \cdot \left( 2^{-104} + 2^{-106} + 2^{-158} + 2^{-159} + 2^{-211} \right)
+\end{eqnarray*}
+Let us now give a lower bound for $\left \vert a_\hi + a_\lo + b_\hi + b_\lo
+\right \vert$ as a function of $\left \vert a_\hi + b_\hi \right \vert$
+in order to be able to give a relative error bound for the procedure
+\AddDD. We have that 
+\begin{eqnarray*}
+\left \vert a_\lo + b_\lo \right \vert & \leq & \left \vert a_\lo \right \vert + \left \vert b_\lo \right \vert \\
+& \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert + 2^{-53} \cdot \left \vert b_\hi \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert a_\hi \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert a_\hi + b_\hi \right \vert 
+\end{eqnarray*}
+So we can check that
+$$\left \vert a_\hi + a_\lo + b_\hi + b_\lo \right \vert \geq \left( 1 - 2^{-52} \right) \cdot \left \vert a_\hi + b_\hi \right \vert$$
+Concerning $\left \vert \delta \right \vert$, this yields to
+$$\left \vert \delta \right \vert \leq 
+\left \vert a_\hi + a_\lo + b_\hi + b_\lo \right \vert \cdot \frac{1}{1-2^{-52}} \cdot 
+\left( 2^{-104} + 2^{-106} + 2^{-158} + 2^{-159} + 2^{-211} \right)$$
+One easily checks that 
+$$ \frac{1}{1-2^{-52}} \cdot \left( 2^{-104} + 2^{-106} + 2^{-158} + 2^{-159} + 2^{-211} \right) \leq 2^{-103,5}$$
+from which one trivially deduces the affirmation.\qed
+\end{proof}
+\begin{theorem}[Relative error of algorithm \ref{addDDref} \AddDD~ with a
+    bounded cancellation\label{theoAddDDrefborn}] ~ \\
+Let be $a_\hi + a_\lo$ and $b_\hi + b_\lo$ the double-double arguments of \ref{addDDref} \AddDD.\\
+If $a_\hi$ and $b_\hi$ are of different sign and if one can check that
+$$\left \vert b_\hi \right \vert \leq 2^{-\mu} \cdot \left \vert a_\hi \right
+\vert$$ for $\mu \geq 1$ \\
+so the returned result will verify 
+$$r_\hi + r_\lo = \left(\left(a_\hi + a_\lo \right) + \left( b_\hi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded as follows:
+$$\left \vert \epsilon \right \vert \leq 2^{-103}\cdot \frac{1-2^{-\mu - 1}}{1-2^{-\mu}-2^{-52}} \leq 2^{-102}$$
+\end{theorem}
+\begin{proof} ~ \\
+Let us reuse the results obtained at the proof \ref{AddDDpreuve} and let us
+start by giving an upper bound for $\left \vert b_\lo \right \vert$
+as a function of $\left \vert a_\hi  \right \vert$:
+$$\left \vert b_\lo \right \vert \leq 2^{-53} \cdot \left \vert b_\hi \right \vert \leq 2^{-53-\mu} \cdot \left \vert a_\hi \right \vert$$
+Let us now continue with a lower bound for $\left \vert a_\hi + b_\hi \right
+\vert$ still as a function of $\left \vert a_\hi \right \vert$:
+$$\left \vert a_\hi + b_\hi \right \vert \geq \left \vert a_\hi \right \vert \cdot \left( 1 - 2^{-\mu} \right)$$
+We get in consequence
+$$\left \vert a_\lo \right \vert \leq \frac{2^{-53}}{1-2^{-\mu}} \cdot \left \vert a_\hi + b_\hi \right \vert$$
+and
+$$\left \vert b_\lo \right \vert \leq \frac{2^{-53-\mu}}{1-2^{-\mu}} \cdot \left \vert a_\hi + b_\hi \right \vert$$
+Thus we can check that
+$$\left \vert \delta \right \vert \leq \left \vert a_\hi + b_\hi \right \vert \cdot 2^{-103} \cdot \frac{1-2^{-\mu-1}}{1-2^{-\mu}}$$
+Once again, we must give a lower bound for $\left \vert a_\hi + a_\lo + b_\hi
+  + b_\lo \right \vert$
+with regard to $\left \vert a_\hi + b_\hi \right \vert$:
+We know that 
+\begin{eqnarray*}
+\left \vert a_\lo + b_\lo \right \vert & \leq & \left \vert a_\lo \right \vert + \left \vert b_\lo \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert a_\hi \right \vert \\
+& \leq & \frac{2^{-52}}{1-2^{-\mu}} \cdot \left \vert a_\hi + b_\hi \right \vert
+\end{eqnarray*}
+So
+$$\left \vert a_\hi + a_\lo + b_\hi + b_\lo \right \vert \geq \left \vert a_\hi + b_\hi \right \vert \cdot \frac{1-2^{-\mu}-2^{-52}}{1-2^{-\mu}}$$
+Thus we get for $\left \vert \delta \right \vert$
+\begin{eqnarray*}
+\left \vert \delta \right \vert & \leq & \left \vert a_\hi + a_\lo + b_\hi + b_\lo \right \vert \cdot \frac{1-2^{-\mu}}{1-2^{-\mu}-2^{-52}} \cdot 
+2^{-103} \cdot \frac{1-2^{-\mu-1}}{1-2^{-\mu}} \\
+& = & \left \vert a_\hi + a_\lo + b_\hi + b_\lo \right \vert \cdot 2^{-103} \cdot \frac{1-2^{-\mu-1}}{1-2^{-\mu}-2^{-52}}
+\end{eqnarray*}
+So finally the following inequality is verified for the relative error $\epsilon$:
+$$\left \vert \epsilon \right \vert \leq 2^{-103} \cdot \frac{1-2^{-\mu-1}}{1-2^{-\mu}-2^{-52}}$$
+We can still give a less exact upper bound for this term by one that does not
+depend on $\mu$ because $\mu \geq 1$:
+$$\frac{1-2^{-\mu-1}}{1-2^{-\mu}-2^{-52}}\leq\frac{\frac{3}{4}}{\frac{1}{2}-2^{-52}}\leq 2$$
+so
+$$\left \vert \epsilon \right \vert \leq 2^{-102}$$\qed
+\end{proof}
+\begin{theorem}[Absolute error of algorithm \ref{addDDref} \AddDD~
+    (general case)\label{addDDerrabs}] ~ \\
+Let be $a_\hi + a_\lo$ and $b_\hi + b_\lo$ the double-double arguments of algorithm \ref{addDDref} \AddDD.\\
+The result $r_\hi + r_\lo$ returned by the algorithm verifies
+$$r_\hi + r_\lo = \left(a_\hi + a_\lo \right) + \left( b_\hi + b_\lo \right) + \delta$$
+where $\delta$ is bounded as follows:
+$$\left \vert \delta \right \vert \leq \max\left( 2^{-53} \cdot \left \vert a_\lo + b_\lo \right \vert, 
+                                                  2^{-102} \cdot \left \vert a_\hi + a_\lo + b_\hi + b_\lo \right \vert \right)$$
+\end{theorem}
+\begin{proof} ~ \\
+Without loss of generality, we can now suppose that 
+$$\frac{1}{2} \cdot \left \vert a_\hi \right \vert \leq \left \vert b_\hi \right \vert \leq \left \vert a_\hi \right \vert$$
+and that $a_\hi$ and $b_\hi$ have different signs
+because for all other cases, the properties we have to show are a direct
+consequence of theorems \ref{theoAddDDref} and \ref{theoAddDDrefborn}.\\
+So we have 
+$$\frac{1}{2} \cdot \left \vert a_\hi \right \vert \leq \left \vert b_\hi \right \vert \leq 2 \cdot \left \vert a_\hi \right \vert$$
+and
+$$\frac{1}{2} \cdot \left \vert b_\hi \right \vert \leq \left \vert a_\hi \right \vert \leq 2 \cdot \left \vert b_\hi \right \vert$$
+So the floating point operation
+$$t_1 = a_\hi \oplus b_\hi$$
+is exact by Sterbenz' lemma \cite{Ste74}.
+In consequence, $t_3$ will be equal to $0$ because, as we have already
+mentioned, the operations computing $t_1$ and $t_3$ out of $a_\hi$ and $b_\hi$ 
+constitute a \Add~ whose properties assure that
+$$t_3 = a_\hi + b_\hi - t_1$$
+We can deduce that
+$$t_4 = t_3 \oplus b_\lo = b_\lo$$
+and can finally check that
+$$t_5 = t_4 \oplus a_\lo = \left( t_4 + a_\lo \right) \cdot \left( 1 + \epsilon^* \right)$$
+with
+$$\left \vert \epsilon^* \right \vert \leq 2^{-53}$$
+So we get
+$$r_\hi + r_\lo = t_1 + t_5 = \left( a_\hi + a_\lo + b_\hi + b_\lo \right) + \delta$$
+with
+$$\left \vert \delta \right \vert \leq 2^{-53} \cdot \left \vert a_\lo + b_\lo \right \vert$$
+which yields to the bound to be proven
+$$\left \vert \delta \right \vert = \max\left( 2^{-53} \cdot \left \vert a_\lo + b_\lo \right \vert, 
+                                               2^{-102} \cdot \left \vert a_\hi + a_\lo + b_\hi + b_\lo \right \vert \right)$$ \qed
+\end{proof}
+\begin{theorem}[Output overlap of algorithm \ref{addDDref} \AddDD] ~ \\
+Let be $a_\hi + a_\lo$ and $b_\hi + b_\lo$ the double-double arguments of algorithm \ref{addDDref} \AddDD.\\
+So the values $r_\hi$ and $r_\lo$ returned by the algorithm will not overlap
+at all and will verify 
+$$\left \vert r_\lo \right \vert \leq 2^{-53} \cdot \left \vert r_\hi \right \vert$$
+\end{theorem}
+\begin{proof} ~\\
+The proof of the affirmed property is trivial because the procedure \AddDD~
+ends by a call to sequence \Add~ which assures it.\qed 
+\end{proof}
+\subsection{The multiplication operator \MulDD}
+Let us now consider the multiplication operator \MulDD:
+\begin{algorithm}[\MulDD] \label{mulDDref} ~ \\
+{\bf In:} two double-double numbers, $a_\hi + a_\lo$ and $b_\hi + b_\lo$ \\
+{\bf Out:} a double-double number $r_\hi + r_\lo$ \\
+{\bf Preconditions on the arguments:} $$\left \vert a_\lo \right \vert \leq 2^{-53} \cdot \left \vert a_\hi \right \vert$$
+                            $$\left \vert b_\lo \right \vert \leq 2^{-53} \cdot \left \vert b_\hi \right \vert$$ 
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( t_1, t_2 \right) \gets \mMul\left( a_\hi, b_\hi \right)$ \\
+$t_3 \gets a_\hi \otimes b_\lo$ \\
+$t_4 \gets a_\lo \otimes b_\hi$ \\
+$t_5 \gets t_3 \oplus t_4$ \\
+$t_6 \gets t_2 \oplus t_5$ \\
+$\left(r_\hi, r_\lo \right) \gets \mAdd\left( t_1, t_6 \right)$\\
+\end{minipage}
+\end{center}
+\end{algorithm}
+Compare also to \cite{crlibmweb} concerning algorithm \ref{mulDDref}.
+\begin{theorem}[Relative error of algorithm \ref{mulDDref} \MulDD] ~ \\
+Let be $a_\hi + a_\lo$ and $b_\hi + b_\lo$ the double-double arguments of algorithm \ref{mulDDref} \MulDD.\\
+So the values returned $r_\hi$ and $r_\lo$ verify
+$$r_\hi + r_\lo = \left(\left(a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded as follows:
+$$\left \vert \epsilon \right \vert \leq 2^{-102}$$
+Further $r_\hi$ and $r_\lo$ will not overlap at all and verify
+$$\left \vert r_\lo \right \vert \leq 2^{-53} \cdot \left \vert r_\hi \right \vert$$
+\end{theorem}
+\begin{proof} ~ \\
+Since algorithm \ref{mulDDref} ends by a call to the \Add~ procedure, 
+the properties of the latter yield to the fact that $r_\hi$ and $r_\lo$
+do not overlap at all and that $\left \vert r_\lo \right \vert \leq 2^{-53} \cdot \left \vert r_\hi \right \vert$.\\
+In order to give upper bounds for the relative and absolute error of the
+algorithm, let us express $t_6$ as a function of $t_2$, $a_\hi$, $a_\lo$,
+$b_\hi$ and $b_\lo$ joined by the error term $\delta$.\\
+We get
+\begin{eqnarray*}
+t_6 & = & t_2 \oplus \left( a_\hi \otimes b_\lo \oplus a_\lo \otimes b_\hi \right) \\
+& = & \left( t_2 + \left(a_\hi \cdot b_\lo \cdot \left( 1 + \epsilon_1 \right) + a_\lo \cdot b_\hi \cdot \left( 1 + \epsilon_2 \right) \right) \cdot
+\left(1 + \epsilon_3 \right) \right)\cdot \left( 1 + \epsilon_4 \right)
+\end{eqnarray*}
+where $\left \vert \epsilon_i \right \vert \leq 2^{-53}$, $i=1,2,3,4$.\\
+Simplifying this expression, we van verify that 
+$$t_6 = t_2 + a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + \delta$$
+with
+\begin{eqnarray*}
+\left \vert \delta \right \vert & \leq & \left \vert a_\lo \cdot b_\lo + a_\hi \cdot b_\lo \cdot \epsilon_1 + a_\lo \cdot b_\hi \cdot \epsilon_2 +
+a_\hi \cdot b_\lo \cdot \epsilon_3 + a_\hi \cdot b_\lo \cdot \epsilon_1 \cdot \epsilon_3 + a_\lo \cdot b_\hi \cdot \epsilon_3 +
+a_\lo \cdot b_\hi \cdot \epsilon_1 \cdot \epsilon_3 \right.\\
+& & \left. + a_\hi \cdot b_\lo \cdot \epsilon_4 + a_\lo \cdot b_\hi \cdot \epsilon_4 +
+a_\hi \cdot b_\lo \cdot \epsilon_1 \cdot \epsilon_4 + a_\lo \cdot b_\hi \cdot \epsilon_2 \cdot \epsilon_4 + 
+a_\hi \cdot b_\lo \cdot \epsilon_3 \cdot \epsilon_4 \right. \\ 
+& & \left. + a_\hi \cdot b_\lo \cdot \epsilon_1 \cdot \epsilon_3 \cdot \epsilon_4 + a_\lo \cdot b_\hi \cdot \epsilon_3 \cdot \epsilon_4 + a_\lo \cdot b_\hi \cdot \epsilon_2 \cdot \epsilon_3 \cdot \epsilon_4 \right \vert \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 7 \cdot 2^{-106} + 6 \cdot 2^{-159} + 2^{-211} \right) \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert \cdot 2^{-103}
+\end{eqnarray*}
+For checking the given bound, we have supposed the following inequalities:
+$$\left \vert a_\lo \right \vert \leq 2^{-53} \cdot \left \vert a_\hi \right \vert$$
+and
+$$\left \vert a_\lo \right \vert \leq 2^{-53} \cdot \left \vert a_\hi \right \vert$$
+Let us now give a lower bound for 
+$\left \vert \left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\lo
+  \right)\right \vert$ as a function of
+$\left \vert a_\hi \cdot b_\hi \right \vert$. For doing so, we give an upper
+bound for 
+$\left \vert a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\lo \right \vert$. \\
+We verify since:
+\begin{eqnarray*} 
+\left \vert a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\lo \right \vert & \leq & 
+\left \vert a_\hi \cdot b_\lo \right \vert + \left \vert a_\lo \cdot b_\hi \right \vert + \left \vert a_\lo \cdot b_\lo \right \vert \\
+& \leq & 2^{-53} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 2^{-53} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 
+2^{-106} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \\
+& \leq & 2^{-51} \cdot \left \vert a_\hi \cdot b_\hi \right \vert 
+\end{eqnarray*}
+This yields to
+\begin{eqnarray*}
+\left \vert \left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\lo \right) \right \vert & \geq &
+\left \vert a_\hi \cdot b_\hi \right \vert \cdot \left(1 - 2^{-51} \right) \\
+& \geq & \frac{1}{2} \cdot \left \vert a_\hi \cdot b_\hi \right \vert 
+\end{eqnarray*}
+from which we deduce that
+$$\left \vert \delta \right \vert \leq 2^{-102} \cdot \left \vert \left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\lo \right) \right \vert$$
+which gives us as an bound for the relative error
+$$r_\hi + r_\lo = \left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\lo \right) \cdot \left(1 + \epsilon \right)$$
+with
+$\left \vert \epsilon \right \vert \leq 2^{-102}$. \qed
+\end{proof}
+\section{Addition operators for triple-double numbers}
+\subsection{The addition operator \AddTT}
+We are going to consider now the addition operator \AddTT. We will only
+analyse a simplified case where the arguments' values verify some bounds
+statically known.
+\begin{algorithm}[\AddTT] \label{addTTref} ~ \\
+{\bf In:} two triple-double numbers, $a_\hi + a_\mi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert b_\hi \right \vert & \leq & \frac{3}{4} \cdot \left \vert a_\hi \right \vert \\
+\left \vert a_\mi \right \vert & \leq & 2^{-\alpha_o} \cdot \left \vert a_\hi \right \vert \\
+\left \vert a_\lo \right \vert & \leq & 2^{-\alpha_u} \cdot \left \vert a_\mi \right \vert \\
+\left \vert b_\mi \right \vert & \leq & 2^{-\beta_o} \cdot \left \vert b_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-\beta_u} \cdot \left \vert b_\mi \right \vert \\
+\alpha_o & \geq & 4 \\
+\alpha_u & \geq & 1 \\
+\beta_o & \geq & 4 \\
+\beta_u & \geq & 1 \\
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left(r_\hi, t_1 \right) \gets \mAdd\left( a_\hi, b_\hi \right)$ \\
+$\left(t_2, t_3 \right) \gets \mAdd\left( a_\mi, b_\mi \right)$ \\
+$\left(t_7, t_4 \right) \gets \mAdd\left( t_1, t_2 \right)$ \\
+$t_6 \gets a_\lo \oplus b_\lo$ \\
+$t_5 \gets t_3 \oplus t_4$ \\
+$t_8 \gets t_5 \oplus t_6$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAdd\left( t_7, t_8 \right)$
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{addTTref} \AddTT\label{theoAddTT}] ~ \\
+Let be $a_\hi + a_\mi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ the triple-double
+arguments of algorithm \ref{addTTref} \AddTT~ verifying the given 
+preconditions.\\
+So the following egality will hold for the returned values $r_\hi$, $r_\mi$ and $r_\lo$ 
+$$r_\hi + r_\mi + r_\lo = \left(\left(a_\hi + a_\mi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded by:
+$$\left \vert \epsilon \right \vert \leq 2^{-\min\left(\alpha_o + \alpha_u,\beta_o + \beta_u\right) - 47} + 
+2^{-\min\left( \alpha_o, \beta_o\right) - 98}$$
+The returned values $r_\mi$ and $r_\lo$ will not overlap at all and the
+overlap of $r_\hi$ and $r_\mi$ will be bounded by the following expression:
+$$\left \vert r_\mi \right \vert \leq 2^{-\min\left( \alpha_o, \beta_o \right) + 5} \cdot \left \vert r_\hi \right \vert$$
+\end{theorem}
+\begin{proof} ~ \\
+The procedure \ref{addTTref} ends by a call to the \Add~ sequence. One can
+trivially deduce that $r_\mi$ and $r_\lo$ do not overlap at all and verify 
+$$\left \vert r_\lo \right \vert \leq 2^{-53} \cdot \left \vert r_\mi \right \vert$$
+Further, it suffices that the bounds given at theorem \ref{theoAddTT} hold for
+$t_7$ and $t_8$ because 
+the last addition computing $r_\mi$ and $r_\lo$ will be exact.
+The same way, one can deduce the following inequalities out of the properties
+of the \Add~ procedure. They will become useful during this proof. 
+$$\left \vert t_1 \right \vert \leq 2^{-53} \cdot \left \vert r_\hi \right \vert$$
+$$\left \vert t_3 \right \vert \leq 2^{-53} \cdot \left \vert t_2 \right \vert$$
+$$\left \vert t_4 \right \vert \leq 2^{-53} \cdot \left \vert t_7 \right \vert$$
+Let us start the proof by giving bounds for the magnitude of $r_\hi$ with
+regard to $a_\hi$:\\
+We have on the one hand
+\begin{eqnarray*}
+\left \vert r_\hi \right \vert & = & \left \vert \circ\left( a_\hi + b_\hi \right) \right \vert \\
+& = & \circ \left( \left \vert a_\hi + b_\hi \right \vert \right) \\
+& \leq & \circ \left( \left \vert a_\hi \right \vert + \left \vert b_\hi \right \vert \right) \\
+& \leq & \circ \left( \left \vert a_\hi \right \vert + \frac{3}{4} \cdot \left \vert a_\hi \right \vert \right) \\
+& \leq & \circ \left( 2 \cdot \left \vert a_\hi \right \vert \right) \\
+& = & 2 \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+and on the other
+\begin{eqnarray*}
+\left \vert r_\hi \right \vert & = & \circ \left( \left \vert a_\hi + b_\hi \right \vert \right) \\
+& \geq & \circ \left( \frac{1}{4} \cdot \left \vert a_\hi \right \vert \right) \\
+& = & \frac{1}{4} \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+So we know that $\frac{1}{4} \cdot \left \vert a_\hi \right \vert \leq \left \vert r_\hi \right \vert \leq 2 \cdot \left \vert a_\hi \right \vert$.\\
+It is now possible to give the following upper bounds for 
+$\left \vert t_1 \right \vert$, $\left \vert t_2 \right \vert$, 
+$\left \vert t_3 \right \vert$, $\left \vert t_7 \right \vert$, $\left \vert
+  t_4 \right \vert$, $\left \vert t_6 \right \vert$ and $\left \vert t_6 \right \vert$:
+\begin{eqnarray*}
+\left \vert t_1 \right \vert & \leq & 2^{-53} \cdot \left \vert r_\hi \right \vert \\
+& \leq & 2^{-53} \cdot 2^2 \cdot \left \vert a_\hi \right \vert \\
+& = & 2^{-51} \cdot \left \vert a_\hi \right \vert 
+\end{eqnarray*}
+\begin{eqnarray*}
+\left \vert t_2 \right \vert & \leq & \circ \left( \left \vert a_\mi + b_\mi \right \vert \right)  \\
+& \leq & \circ \left( \left \vert a_\mi \right \vert + \left \vert b_\mi \right \vert \right) \\
+& \leq & \circ \left( 2^{-\alpha_o} \cdot \left \vert a_\hi \right \vert + 2^{-\beta_o} \cdot \left \vert b_\hi \right \vert \right) \\
+& \leq & \circ \left( 2^{-\alpha_o} \cdot \left \vert a_\hi \right \vert + 2^{-\beta_o} \cdot \frac{3}{4} \cdot \left \vert a_\hi \right \vert \right) \\
+& \leq & \circ \left( 2^{-\min\left(\alpha_o,\beta_o\right) + 1} \cdot \left \vert a_\hi \right \vert \right) \\
+& = & 2^{-\min\left(\alpha_o,\beta_o\right) + 1} \cdot \left \vert a_\hi \right \vert 
+\end{eqnarray*}
+\begin{eqnarray*}
+\left \vert t_3 \right \vert & \leq & 2^{-53} \cdot \left \vert t_2 \right \vert \\
+& \leq & 2^{-53} \cdot 2^{-\min\left(\alpha_o,\beta_o\right) + 1} \cdot \left \vert a_\hi \right \vert \\
+& = & 2^{-\min\left(\alpha_o,\beta_o\right)-52} \cdot \left \vert a_\hi \right \vert 
+\end{eqnarray*}
+\begin{eqnarray*}
+\left \vert t_7 \right \vert & \leq & \circ \left( \left \vert t_1 + t_2 \right \vert \right) \\
+& \leq & \circ \left( \left \vert t_1 \right \vert + \left \vert t_2 \right \vert \right) \\
+& \leq & \circ \left( 2^{-51} \cdot \left \vert a_\hi \right \vert + 2^{-\min\left(\alpha_o,\beta_o\right) + 1} 
+\cdot \left \vert a_\hi \right \vert \right) \\
+& \leq & \circ \left( 2^{-\min\left(\alpha_o,\beta_o\right) + 2} \cdot \left \vert a_\hi \right \vert \right) \\
+& = & 2^{-\min\left(\alpha_o,\beta_o\right) + 2} \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+\begin{eqnarray*}
+\left \vert t_4 \right \vert & \leq & 2^{-53} \cdot \left \vert t_7 \right \vert \\
+& \leq & 2^{-53} \cdot 2^{-\min\left(\alpha_o,\beta_o\right)+2} \cdot \left \vert a_\hi \right \vert \\
+& = & 2^{-\min\left(\alpha_o,\beta_o\right) -51} \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+\begin{eqnarray*}
+\left \vert t_6 \right \vert & \leq & \circ \left( \left \vert a_\lo \right \vert + \left \vert b_\lo \right \vert \right) \\
+& \leq & \circ \left( 2^{-\alpha_o} \cdot 2^{-\alpha_u} \cdot \left \vert a_\hi \right \vert + 
+                      2^{-\beta_o} \cdot 2^{-\beta_u} \cdot \frac{3}{4} \cdot \left \vert a_\hi \right \vert \right) \\
+& \leq & \circ \left( 2^{-\min\left(\alpha_o + \alpha_u,\beta_o + \beta_u\right) + 1} \cdot \left \vert a_\hi \right \vert \right) \\
+& = & 2^{-\min\left(\alpha_o + \alpha_u,\beta_o + \beta_u\right) + 1} \cdot \left \vert a_\hi \right \vert 
+\end{eqnarray*}
+and finally
+\begin{eqnarray*}
+\left \vert t_5 \right \vert & \leq & \circ \left( \left \vert t_3 \right \vert + \left \vert t_4 \right \vert \right) \\
+& \leq & \circ \left( 2^{-\min\left(\alpha_o,\beta_o\right) -52} \cdot \left \vert a_\hi \right \vert + 
+2^{-\min\left(\alpha_o,\beta_o\right)-51} \cdot \left \vert a_\hi \right \vert \right) \\
+& \leq & \circ \left( 2^{-\min\left(\alpha_o,\beta_o\right) -50} \cdot \left \vert a_\hi \right \vert \right) \\
+& = & 2^{-\min\left(\alpha_o,\beta_o\right)-50} \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+Using the fact that the addition \Add~ is exact, it is easy to show that we
+have exactly
+$$r_\hi + t_7 + t_3 + t_4 = a_\hi + a_\mi + b_\hi + b_\mi$$
+Further, we can check 
+\begin{eqnarray*}
+t_8 & = & \left( t_3 \oplus_2 t_4 \right) \oplus_1 \left( a_\lo \oplus_3 b_\lo \right) \\
+& = & t_3 + t_4 + a_\lo + b_\lo + \delta
+\end{eqnarray*}
+with
+\begin{eqnarray*}
+\left \vert \delta \right \vert & \leq & \left \vert t_3 \right \vert \cdot \epsilon_3 + \left \vert t_4 \right \vert \cdot \epsilon_2 +
+\left \vert a_\lo \right \vert \cdot \epsilon_3 + \left \vert b_\lo \right \vert \cdot \epsilon_3 + \left \vert t_3 \right \vert \cdot \epsilon_1
++ \left \vert t_4 \right \vert \cdot \epsilon_1 + \left \vert t_3 \right \vert \cdot \epsilon_1 \cdot \epsilon_2 \\
+& & + \left \vert t_4 \right \vert \cdot \epsilon_1 \cdot \epsilon_2 + \left \vert a_\lo \right \vert \cdot \epsilon_1 +
+\left \vert b_\lo \right \vert \cdot \epsilon_2 + \left \vert a_\lo \right \vert \cdot \epsilon_1 \cdot \epsilon_3 +
+\left \vert b_\lo \right \vert \cdot \epsilon_1 \cdot \epsilon_3 
+\end{eqnarray*}
+where for $i\in\left\lbrace 1,2,3 \right\rbrace$, $\epsilon_i$ is the relative
+error bound of the floating point addition $\oplus_i$ and verifies
+$$\left \vert \epsilon_i \right \vert \leq 2^{-53}$$
+So we get immediately 
+$$r_\hi + r_\mi + r_\lo = r_\hi + t_7 + t_8 = \left( a_\hi + a_\mi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right) + \delta$$
+Let us now express $\left \vert \left( a_\hi + a_\mi + a_\lo \right) + \left(
+    b_\hi + b_\mi + b_\lo \right) \right \vert$ 
+as a function of 
+$\left \vert a_\hi \right \vert$: 
+\begin{eqnarray*}
+\left \vert a_\hi + a_\mi + a_\lo \right \vert & \leq & \left \vert a_\hi \right \vert + \left \vert a_\mi \right \vert + 
+\left \vert a_\lo \right \vert \\
+& \leq & \left \vert a_\hi \right \vert + 2^{-\alpha_o} \cdot \left \vert a_\hi \right \vert + 
+2^{-\alpha_o-\alpha_u} \cdot \left \vert a_\hi \right \vert \\
+& \leq & 2 \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+and, the same way round, 
+\begin{eqnarray*}
+\left \vert b_\hi + b_\mi + b_\lo \right \vert & \leq & 2 \cdot \left \vert b_\hi \right \vert \\
+& \leq & \frac{3}{2} \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+which allows for noting
+$$\left \vert \left( a_\hi + a_\mi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right) \right \vert \leq 2^2 \cdot \left \vert a_\hi \right \vert$$
+In order to give a lower bound for this term, let us prove an upper bound for 
+$\left \vert b_\hi + a_\mi + b_\mi + a_\lo + b_\lo \right \vert$ as follows
+\begin{eqnarray*}
+\left \vert b_\hi + a_\mi + b_\mi + a_\lo + b_\lo \right \vert & \leq & 
+\left \vert b_\hi \right \vert + \left \vert a_\mi \right \vert + \left \vert b_\mi \right \vert + \left \vert a_\lo \right \vert + 
+\left \vert b_\lo \right \vert \\
+& \leq & \frac{3}{4} \cdot \left \vert a_\hi \right \vert + 2^{-\alpha_o} \cdot \left \vert a_\hi \right \vert + 
+2^{-\beta_o} \cdot \frac{3}{4} \cdot \left \vert a_\hi \right \vert + 2^{-\alpha_o-\alpha_u} \cdot \left \vert a_\hi \right \vert \\ & & 
++ 2^{-\beta_o-\beta_u} \cdot \frac{3}{4} \cdot \left \vert a_\hi \right \vert \\
+& \leq & \frac{7}{8} \cdot \left \vert a_\hi \right \vert 
+\end{eqnarray*}
+So we get
+$$\left \vert \left( a_\hi + a_\mi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right) \right \vert 
+\geq \frac{1}{8} \cdot \left \vert a_\hi \right \vert$$
+Using this bounds, we can give upper bounds for the absolute error $\left
+  \vert \delta \right \vert$ first as a function of $\left \vert a_\hi \right
+\vert$ and than as a function of 
+$\left \vert \left( a_\hi + a_\mi + a_\lo \right) + \left( b_\hi + b_\mi +
+    b_\lo \right) \right \vert$ for
+deducing finally a bound for the relative error. \\
+So we get
+\begin{eqnarray*}
+\left \vert \delta \right \vert & \leq & \left \vert t_3 \right \vert \cdot \epsilon_3 + \left \vert t_4 \right \vert \cdot \epsilon_2 +
+\left \vert a_\lo \right \vert \cdot \epsilon_3 + \left \vert b_\lo \right \vert \cdot \epsilon_3 + \left \vert t_3 \right \vert \cdot \epsilon_1
++ \left \vert t_4 \right \vert \cdot \epsilon_1 + \left \vert t_3 \right \vert \cdot \epsilon_1 \cdot \epsilon_2 \\
+& & + \left \vert t_4 \right \vert \cdot \epsilon_1 \cdot \epsilon_2 + \left \vert a_\lo \right \vert \cdot \epsilon_1 +
+\left \vert b_\lo \right \vert \cdot \epsilon_2 + \left \vert a_\lo \right \vert \cdot \epsilon_1 \cdot \epsilon_3 +
+\left \vert b_\lo \right \vert \cdot \epsilon_1 \cdot \epsilon_3 \\
+& \leq & \left \vert a_\hi \right \vert \cdot \epsilon^\prime
+\end{eqnarray*}
+with
+\begin{eqnarray*}
+\epsilon^\prime & \leq & 
+2^{-53} \cdot 2^{-\min\left(\alpha_o,\beta_o\right)-52} \\ & + &
+2^{-53} \cdot 2^{-\min\left(\alpha_o,\beta_o\right)-51} \\ & + &
+2^{-53} \cdot 2^{-\alpha_o-\alpha_u} \\ & + &
+2^{-53} \cdot 2^{-\beta_o-\beta_u} \\ & + &
+2^{-53} \cdot 2^{-\min\left(\alpha_o,\beta_o\right)-52} \\ & + & 
+2^{-53} \cdot 2^{-\min\left(\alpha_o,\beta_o\right)-51} \\ & + &
+2^{-106} \cdot 2^{-\min\left(\alpha_o,\beta_o\right)-52} \\ & + & 
+2^{-106} \cdot 2^{-\min\left(\alpha_o,\beta_o\right)-51} \\ & + &
+2^{-53} \cdot 2^{-\alpha_o-\alpha_u} \\ & + & 
+2^{-53} \cdot 2^{-\beta_o-\beta_u} \\ & + & 
+2^{-106} \cdot 2^{-\alpha_o-\alpha_u} \\ & + &
+2^{-106} \cdot 2^{-\beta_o-\beta_u} \\ 
+& \leq & 2^{-\min\left(\alpha_o,\beta_o\right)-101} + 2^{-\min\left(\alpha_o+\alpha_u,\beta_o+\beta_u\right)-50}
+\end{eqnarray*}
+This yields to
+$$r_\hi + r_\mi + r_\lo = \left( \left( a_\hi + a_\mi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right) \right) \cdot 
+\left(1 + \epsilon \right)$$
+with
+$$\left \vert \epsilon \right \vert \leq 2^{-\min\left(\alpha_o,\beta_o\right)-98} + 2^{-\min\left(\alpha_o+\alpha_u,\beta_o+\beta_u\right)-47}$$
+In order to finish the prove, it suffices now to give an upper bound for the
+maximal overlap between $r_\hi$ and $r_\mi$ because we have already shown that
+$r_\mi$ and $r_\lo$ do not overlap at all.\\
+So we can check 
+\begin{eqnarray*}
+\left \vert r_8 \right \vert & \leq & \circ \left( \left \vert t_5 \right \vert + \left \vert t_6 \right \vert \right) \\
+& \leq & \circ \left( 2^{-\min\left(\alpha_o,\beta_o\right)-50} \cdot \left \vert a_\hi \right \vert + 
+2^{-\min\left(\alpha_o+\alpha_u,\beta_o+\beta_u\right)+1} \cdot \left \vert a_\hi \right \vert \right)\\
+& \leq & \circ \left( 2^{-\min\left(\alpha_o,\beta_o\right)-48} \cdot \left \vert r_\hi \right \vert + 
+2^{-\min\left(\alpha_o+\alpha_u,\beta_o+\beta_u\right)+3} \cdot \left \vert r_\hi \right \vert \right)
+\end{eqnarray*}
+and continue by giving the following upper bound
+\begin{eqnarray*}
+\left \vert r_\mi \right \vert & = & \circ \left( \left \vert t_7 + t_8 \right \vert \right) \\
+& \leq & \circ \left( \left \vert t_7 \right \vert + \left \vert t_8 \right \vert \right) \\
+& \leq & \circ \left( 2^{-\min\left(\alpha_o,\beta_o\right)+4} \cdot \left \vert r_\hi \right \vert + 
+\circ \left( 2^{-\min\left(\alpha_o,\beta_o\right)-48} \cdot \left \vert r_\hi \right \vert + 
+2^{-\min\left(\alpha_o+\alpha_u,\beta_o+\beta_u\right)+3} \cdot \left \vert r_\hi \right \vert \right) \right) \\
+& \leq & \circ \left( \left \vert r_\hi \right \vert \cdot \left( 2^{-\min\left(\alpha_o,\beta_u\right)+4} + 
+2^{-\min\left(\alpha_o,\beta_o\right)-48} + 2^{-\min\left(\alpha+\alpha_u,\beta_o+\beta_u\right)+3} + \right. \right. \\
+& & \left. \left. 2^{-\min\left(\alpha_o,\beta_o\right) -101} + 2^{-\min\left(\alpha_o+\alpha_u,\beta_o+\beta_u\right)-50} \right) \right) \\
+& \leq & 2^{-\min\left(\alpha_o,\beta_o\right)+5} \cdot \left \vert r_\hi \right \vert
+\end{eqnarray*}
+This is the maximal overlap bound we were looking for; the proof is therefore finished.\qed
+\end{proof}
+\begin{theorem}[Special case of algorithm \ref{addTTref} \AddTT] ~ \\
+Let be $a_\hi + a_\mi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ the triple-double
+arguments of algorithm \ref{addTTref} \AddTT~ such that 
+$$a_\hi = a_\mi = a_\lo = 0$$
+So the values $r_\hi$, $r_\mi$ and $r_\lo$ returned will be exactly equal to 
+$$r_\hi + r_\mi + r_\lo = b_\hi + b_\mi + b_\lo$$
+The values $r_\mi$ and $r_\lo$ will not overlap at all. The overlap of $r_\hi$
+and $r_\mi$ must still be evaluated.
+\end{theorem}
+\begin{proof} ~\\
+We will suppose that the \Add~ procedure is exact for $a_\hi=a_\mi=a_\lo=0$ if even we are using its unconditional 
+version. Under this hypothesis, we get thus: 
+\begin{eqnarray*}
+r_\hi & = & \circ \left( 0 + b_\hi \right) = b_\hi \\
+t_1 & = & 0 + b_\hi - b_\hi = 0 \\
+t_2 & = & b_\mi \\
+t_3 & = & 0 \\
+t_7 & = & \circ \left( 0 + b_\mi \right) = b_\mi \\
+t_4 & = & 0 \\
+t_6 & = & 0 \oplus b_\lo = b_\lo \\
+t_5 & = & 0 \oplus 0 = 0 \\
+t_8 & = & 0 \oplus b_\lo = b_\lo \\
+r_\mi + r_\lo & = & b_\mi + b_\lo 
+\end{eqnarray*}
+In consequence, the following holds for the values returned:
+$$r_\hi + r_\mi + r_\lo = b_\hi + b_\mi + b_\lo$$
+Clearly $r_\mi$ and $r_\lo$ do not overlap because the \Add~ procedure the algorithm calls at its last line assures this
+property.\qed
+\end{proof}
+\subsection{The addition operator \AddDTT}
+Let us consider now the addition operator \AddDTT. We will only analyse a simplified case where the arguments of the
+algorithm verify statically known bounds.
+\begin{algorithm}[\AddDTT] \label{addDTTref} ~ \\
+{\bf In:} a double-double number $a_\hi + a_\lo$ and a triple-double number $b_\hi + b_\mi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert b_\hi \right \vert & \leq & 2^{-2} \cdot \left \vert a_\hi \right \vert \\
+\left \vert a_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert \\
+\left \vert b_\mi \right \vert & \leq & 2^{-\beta_o} \cdot \left \vert b_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-\beta_u} \cdot \left \vert b_\mi \right \vert 
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( r_\hi, t_1 \right) \gets \mAdd\left( a_\hi, b_\hi \right)$ \\
+$\left( t_2, t_3 \right) \gets \mAdd\left( a_\lo, b_\mi \right)$ \\
+$\left( t_4, t_5 \right) \gets \mAdd\left( t_1, t_2 \right)$ \\
+$t_6 \gets t_3 \oplus b_\lo$ \\
+$t_7 \gets t_6 \oplus t_5$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAdd\left( t_4, t_7 \right)$ \\
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{addDTTref} \AddDTT] ~ \\
+Let be $a_\hi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ the values taken in argument of algorithm \ref{addDTTref} \AddDTT. 
+Let the preconditions hold for this values.\\
+So the following holds for the values returned by the algorithm $r_\hi$, $r_\mi$ and $r_\lo$ 
+$$r_\hi + r_\mi + r_\lo = \left(\left(a_\hi + a_\mi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded by
+$$\left \vert \epsilon \right \vert \leq 2^{-\beta_o - \beta_u - 52} + 2^{-\beta_o - 104} + 2^{-153}$$
+The values $r_\mi$ and $r_\lo$ will not overlap at all and the overlap of $r_\hi$ and $r_\mi$ will be bounded by:
+$$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right \vert$$
+with
+$$\gamma \geq \min\left( 45, \beta_o - 4, \beta_o + \beta_u - 2 \right)$$
+\end{theorem}
+\begin{proof} ~ \\
+We know using the properties of the \Add~ procedure that 
+\begin{eqnarray*}
+r_\hi + t_1 & = & a_\hi + b_\hi \\
+t_2 + t_3 & = & a_\lo + b_\mi \\
+t_4 + t_5 & = & t_1 + t_2 \\
+r_\mi + r_\lo = t_4 + t_7 
+\end{eqnarray*}
+Supposing that we dispose already of a term of the following form
+$$t_7 = t_5 + t_3 + b_\lo + \delta$$
+with a bounded $\left \vert \delta \right \vert$,
+we can note that 
+$$r_\hi + r_\mi + r_\lo = \left( a_\hi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right) + \delta$$
+Let us now express $t_7$ by $t_5$, $t_3$ and $b_\lo$:
+\begin{eqnarray*}
+t_7 & = & t_5 \oplus t_6 \\
+& = & t_5 \oplus \left( t_3 \oplus b_\lo \right) \\
+& = & \left( t_5 + \left( t_3 + b_\lo \right) \cdot \left( 1 + \epsilon_1 \right) \right) \cdot \left( 1 + \epsilon_2 \right)
+\end{eqnarray*}
+with $\left \vert \epsilon_1 \right \vert \leq 2^{-53}$ and $\left \vert \epsilon_2 \right \vert \leq 2^{-53}$.\\
+We get in consequence
+$$t_7 = t_5 + t_3 + b_\lo + t_3 \cdot \epsilon_1 + b_\lo \cdot \epsilon_1 + t_5 \cdot \epsilon_2 + t_3 \cdot \epsilon_2 + b_\lo \cdot \epsilon_2 +
+t_3 \cdot \epsilon_1 \cdot \epsilon_2 + b_\lo \cdot \epsilon_1 \cdot \epsilon_2$$
+and we can verify that the following upper bound holds for the absolute error $\delta$:
+\begin{eqnarray*}
+\left \vert \delta \right \vert & = & 
+\left \vert t_3 \cdot \epsilon_1 + b_\lo \cdot \epsilon_1 + t_5 \cdot \epsilon_2 + t_3 \cdot \epsilon_2 + b_\lo \cdot \epsilon_2 +
+t_3 \cdot \epsilon_1 \cdot \epsilon_2 + b_\lo \cdot \epsilon_1 \cdot \epsilon_2 \right \vert \\
+& \leq & 2^{-53} \cdot \left \vert t_3 \right \vert + 2^{-53} \cdot \left \vert b_\lo \right \vert + 2^{-53} \cdot \left \vert t_5 \right \vert + 
+2^{-53} \cdot \left \vert b_\lo \right \vert + 2^{-106} \cdot \left \vert t_3 \right \vert + 2^{-106} \cdot \left \vert b_\lo \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert t_3 \right \vert + 2^{-51} \cdot \left \vert b_\lo \right \vert + 2^{-53} \cdot \left \vert t_5 \right \vert
+\end{eqnarray*}
+Let us get now some bounds for $\left \vert t_3 \right \vert$, $\left \vert b_\lo \right \vert$ and 
+$\left \vert t_5 \right \vert$, all as a function of
+$\left \vert a_\hi \right \vert$:
+$$\left \vert b_\lo \right \vert \leq 2^{-\beta_o-\beta_u} \cdot \left \vert b_\hi \right \vert \leq 
+2^{-\beta_o-\beta_u-2} \cdot \left \vert a_\hi \right \vert$$
+which can be obtained using the preconditions' hypotheses. Further
+\begin{eqnarray*}
+\left \vert t_3 \right \vert & \leq & 2^{-53} \cdot \left \vert t_2 \right \vert \\
+& = & 2^{-53} \cdot \left \vert \circ \left( a_\lo + b_\mi \right) \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert a_\lo + b_\mi \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert a_\lo \right \vert + 2^{-52} \cdot \left \vert b_\mi \right \vert \\
+& \leq & 2^{-105} \cdot \left \vert a_\hi \right \vert + 2^{-\beta_o-52} \cdot \left \vert b_\hi \right \vert \\
+& \leq & 2^{-105} \cdot \left \vert a_\hi \right \vert + 2^{-\beta_o-54} \cdot \left \vert a_\hi \right \vert
+\end{eqnarray*}
+and finally
+\begin{eqnarray*}
+\left \vert t_5 \right \vert & \leq & 2^{-53} \cdot \left \vert t_4 \right \vert \\
+& = & 2^{-53} \cdot \left \vert \circ \left( t_1 + t_2 \right) \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert t_1 + t_2 \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert t_1 \right \vert + 2^{-52} \cdot \left \vert t_2 \right \vert \\
+& \leq & 2^{-105} \cdot \left \vert r_\hi \right \vert + 2^{-52} \cdot \left \vert \circ \left( a_\lo + b_\mi \right) \right \vert \\
+& \leq & 2^{-105} \cdot \left \vert \circ \left( a_\hi + b_\hi \right) \right \vert + 2^{-51} \cdot \left \vert a_\lo + b_\mi \right \vert \\
+& \leq & 2^{-104} \cdot \left \vert a_\hi + b_\hi \right \vert + 2^{-51} \cdot \left \vert a_\lo \right \vert + 
+2^{-51} \cdot \left \vert b_\mi \right \vert \\
+& \leq & 2^{-104} \cdot \left \vert a_\hi \right \vert + 2^{-106} \cdot \left \vert a_\hi \right \vert + 
+2^{-104} \cdot \left \vert a_\hi \right \vert + 2^{-\beta_o-53} \cdot \left \vert a_\hi \right \vert \\
+& \leq & \left \vert a_\hi \right \vert \cdot \left( 2^{-102} + 2^{-\beta_o -53} \right)
+\end{eqnarray*}
+So we have
+\begin{eqnarray*}
+\left \vert \delta \right \vert & \leq & \left \vert a_\hi \right \vert \cdot 
+\left( 2^{-157} + 2^{-\beta_o-106} + 2^{-\beta_o-\beta_u-53} + 2^{-155} + 2^{-\beta_o-106} \right) \\
+& \leq & \left \vert a_\hi \right \vert \cdot 
+\left( 2^{-\beta_o-\beta_u-53} + 2^{-\beta_o-105} + 2^{-154} \right)
+\end{eqnarray*}
+Let us now give a lower bound for 
+$\left \vert \left( a_\hi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right) \right \vert$ as a function of
+$\left \vert a_\hi \right \vert$ by getting out an upper bound for 
+$\left \vert a_\lo + b_\hi + b_\mi + b_\lo \right \vert$ as such a function:
+\begin{eqnarray*}
+\left \vert a_\lo + b_\hi + b_\mi + b_\lo \right \vert & \leq & 
+\left \vert a_\lo \right \vert + \left \vert b_\hi \right \vert + \left \vert b_\mi \right \vert + \left \vert b_\lo \right \vert \\
+& \leq & \left \vert a_\hi \right \vert \cdot \left( 2^{-53} + 2^{-2} + 2^{-\beta_o-2} + 2^{-\beta_o-\beta_u-2} \right)
+\end{eqnarray*}
+Since $\beta_o \geq 1$, $\beta_u \geq 1$ we can check that 
+$$\left \vert a_\lo + b_\hi + b_\mi + b_\lo \right \vert \leq 2^{-1} \cdot \left \vert a_\hi \right \vert$$
+In consequence
+$$\left \vert a_\hi + \left( a_\lo + b_\hi + b_\mi + b_\lo \right) \right \vert \geq \frac{1}{2} \cdot \left \vert a_\hi \right \vert$$
+Using this lower bound, we can finally give an upper bound for the relative error $\epsilon$ of the considered procedure:
+$$r_\hi + r_\mi + r_\lo = \left( \left( a_\hi + a_\lo \right) + \left( b_\hi + b_\mi + b_\lo \right) \right) \cdot \left( 1 + \epsilon \right)$$
+with
+$$\left \vert \epsilon \right \vert \leq 2^{-\beta_o-\beta_u-52} + 2^{-\beta_o-104} + 2^{-153}$$
+Last but not least, let us now analyse the additional overlaps generated by the procedure. It is clear that 
+$r_\mi$ and $r_\lo$ do not overlap at all because they are computed by the \Add~ procedure. 
+Let us merely examine now the overlap of $r_\hi$ and $r_\mi$. \\
+We begin by giving a lower bound for $r_\hi$ as a function of $a_\hi$:
+\begin{eqnarray*}
+\left \vert r_\hi \right \vert & = & \left \vert \circ \left( a_\hi + b_\hi \right) \right \vert \\
+& \geq & \circ \left( \left \vert a_\hi + b_\hi \right \vert \right) \\
+& \geq & \circ \left( \frac{3}{4} \cdot \left \vert a_\hi \right \vert \right) \\
+& \geq & \circ \left( \frac{1}{2} \cdot \left \vert a_\hi \right \vert \right) \\
+& = & \frac{1}{2} \cdot \left \vert a_\hi \right \vert 
+\end{eqnarray*}
+Let us then find an upper bound for $\left \vert r_\mi \right \vert$ 
+using also here a term which is a function of $\left \vert a_\hi \right \vert$:
+\begin{eqnarray*}
+\left \vert r_\mi \right \vert & = & \left \vert \circ \left( r_\mi + r_\lo \right) \right \vert \\
+& \leq & 2 \cdot \left \vert r_\mi + r_\lo \right \vert \\
+& = & 2 \cdot \left \vert t_4 + t_7 \right \vert \\
+& \leq & 2 \cdot \left \vert t_4 \right \vert + 2 \cdot \left \vert t_5 + t_3 + b_\lo + \delta \right \vert \\
+& \leq & 2 \cdot \left \vert t_4 \right \vert + 2 \cdot \left \vert t_5 \right \vert + 
+2 \cdot  \left \vert t_3 \right \vert + 2 \cdot \left \vert b_\lo \right \vert + 2 \cdot \left \vert \delta \right \vert \\
+& \leq & 2 \cdot \left \vert t_4 \right \vert + \left \vert a_\hi \right \vert \cdot \left( 2^{-101} + 2^{-\beta_o-52} \right) \\
+& & + \left \vert a_\hi \right \vert \cdot \left( 2^{-104} + 2^{-\beta_o-53} \right) +
+\left \vert a_\hi \right \vert \cdot 2^{-\beta_o-\beta_u-1} \\
+& & +
+\left \vert a_\hi \right \vert \cdot \left( 2^{-\beta_o-\beta_u-52} + 2^{-\beta_o-104} + 2^{-153}\right) 
+\end{eqnarray*}
+By bounding finally still $\left \vert t_4 \right \vert$ by a term that is function of $\left \vert a_\hi \right \vert$
+\begin{eqnarray*}
+\left \vert t_4 \right \vert & = & \left \vert \circ \left( t_1 + t_2 \right) \right \vert \\
+& \leq & 2 \cdot \left \vert t_1 \right \vert + 2 \cdot \left \vert t_2 \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert r_\hi \right \vert + 2 \cdot \left \vert \circ \left( a_\lo + b_\mi \right) \right \vert \\
+& \leq & 2^{-51} \cdot \left \vert a_\hi + b_\hi \right \vert + 4 \cdot \left \vert a_\lo + b_\mi \right \vert \\
+& \leq & \left \vert a_\hi \right \vert \cdot \left( 2^{-\beta_o} + 2^{-49} \right)
+\end{eqnarray*}
+we obtain
+\begin{eqnarray*}
+\left \vert r_\hi \right \vert & \leq & \left \vert a_\hi \right \vert \cdot 
+\left( 2^{-48} \right. \\
+& & + 2^{-\beta_o+1} \\
+& & + 2^{-101} \\
+& & + 2^{-\beta_o-52} \\
+& & + 2^{-104} \\
+& & + 2^{-\beta_o-53} \\
+& & + 2^{-\beta_o-\beta_u-1} \\
+& & + 2^{-\beta_o-\beta_u-52} \\
+& & + 2^{-\beta_o-104} \\
+& & \left. + 2^{-153} \right) \\
+& \leq & \left \vert a_\hi \right \vert \cdot 
+\left( 2^{-47} + 2^{-\beta_o+2} + 2^{-\beta_o-\beta_u} \right)
+\end{eqnarray*}
+We finally check that we have
+$$\left \vert r_\mi \right \vert \leq \left \vert r_\hi \right \vert \cdot \left( 2^{-46} + 2^{-\beta_o+3} + 2^{-\beta_o-\beta_u+1} \right)$$
+from which we can deduce the following bound 
+$$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right \vert$$
+with
+$$\gamma \geq \min\left( 45, \beta_o-4, \beta_o+\beta_u-2 \right)$$
+This finishes the proof.\qed
+\end{proof}
+\section{Triple-double multiplication operators}
+\subsection{The multiplication procedure \MulDT}
+Let us go on with an analysis of the multiplication procedure \MulDT. 
+\begin{algorithm}[\MulDT] \label{mulDTref} ~ \\
+{\bf In:} two double-double numbers $a_\hi + a_\lo$ and $b_\hi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert a_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert b_\hi \right \vert \\
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( r_\hi, t_1 \right) \gets \mMul\left( a_\hi, b_\hi \right)$ \\
+$\left( t_2, t_3 \right) \gets \mMul\left( a_\hi, b_\lo \right)$ \\
+$\left( t_4, t_5 \right) \gets \mMul\left( a_\lo, b_\hi \right)$ \\
+$t_6 \gets a_\lo \otimes b_\lo$ \\
+$\left( t_7, t_8 \right) \gets \mAddDD\left( t_2, t_3, t_4, t_5 \right)$ \\
+$\left( t_9, t_{10} \right) \gets \mAdd\left( t_1, t_6 \right)$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAddDD\left( t_7, t_8, t_9, t_{10} \right)$ \\
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{mulDTref} \MulDT] ~ \\
+Let be $a_\hi + a_\lo$ and $b_\hi + b_\lo$ the values taken by arguments of algorithm \ref{mulDTref} \MulDT \\
+So the following holds for the values returned $r_\hi$, $r_\mi$ and $r_\lo$:
+$$r_\hi + r_\mi + r_\lo = \left(\left(a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded as follows:
+$$\left \vert \epsilon \right \vert \leq 2^{-149}$$
+The values returned $r_\mi$ and $r_\lo$ will not overlap at all and the overlap of $r_\hi$ and $r_\mi$ will be bounded as
+follows:
+$$\left \vert r_\mi \right \vert \leq 2^{-48} \cdot \left \vert r_\hi \right \vert$$
+\end{theorem}
+\begin{proof} ~ \\
+Since algorithm \ref{mulDTref} is relatively long, we will proceed by analysing sub-sequences. So let us consider
+first the following sequence:
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( t_2, t_3 \right) \gets \mMul\left( a_\hi, b_\lo \right)$ \\
+$\left( t_4, t_5 \right) \gets \mMul\left( a_\lo, b_\hi \right)$ \\
+$\left( t_7, t_8 \right) \gets \mAddDD\left( t_2, t_3, t_4, t_5 \right)$ 
+\end{minipage}
+\end{center}
+Clearly $t_7$ and $t_8$ will not overlap. The same way $t_2$ and $t_3$ and $t_4$ and $t_5$ will not overlap and 
+we know that we have exactly the following egalities
+\begin{eqnarray*}
+t_2 + t_3 & = & a_\hi \cdot b_\lo \\
+t_4 + t_5 & = & b_\hi \cdot a_\lo 
+\end{eqnarray*}
+Further we can check that 
+\begin{eqnarray*}
+\left \vert t_3 \right \vert & \leq & 2^{-53} \cdot \left \vert \circ \left( a_\hi \cdot b_\lo \right) \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert a_\hi \cdot b_\lo \right \vert 
+\end{eqnarray*}
+and similarly
+$$\left \vert t_5 \right \vert \leq 2^{-52} \cdot \left \vert b_\hi \cdot a_\lo \right \vert$$
+So we have on the one side
+\begin{eqnarray*}
+2^{-53} \cdot \left \vert t_3 + t_5 \right \vert & \leq & 2^{-53} \cdot \left \vert t_3 \right \vert + 2^{-53} \cdot \left \vert t_5 \right \vert \\
+& \leq & 2^{-105} \cdot \left \vert a_\hi \cdot b_\lo \right \vert + 2^{-105} \cdot \left \vert b_\hi \cdot a_\lo \right \vert 
+\end{eqnarray*}
+and on the other
+\begin{eqnarray*}
+2^{-102} \cdot \left \vert t_2 + t_3 + t_4 + t_5 \right \vert & \leq & 2^{-102} \cdot \left \vert 
+                 b_\hi \cdot a_\lo + a_\hi \cdot b_\lo \right \vert \\
+& \leq & 2^{-102} \cdot \left \vert b_\hi \cdot a_\lo \right \vert + 2^{-102} \cdot \left \vert a_\hi \cdot b_\lo \right \vert 
+\end{eqnarray*}
+Using theorem \ref{addDDerrabs} it is possible to note 
+$$t_7 + t_8 = a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + \delta_1$$
+with
+$$\left \vert \delta_1 \right \vert \leq 2^{-102} \cdot \left \vert a_\hi \cdot b_\lo \right \vert + 
+                                         2^{-102} \cdot \left \vert a_\lo \cdot b_\hi \right \vert$$ 
+Let us now consider the following sub-sequence of algorithm \ref{mulDTref}:
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( r_\hi, t_1 \right) \gets \mMul\left( a_\hi, b_\hi \right)$ \\
+$t_6 \gets a_\lo \otimes b_\lo$ \\
+$\left( t_9, t_{10} \right) \gets \mAdd\left( t_1, t_6 \right)$ 
+\end{minipage}
+\end{center}
+Trivially $t_9$ and $t_{10}$ do not overlap.
+Additionally, one sees that we have exactly
+$$r_\hi + t_1 = a_\hi \cdot b_\hi$$ 
+and, exactly too, 
+$$t_9 + t_{10} = t_1 + t_6$$
+So using
+$$t_6 = a_\lo \otimes b_\lo = a_\lo \cdot b_\lo \cdot \left( 1 + \epsilon \right)$$
+where $\left \vert \epsilon \right \vert \leq 2^{-53}$ we get
+\begin{eqnarray*}
+r_\hi + t_9 + t_{10} & = & r_\hi + t_1 + t_6 \\
+& = & a_\hi \cdot b_\hi + t_6 \\
+& = & a_\hi \cdot b_\hi + a_\lo \cdot b_\lo + \delta_2
+\end{eqnarray*}
+with
+$$\left \vert \delta_2 \right \vert \leq 2^{-53} \cdot \left \vert a_\lo \cdot b_\lo \right \vert$$
+Let us now bound $\left \vert t_9 \right \vert$ with regard to $\left \vert a_\hi \cdot b_\hi \right \vert$:\\
+We have
+\begin{eqnarray*}
+\left \vert t_9 \right \vert & \leq & \circ \left( \left \vert t_1 \right \vert + \left \vert t_6 \right \vert \right) \\
+& \leq & \circ \left( \left \vert t_1 \right \vert + \circ \left( \left \vert a_\lo \cdot b_\lo \right \vert \right) \right) \\
+& \leq & \circ \left( \left \vert t_1 \right \vert + \circ \left( 2^{-106} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \right) \right) \\
+& \leq & \circ \left( 2^{-53} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 2^{-105} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \right) \\
+& \leq & 2^{-51} \cdot \left \vert a_\hi \cdot b_\hi \right \vert 
+\end{eqnarray*}
+With inequalities given, we can bound now the absolute and relative error of algorithm \MulDT~ \ref{mulDTref}. \\
+We know already that
+$$t_7 + t_8 = a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + \delta_1$$
+where
+$$\left \vert \delta_1 \right \vert \leq 2^{-102} \cdot \left \vert a_\hi \cdot b_\lo \right \vert + 
+                                         2^{-102} \cdot \left \vert b_\hi \cdot a_\lo \right \vert$$
+and
+$$r_\hi + t_9 + t_{10} = a_\hi \cdot b_\hi + a_\lo \cdot b_\lo + \delta_2$$
+where
+$$\left \vert \delta_2 \right \vert \leq 2^{-53} \cdot \left \vert a_\lo \cdot b_\lo \right \vert$$
+One remarks that
+\begin{eqnarray*}
+\left \vert t_8 \right \vert & \leq & 2^{-53} \cdot \left \vert t_7 \right \vert \\
+\left \vert t_{10} \right \vert & \leq & 2^{-53} \cdot \left \vert t_9 \right \vert 
+\end{eqnarray*}
+and easily checks that
+$$2^{-53} \cdot \left \vert t_{10} + t_8 \right \vert \leq 2^{-101} \cdot \left \vert t_9 \right \vert + 2^{-101} \cdot \left \vert t_7 \right \vert$$
+and that
+$$2^{-102} \cdot \left \vert t_9 + t_{10} + t_7 + t_8 \right \vert \leq 2^{-101} \cdot \left \vert t_9 \right \vert + 
+                                                                        2^{-101} \cdot \left \vert t_7 \right \vert$$
+So by means of the theorem \ref{addDDerrabs}, we obtain that
+$$r_\mi + r_\lo = t_9 + t_{10} + t_7 + t_8 + \delta_3$$
+where
+$$\left \vert \delta_3 \right \vert \leq 2^{-101} \cdot \left \vert t_9 \right \vert + 2^{-101} \cdot \left \vert t_7 \right \vert$$
+So finally we get 
+$$r_\hi + r_\mi + r_\lo = a_\hi \cdot b_\hi + a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\lo + \delta$$
+where
+\begin{eqnarray*}
+\left \vert \delta \right \vert & = & \left \vert \delta_1 + \delta_2 + \delta_3 \right \vert \\
+& \leq & \left \vert \delta_1 \right \vert + \left \vert \delta_2 \right \vert + \left \vert \delta_3 \right \vert \\
+& \leq & 2^{-102} \cdot \left \vert a_\lo \cdot b_\hi \right \vert \\
+& & + 2^{-102} \cdot \left \vert a_\hi \cdot b_\lo \right \vert \\
+& & + 2^{-53} \cdot \left \vert a_\lo \cdot b_\lo \right \vert \\
+& & + 2^{-152} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \\
+& & + 2^{-101} \cdot \left \vert t_7 \right \vert
+\end{eqnarray*}
+And for $\left \vert t_7 \right \vert$ we obtain the following inequalities
+\begin{eqnarray*}
+\left \vert t_7 \right \vert & \leq & \circ \left( \left \vert t_7 + t_8 \right \vert \right) \\
+& \leq & 2 \cdot \left \vert t_7 + t_8 \right \vert \\
+& \leq & 2 \cdot \left(\left \vert a_\hi \cdot b_\lo \right \vert + 
+                       \left \vert a_\lo \cdot b_\hi \right \vert + 
+                       2^{-102} \cdot \left \vert a_\lo \cdot b_\hi \right \vert + 
+                       2^{-102} \cdot \left \vert a_\hi \cdot b_\lo \right \vert \right) \\
+& \leq & 8 \cdot \left \vert a_\hi \cdot b_\lo \right \vert
+\end{eqnarray*}
+In consequence we can check
+$$\left \vert \delta \right \vert \leq 2^{-150} \cdot \left \vert a_\hi \cdot b_\hi \right \vert$$
+Let us give now an upper bound for $\left \vert a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\lo \right \vert$ as a function of
+$\left \vert a_\hi \cdot b_\hi \right \vert$:\\
+We have
+\begin{eqnarray*}
+\left \vert a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\lo \right \vert & \leq & 
+\left \vert a_\hi \cdot b_\lo \right \vert + \left \vert a_\lo \cdot b_\hi \right \vert + \left \vert a_\lo \cdot b_\lo \right \vert \\
+& \leq & 2^{-51} \cdot \left \vert a_\hi \cdot b_\hi \right \vert
+\end{eqnarray*}
+from which we deduce that
+\begin{eqnarray*}
+\left \vert a_\hi \cdot b_\hi + \left( a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\lo \right) \right \vert & \geq & 
+\left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 1 - 2^{-51} \right) \\
+& \geq & \frac{1}{2} \cdot \left \vert a_\hi \cdot b_\hi \right \vert
+\end{eqnarray*}
+Thus
+$$\left \vert \delta \right \vert \leq 
+2^{-149} \cdot \left \vert a_\hi \cdot b_\hi + a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\lo \right \vert$$
+So we can finally give an upper bound for the relative error $\epsilon$ of the multiplication procedure \MulDT~ 
+defined by algorithm \ref{mulDTref}:
+$$r_\hi + r_\mi + r_\lo = \left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\lo \right) \cdot \left( 1 + \epsilon \right)$$
+with
+$$\left \vert \epsilon \right \vert \leq 2^{-149}$$
+Before concluding, we must still analyse the overlap of the different components of the triple-double number returned
+by the algorithm. It is clear that $r_\mi$ and $r_\lo$ do not overlap because the \AddDD~ brick ensures this. 
+Let us now consider the magnitude of $r_\mi$ with regard to the one of $r_\hi$.\\
+We give first a lower bound for $\left \vert r_\hi \right \vert$:
+\begin{eqnarray*}
+\left \vert r_\hi \right \vert & = & \left \vert \circ \left( a_\hi \cdot b_\hi \right) \right \vert \\
+& \geq & \circ \left( \left \vert a_\hi \cdot b_\hi \right \vert \right) \\
+& \geq & \frac{1}{2} \cdot \left \vert a_\hi \cdot b_\hi \right \vert
+\end{eqnarray*}
+and then an upper bound for $\left \vert r_\mi \right \vert$:
+\begin{eqnarray*}
+\left \vert r_\mi \right \vert & \leq & \circ \left( \left \vert r_\mi + r_\lo \right \vert \right) \\
+& \leq & \circ \left( \left \vert t_7 + t_8 \right \vert + \left \vert t_9 + t_{10} \right \vert + \delta_3 \right) \\
+& \leq & \circ \left( \left \vert a_\hi \cdot b_\lo \right \vert + \left \vert a_\lo \cdot b_\hi \right \vert + \delta_1 +
+                      \left \vert t_9 \right \vert + \left \vert t_{10} \right \vert + \delta_3 \right) \\
+& \leq & \circ \left( \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 
+                      2^{-53} + 2^{-53} + 2^{-155} + 2^{-155} + 2^{-51} + 2^{-104} + 2^{-152} + 2^{-151} \right) \right) \\
+& \leq & 2^{-49} \cdot \left \vert a_\hi \cdot b_\hi \right \vert
+\end{eqnarray*}
+From this we can deduce the final bound 
+$$\left \vert r_\mi \right \vert \leq 2^{-48} \cdot \left \vert r_\hi \right \vert$$\qed
+\end{proof}
+\subsection{The multiplication procedure \MulDTT}
+Let us concentrate now on the multiplication sequence \MulDTT. 
+\begin{algorithm}[\MulDTT] \label{mulDTTref} ~ \\
+{\bf In:} a double-double number $a_\hi + a_\lo$  and a triple-double number $b_\hi + b_\mi + b_\lo$ \\
+{\bf Out:} a triple-double number $r_\hi + r_\mi + r_\lo$ \\
+{\bf Preconditions on the arguments:}
+\begin{eqnarray*}
+\left \vert a_\lo \right \vert & \leq & 2^{-53} \cdot \left \vert a_\hi \right \vert \\
+\left \vert b_\mi \right \vert & \leq & 2^{-\beta_o} \cdot \left \vert b_\hi \right \vert \\
+\left \vert b_\lo \right \vert & \leq & 2^{-\beta_u} \cdot \left \vert b_\mi \right \vert 
+\end{eqnarray*}
+with
+\begin{eqnarray*}
+\beta_o & \geq & 2 \\
+\beta_u & \geq & 1 
+\end{eqnarray*}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{60mm}
+$\left( r_\hi, t_1 \right) \gets \mMul\left( a_\hi, b_\hi \right)$ \\
+$\left( t_2, t_3 \right) \gets \mMul\left( a_\hi, b_\mi \right)$ \\
+$\left( t_4, t_5 \right) \gets \mMul\left( a_\hi, b_\lo \right)$ \\
+$\left( t_6, t_7 \right) \gets \mMul\left( a_\lo, b_\hi \right)$ \\
+$\left( t_8, t_9 \right) \gets \mMul\left( a_\lo, b_\mi \right)$ \\
+$t_{10} \gets a_\lo \otimes b_\lo$ \\
+$\left( t_{11}, t_{12} \right) \gets \mAddDD\left( t_2, t_3, t_4, t_5 \right)$ \\
+$\left( t_{13}, t_{14} \right) \gets \mAddDD\left( t_6, t_7, t_8, t_9 \right)$ \\
+$\left( t_{15}, t_{16} \right) \gets \mAddDD\left( t_{11}, t_{12}, t_{13}, t_{14} \right)$ \\
+$\left( t_{17}, t_{18} \right) \gets \mAdd\left( t_1, t_{10} \right)$ \\
+$\left( r_\mi, r_\lo \right) \gets \mAddDD\left( t_{17}, t_{18}, t_{15}, t_{16} \right)$ \\
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Relative error of algorithm \ref{mulDTTref} \MulDTT] ~ \\
+Let be $a_\hi + a_\lo$ and $b_\hi + b_\mi + b_\lo$ the values in argument of algorithm \ref{mulDTTref} \MulDTT~ such that 
+the given preconditions hold.\\
+So the following will hold for the values $r_\hi$, $r_\mi$ and $r_\lo$ returned
+$$r_\hi + r_\mi + r_\lo = \left(\left(a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\mi + b_\lo \right)\right) \cdot \left(1 + \epsilon\right)$$
+where $\epsilon$ is bounded as follows:
+$$\left \vert \epsilon \right \vert \leq \frac{2^{-99 - \beta_o} + 2^{-99 - \beta_o - \beta_u} + 2^{-152}}
+                                              {1 - 2^{-53} - 2^{-\beta_o + 1} - 2^{-\beta_o - \beta_u + 1}}
+                                    \leq 2^{-97 - \beta_o} + 2^{-97 - \beta_o - \beta_u} + 2^{-150}$$
+The values $r_\mi$ and  $r_\lo$ will not overlap at all and the following bound will be verified for the overlap of 
+$r_\hi$ and $r_\mi$:
+$$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right \vert$$
+where
+$$\gamma \geq \min\left( 48, \beta_o - 4, \beta_o + \beta_u - 4 \right)$$
+\end{theorem}
+\begin{proof} ~ \\
+During this proof we will once again proceed by basic bricks that we will assemble in the end.\\
+Let us therefore start by the following one:
+\begin{center}
+\begin{minipage}[b]{60mm}
+$\left( t_2, t_3 \right) \gets \mMul\left( a_\hi, b_\mi \right)$ \\
+$\left( t_4, t_5 \right) \gets \mMul\left( a_\hi, b_\lo \right)$ \\
+$\left( t_{11}, t_{12} \right) \gets \mAddDD\left( t_2, t_3, t_4, t_5 \right)$
+\end{minipage}
+\end{center}
+Since we have the exact egalities
+$$t_2 + t_3 = a_\hi \cdot b_\mi$$
+and
+$$t_4 + t_5 = a_\hi \cdot b_\lo$$
+and since we know that $t_2$ and $t_3$ and $t_4$ and $_5$ do not overlap, 
+it suffices to apply the bound proven at theorem \ref{addDDerrabs}. 
+So we can check on the one hand
+\begin{eqnarray*}
+2^{-53} \cdot \left \vert t_3 + t_5 \right \vert & \leq & 2^{-53} \cdot \left \vert t_3 \right \vert + 2^{-53} \cdot \left \vert t_5 \right \vert \\
+& \leq & 2^{-106} \cdot \left \vert t_2 \right \vert + 2^{-106} \cdot \left \vert t_4 \right \vert \\
+& \leq & 2^{-105} \cdot \left \vert a_\hi \cdot b_\mi \right \vert + 2^{-105} \cdot \left \vert a_\hi \cdot b_\lo \right \vert \\
+& \leq & 2^{-105-\beta_o} \cdot \left \vert a_\hi \cdot b_\mi \right \vert + 2^{-105-\beta_o-\beta_u} \cdot \left \vert a_\hi \cdot b_\lo \right \vert
+\end{eqnarray*}
+and on the other
+\begin{eqnarray*}
+2^{-102} \cdot \left \vert t_2 + t_3 + t_4 + t_5 \right \vert & = & 
+2^{-102} \cdot \left \vert a_\hi \cdot b_\mi + a_\hi \cdot b_\lo \right \vert \\
+& \leq & 2^{-102} \cdot \left \vert a_\hi \cdot b_\mi \right \vert + 2^{-102} \cdot \left \vert a_\hi \cdot b_\lo \right \vert \\
+& \leq & 2^{-102-\beta_o} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 2^{-102-\beta_o-\beta_u} \cdot \left \vert a_\hi \cdot b_\lo \right \vert
+\end{eqnarray*}
+In consequence, using the mentioned theorem, we obtain
+$$t_{11} + t_{12} = a_\hi \cdot b_\mi + a_\hi \cdot b_\lo + \delta_1$$
+with
+$$\left \vert \delta_1 \right \vert \leq 
+2^{-102-\beta_o} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 2^{-102-\beta_o-\beta_u} \cdot \left \vert a_\hi \cdot b_\lo \right \vert$$
+Let us continue with the following part of the algorithm:
+\begin{center}
+\begin{minipage}[b]{60mm}
+$\left( t_6, t_7 \right) \gets \mMul\left( a_\lo, b_\hi \right)$ \\
+$\left( t_8, t_9 \right) \gets \mMul\left( a_\lo, b_\mi \right)$ \\
+$\left( t_{13}, t_{14} \right) \gets \mAddDD\left( t_6, t_7, t_8, t_9 \right)$ 
+\end{minipage}
+\end{center}
+We have
+\begin{eqnarray*}
+2^{-53} \cdot \left \vert t_7 + t_9 \right \vert & \leq & 2^{-53} \cdot \left \vert t_7 \right \vert + 2^{-53} \cdot \left \vert t_9 \right \vert \\
+& \leq & 2^{-106} \cdot \left \vert t_6 \right \vert + 2^{-106} \cdot \left \vert t_8 \right \vert \\
+& \leq & 2^{-105} \cdot \left \vert a_\lo \cdot b_\hi \right \vert + 2^{-105} \cdot \left \vert a_\lo \cdot b_\mi \right \vert \\
+& \leq & 2^{-158} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 2^{-158-\beta_o} \cdot \left \vert a_\hi b_\hi \right \vert 
+\end{eqnarray*}
+and
+\begin{eqnarray*}
+2^{-102} \cdot \left \vert t_6 + t_7 + t_8 + t_9 \right \vert & = &  2^{-102} \cdot \left \vert a_\lo \cdot b_\hi + a_\lo \cdot b_\mi \right \vert \\
+& \leq & 2^{-102} \cdot \left \vert a_\lo \cdot b_\hi \right \vert + 2^{-102} \cdot \left \vert a_\lo \cdot b_\mi \right \vert \\
+& \leq & 2^{-155} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 2^{-155-\beta_o} \cdot \left \vert a_\hi \cdot b_\hi \right \vert
+\end{eqnarray*}
+So we get
+$$t_{13} + t_{14} = a_\lo \cdot b_\hi + a_\lo \cdot b_\mi + \delta_2$$
+with
+$$\left \vert \delta_2 \right \vert \leq 
+2^{-155} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 2^{-155-\beta_o} \cdot \left \vert a_\hi \cdot b_\hi \right \vert$$
+Let us now consider the brick that produces $t_{15}$ and $t_{16}$ out of the values in argument.
+By the properties of the \AddDD~ procedure, $t_{11}$ and $t_{12}$ and $t_{13}$ and $t_{14}$ do not overlap at all and
+verify thus the preconditions of the next \AddDD~ brick that will compute $t_{15}$ and $t_{16}$.
+So it suffices to apply once again the absolute error bound of this procedure for obtaining
+$$t_{15} + t_{16} = t_{11} + t_{12} + t_{13} + t_{14} + \delta_3$$ with $\left \vert \delta_3 \right \vert$ which remains to be 
+estimated.\\
+So we have on the one hand
+\begin{eqnarray*}
+2^{-53} \cdot \left \vert t_{12} + t_{14} \right \vert & \leq & 2^{-53} \cdot \left \vert t_{12} \right \vert + 2^{-53} \cdot
+\left \vert t_{14} \right \vert \\
+& \leq & 2^{-106} \cdot \left \vert t_{11} \right \vert + 2^{-106} \cdot \left \vert t_{13} \right \vert 
+\end{eqnarray*}
+-- which is an upper bound that can still be estimated by
+\begin{eqnarray*}
+\left \vert t_{11} \right \vert & = & \left \vert \circ \left( t_{11} + t_{12} \right) \right \vert \\
+& \leq & \left \vert \left( t_{11} + t_{12} \right) \cdot \left( 1 + 2^{-53} \right) \right \vert \\
+& \leq & 2 \cdot \left \vert t_{11} + t_{12} \right \vert \\
+& \leq & 2 \cdot \left \vert a_\hi \cdot b_\mi + a_\hi \cdot b_\lo + \delta_1 \right \vert \\
+& \leq & 2 \cdot \left( \left \vert a_\hi \cdot b_\mi \right \vert + \left \vert a_\hi \cdot b_\lo \right \vert + \left \vert \delta_1 \right \vert 
+\right) \\
+& \leq & 2 \cdot \left( 2^{-\beta_o} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 
+2^{-\beta_o-\beta_u} \cdot \left \vert a_\hi \cdot b_\hi \right \vert +  
+2^{-\beta_o-102} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 2^{-\beta_o-\beta_u-102} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \right) \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 2^{-\beta_o+2} + 2^{-\beta_o-\beta_u+2} \right)
+\end{eqnarray*}
+which means, using also the following inequalities that
+\begin{eqnarray*}
+\left \vert t_{13} \right \vert & = & \left \vert \circ \left( t_{13} + t_{14} \right) \right \vert \\
+& \leq & 2 \cdot \left \vert t_{13} + t_{14} \right \vert \\
+& \leq & 2 \cdot \left \vert a_\lo \cdot b_\hi + a_\lo \cdot b_\mi + \delta_2 \right \vert \\
+& \leq & 2 \cdot \left( \left \vert a_\lo \cdot b_\hi \right \vert + \left \vert a_\lo \cdot b_\mi \right \vert + \left \vert \delta_2 \right \vert 
+\right) \\
+& \leq & 2 \cdot \left( 2^{-53} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 
+2^{-53-\beta_o} \cdot \left \vert a_\hi \cdot b_\hi \right \vert +  
+2^{-155} \cdot \left \vert a_\hi \cdot b_\hi \right \vert +  
+2^{-155-\beta_o} \cdot \left \vert a_\hi \cdot b_\hi \right \vert 
+\right) \\
+& \leq & 2^{-50} \cdot \left \vert a_\hi \cdot b_\hi \right \vert
+\end{eqnarray*}
+we can finally check that we have on the one side
+$$2^{-53} \cdot \left \vert t_{12} + t_{14} \right \vert \leq \left \vert a_\hi \cdot b_\hi \right \vert \cdot 
+\left( 2^{-\beta_o-104} + 2^{-\beta_o-\beta_u-104} + 2^{-156} \right)$$
+And on the other
+\begin{eqnarray*}
+2^{-102} \cdot \left \vert t_{11} + t_{12} + t_{13} + t_{14} \right \vert & \leq & 
+2^{-102} \cdot \left \vert a_\hi \cdot b_\mi + a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\mi + \delta_1 + \delta_2 \right \vert \\
+& \leq & 2^{-102} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \cdot \\
+& & \left( 2^{-\beta_o} \right. \\ & & + 2^{-\beta_o-\beta_u} \\ & & + 2^{-53} \\ & & + 2^{-\beta_o-53} \\ & & + 2^{-\beta_o-102} \\ 
+& & + 2^{-\beta_o-\beta_u-102} \\ & & + 2^{-155} \\ & & \left. + 2^{-\beta_o-155} \right) \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left(
+2^{-\beta_o-101} + 2^{-\beta_o-\beta_u-101} + 2^{-154} \right)
+\end{eqnarray*}
+So we know that 
+$$t_{15} + t_{16} = t_{11} + t_{12} + t_{13} + t_{14} + \delta_3$$
+with
+$$\left \vert \delta_3 \right \vert \leq \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left(
+2^{-\beta_o-101} + 2^{-\beta_o-\beta_u-101} + 2^{-154} \right)$$
+With this result we can note now
+$$t_{15} + t_{16} = a_\hi \cdot b_\mi + a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\mi + \delta_4$$
+with
+\begin{eqnarray*}
+\left \vert \delta_4 \right \vert & \leq & 
+\left \vert a_\hi \cdot b_\hi \right \vert \cdot \\
+& & \left( 2^{-\beta_o-102} \right. \\
+& & + 2^{-\beta_o-\beta_u-102} \\
+& & + 2^{-155} \\
+& & + 2^{-\beta_o-155} \\
+& & + 2^{-\beta_o-101} \\
+& & \left. + 2^{-\beta_o-\beta_u-101} \right) \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 2^{-\beta_o-100} + 2^{-\beta_o-\beta_u-100} + 2^{-155} \right)
+\end{eqnarray*}
+Let us give now an upper bound for $\delta_5$ defined by the following expression:
+$$r_\mi + r_\lo = t_1 + a_\lo \cdot b_\lo + t_{15} + t_{16} + \delta_5$$
+It is clear that $t_{17}$ and $t_{18}$ do not overlap. In contrast the \Add~ operation which adds $t_1$ to $t_{10}$ is 
+necessary because $t_1$ and $t_{10}$ can overlap and even \ouvguill overtake\fermguill~ each other: 
+$$\left \vert t_1 \right \vert \geq 2^{-106} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \lor t_1 = 0$$
+and
+$$\left \vert t_{10} \right \vert \leq 2^{-\beta_o-\beta_u-52} \cdot \left \vert a_\hi \cdot b_\hi \right \vert$$
+The same argument tells us that the \Add~ must be conditional. \\
+So we have
+$$t_{17} + t_{18} = t_1 + t_{10}$$
+and
+$$t_{10} = a_\lo \cdot b_\lo + \delta^\prime$$
+with
+$$\left \vert \delta^\prime \right \vert \leq 2^{-106-\beta_o-\beta_u} \cdot \left \vert a_\hi \cdot b_\hi \right \vert$$
+Let us apply once again the bound for the absolute error of the \AddDD~ procedure:\\
+So we have on the one hand
+\begin{eqnarray*}
+2^{-53} \cdot \left \vert t_{18} + t_{16} \right \vert & \leq & 
+2^{-53} \cdot \left \vert t_{18} \right \vert + 2^{-53} \cdot \left \vert t_{18} \right \vert \\
+& \leq & 2^{-106} \cdot \left \vert t_{17} \right \vert + 2^{-106} \cdot \left \vert t_{15} \right \vert
+\end{eqnarray*}
+We can estimate this by
+\begin{eqnarray*}
+\left \vert t_{17} \right \vert & \leq & \left \vert \circ \left( t_1 + t_{10} \right) \right \vert \\
+& \leq & 2 \cdot \left \vert t_1 + t_{10} \right \vert \\
+& \leq & 2 \cdot \left \vert t_1 \right \vert + 2 \cdot \left \vert t_{10} \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert r_\hi \right \vert + 2 \cdot \left \vert \circ \left( a_\lo \cdot b_\lo \right) \right \vert \\
+& \leq & 2^{-52} \cdot \left \vert \circ \left( a_\hi \cdot b_\hi \right) \right \vert + 2^2 \cdot \left \vert a_\lo \cdot b_\lo \right \vert \\
+& \leq & 2^{-51} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 2^{-51-\beta_o-\beta_u} \cdot \left \vert a_\hi \cdot b_\hi \right \vert 
+\end{eqnarray*}
+and by
+\begin{eqnarray*}
+\left \vert t_{15} \right \vert & = & \left \vert \circ \left( t_{15} + t_{16} \right) \right \vert \\
+& \leq & 2 \cdot \left \vert t_{15} + t_{16} \right \vert \\
+& \leq & 2 \cdot \left \vert 
+a_\hi \cdot b_\mi + a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\mi + \delta_4 \right \vert \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 
+2^{-\beta_o+1} + 2^{-\beta_o-\beta_u+1} + 2^{-52} + 2^{-\beta_o-52} + 2^{-\beta_o-99} + 2^{-\beta_o-\beta_u-99} + 2^{-154}  \right) \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 2^{-\beta_o+2} + 2^{-\beta_o-\beta_u+2} + 2^{-51}  \right)
+\end{eqnarray*}
+So finally, we have on the one hand 
+\begin{eqnarray*}
+2^{-53} \cdot \left \vert t_{18} + t_{16} \right \vert & \leq & 
+\left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 2^{-157} + 2^{-157-\beta_o-\beta_u} + 2^{-104-\beta_o} + 
+2^{-104-\beta_o-\beta_u} + 2^{-157}  \right) \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 2^{-\beta_o-104} + 2^{-\beta_o-\beta_u-103} + 2^{-156} \right)
+\end{eqnarray*}
+And on the other
+\begin{eqnarray*}
+2^{-102} \cdot \left \vert t_{17} + t_{18} + t_{15} + t_{16} \right \vert & \leq &
+2^{-102} \cdot \left \vert t_1 + a_\lo \cdot b_\lo + \delta^\prime + a_\hi \cdot b_\mi + a_\hi \cdot b_\lo + 
+a_\lo \cdot b_\hi \right. \\ & & \left. + a_\lo \cdot b_\mi + \delta_4 \right \vert \\
+& \leq & 2^{-102} \cdot \left( 2^{-53} \cdot \left \vert r_\hi \right \vert \right. \\
+& & + 2^{-53-\beta_o-\beta_u} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \\
+& & + 2^{-\beta_o} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \\
+& & + 2^{-\beta_o-\beta_u} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \\
+& & + 2^{-53} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \\
+& & + 2^{-53-\beta_o} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \\
+& & + 2^{-106-\beta_o-\beta_u} \cdot \left \vert a_\hi \cdot b_\hi \right \vert \\
+& & \left. + \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 2^{-100-\beta_o} + 2^{-100-\beta_o-\beta_u} + 2^{-155} \right) \right) \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 2^{-101-\beta_o} + 2^{-101-\beta_o-\beta_u} + 2^{-153} \right)
+\end{eqnarray*}
+which means that we finally obtain the following
+$$r_\mi + r_\lo = t_1 + a_\lo \cdot b_\lo + a_\hi \cdot b_\mi + a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\mi + \delta_6$$
+with
+$$\left \vert \delta_6 \right \vert \leq \left \vert \delta_4 + \delta_5 \right \vert$$
+where
+$$\left \vert \delta_5 \right \vert \leq 
+\left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 2^{-101-\beta_o} + 2^{-101-\beta_o-\beta_u} + 2^{-153} \right)$$
+Thus we can check that
+\begin{eqnarray*}
+\left \vert \delta_6 \right \vert & \leq & 
+\left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 2^{-100-\beta_o} + 2^{-100-\beta_o-\beta_u} + 2^{-155} +
+2^{-101-\beta_o} + 2^{-101-\beta_o-\beta_u} + 2^{-153} \right) \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 2^{-99-\beta_o} + 2^{-99-\beta_o-\beta_u} + 2^{-152} \right)
+\end{eqnarray*}
+Let us now integrate the different intermediate results:\\
+Since we know that the following egality is exact
+$$r_\hi + t_1 = a_\hi \cdot b_\hi$$
+we can check that
+$$r_\hi + r_\mi + r_\lo = \left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\mi + b_\lo \right) + \delta_6$$
+We continue by giving a lower bound for 
+$\left \vert \left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\mi + b_\lo \right) \right \vert$
+using a term which is a function of $\left \vert a_\hi \cdot b_\hi \right \vert$. We do so for being able to give
+a relative error bound.
+We first bound $$\left \vert a_\hi \cdot b_\mi + a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\mi + a_\lo \cdot b_\lo \right \vert$$
+by such a term.\\
+We have
+\begin{eqnarray*}
+\left \vert a_\hi \cdot b_\mi + a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\mi + a_\lo \cdot b_\lo \right \vert & \leq & 
+\left \vert a_\hi \cdot b_\mi \right \vert + 
+\left \vert a_\hi \cdot b_\lo \right \vert + 
+\left \vert a_\lo \cdot b_\hi \right \vert + 
+\left \vert a_\lo \cdot b_\mi \right \vert + 
+\left \vert a_\lo \cdot b_\lo \right \vert \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 2^{-\beta_o}  + 
+2^{-\beta_o-\beta_u} + 
+2^{-53}  \right. \\ & & \left.  + 
+2^{-\beta_o-53} + 
+2^{-\beta_o-53} \right) \\
+& \leq & 2^{-\beta_o+1} \cdot \left \vert a_\hi \cdot b_\hi \right \vert + 
+2^{-\beta_o-\beta_u+1} \cdot \left \vert a_\hi \cdot b_\hi \right \vert  \\ & & + 
+2^{-53} \cdot \left \vert a_\hi \cdot b_\hi \right \vert
+\end{eqnarray*}
+and we get
+$$\left \vert \left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\mi + b_\lo \right) \right \vert \geq 
+\left \vert a_\hi \cdot b_\hi \right \vert \cdot \left( 1 - 2^{-53} - 2^{-\beta_o+1} -2^{-\beta_o-\beta_u+1} \right)$$
+from which we deduce (since $\beta_o \geq 2$, $\beta_u \geq 1$) 
+$$\left \vert a_\hi \cdot b_\hi \right \vert \leq \frac{1}{1 - 2^{-53} - 2^{-\beta_o+1} -2^{-\beta_o-\beta_u+1}} \cdot 
+\left \vert \left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\mi + b_\lo \right) \right \vert$$
+Using this inequality we can finally give a bound for the relative error $\epsilon$ as follows:
+$$r_\hi + r_\mi + r_\lo = \left( a_\hi + a_\lo \right) \cdot \left( b_\hi + b_\mi + b_\lo \right) \cdot \left( 1 + \epsilon \right)$$
+with
+$$\left \vert \epsilon \right \vert \leq 
+\frac{2^{-99-\beta_o} + 2^{-99-\beta_o-\beta_u} + 2^{-152}}{1 - 2^{-53} - 2^{-\beta_o+1} -2^{-\beta_o-\beta_u+1}}$$
+Let us recall that for this inequality, $\beta_o \geq 2$, $\beta_u \geq 1$ must hold which is the case.\\
+It is certainly possible to estimate $\left \vert \epsilon \right \vert$ by a term which is slightly less exact:
+$$\left \vert \epsilon \right \vert \leq 2^{-97 - \beta_o} + 2^{-97 - \beta_o - \beta_u} + 2^{-150}$$
+because
+$$1 - 2^{-53} - 2^{-\beta_o+1} -2^{-\beta_o-\beta_u+1} \geq \frac{1}{4}$$
+for $\forall \beta_o \geq 2, \beta_u \geq 1$.\\~\\
+In order to finish this proof, we must still give an upper bound for the maximal overlap generated by the 
+algorithm \ref{mulDTTref} \MulDTT.
+Clearly $r_\mi$ and $r_\lo$ do not overlap because of the properties of the basic brick \AddDD.
+Let us give an upper bound for the overlap between $r_\hi$ and $r_\mi$ giving a term of the following form: 
+$$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right \vert$$
+where we constate a lower bound for $\gamma$ using a term in $\beta_o$ and $\beta_u$.\\
+Let us start by giving a lower bound for $r_\hi$ as a function of $\left \vert a_\hi \cdot b_\hi \right \vert$.\\ We have
+\begin{eqnarray*}
+\left \vert r_\hi \right \vert & = & \left \vert \circ \left( a_\hi \cdot b_\hi \right) \right \vert \\
+& \geq & \frac{1}{2} \cdot \left \vert a_\hi \cdot b_\hi \right \vert
+\end{eqnarray*}
+Then, let us give an upper bound for $\left \vert r_\mi \right \vert$ using a function of 
+$\left \vert a_\hi \cdot b_\hi \right \vert$:
+\begin{eqnarray*}
+\left \vert r_\mi \right \vert & \leq & \left \vert \circ \left( r_\mi + r_\lo \right) \right \vert \\
+& \leq & 2 \cdot \left \vert r_\mi + r_\lo \right \vert \\
+& \leq & 
+2 \cdot \left \vert t_1 + a_\lo \cdot b_\lo + a_\hi \cdot b_\mi + a_\hi \cdot b_\lo + a_\lo \cdot b_\hi + a_\lo \cdot b_\mi + \delta_6 \right \vert \\
+& \leq & 2 \cdot \left \vert a_\hi \cdot b_\hi \right \vert \cdot \\
+& & \cdot \left( 
+2^{-52} + 
+2^{-\beta_o-\beta_u-53} + 
+2^{-\beta_o} + 
+2^{-\beta_o-\beta_u} + 
+2^{-53} + 
+2^{-\beta_o-53} +  \right. \\ & & \left. 
+2^{-\beta_o-99} + 
+2^{-\beta_o-\beta_u-99} + 
+2^{-152} \right) \\
+& \leq & \left \vert a_\hi \cdot b_\hi \right \vert
+\cdot \left( 
+2^{-50} + 
+2^{-\beta_o-2} + 
+2^{-\beta_o-\beta_u+2} \right)
+\end{eqnarray*}
+This implies that 
+\begin{eqnarray*}
+\left \vert r_\mi \right \vert & \leq & 2 \cdot \left \vert r_\hi \right \vert \cdot \left( 
+2^{-50} + 
+2^{-\beta_o-2} + 
+2^{-\beta_o-\beta_u+2} \right) \\
+& \leq & \left \vert r_\hi \right \vert \cdot \left( 
+2^{-49} + 
+2^{-\beta_o-3} + 
+2^{-\beta_o-\beta_u+3} \right)
+\end{eqnarray*}
+From which we can deduce 
+$$\left \vert r_\mi \right \vert \leq 2^{-\gamma} \cdot \left \vert r_\hi \right \vert$$
+with
+$$\gamma \geq \min \left( 48, \beta_o - 4, \beta_o -\beta_u -4 \right)$$
+This result finishes the proof.\qed
+\end{proof}
+\section{Final rounding procedures}
+The renormalisation sequence and all computational basic operators on triple-double numbers have been presented only
+for one reason: allowing for implementing efficiently elementary functions in double precision 
+\cite{Defour-thesis, crlibmweb, DinDefLau2004LIP}. For obtaining this 
+goal we are still lacking an important basic brick: the final rounding of a triple-double number into a double precision
+number. This rounding must be possible in each of the $4$ known rounding modes \cite{IEEE754}. In particular, we will 
+distinguish between the round-to-nearest sequence and the ones for the directed rounding modes.\\ 
+Let us start this discussion by introducing some notations:\\
+We will notate
+\begin{itemize}
+\item $\circ \left( x \right) \in \F$ the rounding to the nearest double precision number of a real number $x \in \R$,
+\item $\vartriangle \left( x \right) \in \F$ the rounding towards $+\infty$ of a real $x \in \R$ into double precision,
+\item $\triangledown \left( x \right) \in \F$ the rounding towards $-\infty$ of a real $x \in \R$ into double precision and
+\item $\diamond \left( x \right) \in \F$ the rounding towards $0$ of a real number $x \in \R$ into a double pr\'ecision number.
+\end{itemize}
+Since the directed rounding modes behave all in a similar fashion we will make a slight abuse of our notations. An 
+unspecified directed rounding mode will be notated also $\diamond \left( x \right)$.
+\begin{definition}[Correct rounding procedure] \label{defprocarrcorr} ~ \\
+Let be {\bf A} a procedure taking a non-overlapping triple-double number $x_\hi + x_\mi + x_\lo$ as argument. This number be 
+such that 
+$x_\mi = \circ \left( x_\mi + x_\lo \right)$.
+Let the procedure {\bf A} return a double precision number $x^\prime$.\\
+So we will say that {\bf A} is a correct rounding procedure for round-to-nearest-ties-to-even mode iff
+for all possible entries
+$$x^\prime = \circ \left( x_\hi + x_\mi + x_\lo \right)$$
+The same way {\bf A} is a correct rounding procedure for a directed rounding mode iff for all possible entries
+$$x^\prime = \diamond \left( x_\hi + x_\mi + x_\lo \right)$$
+\end{definition}
+In the sequel we will present two algorithms for final rounding -- one for round-to-nearest mode, the other one for 
+the directed modes -- and we will prove their correctness with regard to definition \ref{defprocarrcorr}.
+\subsection{Final rounding to the nearest even}
+\begin{lemma}[Generation of half an $\mUlp$ or a quarter of an $\mUlp$] \label{genmiquartulp} ~\\
+Let be $x$ a non-subnormal floating point number different from $\pm 0$, $\pm \infty$ and $\nan$ and such that $x^-$ 
+is not a subnormal number. \\
+Given the following instruction sequence:
+\begin{center}
+$t_1 \gets x^-$ \\
+$t_2 \gets x \ominus t_1$ \\
+$t_3 \gets t_2 \otimes \frac{1}{2}$ 
+\end{center}
+we know that 
+\begin{itemize}
+\item if it exists a $k \in \Z$ such that $x=2^k$ exactly so 
+$$\left \vert t_3 \right \vert = \frac{1}{4} \cdot \mUlp \left( x \right)$$
+\item if it does not exist any $k \in \Z$ such that $x=2^k$ exactly so
+$$\left \vert t_3 \right \vert = \frac{1}{2} \cdot \mUlp \left( x \right)$$
+\end{itemize}
+\end{lemma}
+\begin{proof} ~\\
+Without loss of generality, we can suppose that $x$ is positive because the definition of $x^-$ and all floating
+point operations are symmetrical with regard to the sign \cite{IEEE754} and because the egalities to be proven ignore it.
+Additionally since the floating point multiplication by an integer power of $2$ is always exact, it suffices to 
+show that $t_2 = \frac{1}{2} \cdot \mUlp \left( x \right)$ if $x$ is exactly an integer power of $2$ and that
+$t_2 = \mUlp\left( x \right)$ otherwise.\\
+Let us begin by showing that we have the exact equation 
+$$t_2 = x - x^-$$
+which means that the floating point substraction is exact. This is the case by Sterbenz' lemma \cite{Ste74} if 
+$$\frac{1}{2} \cdot x \leq x^- \leq 2 \cdot x$$
+So let us show this inequality. \\
+Since $x \not = 0$ and since it is not subnormal we know already that $x^- \not = 0$. 
+Additionally $x^- > 0$ because $x > 0$ and $x^-$ is its direct predecessor with regard to $<$.
+Further by definition \ref{predsuccdef}, it is trivial to see that 
+$\forall y \in \F.\left( y^- \right)^+ = y = \left( y^+ \right)^-$.\\
+Since $x$ is positive and since $x^-$ is therefore its predecessor with regard to $<$ we have
+$$x^- < x < 2 \cdot x$$
+Let us suppose now that 
+$$x^- < \frac{1}{2} \cdot x$$
+Since $x$ is not subnormal and since it is positive, there exist $e \in \Z$ and  $m \in \N$ such that
+$$x = 2^e \cdot m$$
+with
+$$2^{p-1} \leq m < 2^p$$ 
+where $p \geq 2$ is the format's precision; in particular, for double precision, $p=53$.\\
+Given that $x^-$ is not subnormal neither and positive, too, it is the predecessor of $x$ and verifies
+$$x^- = \left \lbrace \begin{array}{lll} 2^e \cdot \left(m - 1 \right) & \mbox{ if } & m-1 \geq 2^{p-1} \\
+                                             2^{e-1} \cdot \left( 2^p - 1 \right) & \mbox{ otherwise} & \end{array} \right.$$
+So two cases must be treated separately:\\~\\
+{\bf 1st case: $x^- = 2^e \cdot  \left( m -1 \right)$ } \\ ~ \\
+We get here with the hypotheses supposed 
+\begin{eqnarray*}
+x^- & < & \frac{1}{2} \cdot x \\
+2^e \cdot \left( m - 1 \right) & < & \frac{1}{2} \cdot 2^e \cdot m \\
+m-1 & < & \frac{1}{2} \cdot m \\
+m & < & 2 
+\end{eqnarray*}
+In contrast $m \geq 2^{p-1}$ and $p\geq2$; so we have contradiction in this case. \\ ~ \\
+{\bf 2nd case: $x^- = 2^{e-1} \cdot  \left( 2^p -1 \right)$ } \\ ~ \\
+We can check 
+\begin{eqnarray*}
+x^- & < & \frac{1}{2} \cdot x \\
+2^{e-1} \cdot \left( 2^{p-1} - 1 \right) & < & \frac{1}{2} \cdot 2^e \cdot m \\
+2^{e-1} \cdot \left( 2^{p-1} - 1 \right) & < & 2^{e-1} \cdot m \\
+2^p - 1 < m
+\end{eqnarray*}
+In contrast $m<2^p$, thus $2^p - 1 < m < 2^p$.
+This is a contradiction because the inequalities are strict and $m \in \N$. \\ ~ \\
+So Sterbenz' lemma \cite{Ste74} can be applied and we get the exact equation
+$$t_2 = x - x^-$$
+It is now important to see that 
+$$x^+ = \left \lbrace \begin{array}{lll} 2^e \cdot \left(m + 1 \right) & \mbox{ if } & m+1 < 2^p \\
+                                             2^{e+1} \cdot 2^{p-1} & \mbox{ otherwise} & \end{array} \right.$$
+Further, without loss of generality, we can suppose that $x^+ \not = + \infty$ and that therefore
+$$\mUlp \left( x \right) = x^+ - x$$
+If ever we could not suppose this, it would suffice to apply definition \ref{defulp} of the 
+$\mUlp$ function which would only change the exponent $e$ by $1$ in the sequel.\\
+So at this stage of the proof, two different cases are to be treated: 
+$x$ is or is not exactly an integer power of $2$. \\ ~ \\
+{\bf 1st case: $x$ is not exactly an integer power of $2$ } \\ ~ \\
+So we get $x=2^e \cdot m$ with $2^{p-1} < m < 2^p$ from which we deduce that $m-1 \geq 2^{p-1}$ and that, finally,
+$$x^- = 2^e \cdot \left(m - 1 \right)$$
+So still two sub-cases present themselves: \\ ~ \\
+{\bf case a): $x^+ = 2^e \cdot \left( m + 1 \right)$} \\ ~ \\
+We can check that 
+\begin{eqnarray*}
+\mUlp \left( x \right) & = & x^+ - x \\
+& = & 2^e \cdot \left( m + 1 \right) - 2^e \cdot m \\
+& = & 2^e \cdot \left(m + 1 - m \right) \\
+& = & 2^e
+\end{eqnarray*}
+and
+\begin{eqnarray*}
+t_2 & = & x - x^- \\
+& = & 2^e \cdot m - 2^e \cdot \left( m - 1 \right) \\
+& = & 2^e \cdot \left( m - m + 1 \right) \\
+& = & 2^e
+\end{eqnarray*}
+So we know that
+$$t_2 = \mUlp \left( x \right)$$ ~ \\
+{\bf case b): $x^+ = 2^e \cdot \left( m + 1 \right)$} \\ ~ \\
+So in order to get $x^+$ being equal to $2^e \cdot \left( m + 1 \right)$, we must have $m+1 \geq 2^p$. \\
+In contrast we can show that $m+1 \leq 2^p$ as follows: \\
+Let us suppose that $m+1 > 2^p$. Since $m < 2^p$ because $x$ is not subnormal we get
+$$2^p - 1 < m < 2^p$$
+In contrast, the inequalities are strict and $m \in \N$, thus contradiction. \\
+We therefore know that
+$$m=2^p - 1$$
+So we get
+\begin{eqnarray*}
+\mUlp \left( x \right) & = & x^+ - x \\
+& = & 2^{e+1} \cdot 2^{p-1} - 2^e \cdot \left( 2^p - 1 \right) \\
+& = & 2^e \cdot 2^p - 2^e \cdot 2^p + 2^e \\
+& = & 2^e
+\end{eqnarray*}
+and
+\begin{eqnarray*}
+t_2 & = & x - x^- \\
+& = & 2^e \cdot \left( 2^p - 1 \right) - 2^e \cdot \left( 2^p - 2 \right) \\
+& = & 2^e \cdot 2^p - 2^e - 2^e \cdot 2^p + 2 \cdot 2^e \\
+& = & 2^e
+\end{eqnarray*}
+Thus we have still 
+$$t_2 = \mUlp \left( x \right)$$ ~ \\
+{\bf 2nd case: $x$ is exactly an integer power of $2$ } \\ ~ \\
+So in this case we verify that $$x=2^e \cdot 2^{p-1}$$ and therefore $m=2^{p-1}$. \\
+In consequence, $$x^+ = 2^e \cdot \left(2^{p-1} + 1 \right)$$ because we got
+$2^{p-1} + 1 < 2^p$ since $p \geq 2$. \\
+The same way $$x^- = 2^{e-1} \cdot \left(2^p - 1 \right)$$ because, trivially, $2^{p-1} - 1 < 2^{p-1}$.\\
+So we get
+\begin{eqnarray*}
+\mUlp \left( x \right) & = & x^+ - x \\
+& = & 2^e \cdot \left( 2^{p-1} + 1 \right) - 2^e \cdot 2^{p-1} \\
+& = & 2^e \cdot 2^{p-1} + 2^e - 2^e \cdot 2^{p-1} \\
+& = & 2^e
+\end{eqnarray*}
+and
+\begin{eqnarray*}
+t_2 & = & x - x^- \\
+& = & 2^e \cdot 2^{p-1} - 2^{e-1} \cdot \left( 2^p - 1 \right) \\
+& = & 2^e \cdot 2^{p-1} - 2^{e-1} \cdot 2^p + 2^{e-1} \\
+& = & 2^{e-1} \\
+& = & \frac{1}{2} \cdot 2^e
+\end{eqnarray*}
+Thus we can check that
+$$t_2 = \frac{1}{2} \cdot \mUlp \left( x \right)$$ \qed
+\end{proof}
+\begin{lemma}[Generation of half an $\mUlp$] \label{genmiulp} ~\\
+Let be $x$ a non-subnormal floating point number different from $\pm 0$, $\pm\infty$ and $\nan$.\\
+Let be the following instruction sequence:
+\begin{center}
+$t_1 \gets x^+$ \\
+$t_2 \gets t_1 \ominus x$ \\
+$t_3 \gets t_2 \otimes \frac{1}{2}$ 
+\end{center}
+So the following holds 
+$$\left \vert t_3 \right \vert = \frac{1}{2} \cdot \mUlp \left( x \right)$$
+and one knows that
+\begin{center}
+$x > 0$ iff $t_3 > 0$
+\end{center}
+\end{lemma}
+\begin{proof} ~ \\
+In the beginning we will show the first equation; the equivalence of the signs will be shown below. 
+So, without loss of generality, we can suppose that $x$ is positive because the definition of $x^+$ and all
+floating point operations are symmetrical with regard to the sign \cite{IEEE754} 
+and because the equation to be shown ignorates it. 
+Further since the floating point multiplication by an integer power of $2$ is always exact, it suffices to show that 
+$t_2 = \frac{1}{2} \cdot \mUlp \left( x \right)$.\\
+Let us still start the proof by showing that the substraction
+$$t_2 \gets t_1 \ominus x$$ 
+is exact by Sterbenz' lemma \cite{Ste74}. We must therefore show that 
+$$\frac{1}{2} \cdot x \leq x^+ \leq 2 \cdot x$$
+Since $x$ is positive and since $x^+$ is its direct successor in the ordered set of the floating point numbers, we know
+already that $x < x^+$.
+So trivially, we get $$\frac{1}{2} \cdot x < x < x^+$$
+Let us suppose now that 
+$$x^+ > 2 \cdot x$$
+Since $x$ is not subnormal and since it is positive, there exist $e \in \Z$ and $m \in \N$ such that
+$$x = 2^e \cdot m$$
+with
+$$2^{p-1} \leq m < 2^p$$
+where $p\geq 2$ is the precision of the format.\\
+Further we know that 
+$$x^+ = \left \lbrace \begin{array}{lll} 2^e \cdot \left(m + 1 \right) & \mbox{ if } & m+1 < 2^p \\
+                                         2^{e+1} \cdot 2^{p-1} & \mbox{ otherwise} & \end{array} \right.$$
+So two different cases show up: \\ ~ \\
+{\bf 1st case: $x^+ = 2^e \cdot \left( m + 1 \right)$} \\ ~ \\
+We have 
+\begin{eqnarray*}
+x^+ & > & 2 \cdot x \\
+2^e \cdot \left( m + 1 \right) & > & 2 \cdot 2^e \cdot m \\
+m+1 & > & 2 \cdot m \\
+1 & > & m
+\end{eqnarray*}
+In contrast, $m \geq 2^{p-1}$ and $p \geq 2$, thus contradiction. \\ ~ \\
+{\bf 2nd case: $x^+ = 2^{e+1} \cdot 2^{p-1}$} \\ ~ \\
+So in this case, we have $m+1\geq 2^p$ and therefore $m=2^p - 1$ because $m \leq 2^p - 1$ holds 
+since $x$ is not subnormal.\\
+We get thus
+\begin{eqnarray*}
+x^+ & > & 2 \cdot x \\
+2^{e+1} \cdot 2^{p-1} & > & 2 \cdot 2^e \cdot \left( 2^p - 1 \right) \\
+2^e \cdot 2^p & > & 2 \cdot 2^e \cdot 2^p - 2 \cdot 2^e \\
+2^p & > & 2 \cdot 2^p - 2 \\
+2 > 2^p
+\end{eqnarray*}
+In contrast $p\geq2$ which is contradictory.\\
+So we can apply Sterbenz' lemma \cite{Ste74} and we get immediately that
+$$t_2 = x^+ - x = \mUlp \left( x \right)$$ by the definition of the $\mUlp$ function \\
+Let us show now that
+$$x > 0 \mbox{ iff } t_3 > 0$$
+Let us suppose that $x$ is positive. In consequence $x^+$ is its successor with regard to $<$ and we get
+$$x^+ - x > 0$$ which means that
+\begin{eqnarray*}
+t_2 & = & x^+ \ominus x \\
+& = & \circ \left( x^+ - x \right) \\
+& > & 0
+\end{eqnarray*}
+because the rounding function is monotonic for positive numbers.\\
+In contrast, if $x$ is negative $x^+$ is its predecessor with regard to $<$ and we get thus $x^+ - x < 0$. \\
+We conclude in this case in the same way.\qed
+\end{proof}
+\begin{lemma}[Signs of the generated values] \label{gensigne} ~\\
+Let be $x \in \F$ a non-subnormal floating point number different from $0$.\\
+Given the following instruction sequence
+\begin{center}
+$t_1 \gets x^-$ \\
+$t_2 \gets x \ominus t_1$ \\
+$t_3 \gets t_2 \otimes \frac{1}{2}$ \\
+$t_4 \gets x^+$ \\
+$t_5 \gets t_4 \ominus x$ \\
+$t_6 \gets t_5 \otimes \frac{1}{2}$ 
+\end{center}
+the values $t_3$ and $t_6$ have the same sign.
+\end{lemma}
+\begin{proof} ~\\
+It is clear that it suffices to show that $t_2$ and $t_5$ have the same sign. Because of definition \ref{predsuccdef} 
+of $x^+$ and $x^-$, we are obliged to treat two different cases which depend on whether $x$ is positive or not.\\ ~ \\
+{\bf 1st case: $x>0$} \\ ~ \\
+So $x^+$ is the successor of $x$ with regard to the order $<$ on the floating point numbers and $x^-$ 
+is its predecessor. Formally we have 
+$$x^- < x < x^+$$
+Thus
+\begin{eqnarray*}
+x - x^- & > & 0 \\
+x^+ - x & > & 0 
+\end{eqnarray*}
+Due to the monotony of the rounding function, we obtain
+\begin{eqnarray*}
+\circ \left( x - x^- \right) & > & \circ \left( 0 \right) \\
+\circ \left( x^+ - x \right) & > & \circ \left( 0 \right)
+\end{eqnarray*}
+and thus, since $0$ is exactly representable,
+\begin{eqnarray*}
+x \ominus x^- & > & 0 \\
+x^+ \ominus x & > & 0 
+\end{eqnarray*}
+which is the fact to be shown. \\ ~ \\
+{\bf 2nd case: $x<0$} \\ ~ \\
+We get in this case that $x^+ < x < x^-$ and we finish the proof in a complete analogous way to the 1st case.\qed
+\end{proof}
+In the sequel, we will use the sign function $\sgn\left( x \right)$ which we define as follows:
+$$\forall x \in \R\mbox{ . }\sgn\left( x \right) = \left \lbrace \begin{array}{cl} -1 & \mbox{ if } x < 0 \\
+                                                                           0 & \mbox{ if } x = 0 \\
+                                                                           1 & \mbox{ otherwise} \end{array} \right.$$
+\begin{lemma}[Equivalence between a $\xor$ and a floating point multiplication] \label{equivxormult} ~ \\
+Let be $x, y \in \F$ two floating point numbers such that $x \not = 0$, $y \not = 0$. \\
+So, \vspace{-5mm}
+\begin{center}
+$$x \otimes y \geq 0$$
+implies
+$$x > 0 \xor y > 0$$
+\end{center}
+\end{lemma}
+\begin{proof} ~ \\
+Clearly $x \otimes y \geq 0$ implies $\circ \left( x \cdot y \right) \geq 0$. By monotony of the rounding function, this yields to 
+$x \cdot y \geq 0$. Trivially one sees that this means that $x \geq 0 \xor y \geq 0$. Since the equations are not possible
+by hypothesis, we can conclude.\qed
+\end{proof}
+\begin{lemma}[Round-to-nearest-ties-to-even of the lower significance parts] \label{arrpairfaible} ~ \\
+Let be $x_\mi$ and $x_\lo$ two non-subnormal floating point numbers such that 
+$\exists e \in \Z \mbox{ . } 2^e = t$ such that $x_\mi = t^-$
+and that $x_\lo = \frac{1}{4} \cdot \mUlp\left( t \right)$. \\
+So,
+$$x_\mi \not = \circ \left( x_\mi + x_\lo \right)$$
+Similar, let be $x_\mi$ and $x_\lo$ two non-subnormal floating point numbers such that  
+$\exists e \in \Z \mbox{ . } 2^e = t$ such that $x_\mi = t^+$
+and that $x_\lo = \frac{1}{2} \cdot \mUlp\left( t \right)$. \\
+So,
+$$x_\mi \not = \circ \left( x_\mi - x_\lo \right)$$
+\end{lemma}
+\begin{proof} ~\\
+In both cases $t$ is representable as a floating point number because $x_\mi$ is not subnormal.
+Since $t$ is an integer power of $2$, the significand of $t$ is even. 
+Therefore the significand of $x_\mi$ is odd in both cases because $x_\mi$ is either the direct predecessor or the direct
+successor of $t$. \\
+Let us show now that $\left \vert x_\lo \right \vert = \frac{1}{2} \cdot \mUlp\left(x_\mi \right)$.
+If $x_\mi = t^-$ then we can deduce
+\begin{eqnarray*}
+\frac{1}{2} \cdot \mUlp\left( x_\mi \right) & = & \frac{1}{2} \cdot \left( x_\mi^+ - x_\mi \right) \\
+& = & \frac{1}{2} \cdot \left( t - t^- \right) \\
+& = & - \frac{1}{4} \cdot \left( t^+ - t \right) \\
+& = & - \frac{1}{4} \cdot \mUlp\left( t \right) \\
+& = & - x_\lo
+\end{eqnarray*}
+using amongst others lemma \ref{poweroftwo}. 
+If $x_\mi = t^+$ then we know that $x_\mi$ is not an integer power of $2$ because $t$ is one and we are supposing that the 
+format's precision $p$ is greater than $2$ bits. So it exists $e \in \Z$ and $m = 2^p$ such that $t = 2^e \cdot m$
+\begin{eqnarray*}
+\frac{1}{2} \cdot \mUlp\left( x_\mi \right) & = & \frac{1}{2} \cdot \left( x_\mi^+ - x_\mi \right) \\
+& = & \frac{1}{2} \cdot \left( 2^e \cdot \left( m + 2 \right) - 2^e \cdot \left( m + 1 \right) \right) \\
+& = & \frac{1}{2} \cdot \left( 2^e \cdot \left( m + 1 \right) - 2^e \cdot m \right) \\
+& = & \frac{1}{2} \cdot \mUlp\left( t \right) \\
+& = & x_\lo
+\end{eqnarray*}
+So, in both cases, $x_\mi + x_\lo$ is located exactly at the middle of two floating point numbers that can be expressed 
+with the exponent of $x_\mi$ or its successor and its predecessor.
+Since $x_\mi$ has an odd significand the rounding with done away from it.\qed
+\end{proof}
+\begin{algorithm}[Final rounding to the nearest (even)] \label{algarrpres} ~ \\
+{\bf In:} a triple-double number $x_\hi + x_\mi + x_\lo$ \\
+{\bf Out:} a double precision number $x^\prime$ returned by the algorithm \\
+{\bf Preconditions on the arguments:}
+\begin{itemize}
+\item $x_\hi$ and $x_\mi$ as well as $x_\mi$ and $x_\lo$ do not overlap
+\item $x_\mi = \circ \left( x_\mi + x_\lo \right)$
+\item $x_\hi \not = 0$, $x_\mi \not = 0$ and $x_\lo \not = 0$  
+\item $\circ \left( x_\hi + x_\mi \right) \not \in \left \lbrace x_\hi^-, x_\hi, x_\hi^+ \right \rbrace \Rightarrow 
+\left \vert \left( x_\hi + x_\mi \right) - \circ\left( x_\hi + x_\mi \right) \right \vert \not = 
+\frac{1}{2} \cdot \mUlp\left( \circ \left( x_\hi + x_\mi \right) \right)$
+\end{itemize}
+{\bf Algorithm:} \\
+\begin{center}
+\begin{minipage}[b]{80mm}
+$t_1 \gets x_\hi^-$ \\
+$t_2 \gets x_\hi \ominus t_1$ \\
+$t_3 \gets t_2 \otimes \frac{1}{2}$ \\
+$t_4 \gets x_\hi^+$ \\
+$t_5 \gets t_4 \ominus x_\hi$ \\
+$t_6 \gets t_5 \otimes \frac{1}{2}$ 
+\\ ~ \\
+{\bf if} $\left( x_\mi \not = -t_3 \right)$ {\bf and} $\left( x_\mi \not = t_6 \right)$ {\bf then} 
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{70mm}
+\vspace{-2.4mm}
+{\bf return } $\left( x_\hi \oplus x_\mi \right)$
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf else} 
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{70mm}
+{\bf if} $\left( x_\mi \otimes x_\lo > 0.0 \right)$ {\bf then} 
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{60mm}
+{\bf if} $\left( x_\hi \otimes x_\lo > 0.0 \right)$ {\bf then} 
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{50mm}
+\vspace{-2.4mm}
+{\bf return } $x_\hi^+ $
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf else}
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{50mm}
+\vspace{-2.4mm}
+{\bf return } $x_\hi^- $
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf end if} 
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf else}
+\vspace{-2.4mm}
+\begin{center}
+\begin{minipage}[b]{60mm}
+\vspace{-2.4mm}
+{\bf return } $x_\hi $
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf end if} 
+\end{minipage}
+\end{center}
+\vspace{-2.4mm}
+{\bf end if} 
+\end{minipage}
+\end{center}
+\end{algorithm}
+\begin{theorem}[Correctness of the final rounding procedure \ref{algarrpres}]\label{corralgpluspres} ~\\
+Let be {\bf A} the algorithm \ref{algarrpres} said \ouvguill Final rounding to the nearest (even)\fermguill.
+Let be $x_\hi + x_\mi + x_\lo$ triple-double number for which the preconditions of algorithm {\bf A} hold.
+Let us notate $x^\prime$ the double precision number returned by the procedure. \\
+So
+$$x^\prime = \circ \left( x_\hi + x_\mi + x_\lo \right)$$
+i.e. {\bf A} is a correct rounding procedure for round-to-nearest-ties-to-even mode.
+\end{theorem}
+\begin{proof} ~ \\
+During this proof we will proceed as follows: one easily sees that the presented procedure can only return four
+different results which are $x_\hi \oplus x_\mi$, $x_\hi$, $x_\hi^+$ and $x_\hi^-$. 
+The choices made by the branches of the algorithm imply for each of this results additional hypotheses on the 
+arguments' values. It will therefore suffice to show for each of this four choices that the rounding of the 
+arguments is equal to the result returned under this hypotheses. In contrast, the one that can be easily 
+deduced from the tests on the branches, which use a floating point multiplication in fact, are not particularly 
+adapted to what is needed in the proof. Using amongst others lemma \ref{equivxormult}, one sees that 
+$9$ different simply analysable cases are possible out of which one is a special one and $8$ have a very regular form:
+\begin{enumerate}
+\item If the first branch is taken, we know that
+$$x_\mi \not = \sgn\left( x_\hi \right) \cdot \frac{1}{2} \cdot \mUlp \left( x_\hi \right)$$
+and that 
+$$x_\mi \not = - \sgn\left( x_\hi \right) \cdot \left \lbrace 
+\begin{array}{ll} \frac{1}{4} \cdot \mUlp \left( x_\hi \right) & \mbox{ if } \exists e \in \Z \mbox{ . } 2^e = x_\hi \\
+                  \frac{1}{2} \cdot \mUlp \left( x_\hi \right) & \mbox{ otherwise} \end{array} \right.$$
+as per lemmas \ref{genmiquartulp}, \ref{genmiulp} and \ref{gensigne}.
+In this case $x_\hi \oplus x_\mi$ will be returned.
+\item If the first branch is not taken, we know already very well the absolute value of $x_\mi$:
+we can therefore suppose that
+$$\left \vert x_\mi \right \vert = \left \lbrace 
+\begin{array}{ll} \frac{1}{4} \cdot \mUlp \left( x_\hi \right) & \mbox{ if } \exists e \in \Z \mbox{ . } 2^e = x_\hi \\
+                  \frac{1}{2} \cdot \mUlp \left( x_\hi \right) & \mbox{ otherwise} \end{array} \right.$$
+It is thus natural that $x_\mi$ does not play any role in the following computations of the value to be returned but by its
+sign.
+Using \ref{equivxormult} we know that the two tests that follow are equivalent to  
+{{\bf if} $x_\mi > 0 \xor x_\lo > 0$} and to {{\bf if} $x_\hi > 0 \xor x_\lo > 0$}. 
+It is easy to check that the values returned depending on the signs of  
+$x_\hi$, $x_\mi$ and $x_\lo$ obey to this scheme:
+\begin{center}
+\begin{tabular}{l|ccc|cc|c|c}
+Case & $x_\hi$ & $x_\mi$ & $x_\lo$ & $x_\mi \xor x_\lo$ & $x_\hi \xor x_\lo$ & 
+Return val. $x^\prime$ & Interpreted val. $x^\prime$ \\
+\hline 
+a.) & + & + & + & + & + & $x_\hi^+$ & $\succ\left( x_\hi \right)$ \\
+b.) & + & + & - & - & - & $x_\hi$ & $x_\hi$ \\
+c.) & + & - & + & - & + & $x_\hi$ & $x_\hi$ \\
+d.) & + & - & - & + & - & $x_\hi^-$ & $\pred\left( x_\hi \right)$ \\
+e.) & - & + & + & + & - & $x_\hi^-$ & $\succ\left( x_\hi \right)$ \\
+f.) & - & + & - & - & + & $x_\hi$ & $x_\hi$ \\
+g.) & - & - & + & - & - & $x_\hi$ & $x_\hi$ \\
+h.) & - & - & - & + & + & $x_\hi^+$ & $\pred\left( x_\hi \right)$
+\end{tabular}
+\end{center}
+We see now that the returned value $x^\prime$ expressed as $x_\hi$, $\succ\left(x_\hi\right)$ or $\pred\left(x_\hi\right)$ in 
+cases a.) through d.) are equivalent to cases h.) through e.). 
+We will consider them thus equivalently; of course, doing so, we will not any longer be able to suppose anything 
+concerning the magnitude and the sign of $x_\hi$.
+\end{enumerate}
+Let us start the proof by showing the correctness of the first case.
+Since $x_\hi$ and $x_\mi$ do not overlap by hypothesis, we know by definition \ref{defoverlap} that 
+$$\left \vert x_\mi \right \vert < \mUlp\left( x_\hi \right)$$
+So we can notate the following
+$$x_\mi \in I^\prime_1 \cup I^\prime_2 \cup I^\prime_3 \cup I^\prime_4 \cup I^\prime_5 \cup I^\prime_6$$
+with
+\begin{eqnarray*}
+I^\prime_1 & = & \left] - \mUlp\left( x_\hi \right) ; -\frac{3}{4} \cdot \mUlp\left(x_\hi \right) \right] \\
+I^\prime_2 & = & \left] -\frac{3}{4} \cdot \mUlp\left(x_\hi \right) ; 
+- \frac{1}{2} \cdot \mUlp\left(x_\hi \right) \right[ \\
+I^\prime_3 & = & \left[ - \frac{1}{2} \cdot \mUlp\left(x_\hi \right); -\tau \right[ \\
+I^\prime_4 & = & \left] -\tau ; 0 \right] \\
+I^\prime_5 & = & \left[ 0; \frac{1}{2} \cdot \mUlp\left(x_\hi\right) \right[ \\
+I^\prime_6 & = & \left ] \frac{1}{2} \cdot \mUlp\left( x_\hi \right) ; \mUlp\left( x_\hi \right) \right [
+\end{eqnarray*}
+where
+$$\tau = \left \lbrace 
+\begin{array}{ll} \frac{1}{4} \cdot \mUlp \left( x_\hi \right) & \mbox{ if } \exists e \in \Z \mbox{ . } 2^e = x_\hi \\
+                  \frac{1}{2} \cdot \mUlp \left( x_\hi \right) & \mbox{ otherwise} \end{array} \right.$$
+This is equivalent to claiming
+$$x_\mi \in I_1 \cup I_2 \cup I_3 \cup I_4 \cup I_5 \cup I_6$$
+where
+\begin{eqnarray*}
+I_1 & = & \left [ \left( -\mUlp\left( x_\hi \right) \right)^- ; 
+\left( -\frac{3}{4} \cdot \mUlp\left(x_\hi \right) \right)^+ \right] \\
+I_2 & = & \left [ \left( \frac{3}{4} \cdot \mUlp\left( x_\hi \right) \right)^- ; 
+\left(- \frac{1}{2} \cdot \mUlp\left(x_\hi \right)\right)^+ \right] \\
+I_3 & = & \left [ \left( -\frac{1}{2} \cdot \mUlp\left( x_\hi \right) \right)^- ; \left( -\tau \right)^+ \right] \\
+I_4 & = & \left [ \left( -\tau \right)^- ; 0 \right] \\
+I_5 & = & \left [ 0 ; \left( \frac{1}{2} \cdot \mUlp\left(x_\hi\right) \right)^- \right] \\
+I_6 & = & \left [ \left(\frac{1}{2} \cdot \mUlp\left( x_\hi \right) \right)^+ ; \left( \mUlp\left( x_\hi \right) \right)^- \right ]
+\end{eqnarray*}
+because $x_\mi$ is a floating point number and because all bounds of the intervals are floating point numbers, too. So
+we can express their predecessors and successors by $z^+$ and $z^-$. Thus $\forall i=1,\dots,6 \mbox{ . } I^\prime_i = I_i$. 
+It is clear that the set of floating point numbers $I_3$ is empty if 
+$\tau = \frac{1}{2} \cdot \mUlp\left( x_\hi \right)$.\\
+Further we know that $x_\mi$ and $x_\lo$ do not overlap and that $x_\mi = \circ \left( x_\mi + x_\lo \right)$ by hypothesis.
+This means that 
+$$\left \vert x_\lo \right \vert \leq \frac{1}{2} \cdot \mUlp \left( x_\mi \right) \leq \frac{1}{2} \cdot \mUlp\left( \mUlp \left( x_\hi \right) \right)$$
+and we can write 
+$$x_\mi + x_\lo \in \left( J_1 \cup J_2 \cup J_3 \cup J_4 \cup J_5 \cup J_6\right) \backslash U$$
+with
+\begin{eqnarray*}
+J_1 & = & \left [ \left( -\mUlp\left( x_\hi \right) \right)^- 
+- \frac{1}{2} \cdot \mUlp\left( \mUlp \left( x_\hi \right) \right) ; 
+\left( - \frac{3}{4} \cdot \mUlp\left( x_\hi \right) \right)^+
++ \frac{1}{2} \cdot \mUlp\left( \mUlp\left( x_\hi \right) \right) \right] \\
+J_2 & = & \left[ \left( - \frac{3}{4} \cdot \mUlp\left( x_\hi \right) \right)^- 
+- \frac{1}{2} \cdot \mUlp \left( \mUlp\left( x_\hi \right) \right) ;
+\left(-\frac{1}{2} \cdot \mUlp\left(x_\hi \right)\right)^+ 
++ \frac{1}{2} \cdot \mUlp\left( \mUlp \left( x_\hi \right) \right) \right] \\
+J_3 & = & \left [ \left(- \frac{1}{2} \cdot \mUlp\left(x_\hi \right)\right)^- 
+- \frac{1}{2} \cdot \mUlp\left( \xi_1 \right) ;                   
+\left( -\tau \right)^+ + \frac{1}{2} \cdot \mUlp\left( \xi_1 \right) \right] \\
+J_4 & = & \left [ \left( -\tau \right)^- - \frac{1}{2} \cdot \mUlp\left( \xi_2 \right) ; 0 \right] \\
+J_5 & = & \left [ 0; 
+\left( \frac{1}{2} \cdot \mUlp\left(x_\hi\right) \right)^- + \frac{1}{2} \cdot \mUlp\left( \xi_3 \right) \right] \\
+J_6 & = & \left [ \left(\frac{1}{2} \cdot \mUlp\left( x_\hi \right) \right)^+ 
+- \frac{1}{2} \cdot \mUlp\left( \mUlp \left( x_\hi \right) \right); 
+\left( \mUlp\left( x_\hi \right) \right)^- + \frac{1}{2} \cdot \mUlp\left( \mUlp \left( x_\hi \right) \right) \right ]
+\end{eqnarray*}
+where
+\begin{eqnarray*}
+\xi_1 & = & \frac{1}{2} \cdot \mUlp\left(x_\hi\right) \in I_3 \\
+\xi_2 & = & \tau \in I_4 \\
+\xi_3 & = & \frac{1}{2} \cdot \mUlp\left(x_\hi\right) \in I_5
+\end{eqnarray*}
+and where $U$ is the set of the impossible cases for $x_\mi + x_\lo$. The word \ouvguill impossible\fermguill~ refers here 
+to the facts caused by the property that $x_\mi = \circ \left( x_\mi + x_\lo \right)$. \\
+Let us still remark that the intervals $J_3$, $J_4$ and $J_5$ are well defined as per lemma \ref{ulpmonoton} 
+and that it is important to see that it does not suffice to estimate their bounds by the less exact inequality
+that follows:
+$$\mUlp \left( x_\mi \right) \leq \mUlp\left( \mUlp \left( x_\hi \right) \right)$$
+which would mean that 
+$$\xi_i = \mUlp\left( x_\hi \right)$$
+Since the images of the $\mUlp$ function are always integer powers of $2$, the difference of their predecessors and
+themselves can be as small as half an $\mUlp$ of an $\mUlp$ of $x_\hi$ which would be a too inexact estimate. \\
+Let us continue now with the simplification of the bounds of the intervals $J_i$. The purpose of this  
+will be showing that $x_\mi + x_\lo$ are always intervals such that one can decide the rounding 
+$\circ \left( x_\hi + \left( x_\mi + x_\lo \right) \right)$
+without using the rule of even rounding. Let us remark already that we know that $\forall i=1,\dots,6 \mbox{ . } I_i \subseteq J_i$.\\
+Since $\mUlp\left( x_\hi \right)$ is a non-subnormal floating point number that is positive and equal to an integer power
+of $2$, we get using lemmas \ref{commut} and \ref{poweroftwo} that 
+\begin{eqnarray*}
+\left( - \mUlp\left( x_\hi \right)  \right)^- - \frac{1}{2} \cdot \mUlp\left(  \mUlp\left( x_\hi \right)  \right) & = & 
+- \mUlp\left( x_\hi \right)^- - \frac{1}{2} \cdot \left(  \mUlp\left( x_\hi \right)^+ -  \mUlp\left( x_\hi \right)  \right) \\
+& = & - \mUlp\left( x_\hi \right)  + \left(  \mUlp\left( x_\hi \right)  - \mUlp\left( x_\hi \right)^- \right) \\ & & - 
+\frac{1}{2} \cdot \left(  \mUlp\left( x_\hi \right)^+ -  \mUlp\left( x_\hi \right)  \right) \\
+& = & - \mUlp\left( x_\hi \right) 
+\end{eqnarray*}
+and similarly
+\begin{eqnarray*}
+ \mUlp\left( x_\hi \right)^- + \frac{1}{2} \cdot \mUlp\left(  \mUlp\left( x_\hi \right)  \right) & = &  
+\mUlp\left( x_\hi \right)^- + \frac{1}{2} \cdot \left(  \mUlp\left( x_\hi \right)^+ -  \mUlp\left( x_\hi \right)  \right) \\
+& = &  \mUlp\left( x_\hi \right)^- + \left(  \mUlp\left( x_\hi \right)  -  \mUlp\left( x_\hi \right)^- \right) \\ 
+& = &  \mUlp\left( x_\hi \right) 
+\end{eqnarray*}
+Further, still analogously to the previous cases and using lemma \ref{multhalf},
+\begin{eqnarray*}
+\left( \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)  \right)^- + \frac{1}{2} \cdot \mUlp\left( \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)  \right) 
+& = & 
+\frac{1}{2} \cdot  \mUlp\left( x_\hi \right)^- + \frac{1}{4} \mUlp\left(  \mUlp\left( x_\hi \right)  \right) \\
+& = & \frac{1}{2} \cdot \left(  \mUlp\left( x_\hi \right)^- + \frac{1}{2} \cdot \left(  \mUlp\left( x_\hi \right)^+ 
+-  \mUlp\left( x_\hi \right)  \right) \right) \\
+& = & \frac{1}{2} \cdot \left(  \mUlp\left( x_\hi \right)^- +  \mUlp\left( x_\hi \right)  -  \mUlp\left( x_\hi \right)^- \right) \\
+& = & \frac{1}{2} \cdot  \mUlp\left( x_\hi \right) 
+\end{eqnarray*}
+and
+\begin{eqnarray*}
+\left( \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)  \right)^+ - \frac{1}{2} \cdot \mUlp\left(  \mUlp\left( x_\hi \right)  \right) & = & 
+\frac{1}{2} \cdot  \mUlp\left( x_\hi \right)^+ - \frac{1}{2} \cdot \left(  \mUlp\left( x_\hi \right)^+ -  \mUlp\left( x_\hi \right)  \right) \\
+& = & \frac{1}{2} \cdot  \mUlp\left( x_\hi \right) 
+\end{eqnarray*}
+Then
+\begin{eqnarray*}
+\left( - \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)  \right)^- - \frac{1}{2} \cdot \mUlp\left( \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)  \right) 
+& = & - \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)^- - \frac{1}{4} \cdot \left(  \mUlp\left( x_\hi \right)^+ -  \mUlp\left( x_\hi \right)  \right) \\
+& = & \frac{1}{2} \cdot \left( - \mUlp\left( x_\hi \right)^- - \left(  \mUlp\left( x_\hi \right)  -  \mUlp\left( x_\hi \right)^- \right) \right) \\
+& = & - \frac{1}{2} \cdot  \mUlp\left( x_\hi \right) 
+\end{eqnarray*}
+further, using also lemma \ref{succtroisfoispuissdeux},
+\begin{eqnarray*}
+\left( - \frac{3}{4} \cdot \mUlp\left( x_\hi \right) \right)^+
++ \frac{1}{2} \cdot \mUlp\left( \mUlp\left( x_\hi \right) \right) 
+& = & - \frac{1}{4} \cdot \left( 3 \cdot \mUlp\left( x_\hi \right) \right)^+ + 
+\frac{1}{2} \cdot \mUlp\left( \mUlp\left( x_\hi \right) \right) \\
+& = & - \frac{1}{4} \cdot \left( 3 \cdot \mUlp\left( x_\hi \right)^+ - \mUlp\left( \mUlp\left( x_\hi \right)\right)\right)
+\\ & & + \frac{1}{2} \cdot \mUlp\left( \mUlp\left( x_\hi \right) \right) \\
+& = & - \frac{3}{4} \cdot \mUlp\left( x_\hi \right)^+ + 
+\frac{3}{4} \cdot \mUlp\left( \mUlp\left( x_\hi \right) \right) \\
+& = & \frac{3}{4}\cdot\left( \mUlp\left( x_\hi \right)^+ -\mUlp\left( x_\hi\right) -\mUlp\left( x_\hi \right)^+ \right) \\
+& = & -\frac{3}{4} \cdot \mUlp\left( x_\hi \right)
+\end{eqnarray*}
+and, still with the same lemmas,
+\begin{eqnarray*}
+\left( - \frac{3}{4} \cdot \mUlp\left( x_\hi \right) \right)^- 
+- \frac{1}{2} \cdot \mUlp \left( \mUlp\left( x_\hi \right) \right) 
+& = & \frac{1}{4} \left( - 3 \mUlp\left( x_\hi \right) \right)^- - 
+\frac{1}{2} \mUlp\left( \mUlp\left( x_\hi \right) \right) \\
+& = & \frac{1}{4} \cdot \left( 3 \cdot \mUlp\left( x_\hi \right) - \left( 3 \cdot \mUlp\left( x_\hi \right) \right)^- 
+- 3 \cdot \mUlp\left( x_\hi \right) \right) \\
+& & - \frac{1}{2} \cdot \mUlp \left( \mUlp \left( x_\hi \right) \right) \\
+& = & \frac{1}{4} \cdot \left( \left( 3 \cdot \mUlp\left( x_\hi \right) \right)^+ - 
+6 \cdot \mUlp\left( x_\hi \right) \right) - \frac{1}{2} \cdot \mUlp \left( \mUlp \left( x_\hi \right) \right) \\
+& = & \frac{1}{4} \cdot \left( 3 \cdot \mUlp\left( x_\hi \right) \right)^+ - \frac{3}{2} \cdot \mUlp\left( x_\hi \right) 
+- \frac{1}{2} \cdot \mUlp \left( \mUlp \left( x_\hi \right) \right) \\
+& = & \frac{1}{4} \cdot \left( 3 \cdot \mUlp\left( x_\hi \right)^+ - \mUlp\left(\mUlp\left(x_\hi\right)\right) \right)\\
+& & - \frac{3}{2} \cdot \mUlp\left( x_\hi \right) - \frac{1}{2} \cdot \mUlp \left( \mUlp\left( x_\hi \right) \right) \\
+& = & \frac{3}{4} \cdot \left( \mUlp\left( x_\hi \right)^+ - 2 \cdot \mUlp\left( x_\hi \right) - 
+\mUlp\left( \mUlp \left( x_\hi \right) \right) \right) \\
+& = & \frac{3}{4} \cdot \left( \mUlp\left( x_\hi \right)^+ - 2 \cdot \mUlp\left( x_\hi \right) - 
+\mUlp\left( x_\hi\right)^+ + \mUlp\left( x_\hi \right) \right) \\
+& = & - \frac{3}{4} \cdot \mUlp\left( x_\hi \right) 
+\end{eqnarray*}
+and finally
+\begin{eqnarray*}
+\left( - \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)  \right)^+ + \frac{1}{2} \cdot \mUlp\left(  \mUlp\left( x_\hi \right)  \right) 
+& = & \frac{1}{2} \cdot \left( - \mUlp\left( x_\hi \right)^+ +  \mUlp\left( x_\hi \right)^+ -  \mUlp\left( x_\hi \right)  \right) \\
+& = & - \frac{1}{2} \cdot  \mUlp\left( x_\hi \right) 
+\end{eqnarray*}
+For each bound that depends on $\tau$ we are obliged to treat two different cases.\\
+Let us suppose first that
+$$\tau = \frac{1}{4} \cdot \mUlp \left( x_\hi \right) $$
+So we get
+\begin{eqnarray*}
+\left( - \frac{1}{4} \cdot  \mUlp\left( x_\hi \right)  \right)^- - \frac{1}{2} \cdot \mUlp\left( \frac{1}{4} \cdot  \mUlp\left( x_\hi \right)  \right) 
+& = & \frac{1}{4} \cdot \left( - \mUlp\left( x_\hi \right)^- - \frac{1}{2} \cdot \left(  \mUlp\left( x_\hi \right)^+ 
+-  \mUlp\left( x_\hi \right)  \right) \right) \\
+& = & \frac{1}{4} \cdot \left( - \mUlp\left( x_\hi \right)^- - \left(  \mUlp\left( x_\hi \right)^- -  \mUlp\left( x_\hi \right)  \right) \right) \\
+& = & \frac{1}{4} \cdot \left( - \mUlp\left( x_\hi \right)^- -  \mUlp\left( x_\hi \right)^- +  \mUlp\left( x_\hi \right)  \right) \\
+& = & \frac{1}{4} \cdot  \mUlp\left( x_\hi \right) 
+\end{eqnarray*}
+and
+\begin{eqnarray*} 
+\left( - \frac{1}{4} \cdot  \mUlp\left( x_\hi \right)  \right)^+ + \frac{1}{2} \cdot \mUlp\left( \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)  \right)
+& = & \frac{1}{4} \cdot \left( - \mUlp\left( x_\hi \right)^+ +  \mUlp\left( x_\hi \right)^+ -  \mUlp\left( x_\hi \right)  \right) \\
+& = & - \frac{1}{4} \cdot  \mUlp\left( x_\hi \right) 
+\end{eqnarray*}
+Let us suppose now
+$$\tau = \frac{1}{2} \cdot \mUlp \left( x_\hi \right) $$
+We get thus 
+\begin{eqnarray*}
+\left( - \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)  \right)^- - \frac{1}{2} \cdot \mUlp\left( \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)  \right) 
+& = & \frac{1}{2} \cdot \left( - \mUlp\left( x_\hi \right)^- - \frac{1}{2} \cdot \left(  \mUlp\left( x_\hi \right)^+ 
+-  \mUlp\left( x_\hi \right)  \right) \right) \\
+& = & \frac{1}{2} \cdot \left( - \mUlp\left( x_\hi \right)^- - \left(  \mUlp\left( x_\hi \right)^- -  \mUlp\left( x_\hi \right)  \right) \right) \\
+& = & \frac{1}{2} \cdot \left( - \mUlp\left( x_\hi \right)^- -  \mUlp\left( x_\hi \right)^- +  \mUlp\left( x_\hi \right)  \right) \\
+& = & \frac{1}{2} \cdot  \mUlp\left( x_\hi \right) 
+\end{eqnarray*}
+and
+\begin{eqnarray*} 
+\left( - \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)  \right)^+ + \frac{1}{2} \cdot \mUlp\left( \frac{1}{2} \cdot  \mUlp\left( x_\hi \right)  \right)
+& = & \left(- \frac{1}{2} \cdot  \mUlp\left( x_\hi \right) \right)^+ + \frac{1}{4} \cdot \mUlp\left(  \mUlp\left( x_\hi \right)  \right) \\
+& \leq & \left(- \frac{1}{2} \cdot  \mUlp\left( x_\hi \right) \right)^+ + \frac{1}{2} \cdot \mUlp\left(  \mUlp\left( x_\hi \right)  \right) \\
+& = & -\frac{1}{2} \cdot  \mUlp\left( x_\hi \right) 
+\end{eqnarray*}
+Finally, for all cases, we observe the following intervals:
+$$x_\mi + x_\lo \in \left( J_1 \cup J_2 \cup J_3 \cup J_4 \cup J_5 \cup J_6 \right) \backslash U$$
+with
+\begin{eqnarray*}
+J_1 & = & \left[ - \mUlp\left( x_\hi \right) ; - \frac{3}{4} \cdot \mUlp\left( x_\hi \right) \right] \\
+J_2 & = & \left[ - \frac{3}{4} \cdot \mUlp\left( x_\hi \right) ; - \frac{1}{2} \cdot \mUlp\left( x_\hi \right) \right] \\
+J_3 & = & \left[ - \frac{1}{2} \cdot \mUlp\left( x_\hi \right) ; - \tau \right] \\
+J_4 & = & \left[ - \tau ; 0 \right] \\
+J_5 & = & \left[ 0 ; \frac{1}{2} \cdot \mUlp\left( x_\hi \right) \right] \\
+J_6 & = & \left[ \frac{1}{2} \cdot \mUlp\left( x_\hi \right) ; \mUlp\left( x_\hi \right) \right] 
+\end{eqnarray*}
+Let us now consider more precisely the set $U$ if impossible cases due to the property that
+$x_\mi = \circ \left( x_\mi + x_\lo \right)$ and due to the fact that $x_\lo \not = 0$: \\
+Let us show that $\frac{1}{2} \cdot \mUlp\left( x_\hi \right) \in U$, i.e. 
+$$x_\mi + x_\lo \not = \frac{1}{2} \cdot \mUlp\left( x_\hi \right)$$
+Let us suppose that this would not be the case. We would get
+$$x_\mi + x_\lo = \frac{1}{2} \cdot \mUlp\left( x_\hi \right)$$
+As $x_\mi \not = \frac{1}{2} \cdot \mUlp\left( x_\hi \right)$ as per hypothesis in this branch of the algorithm and because 
+$x_\lo \not = 0$, there must exist a number $\mu \in \R \backslash \left \lbrace 0 \right \rbrace$ such that
+$x_\mi = \frac{1}{2} \cdot \mUlp\left( x_\hi \right) + \mu$ and that $x_\lo = -\mu$. \\
+Since $x_\lo = \mu$  must hold, $\mu$ must be a floating point number. 
+Further $$\left \vert \mu \right \vert = \left \vert x_\lo \right \vert \leq \frac{1}{2} \cdot \mUlp\left( x_\mi \right)$$
+must be justified.
+So there exist two floating point numbers $\frac{1}{2} \cdot \mUlp\left( x_\hi \right)$ and $x_\mi$ such that 
+their difference verifies
+\begin{eqnarray*}
+\left \vert x_\mi - \frac{1}{2} \cdot \mUlp\left( x_\hi \right) \right \vert & = & \left \vert 
+\frac{1}{2} \cdot \mUlp\left( x_\hi \right) + \mu - \frac{1}{2} \cdot \mUlp\left( x_\hi \right) \right \vert \\
+& = & \left \vert \mu \right \vert \\
+& \leq & \frac{1}{2} \cdot \mUlp\left( x_\mi \right) 
+\end{eqnarray*}
+which is possible only if $x_\mi$ is exactly an integer power of $2$. In contrast, as 
+$\frac{1}{2} \cdot \mUlp\left( x_\hi \right)$ is the only one in the interval that is possible for $x_\mi$, which is 
+by the way 
+$\left] \frac{1}{4} \cdot \mUlp\left( x_\hi \right) ; \mUlp\left( x_\hi \right) \right[$, we obtain a contradiction. \\
+Using a completely analogous argument, one sees further that
+$$-\tau \in U$$
+Clearly $0 \in U$ because $x_\lo \not = 0$ and it is less in magnitude than $x_\mi$. \\
+Let us show finally that
+$-\mUlp\left( x_\hi \right) \in U$ and that $\mUlp\left( x_\hi \right) \in U$.\\
+Let us suppose that we would have
+$$\left \vert x_\mi + x_\lo \right \vert = \mUlp\left( x_\hi \right)$$
+In contrast we know that $\left \vert x_\mi \right \vert < \mUlp\left( x_\hi \right)$. 
+Since $x_\mi$ is a floating point number, this means that 
+$$\left \vert x_\mi \right \vert \leq \mUlp\left( x_\hi \right)^-$$
+which yields to
+\begin{eqnarray*}
+\left \vert x_\lo \right \vert & \geq & \mUlp\left( x_\hi \right) - \mUlp\left( x_\hi \right)^- \\
+& = & \frac{1}{2} \cdot \left( \mUlp\left(x_\hi \right)^+ - \mUlp\left( x_\hi \right) \right) \\
+& = & \frac{1}{2} \cdot \mUlp \left( \mUlp \left( x_\hi \right) \right)
+\end{eqnarray*}
+Further we know that $\left \vert x_\mi \right \vert \leq \mUlp\left( x_\hi \right)^-$ and that
+$\left \vert x_\lo \right \vert \leq \frac{1}{2} \cdot \mUlp\left( x_\mi \right)$.
+So we can check that 
+\begin{eqnarray*}
+\left \vert x_\lo \right \vert & \leq & \frac{1}{2} \cdot \mUlp\left( x_\mi \right) \\
+& = & \frac{1}{2} \cdot \left( \left( \mUlp\left( x_\hi \right)^- \right)^+ - \mUlp\left( x_\hi \right)^+ \right) \\
+& = & \frac{1}{2} \cdot \left( \mUlp\left( x_\hi \right) - \mUlp\left( x_\hi \right)^- \right) \\
+& = & \frac{1}{4} \cdot \mUlp \left( \mUlp \left( x_\hi \right) \right)
+\end{eqnarray*}
+We have thus obtained a contradiction to the hypothesis that says that 
+$-\mUlp\left( x_\hi \right) \not \in U$ and that $\mUlp\left( x_\hi \right) \not \in U$. \\
+Let us still show that in the case where $x_\hi$ is an integer power of $2$, i.e. 
+$\exists e \in \Z \mbox{ . } x_\hi = 2^e$, $-\frac{3}{4} \cdot \mUlp\left( x_\hi \right) \in U$.
+Since $x_\lo \not = 0$, using a similar argument as the one given above, the problem can be reduced to showing
+that $x_\mi = - \frac{3}{4} \cdot \mUlp \left( x_\hi \right)$ is impossible if $x_\hi$ is an integer power of $2$.
+Let us suppose the contrary. Since $x_\hi$ is an integer power of $2$, its significand is even. In consequence 
+the significand of $x_\hi^-$ is odd and the one of $x_\hi^{--}$ is again even. So 
+$\circ\left( x_\hi + x_\mi \right) = x_\hi^{--}$ because $x_\hi + x_\mi$ is at the exact middle between
+$x_\hi^{--}$ and $x_\hi^{-}$ and the significand of $x_\hi^{--}$ is even. It follows that 
+$\left( x_\hi + x_\mi \right) - \circ\left( x_\hi + x_\mi \right) = 
+\frac{1}{2} \cdot \mUlp \left( \circ\left( x_\hi + x_\mi \right) \right)$ which is impossible as per hypothesis. \par
+Having shown which numbers are in $U$, we can rewrite our intervals as follows
+$$x_\mi + x_\lo \in J^\prime_1 \cup J^\prime_2 \cup J^\prime_3 \cup J^\prime_4 \cup J^\prime_5 \cup J^\prime_6$$
+with
+\begin{eqnarray*}
+J^\prime_1 & = & \left] - \mUlp\left( x_\hi \right) ; - \frac{3}{4} \cdot \mUlp\left( x_\hi \right) \right] \\
+J^\prime_2 & = & \left] - \frac{3}{4} \cdot \mUlp\left( x_\hi \right) ; 
+- \frac{1}{2} \cdot \mUlp\left( x_\hi \right) \right[ \\
+J^\prime_3 & = & \left] - \frac{1}{2} \cdot \mUlp\left( x_\hi \right) ; - \tau \right[ \\
+J^\prime_4 & = & \left] - \tau ; 0 \right] \\
+J^\prime_5 & = & \left[ 0 ; \frac{1}{2} \cdot \mUlp\left( x_\hi \right) \right[ \\
+J^\prime_6 & = & \left] \frac{1}{2} \cdot \mUlp\left( x_\hi \right) ; \mUlp\left( x_\hi \right) \right[
+\end{eqnarray*}
+One can trivially check that the rounding $\circ \left( x_\hi + \left( x_\mi + x_\lo \right) \right)$ can be decided without
+using the rule for even rounding.
+In particular the cases present themselves as follows \cite{IEEE754}:
+$$\circ \left( x_\hi + \left( x_\mi + x_\lo\right) \right) = \left \lbrace
+\begin{array}{ll}
+x_\hi^{--} & \mbox{ if } x_\mi + x_\lo \in J^\prime_1 \land \exists e \in \Z \mbox{ . } 2^e = x_\hi \\
+x_\hi^- & \mbox{ if } x_\mi + x_\lo \in J^\prime_1 \land \lnot \exists e \in \Z \mbox{ . } 2^e = x_\hi \\
+x_\hi^- & \mbox{ if } x_\mi + x_\lo \in J^\prime_2\\
+x_\hi^- & \mbox{ if } x_\mi + x_\lo \in J^\prime_3\\
+x_\hi & \mbox{ if } x_\mi + x_\lo \in J^\prime_4 \\
+x_\hi & \mbox{ if } x_\mi + x_\lo \in J^\prime_5\\
+x_\hi^+ & \mbox{ if } x_\mi + x_\lo \in J^\prime_6\\
+\end{array} \right.$$
+which can be compared to 
+$$\circ \left( x_\hi + x_\mi \right) = \left \lbrace
+\begin{array}{ll}
+x_\hi^{--} & \mbox{ if } x_\mi \in I^\prime_1 \land \exists e \in \Z \mbox{ . } 2^e = x_\hi \\
+x_\hi^- & \mbox{ if } x_\mi \in I^\prime_1 \land \lnot \exists e \in \Z \mbox{ . } 2^e = x_\hi \\
+x_\hi^- & \mbox{ if } x_\mi \in I^\prime_2\\
+x_\hi^- & \mbox{ if } x_\mi \in I^\prime_3\\
+x_\hi & \mbox{ if } x_\mi \in I^\prime_4 \\
+x_\hi & \mbox{ if } x_\mi \in I^\prime_5\\
+x_\hi^+ & \mbox{ if } x_\mi \in I^\prime_6\\
+\end{array} \right.$$
+Additionally we check that 
+$$\forall i=1, \dots ,6 \mbox{ . } J^\prime_i \subseteq I^\prime_i$$
+We would therefore get an immediate contradiction if we supposed that 
+$$\circ \left( x_\hi + \left( x_\mi + x_\lo \right) \right) \not = \circ \left( x_\hi + x_\mi \right)$$
+This finishes the proof for the first case.\\ ~ \\
+Let us consider now subcases a.) through d.) of the second main case of the proof. We have already shown that
+the subcases h.) through e.) are equal to the first ones. 
+Without loss of generality we will only analyse the case where $x_\hi > 0$. 
+The set of the floating point numbers as well as the rounding function $\circ \left( \hat{x} \right)$ 
+are symmetrical around $0$. 
+We can therefore suppose that 
+$$x_\mi = - \left \lbrace \begin{array}{ll} 
+\frac{1}{4} \cdot \mUlp\left(x_\hi \right) & \mbox{if } \exists e \in \Z \mbox{ . } 2^e = x_\hi \\
+\frac{1}{2} \cdot \mUlp\left(x_\hi \right) & \mbox{otherwise} \end{array} \right.$$
+or that 
+$$x_\mi = \frac{1}{2} \cdot \mUlp\left(x_\hi \right)$$
+depending on whether $x_\mi$ is negative or positive.\\
+It is clear that one can suppose that
+$$\left \vert x_\mi + x_\lo \right \vert < \mUlp\left( x_\hi \right)$$
+because otherwise we would have $\left \vert x_\lo \right \vert \geq \frac{1}{2} \cdot \mUlp\left( x_\hi \right)$ whilst
+$\left \vert x_\lo \right \vert \leq 2^{-53} \cdot \mUlp\left( x_\hi \right)$.\\
+Let us treat now the four cases one after another:
+{
+\renewcommand{\labelenumi}{\alph{enumi}.)}
+\begin{enumerate}
+\item We can suppose in this case that $x_\mi > 0$ and that $x_\lo > 0$: \\
+So
+$$\mUlp\left( x_\hi \right) > x_\mi + x_\lo > \frac{1}{2} \cdot \mUlp\left(x_\hi \right)$$
+Thus since the inequalities are strict
+$$\circ \left( x_\hi + \left( x_\mi + x_\lo \right) \right) = x_\hi^+ = \succ\left( x_\hi \right)$$
+which is the number returned by the algorithm.
+\item We have here $x_\mi > 0$ and $x_\lo < 0$: \\
+So the same way, we know that 
+$$x_\mi + x_\lo < \frac{1}{2} \cdot \mUlp\left(x_\hi \right)$$
+Additionally, we know that $x_\lo \geq -2^{-53} \cdot \mUlp\left(x_\hi \right) > -\frac{1}{4} \cdot \mUlp\left( x_\hi \right)$.
+This yields thus to 
+$$\circ \left( x_\hi + \left( x_\mi + x_\lo \right) \right) = x_\hi$$
+The correctness of the algorithm is therefore verified also in this case.
+\item In this case one knows that $x_\mi < 0$ and $x_\lo > 0$. In consequence
+$$x_\mi = - \tau$$
+with $$\tau = \left \lbrace \begin{array}{ll} 
+\frac{1}{4} \cdot \mUlp\left(x_\hi \right) & \mbox{if } \exists e \in \Z \mbox{ . } 2^e = x_\hi \\
+\frac{1}{2} \cdot \mUlp\left(x_\hi \right) & \mbox{otherwise} \end{array} \right.$$
+Thus we get
+$$\frac{1}{4} \cdot \mUlp\left( x_\hi \right) > 2^{-53} \cdot \mUlp \left( x_\hi \right) > x_\mi + x_\lo > -\tau$$
+mentioning analogous arguments as the ones given above. This yields to
+$$\circ \left( x_\hi + \left( x_\mi + x_\lo \right) \right) = x_\hi$$
+which is the number returned by the algorithm.
+\item Finally if $x_\mi < 0$ and $x_\lo < 0$ one checks that
+$$-2 \cdot \tau < x_\mi + x_\lo < -\tau$$
+The lower bound given for $x_\mi + x_\lo$ can be explained as follows. 
+If $\tau = \frac{1}{2} \cdot \mUlp\left( x_\hi \right)$, it trivially holds due to the bound:
+$$\left \vert x_\mi + x_\lo \right \vert < \mUlp\left( x_\hi \right)$$
+We have already indicated this bound.
+Otherwise we know that $\tau = \frac{1}{4} \cdot \mUlp\left( x_\hi \right)$ and that $x_\mi = -\tau$.
+Since $\left \vert x_\lo \right \vert \leq 2^{-53} \cdot \left \vert x_\mi \right \vert$, one gets
+$$x_\mi + x_\lo > - \left( \frac{1}{4} + 2^{-55} \right) \cdot \mUlp\left( x_\hi \right) > -2 \cdot \tau$$
+Thus the bounds obtained for $x_\mi + x_\lo$ imply always that
+$$\circ \left( x_\hi + \left( x_\mi + x_\lo \right) \right) = x_\hi^- = \pred\left( x_\hi \right)$$
+Thus in this subcase, too, and therefore in all cases, the algorithm returns a floating point number $x^\prime$ 
+which is equal to $\circ \left( x_\hi + x_\mi + x_\lo \right)$.
+\end{enumerate}
+}
+By this final statement we have finished the proof.\qed
+\end{proof}
+\subsection{Final rounding for the directed modes}
+As we have already mentioned, the three directed rounding modes behave all in a similar fashion. On the one hand
+we have 
+$$\forall \hat{x} \in \R \mbox{ . } \diamond \left( \hat{x} \right) = \left \lbrace 
+\begin{array}{ll}
+\triangledown \left( \hat{x} \right) & \mbox{ if } \hat{x} < 0 \\
+\vartriangle \left( \hat{x} \right) & \mbox{ otherwise}
+\end{array} \right. $$
+On the other hand, one can check that 
+$$\forall \hat{x} \in \R \mbox{ . } \vartriangle \left( \hat{x} \right) = - \triangledown \left( - \hat{x} \right)$$
+The given equations are also verified on the set of the floating point numbers $\F$ \cite{Defour-thesis, IEEE754}. 
+We will therefore refrain from treating each directed rounding mode separately but we will consider them all in 
+common. So slightly deriving from our notations, we will notate $\diamond$ the rounding function of all possible three
+directed rounding modes.\par
+Further we suppose that we dispose of a correct rounding procedure for each directed rounding mode capable
+of rounding a double number $x_\hi + x_\lo$. This procedure will return in fact $\diamond \left( x_\hi + x_\lo \right)$
+\cite{crlibmweb, Defour-thesis}. 
+For constructing a correct rounding procedure for triple-double precision, we will try to give a reduction 
+procedure for reducing a triple-double number into a double-double number such that the directed 
+rounding of both triple-double and double-double numbers be equal. 
+\begin{lemma}[Directed rounding decision] \label{decarrdir} ~ \\
+Let be $x \in \F$ a floating point number. \\
+Let be $\mu, \nu \in \R$ two real numbers such that $\left \vert \mu \right \vert < \mUlp\left( x \right)$ and
+$\left \vert \nu \right \vert < \mUlp\left( x \right)$  and that
+$$\sgn\left( \mu \right) = \sgn\left( \nu \right)$$
+So the following equation holds
+$$\diamond \left( x + \mu \right) = \diamond\left( x + \nu \right)$$
+\end{lemma}
+\begin{proof} ~ \\
+We know by definition of the rounding mode, e.g. by the one of rounding $\vartriangle$ towards $+\infty$ that
+$$\forall y \in \F, \mu \in \R, \left \vert \mu \right \vert < \mUlp\left( y \right) \mbox{ . }
+\vartriangle \left( y + \rho \right) = \left \lbrace \begin{array}{ll} 
+\succ\left(y\right) & \mbox{ if } \rho > 0 \\
+y & \mbox{ otherwise}
+\end{array} \right. $$
+In fact, the rounding result $\vartriangle\left( y + \rho \right)$ is the smallest floating point number greater or equal 
+to 
+$y + \rho$. \\
+Since $x$ is a floating point number and as 
+$\pred\left( x \right) < x + \mu < \succ\left( x \right)$ and $\pred\left( x \right) < x + \mu < \succ\left( x \right)$ 
+because $\left \vert \mu \right \vert < \mUlp\left( x \right)$ and $\left \vert \mu \right \vert < \mUlp\left( x \right)$, 
+supposing that $\diamond \left( x + \mu \right) \not = \diamond \left( x + \nu \right)$ would yield to an immediate contradiction.\qed
+\end{proof}
+\begin{lemma}[Disturbed directed rounding] \label{arrdirper} ~ \\
+Let be $\hat{x} \in \R$ a real number and $x = \circ\left( \hat{x} \right) \in \F$ the (even) floating point number nearest to 
+$\hat{x}$. 
+Let be $\xi\left(\hat{x}\right) = \hat{x} - x$. \\
+Let be $\delta \in \R$ such that
+$$\left \vert \delta \right \vert < \left \vert \xi\left(\hat{x}\right) \right \vert$$
+So the following equation holds 
+$$\diamond \left( \hat{x} \right) = \diamond \left( \hat{x} + \delta \right)$$
+\end{lemma}
+Let us remark still that the inequality in hypothesis 
+-- $\left \vert \delta \right \vert < \left \vert \xi\left( \hat{x} \right) \right \vert$ --
+must be assured to be strict.
+\begin{proof} ~ \\
+We know already that 
+$$\diamond \left( \hat{x} + \delta \right) = \diamond \left( x + \xi\left( \hat{x} \right) + \delta \right)$$
+Let us show now that $\xi\left( \hat{x} \right)$ and $\xi\left( \hat{x} \right) + \delta$ have the same sign. 
+Let us therefore suppose that this would not be the case.  
+Without loss of generality, it suffices to consider the case where $\xi\left( \hat{x} \right)$ is positive; the 
+inverse case can be treated completely analogously. \\
+Thus $$\xi\left( \hat{x} \right) \geq 0$$ and $$\xi\left( \hat{x} \right) + \delta < 0$$
+In consequence $$\xi\left( \hat{x} \right) < - \delta$$
+On the other hand $$\left \vert \delta \right \vert < \left \vert \xi\left( \hat{x} \right) \right \vert$$
+Thus
+$$0 \leq \xi\left( \hat{x} \right) < \xi\left( \hat{x} \right)$$
+which yields to 
+$$\xi\left( \hat{x} \right) = 0$$ 
+In this case we know that $$\delta = 0$$ as per the hypotheses of the theorem. Thus contradiction and we know that 
+$\xi\left( \hat{x} \right)$ and $\xi\left( \hat{x} \right) + \delta$ have really the same sign.\\
+It is clear that $\xi\left( \hat{x} \right) \leq \frac{1}{2} \cdot \mUlp\left( x \right)$ because the rounding of $\hat{x}$ 
+towards $x$ is done to the nearest floating point number. In consequence, since $\delta < \xi\left( \hat{x} \right)$ we obtain
+$$\xi\left( \hat{x} \right) + \delta < \mUlp\left( x \right)$$
+As $x$ is a floating point number it suffices thus to conclude using lemma \ref{decarrdir} 
+by putting $\mu = \xi\left( \hat{x} \right)$ and
+$\nu = \xi\left( \hat{x} \right) + \delta$.\qed
+\end{proof}
+\begin{lemma}[Reduction of a triple-double into a double-double -- simple case] \label{moinsquunmiulp} ~ \\
+Let be $x_\hi + x_\mi + x_\lo \in \F + \F + \F$ a non-overlapping triple-double number such that $x_\lo$ is not subnormal, such that 
+$x_\mi = \circ \left( x_\mi + x_\lo \right)$ and such that $\left \vert x_\mi \right \vert < \tau$ where
+$$\tau = \left \lbrace \begin{array}{ll} 
+\frac{1}{4} \cdot \mUlp\left( x_\hi \right) & \mbox{ if } \exists e \in \Z \mbox{ . } 2^e = \left \vert x_\hi \right \vert \land 
+\sgn\left( x_\mi \right) = -\sgn\left( x_\hi \right)\\
+\frac{1}{2} \cdot \mUlp\left( x_\hi \right) & \mbox{ otherwise} \end{array} \right.$$
+Given the instruction sequence below:
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( t_1, t_2 \right) \gets \mAdd\left( x_\hi, x_\mi \right)$ \\
+$t_3 \gets t_2 \oplus x_\lo$
+\end{minipage}
+\end{center}
+the following equation holds after the execution of the sequence
+$$\diamond\left( t_1 + t_3 \right) = \diamond\left( x_\hi + x_\mi + x_\lo \right)$$
+\end{lemma}
+\begin{proof} ~ \\
+Due to the hypothesis that $\left \vert x_\mi \right \vert < \tau$ we can suppose that $x_\hi = \circ \left( x_\hi + x_\mi \right)$. 
+In consequence, using the properties of the \Add~ procedure, we know that we have exactly
+$$t_1 = \circ \left( x_\hi + x_\mi \right) = x_\hi$$
+and
+$$t_2 = x_\hi + x_\mi - t_1 = x_\mi$$
+So since as per hypothesis we have $x_\mi = \circ \left( x_\mi + x_\lo \right)$, we know also that 
+$t_3$ verifies exactly
+$$t_3 = x_\mi \oplus x_\lo = \circ\left( x_\mi + x_\lo \right) = x_\mi$$
+Let us put now
+$$\delta = x_\lo$$
+and
+$$\hat{x} = t_1 + t_3$$
+Clearly we get
+\begin{eqnarray*}
+\xi\left( \hat{x} \right) & = & \hat{x} - \circ\left( \hat{x} \right) \\
+& = & t_1 + t_3 - \circ\left( t_1 + t_3 \right) \\
+& = & x_\hi + x_\mi - \circ\left( x_\hi + x_\mi \right) \\
+& = & x_\hi + x_\mi - x_\hi \\
+& = & x_\mi
+\end{eqnarray*}
+Let us show now that
+$$\left \vert \delta \right \vert < \left \vert \xi\left( \hat{x} \right) \right \vert$$
+Amongst other by the lemma's hypotheses and due to the fact that $x_\mi \not = 0$, we can check that
+\begin{eqnarray*}
+\left \vert \xi\left( \hat{x} \right) \right \vert 
+& = & \left \vert x_\mi \right \vert \\
+& > & 2^{-53} \cdot \left \vert x_\mi \right \vert \\
+& \geq & \left \vert x_\lo \right \vert 
+\end{eqnarray*}
+The inequality the lemma \ref{arrdirper} asks for in hypothesis is well verified.\\
+So as per the same lemma \ref{arrdirper} we know that
+$$\diamond \left( \hat{x} + \delta \right) = \diamond\left( \hat{x} \right)$$
+This means that 
+$$\diamond \left( x_\hi + x_\mi + x_\lo \right) = \diamond\left( t_1 + t_3 \right)$$
+which is the equation that was to be shown.\qed
+\end{proof}
+\begin{lemma}[Reduction of a triple-double into a double-double -- difficult case] \label{plusdunmiulp} ~ \\
+Let be $x_\hi + x_\mi + x_\lo \in \F + \F + \F$ a non-overlapping triple-double number such that $x_\lo$ is not subnormal, such that
+$x_\mi = \circ \left( x_\mi + x_\lo \right)$ and that $\left \vert x_\mi \right \vert \geq \tau$ where
+$$\tau = \left \lbrace \begin{array}{ll} 
+\frac{1}{4} \cdot \mUlp\left( x_\hi \right) & \mbox{ if } \exists e \in \Z \mbox{ . } 2^e = \left \vert x_\hi \right \vert \land 
+\sgn\left( x_\mi \right) = -\sgn\left( x_\hi \right)\\
+\frac{1}{2} \cdot \mUlp\left( x_\hi \right) & \mbox{ otherwise} \end{array} \right.$$
+Given the instruction sequence below
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( t_1, t_2 \right) \gets \mAdd\left( x_\hi, x_\mi \right)$ \\
+$t_3 \gets t_2 \oplus x_\lo$
+\end{minipage}
+\end{center}
+the following equation holds after the execution of the sequence
+$$\diamond\left( t_1 + t_3 \right) = \diamond\left( x_\hi + x_\mi + x_\lo \right)$$
+\end{lemma}
+\begin{proof} ~ \\
+Without loss of generality, let us suppose in the sequel that $x_\hi > 0$. This is legitime because the set of the 
+floating point numbers is symmetrical around $0$. In fact it suffices to apply lemma \ref{commut} and 
+definition \ref{defulp} in order to obtain a proof for each case.\\
+In what follows we will proceed as that: we will decompose the problem in several cases and subcases that we will 
+treat one after another. For each of this subcases we will show either directly the desired result or the fact that 
+$\left \vert t_2 \right \vert \geq \left \vert x_\lo \right \vert$.
+In the end we will prove that this fact yields to the correctness of the lemma in each case.\\
+Let us start by considering the case where $\tau = \frac{1}{2} \cdot \mUlp\left( x_\hi \right)$. 
+Thus $x_\hi$ is not an exact integer power of $2$.\\
+We therefore get 
+$$\frac{1}{2} \leq \left \vert x_\mi \right \vert < \mUlp\left( x_\hi \right)$$
+which is equivalent to
+$$\frac{1}{2} \leq \left \vert x_\mi \right \vert \leq \mUlp\left( x_\hi \right)^-$$
+because $x_\mi$ is a floating point number.\\
+We can check now that
+$$t_1 = \circ \left( x_\hi + x_\mi \right) = \left \lbrace \begin{array}{ll} 
+x_\hi^+ & \mbox{ if } x_\mi > 0 \\
+x_\hi & \mbox{ if } x_\mi = \frac{1}{2} \cdot \mUlp\left( x_\hi \right) \mbox{ and the significand of } x_\hi \mbox{ is even} \\
+x_\hi^- & \mbox{ if } x_\mi < 0
+\end{array} \right.$$
+This implies the handling of three different subcases. \\
+Let as treat first the case where $t_1 = x_\hi$: \\
+We get here
+\begin{eqnarray*}
+t_2 & = & x_hi + x_\mi - t_1 \\
+& = & x_\hi + x_\mi - x_\hi \\
+& = & x_\mi 
+\end{eqnarray*}
+and further
+\begin{eqnarray*}
+t_3 & = & t_2 \oplus x_\lo \\
+& = & x_\mi \oplus x_\lo \\
+& = & \circ \left( x_\mi + x_\lo \right) \\
+& = & x_\mi 
+\end{eqnarray*}
+as per the hypothesis on the arguments.  \\
+So let us put
+\begin{eqnarray*}
+\hat{x} & = & t_1 + t_3 \\
+\delta & = & x_\lo 
+\end{eqnarray*}
+Thus
+\begin{eqnarray*}
+\hat{x} & = & x_\hi + x_\mi \\
+\xi\left( \hat{x} \right) & = & \circ \left( \hat{x} \right) \\
+& = & \circ \left( t_1 + t_2 \right) \\
+& = & t_2 \\
+& = & t_3
+\end{eqnarray*}
+and
+$$\left \vert \delta \right \vert < \left \vert \xi\left( \hat{x} \right) \right \vert$$
+because
+$$\left \vert x_\lo \right \vert \leq 2^{-53} \cdot \left \vert x_\mi \right \vert$$
+et $$x_\mi \not = 0$$
+Applying lemma \ref{arrdirper} we thus obtain 
+$$\diamond \left( t_1 + t_3 \right) = \diamond \left( x_\hi + x_\mi + x_\lo \right)$$
+Let us continue with the case where $t_1 = x_\hi^+$: \\
+We get here
+\begin{eqnarray*}
+t_2 & = & x_\hi + x_\mi + t_1 \\
+& = & x_\hi + x_\mi - x_\hi^+ \\
+& = & - \left( x_\hi^+ - x_\hi \right) + x_\mi \\
+& = & - \mUlp\left( x_\hi \right) + x_\mi \\
+& \leq & -\mUlp\left( x_\hi \right) + \mUlp\left( x_\hi \right)^- \\
+& = & - \left( \mUlp\left( x_\hi \right) - \mUlp\left( x_\hi \right)^- \right) \\
+& = & - \frac{1}{2} \cdot \left( \mUlp\left( x_\hi \right)^+ - \mUlp\left( x_\hi \right) \right) \\
+& = & - \frac{1}{2} \cdot \mUlp\left( \mUlp \left( x_\hi \right) \right)
+\end{eqnarray*}
+Thus
+$$\left \vert t_2 \right \vert \geq \frac{1}{2} \cdot \mUlp\left( \mUlp \left( x_\hi \right) \right)$$
+In contrast $\left \vert x_\lo \right \vert \leq \frac{1}{2} \cdot \mUlp\left( \mUlp \left( x_\hi \right) \right)$
+as per hypothesis which implies 
+$$\left \vert t_2 \right \vert \geq \left \vert x_\lo \right \vert$$
+Let us finally check the properties to be show for the third and last subcase, supposing now that
+$t_1 = x_\hi^-$. \\
+Since $x_\hi$ is not exactly an integer power of $2$, we can check the following applying amongst other 
+lemma \ref{notpoweroftwo}:
+\begin{eqnarray*}
+t_2 & = & x_\hi + x_\mi - t_1 \\
+& = & x_\hi + x_\mi - x_\hi^- \\
+& = & x_\hi^+ - x_\hi + x_\mi \\
+& = & \mUlp\left( x_\hi \right) + x_\mi \\
+& \geq & \mUlp\left( x_\hi \right) - \mUlp\left( x_\hi \right)^- \\
+& = & \frac{1}{2} \cdot \mUlp\left( \mUlp \left( x_\hi \right) \right)
+\end{eqnarray*}
+We therefore still get
+$$\left \vert t_2 \right \vert \geq \left \vert x_\lo \right \vert$$
+using the same argument as the one given above. \\ ~ \\
+Let us handle now the case where $\tau = \frac{1}{4} \cdot \mUlp\left( x_\hi \right)$: \\
+We can suppose in this case that $x_\hi$ is an exact integer power of $2$ and that $x_\mi$ is negative 
+because we had already supposed that $x_\hi$ is positive and because we know that 
+$\sgn\left( x_\hi \right) = -\sgn\left( x_\mi \right)$. We get further the following bounds for $x_\mi$:
+$$\frac{1}{4} \cdot \mUlp\left( x_\hi \right) \leq \left \vert x_\mi \right \vert \leq \mUlp\left( x_\hi \right)^-$$
+which means that
+$$-\mUlp\left( x_\hi \right)^- \leq x_\mi \leq -\frac{1}{4} \cdot \mUlp\left( x_\hi \right)$$
+still because $x_\mi$ is a floating point number. \\
+Since $x_\hi$ is an integer power of $2$ and as for this reason, its significand is even, one can check that
+$$t_1 = \circ \left( x_\hi + x_\mi \right) = \left \lbrace \begin{array}{ll} 
+x_\hi & \mbox{ if } x_\mi = -\frac{1}{4} \cdot \mUlp\left( x_\hi \right) \\
+x_\hi^- & \mbox{ if } -\frac{1}{2} \cdot \mUlp\left( x_\hi \right) < x_\mi < -\frac{1}{4} \cdot \mUlp\left( x_\hi \right) \\
+x_\hi^- & \mbox{ if } x_\mi = -\frac{1}{2} \cdot \mUlp\left( x_\hi \right) \\
+x_\hi^- & \mbox{ if } -\frac{3}{4} \cdot \mUlp\left( x_\hi \right) < x_\mi < -\frac{1}{2} \cdot \mUlp\left( x_\hi \right) \\
+x_\hi^{--} & \mbox{ if } -\mUlp\left( x_\hi \right)^- \leq x_\mi \leq -\frac{3}{4} \cdot \mUlp\left( x_\hi \right)
+\end{array} \right.
+$$
+The assertion that $t_1 = x_\hi^-$ if $x_\mi = -\frac{1}{2} \cdot \mUlp\left( x_\hi \right)$ can be explained as follows:\\
+We have 
+\begin{eqnarray*}
+x_\hi + x_\mi & = & x_\hi - \frac{1}{2} \cdot \mUlp\left( x_\hi \right) \\
+& = & x_\hi - \frac{1}{2} \cdot \left( x_\hi^+ - x_\hi \right) \\
+& = & x_\hi - \left( x_\hi - x_\hi^- \right) \\
+& = & x_\hi^- 
+\end{eqnarray*}
+Thus $$\circ \left( x_\hi + x_\mi \right) = \circ \left( x_\hi^- \right) = x_\hi^-$$
+because $x_\hi^-$ is clearly a floating point number.
+Let us consider now first the cases where we have equations, i.e. the cases where 
+$x_\mi = -\frac{1}{4} \cdot \mUlp\left( x_\hi \right)$ and
+$x_\mi = - \frac{1}{2} \cdot \mUlp\left( x_\hi \right)$: \\
+Let us commence by the case where $x_\mi = -\frac{1}{4} \cdot \mUlp\left( x_\hi \right)$: \\
+We get here
+\begin{eqnarray*}
+t_2 & = & x_\hi + x_\mi - t_1 \\
+& = & x_\hi + x_\mi - x_\hi \\
+& = & x_\mi 
+\end{eqnarray*}
+and we can check that the following holds by the hypotheses on the arguments
+\begin{eqnarray*}
+t_3 & = & x_\mi \oplus x_\lo \\
+& = & \circ \left( x_\mi + x_\lo \right) \\
+& = & x_\mi 
+\end{eqnarray*}
+Let us put now
+\begin{eqnarray*}
+\hat{x} & = & t_1 + t_3 \\
+\delta & = & x_\lo \\
+\xi\left( \hat{x} \right) & = & \circ\left( \hat{x} \right) - \hat{x} = t_3
+\end{eqnarray*}
+So by applying lemma \ref{arrdirper}, we get
+$$\diamond \left( t_1 + t_3 \right) = \diamond \left( x_\hi + x_\mi + x_\lo \right)$$
+because 
+$$\left \vert x_\lo \right \vert \leq 2^{-53} \cdot \left \vert x_\mi \right \vert$$
+and $x_\mi \not = 0$ which is a hypothesis of the lemma to prove. \\
+Let us now handle the second of these particular cases, i.e. the cases where  
+$x_\mi = -\frac{1}{2} \cdot \mUlp\left( x_\hi \right)$: \\
+We get
+\begin{eqnarray*}
+t_2 & = & x_\hi + x_\mi - t_1 \\
+& = & x_\hi + x_\mi - x_\hi^- \\
+& = & \frac{1}{2} \cdot \mUlp\left( x_\hi \right) + x_\mi \\
+& = & \frac{1}{2} \cdot \mUlp\left( x_\hi \right) - \frac{1}{2} \cdot \mUlp\left( x_\hi \right) \\
+& = & 0 
+\end{eqnarray*}
+So in consequence we have
+\begin{eqnarray*}
+t_3 & = & t_2 \oplus x_\lo \\
+& = & 0 \oplus x_\lo \\
+& = & x_\lo
+\end{eqnarray*}
+And we thus obtain finally
+\begin{eqnarray*}
+\diamond \left( x_\hi + x_\mi + x_\lo \right) & = & \diamond \left( t_1 + t_2 + x_\lo \right) \\
+& = & \diamond \left( t_1 + 0 + x_\lo \right) \\
+& = & \diamond \left( t_1 + t_3 \right)
+\end{eqnarray*}
+Let us now analyse the other principal cases, starting with the case where 
+$$-\frac{1}{2} \cdot \mUlp\left( x_\hi \right) < x_\mi < -\frac{1}{4} \cdot \mUlp\left( x_\hi \right)$$
+This inequality bounding $x_\mi$ is in fact equivalent to the following one because $x_\mi$ is a floating point number:
+$$-\frac{1}{2} \cdot \mUlp\left( x_\hi \right)^- \leq x_\mi \leq -\frac{1}{4} \cdot \mUlp\left( x_\hi \right)^+$$
+So we can check
+\begin{eqnarray*}
+t_2 & = & x_\hi + x_\mi - t_1 \\
+& = & x_\hi + x_\mi - x_\hi^- \\
+& = & \frac{1}{2} \cdot \mUlp\left( x_\hi \right) + x_\mi \\
+& \geq & \frac{1}{2} \cdot \mUlp\left( x_\hi \right) - \frac{1}{2} \cdot \mUlp\left( x_\hi \right)^- \\
+& = & \frac{1}{2} \cdot \left( \mUlp\left( x_\hi \right) - \mUlp\left( x_\hi \right)^- \right) \\
+& = & \frac{1}{4} \mUlp\left( \mUlp\left( x_\hi \right) \right)
+\end{eqnarray*}
+In contrast we know that
+$$\left \vert x_\lo \right \vert \leq \frac{1}{2} \cdot \mUlp \left( x_\mi \right)$$
+Since in the currently treated case the following holds
+$$\left \vert x_\mi \right \vert \leq \frac{1}{2} \cdot \mUlp\left( x_\hi \right)$$
+we get as per lemma \ref{multhalf} 
+$$\left \vert x_\lo \right \vert \leq \frac{1}{4} \cdot \mUlp\left( \mUlp\left( x_\hi \right) \right)$$
+which yields to
+$$\left \vert t_2 \right \vert \geq \left \vert x_\lo \right \vert$$
+Let us now consider the second and one but not least case. We suppose here that
+$$-\frac{3}{4} \cdot \mUlp\left( x_\hi \right) < x_\mi < -\frac{1}{2} \cdot \mUlp\left( x_\hi \right)$$
+which is equivalent to 
+$$-\left(\frac{3}{4} \cdot \mUlp\left( x_\hi \right)\right)^- \leq x_\mi < -\frac{1}{2} \cdot \mUlp\left( x_\hi \right)^+$$
+We therefore get
+\begin{eqnarray*}
+t_2 &= & x_\hi + x_\mi - t_1 \\
+& = & x_\hi + x_\mi - x_\hi^- \\
+& = & \frac{1}{2} \cdot \mUlp\left( x_\hi \right) + x_\mi \\
+& \leq & \frac{1}{2} \cdot \mUlp\left( x_\hi \right) - \frac{1}{2} \cdot \mUlp\left( x_\hi \right)^+ \\
+& = & -\frac{1}{2} \cdot \left( \mUlp\left( x_\hi \right)^+ - \mUlp\left( x_\hi \right) \right) \\
+& = & -\frac{1}{2} \cdot \mUlp\left( \mUlp\left( x_\hi \right) \right)
+\end{eqnarray*}
+which gives us
+$$\left \vert t_2 \right \vert \geq \frac{1}{2} \cdot \mUlp\left( \mUlp\left( x_\hi \right) \right)$$
+We can deduce from that, still using the argument that 
+$\left \vert x_\lo \right \vert \leq \frac{1}{2} \cdot \mUlp\left( \mUlp \left( x_\hi \right) \right)$, that
+$$\left \vert t_2 \right \vert \geq \left \vert x_\lo \right \vert $$
+Let us finally handle the last case where $-\mUlp\left( x_\hi \right)^- \leq x_\mi \leq - \frac{3}{4} \cdot \mUlp\left( x_\hi \right)$: \\
+Using the property that $x_\hi^-$ is an exact integer power of $2$ and using further 
+lemma \ref{notpoweroftwo}, we can check now that
+\begin{eqnarray*}
+t_2 & = & x_\hi + x_\mi - t_1 \\
+& = & x_\hi + x_\mi - x_\hi^{--} \\
+& = & x_\hi + x_\mi - x_\hi^{--} + x_\hi^- - x_\hi^- \\
+& = & x_\hi - x_\hi^- + x_\mi + x_\hi^- - x_\hi^{--} \\
+& = & \frac{1}{2} \cdot \mUlp\left( x_\hi \right) + x_\mi + \left( x_\hi^- \right)^+ - x_\hi^- \\
+& = & \frac{1}{2} \cdot \mUlp\left( x_\hi \right) + x_\mi + x_\hi - x_\hi^- \\
+& = & \frac{1}{2} \cdot \mUlp\left( x_\hi \right) + x_\mi + \frac{1}{2} \cdot \mUlp\left( x_\hi \right) \\
+& = & \mUlp\left( x_\hi \right) + x_\mi \\
+& \geq & \mUlp\left( x_\hi \right) + \mUlp\left( x_\hi \right)^- \\
+& = & \frac{1}{2} \cdot \mUlp\left( \mUlp\left( x_\hi \right) \right)
+\end{eqnarray*}
+In consequence we still get the same upper bound for $\left \vert x_\lo \right \vert$, i.e.
+$$\left \vert t_2 \right \vert \geq \left \vert x_\lo \right \vert$$
+Since we have now treated all the cases that have been showing up, it suffices now to show that the upper bound
+already mentioned yields to the property to be proven. Once again, we decompose the problem in cases and subcases.\\
+Let us start by showing the property for the equation $\left \vert t_2 \right \vert = \left \vert x_\lo \right \vert$: \\
+If $\sgn\left( t_2 \right) = \sgn\left( x_\lo \right)$ we get
+\begin{eqnarray*}
+t_3 & = & t_2 \oplus x_\lo \\
+& = & x_\lo \oplus x_\lo \\
+& = & \circ \left( 2 \cdot x_\lo \right) \\
+& = & 2 \cdot x_\lo
+\end{eqnarray*}
+So we have exactly
+$$t_1 + t_3 = x_\hi + x_\mi + x_\lo$$
+and thus
+$$\diamond \left( t_1 + t_3 \right) = \diamond \left( x_\hi + x_\mi + x\lo \right)$$
+Otherwise, we have $\sgn\left( t_2 \right) = -\sgn\left( x_\lo \right)$ and get
+\begin{eqnarray*}
+t_3 & = & t_2 \oplus x_\lo \\
+& = & - x_\lo \oplus x_\lo \\
+& = & 0 
+\end{eqnarray*}
+exactly.
+This means finally that
+\begin{eqnarray*}
+\diamond \left( t_1 + t_3 \right) & = & \diamond \left( t_1 \right) \\
+& = & \diamond \left( t_1 + t_2 - t_2 \right) \\
+& = & \diamond \left( x_\hi + x_\mi + x_\lo \right)
+\end{eqnarray*}
+In the end let us consider the case where one can suppose that 
+$\left \vert t_2 \right \vert > \left \vert x_\lo \right \vert$: \\
+We can suppose here
+\begin{eqnarray*}
+t_3 & = & t_2 \oplus x_\lo \\
+& = & t_2 + x_\lo + \delta
+\end{eqnarray*}
+with
+$$\left \vert \delta \right \vert \leq 2^{-53} \cdot \left \vert t_2 + x_\lo \right \vert$$
+Let us show now that $t_2$ and $t_3$ have the same sign. For doing so let us suppose that this would not be true.\\
+Clearly, $t_2$ and $t_2 + x_\lo$ have the same sign because we know that 
+$\left \vert t_2 \right \vert > \left \vert x_\lo \right \vert$. \\
+So in order to have $\sgn\left( t_2 \right) = -1 \cdot \sgn\left( t_3 \right)$ to hold, we must have
+$$\left \vert \delta \right \vert > \left \vert t_2 + x_\lo \right \vert$$
+Thus we would obtain 
+$$2^{-53} \cdot \left \vert t_2 + x_\lo \right \vert > \left \vert t_2 + x_\lo \right \vert$$
+which is not true because 
+$$t_2 + x_\lo = 0$$
+This would yield to $\left \vert t_2 \right \vert = \left \vert x_\lo \right \vert$ which is excluded by hypotheses. 
+Thus, contradiction. \\
+The values $t_2$ and $t_3$ have therefore the same sign. By applying lemma \ref{decarrdir}, we get:
+$$\diamond \left( t_1 + t_2 \right) = \diamond \left( t_1 + t_3 \right)$$
+Let us show now that
+$$\diamond \left( t_1 + t_2 \right) = \diamond \left( x_\hi + x_\mi + x_\lo \right)$$
+in order to be able to conclude. \\
+For doing so, let us put
+\begin{eqnarray*}
+\hat{x} & = & t_1 + t_2 \\
+\delta^\prime & = & x_\lo \\
+\xi\left( \hat{x} \right) & = & t_2 
+\end{eqnarray*}
+and let us check that
+\begin{eqnarray*}
+\left \vert \delta^\prime \right \vert 
+& = & \left \vert x_\lo \right \vert \\
+& < & \left \vert t_2 \right \vert \\
+& = & \left \vert \xi\left(\hat{x}\right) \right \vert
+\end{eqnarray*}
+We can now apply lemma \ref{arrdirper} and obtain:
+$$\diamond \left( t_1 + t_3 \right) = \diamond \left( x_\hi + x_\mi + x_\lo \right)$$
+This is the equation to be shown.\qed
+\end{proof}
+\begin{theorem}[Directed final rounding of a triple-double number] \label{arrdir} ~ \\
+Let be $x_\hi + x_\mi + x_\lo \in \F + \F + \F$ a non-overlapping triple-double number. \\
+Let be $\diamond$ a directed rounding mode.\\
+Let be {\bf A} the following instruction sequence:
+\begin{center}
+\begin{minipage}[b]{50mm}
+$\left( t_1, t_2 \right) \gets \mAdd\left( x_\hi, x_\mi \right)$ \\
+$t_3 \gets t_2 \oplus x_\lo$ \\
+{\bf return } $\diamond\left( t_1 + t_3 \right)$
+\end{minipage}
+\end{center}
+So {\bf A} is a correct rounding procedure for the rounding mode $\diamond$.
+\end{theorem}
+\begin{proof} ~\\
+Trivial as per lemmas \ref{moinsquunmiulp} and \ref{plusdunmiulp}.\qed
+\end{proof}
+\bibliographystyle{plain} 
+\bibliography{elem-fun.bib}
+\end{document} 
