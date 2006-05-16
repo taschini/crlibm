@@ -166,6 +166,23 @@ double rand_for_log(){
   return result.d;
 }
 
+/* Produce a domain ]-1;+infty[ 
+
+   Attention: we have no normal law on the FP results.
+
+*/
+double rand_for_log1p() {
+  db_number result;
+
+  result.d = rand_for_log();
+  if (result.d < 1.0) {
+    if (rand_int() && 0x1) 
+      result.i[HI] = 0x80000000 & result.i[HI];
+  }
+
+  return result.d;
+}
+
 
 /* For trigonometric functions it is difficult to tell what the test function should be */ 
 
@@ -446,7 +463,61 @@ void test_init(/* pointers to returned value */
 #endif
     }
 
-  else  if (strcmp (func_name, "sin") == 0)
+  else  if (strcmp (func_name, "expm1") == 0)
+    {
+      *randfun_perf     = rand_for_exp_soaktest;
+      *randfun_soaktest = rand_for_exp_soaktest;
+      *worst_case= 1.0;   /* TODO */
+      *testfun_libm   = log;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = expm1_ru;	break;
+      case RD:
+	*testfun_crlibm = expm1_rd;	break;
+      case RZ:
+	*testfun_crlibm = expm1_rz;	break;
+      default:
+	*testfun_crlibm = expm1_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_libultim    = NULL; /* TODO */
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = NULL; /* TODO */
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_expm1;
+#endif
+    }
+
+  else if (strcmp (func_name, "log1p") == 0)
+    {
+      *randfun_perf     = rand_for_log1p;
+      *randfun_soaktest = rand_for_log1p;
+      *worst_case= 1.0;   /* TODO */
+      *testfun_libm   = log;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = log1p_ru;	break;
+      case RD:
+	*testfun_crlibm = log1p_rd;	break;
+      case RZ:
+	*testfun_crlibm = log1p_rz;	break;
+      default:
+	*testfun_crlibm = log1p_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_libultim    = NULL;
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = NULL;
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_log1p;
+#endif
+    }
+
+  else if (strcmp (func_name, "sin") == 0)
     {
       *randfun_perf     = rand_for_trig_perf;
       *randfun_soaktest = rand_for_trig_soaktest;

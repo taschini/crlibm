@@ -1,5 +1,5 @@
 /*
- * Author  : David Defour, Catherine Daramy, Florent de Dinechin
+ * Author  : David Defour, Catherine Daramy, Florent de Dinechin, Christoph Lauter
  * Contact : David.Defour@ens-lyon.fr, catherine_daramy@ens-lyon.fr
  *
  * This program is free software; you can redistribute it and/or modify
@@ -112,6 +112,19 @@ extern double asin_rn(double); /* to nearest */
 extern double asin_rd(double); /* toward -inf */
 extern double asin_ru(double); /* toward +inf */
 extern double asin_rz(double); /* toward zero */
+
+/* expm1 = e^x -1 */
+extern double expm1_rn(double); /* to nearest */
+extern double expm1_rd(double); /* toward -inf */
+extern double expm1_ru(double); /* toward +inf */
+extern double expm1_rz(double); /* toward zero */
+
+/* log1p = log(1 + x) */
+extern double log1p_rn(double); /* to nearest */
+extern double log1p_rd(double); /* toward -inf */
+extern double log1p_ru(double); /* toward +inf */
+extern double log1p_rz(double); /* toward zero */
+
 
 /* Unfinished functions */
 /* These functions provide correct rounding but are very slow
