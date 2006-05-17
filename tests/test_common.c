@@ -157,7 +157,7 @@ double rand_for_expm1_soaktest() {
   while ((expo = (rand_int() & 0x0000007f)) > 70);
   expo -= 60;
 
-  resdb.i[HI] = (expo + 1023) << 20;
+  resdb.i[HI] |= (expo + 1023) << 20;
 
   resdb.i[HI] |= (rand_int() & 0x80000000);
 

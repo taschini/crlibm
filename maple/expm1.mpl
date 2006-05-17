@@ -45,6 +45,8 @@ ReturnXBound := convert((ieeehexa(2^(-54)))[1],decimal,hex):
 
 Largest := 2^(1023) * ((2^(53) - 1) / 2^(52)):
 
+Smallest := 2^(-1023) * 1 * 2^(-51):
+
 OverflowBound := nearest(log(Largest + 1)):
 
 MinusOneBound := nearest(log(2^(-54))):
@@ -53,6 +55,7 @@ SimpleOverflowBound := convert(ieeehexa(OverflowBound)[1],decimal,hex):
 
 DirectIntervalBound := convert((ieeehexa(0.25))[1],decimal,hex):
 
+MinusOnePlusOneUlp := -1 + 2^(-53): # Attention: it's 2^(-53) because we are at a binade boundary
 
 # Second, we have the computation of the values for the direct interval
 
@@ -177,7 +180,8 @@ fprintf(fd, "\#define INDEXMASK1 0x%08x\n",indexmask1):
 fprintf(fd, "\#define INDEXMASK2 0x%08x\n",indexmask2):
 fprintf(fd, "\#define RETURNXBOUND 0x%08x\n",ReturnXBound):
 fprintf(fd, "\#define OVERFLOWBOUND %1.50e\n",OverflowBound):
-fprintf(fd, "\#define LARGEST %1.50e\n",Largest):
+fprintf(fd, "\#define LARGEST %1.50e\n",Largest): 
+fprintf(fd, "\#define SMALLEST %1.50e\n",Smallest): 
 fprintf(fd, "\#define MINUSONEBOUND %1.50e\n",MinusOneBound):
 fprintf(fd, "\#define SIMPLEOVERFLOWBOUND 0x%08x\n",SimpleOverflowBound):
 fprintf(fd, "\#define DIRECTINTERVALBOUND 0x%08x\n",DirectIntervalBound):
@@ -185,6 +189,7 @@ fprintf(fd, "\#define ROUNDCSTDIRECTRN %1.50e\n",compute_rn_constant(epsQuickDir
 fprintf(fd, "\#define ROUNDCSTDIRECTRD %1.50e\n",epsQuickDirectOverall):
 fprintf(fd, "\#define ROUNDCSTCOMMONRN %1.50e\n",compute_rn_constant(epsQuickCommonOverall)):
 fprintf(fd, "\#define ROUNDCSTCOMMONRD %1.50e\n",epsQuickCommonOverall):
+fprintf(fd, "\#define MINUSONEPLUSONEULP %1.50e\n",MinusOnePlusOneUlp):
 
 
 
