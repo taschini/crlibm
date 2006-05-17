@@ -534,7 +534,7 @@ double expm1_rd(double x) {
 
   /* Test if we are so small that we can return (a corrected) x as correct rounding */
   if (xIntHi < RETURNXBOUND) {
-    /* The only algebraic result is 0 for x = 0; in this case, we can return x
+    /* The only algebraic result is 0 for x = +/- 0; in this case, we can return x = +/- 0
        The truncation rest x^2/2 + x^3/6 + ... is always positive 
        but less than 1 ulp in this case, so we round down by returning x
     */
@@ -825,10 +825,13 @@ double expm1_ru(double x) {
 
   /* Test if we are so small that we can return (a corrected) x as correct rounding */
   if (xIntHi < RETURNXBOUND) {
-    /* The only algebraic result is 0 for x = 0; in this case, we can return x
+    /* The only algebraic result is 0 for x = +/-0; in this case, we return x = +/-0
        The truncation rest x^2/2 + x^3/6 + ... is always positive 
        but less than 1 ulp in this case, so we round by adding 1 ulp 
     */
+    
+    if (x == 0.0) return x;
+
     if (xdb.i[HI] & 0x80000000) {
       /* x is negative 
 	 We add 1 ulp by subtracting 1 in long
@@ -1123,7 +1126,7 @@ double expm1_rz(double x) {
 
   /* Test if we are so small that we can return (a corrected) x as correct rounding */
   if (xIntHi < RETURNXBOUND) {
-    /* The only algebraic result is 0 for x = 0; in this case, we can return x
+    /* The only algebraic result is 0 for x = +/- 0; in this case, we can return x = +/- 0
        expm1 is positive for positive x, negative for negative x
        The truncation rest x^2/2 + x^3/6 + ... is always positive 
        but less than 1 ulp in this case, so we round as follows:
@@ -1131,6 +1134,9 @@ double expm1_rz(double x) {
        - x is positive => expm1 is positive => round downwards => truncate by returning x
        - x is negative => expm1 is negative => round upwards => add 1 ulp
     */
+
+    if (x == 0.0) return x;
+
     if (xdb.i[HI] & 0x80000000) {
       /* x is negative 
 	 We add 1 ulp by subtracting 1 in long

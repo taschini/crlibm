@@ -244,6 +244,13 @@ local  hex2, xx, longint, expo, sgn, frac, resultat:
     resultat:
 end proc:
 
+ieeehexaString := proc(x) 
+	local hex, result:
+	hex := ieeehexa(x):
+	result := cat(hex[1],hex[2]):	
+	return result:
+end proc:
+
 
 
 #---------------------------------------------------------------------

@@ -6,8 +6,9 @@ expm1     # Name of the function to test
 #   2/ The high and low hexadecimal halves of an input
 #   3/ The high and low hexadecimal halves of the expected corresponding output
 
+# TODO: VERIFY THIS VALUES
 
-# Special cases TODO: VERIFY THIS INDICATIONS
+# Special cases 
 N 00000000 00000000 00000000 00000000 # zero
 N 80000000 00000000 80000000 00000000 # -zero
 P 00000000 00000000 00000000 00000000 # zero
@@ -19,23 +20,131 @@ Z 80000000 00000000 80000000 00000000 # -zero
 
 N 00000000 00000001 00000000 00000001 # smallest denorm positive
 N 80000000 00000001 80000000 00000001 # smallest denorm negative
-P 00000000 00000001 00000000 00000001 # smallest denorm positive
+P 00000000 00000001 00000000 00000002 # smallest denorm positive
 P 80000000 00000001 80000000 00000000 # smallest denorm negative
 M 00000000 00000001 00000000 00000001 # smallest denorm positive
-M 80000000 00000001 80000000 00000000 # smallest denorm negative
+M 80000000 00000001 80000000 00000001 # smallest denorm negative
 Z 00000000 00000001 00000000 00000001 # smallest denorm positive
 Z 80000000 00000001 80000000 00000000 # smallest denorm negative
 
 N 7ff00000 00000000 7ff00000 00000000 # +inf
 N fff00000 00000000 bff00000 00000000 # -inf
-P 7ff00000 00000000 7ff00000 00000001 # +inf
-P fff00000 00000000 bff00000 00000001 # -inf
+P 7ff00000 00000000 7ff00000 00000000 # +inf
+P fff00000 00000000 bff00000 00000000 # -inf
 M 7ff00000 00000000 7ff00000 00000000 # +inf
 M fff00000 00000000 bff00000 00000000 # -inf
-Z 7ff00000 00000000 7ff00000 00000001 # +inf
-Z fff00000 00000000 bff00000 00000001 # -inf
+Z 7ff00000 00000000 7ff00000 00000000 # +inf
+Z fff00000 00000000 bff00000 00000000 # -inf
 
 N fff80000 00000000 fff80000 00000000 # NaN
 P fff80000 00000000 fff80000 00000000 # NaN
 M fff80000 00000000 fff80000 00000000 # NaN
 Z fff80000 00000000 fff80000 00000000 # NaN
+
+# Overflows
+
+N 40862E42 FEFA39EE 7fefffff fffffb2a
+N 40862E42 FEFA39EF 7fefffff ffffff2a
+N 40862E42 FEFA39F0 7ff00000 00000000
+N 40862E42 FEFA39F1 7ff00000 00000000
+
+P 40862E42 FEFA39EE 7fefffff fffffb2b
+P 40862E42 FEFA39EF 7fefffff ffffff2b
+P 40862E42 FEFA39F0 7ff00000 00000000
+P 40862E42 FEFA39F1 7ff00000 00000000
+
+M 40862E42 FEFA39EE 7fefffff fffffb2a
+M 40862E42 FEFA39EF 7fefffff ffffff2a
+M 40862E42 FEFA39F0 7fefffff ffffffff
+M 40862E42 FEFA39F1 7fefffff ffffffff
+
+Z 40862E42 FEFA39EE 7fefffff fffffb2a
+Z 40862E42 FEFA39EF 7fefffff ffffff2a
+Z 40862E42 FEFA39F0 7fefffff ffffffff
+Z 40862E42 FEFA39F1 7fefffff ffffffff
+
+
+# -1.0 + correction in result
+
+N C0420596 6F2B4F12 bfefffff fffffffe
+N C042B708 872320E1 bfefffff ffffffff
+N C042B708 872320E2 bff00000 00000000
+N C042B708 872320E3 bff00000 00000000
+N C5000000 00000000 bff00000 00000000
+
+P C0420596 6F2B4F12 bfefffff fffffffd
+P C0425000 00000000 bfefffff fffffffe
+P C042B708 872320E1 bfefffff ffffffff
+P C042B708 872320E2 bfefffff ffffffff
+P C042B708 872320E3 bfefffff ffffffff
+P C5000000 00000000 bfefffff ffffffff
+
+M C0420596 6F2B4F12 bfefffff fffffffe
+M C0425000 00000000 bfefffff ffffffff
+M C042B708 872320E1 bff00000 00000000
+M C042B708 872320E2 bff00000 00000000
+M C042B708 872320E3 bff00000 00000000
+M C5000000 00000000 bff00000 00000000
+
+Z C0420596 6F2B4F12 bfefffff fffffffd
+Z C0425000 00000000 bfefffff fffffffe
+Z C042B708 872320E1 bfefffff ffffffff
+Z C042B708 872320E2 bfefffff ffffffff
+Z C042B708 872320E3 bfefffff ffffffff
+Z C5000000 00000000 bfefffff ffffffff
+
+
+# Passing into "x + correction is result" path
+
+N 3c8fffff fffffffe 3c8fffff fffffffe
+N 3c8fffff ffffffff 3c8fffff ffffffff
+N 3c900000 00000000 3c900000 00000000
+N 3c900000 00000001 3c900000 00000001
+N 3c900000 00000002 3c900000 00000002
+
+P 3c8fffff fffffffd 3c8fffff fffffffe
+P 3c8fffff fffffffe 3c8fffff ffffffff
+P 3c8fffff ffffffff 3c900000 00000000
+P 3c900000 00000000 3c900000 00000001
+P 3c900000 00000001 3c900000 00000002
+P 3c900000 00000002 3c900000 00000003
+
+M 3c8fffff fffffffe 3c8fffff fffffffe
+M 3c8fffff ffffffff 3c8fffff ffffffff
+M 3c900000 00000000 3c900000 00000000
+M 3c900000 00000001 3c900000 00000001
+M 3c900000 00000002 3c900000 00000002
+
+Z 3c8fffff fffffffe 3c8fffff fffffffe
+Z 3c8fffff ffffffff 3c8fffff ffffffff
+Z 3c900000 00000000 3c900000 00000000
+Z 3c900000 00000001 3c900000 00000001
+Z 3c900000 00000002 3c900000 00000002
+
+
+N bc8fffff fffffffe bc8fffff fffffffe
+N bc8fffff ffffffff bc8fffff ffffffff
+N bc900000 00000000 bc900000 00000000
+N bc900000 00000001 bc900000 00000001
+N bc900000 00000002 bc900000 00000002
+
+P bc8fffff fffffffd bc8fffff fffffffc
+P bc8fffff fffffffe bc8fffff fffffffd
+P bc8fffff ffffffff bc8fffff fffffffe
+P bc900000 00000000 bc8fffff ffffffff
+P bc900000 00000001 bc900000 00000000
+P bc900000 00000002 bc900000 00000001
+
+M bc8fffff fffffffe bc8fffff fffffffe
+M bc8fffff ffffffff bc8fffff ffffffff
+M bc900000 00000000 bc900000 00000000
+M bc900000 00000001 bc900000 00000001
+M bc900000 00000002 bc900000 00000002
+
+Z bc8fffff fffffffe bc8fffff fffffffd
+Z bc8fffff ffffffff bc8fffff fffffffe
+Z bc900000 00000000 bc8fffff ffffffff
+Z bc900000 00000001 bc900000 00000000
+Z bc900000 00000002 bc900000 00000001
+
+
