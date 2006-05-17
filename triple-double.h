@@ -246,6 +246,42 @@
     Add12Cond((*(resm)),(*(resl)),_t4,_t7);                     \
 }
 
+/* Add123
+
+   Procedure for adding a double number to a double 
+   double number resulting in a triple double number
+
+
+   Arguments:       a double number a 
+                    a double double number bh, bl
+   
+   Results:         a triple double number resh, resm, resl
+
+   Preconditions:   abs(bh) <= 2^(-2) * abs(a)
+		    abs(bl) <= 2^(-53) * abs(bh)
+		    
+   Guarantees:      resm and resl are non-overlapping
+                    resm = round-to-nearest(resm + resl)
+		    abs(resm) <= 2^(-\gamma) * abs(resh)
+		    where
+		    
+		    \gamma >= 52
+
+		    resh+resm+resl=(a + (bh+bm+bl)) exactly
+		    
+
+   Details:         resh, resm and resl are considered to be pointers
+*/
+#define Add123(resh, resm, resl, a, bh, bl)                     \
+{                                                               \
+    double _t1;                                                 \
+                                                                \
+    Add12((*(resh)),_t1,(a),(bh));                              \
+    Add12((*(resm)),(*(resl)),_t1,(bl));                        \
+}
+
+
+
 /* Add133
 
    Procedure for adding a double number to a triple 
@@ -282,6 +318,49 @@
     double _t1, _t2, _t3, _t4;                                  \
                                                                 \
     Add12((*(resh)),_t1,(a),(bh));                              \
+    Add12Cond(_t2,_t3,_t1,(bm));                                \
+    _t4 = _t3 + (bl);                                           \
+    Add12Cond((*(resm)),(*(resl)),_t2,_t4);                     \
+}
+
+/* Add133Cond
+
+   Procedure for adding a double number to a triple 
+   double number resulting in a triple double number
+
+
+   Arguments:       a double number a 
+                    a triple double number bh, bm, bl
+   
+   Results:         a triple double number resh, resm, resl
+
+   Preconditions:   abs(bm) <= 2^(-b_o) * abs(bh)
+		    abs(bl) <= 2^(-b_u) * abs(bm)
+		    where
+		    b_o >= 2
+		    b_u >= 1
+		    
+   Guarantees:      resm and resl are non-overlapping
+                    resm = round-to-nearest(resm + resl)
+		    abs(resm) <= 2^(\gamma) * abs(resh)
+		    where
+
+		    TODO
+
+		    resh+resm+resl=(a + (bh+bm+bl)) * (1+eps)
+		    where
+		    abs(eps) <= 
+
+		    TODO
+
+
+   Details:         resh, resm and resl are considered to be pointers
+*/
+#define Add133Cond(resh, resm, resl, a, bh, bm, bl)             \
+{                                                               \
+    double _t1, _t2, _t3, _t4;                                  \
+                                                                \
+    Add12Cond((*(resh)),_t1,(a),(bh));                          \
     Add12Cond(_t2,_t3,_t1,(bm));                                \
     _t4 = _t3 + (bl);                                           \
     Add12Cond((*(resm)),(*(resl)),_t2,_t4);                     \

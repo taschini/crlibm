@@ -144,8 +144,28 @@ double rand_for_exp_normal(){
 }
 
 
+/* Return a number between -2^10 and +2^10 leaving out exponents <= -60
+   Attention: no normal law
+*/
+double rand_for_expm1_soaktest() {
+  db_number resdb;
+  int expo;
+
+  resdb.i[HI] = rand_int() & 0x000fffff;
+  resdb.i[LO] = rand_int();
+
+  while ((expo = (rand_int() & 0x0000007f)) > 70);
+  expo -= 60;
+
+  resdb.i[HI] = (expo + 1023) << 20;
+
+  resdb.i[HI] |= (rand_int() & 0x80000000);
+
+  return resdb.d;
+}
 
 
+#define rand_for_expm1_testperf rand_for_expm1_soaktest
 
 #define rand_for_csh_perf rand_for_exp_perf
 /* I wish we could soaktest using rand_generic, but current MPFR is
@@ -465,10 +485,10 @@ void test_init(/* pointers to returned value */
 
   else  if (strcmp (func_name, "expm1") == 0)
     {
-      *randfun_perf     = rand_for_exp_soaktest;
-      *randfun_soaktest = rand_for_exp_soaktest;
+      *randfun_perf     = rand_for_expm1_testperf;
+      *randfun_soaktest = rand_for_expm1_soaktest;
       *worst_case= 1.0;   /* TODO */
-      *testfun_libm   = log;
+      *testfun_libm   = expm1;
       switch(crlibm_rnd_mode){
       case RU:
 	*testfun_crlibm = expm1_ru;	break;
@@ -495,7 +515,7 @@ void test_init(/* pointers to returned value */
       *randfun_perf     = rand_for_log1p;
       *randfun_soaktest = rand_for_log1p;
       *worst_case= 1.0;   /* TODO */
-      *testfun_libm   = log;
+      *testfun_libm   = log1p;
       switch(crlibm_rnd_mode){
       case RU:
 	*testfun_crlibm = log1p_ru;	break;
