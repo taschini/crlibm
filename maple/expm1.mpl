@@ -75,15 +75,31 @@ quickDirectpoly := X -> X+1/2*X^2+(3360682229480701/1180591620717411303424*X^6+3
 accuDirectpoly := X -> X+1/2*X^2+(3786738884990361/4951760157141521099596496896*X^12+7100145222887513/618970019642690137449562112*X^11+6212541673969101/38685626227668133590597632*X^10+5047690109993399/2417851639229258349412352*X^9+3785767582868083/151115727451828646838272*X^8+5205430426443615/18889465931478580854784*X^7+29303968161043118891149009244865/10633823966279326983230456482242756608*X^6+65933928362347017505024866986963/2658455991569831745807614120560689152*X^5+65933928362347017505149159875899/332306998946228968225951765070086144*X^4+28846093658526820158502757550845/20769187434139310514121985316880384*X^3+21634570243895115118877068038417/2596148429267413814265248164610048*X^2+27043212804868893898596335048021/649037107316853453566312041152512*X+243583606221817153033947472119380503276473908509/1461501637330902918203684832716283019655932542976)*X^3:
 
 
+# Truncate the quick phase direct interval polynomial to degree specialDegree 
+# for special interval |x| <= specialBound (speed-up)
+
+specialDegree := 5:
+specialBound := 2^(-12):
+
+specialPoly := unapply(sum(coeff(quickDirectpoly(x),x,i) * x^i,i=0..specialDegree),x):
+
+printf("Special polynomial is the direct polynomial truncated to degree %d used in |x| < 2^(%f)\n",
+	specialDegree, evalf(log[2](specialBound))):
+
 # Compute the relative errors
 
 errDirectQuick := numapprox[infnorm](quickDirectpoly(x)/directF(x) -1,x=directA..directB):
 errDirectAccu := numapprox[infnorm](accuDirectpoly(x)/directF(x) -1,x=directA..directB):
 
+errSpecialPoly := numapprox[infnorm](specialPoly(x)/directF(x) -1,x=-specialBound..specialBound):
+
+
 printf("The relative approximation error of the direct interval quick polynomial is 2^(%f)\n",
 	evalf(log[2](abs(errDirectQuick)))):
 printf("The relative approximation error of the direct interval accurate polynomial is 2^(%f)\n",
 	evalf(log[2](abs(errDirectAccu)))):
+printf("The relative approximation error of the special interval special polynomial is 2^(%f)\n",
+	evalf(log[2](abs(errSpecialPoly)))):
 
 
 # Third, we have the computation of the values for the common interval
@@ -185,6 +201,7 @@ fprintf(fd, "\#define SMALLEST %1.50e\n",Smallest):
 fprintf(fd, "\#define MINUSONEBOUND %1.50e\n",MinusOneBound):
 fprintf(fd, "\#define SIMPLEOVERFLOWBOUND 0x%08x\n",SimpleOverflowBound):
 fprintf(fd, "\#define DIRECTINTERVALBOUND 0x%08x\n",DirectIntervalBound):
+fprintf(fd, "\#define SPECIALINTERVALBOUND 0x%08x\n",convert((ieeehexa(specialBound))[1],decimal,hex)):
 fprintf(fd, "\#define ROUNDCSTDIRECTRN %1.50e\n",compute_rn_constant(epsQuickDirectOverall)):
 fprintf(fd, "\#define ROUNDCSTDIRECTRD %1.50e\n",epsQuickDirectOverall):
 fprintf(fd, "\#define ROUNDCSTCOMMONRN %1.50e\n",compute_rn_constant(epsQuickCommonOverall)):
