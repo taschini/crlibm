@@ -487,7 +487,8 @@ void test_init(/* pointers to returned value */
     {
       *randfun_perf     = rand_for_expm1_testperf;
       *randfun_soaktest = rand_for_expm1_soaktest;
-      *worst_case= 1.0;   /* TODO */
+      *worst_case= 0.6300653316969685446835569564427714794874191284179687500;   
+      /* TODO: The value above is not the worst case but a difficult case for RN*/
       *testfun_libm   = expm1;
       switch(crlibm_rnd_mode){
       case RU:
