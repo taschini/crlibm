@@ -1,5 +1,5 @@
 /*
- * Correctly rounded arctangent
+ * Correctly rounded arcsine
  *
  * Author : Christoph Lauter (ENS Lyon)
  *
