@@ -547,7 +547,7 @@ double expm1_rn(double x) {
 }
 
 double expm1_rd(double x) {
-  db_number xdb, scaledb, shiftedXMultdb, polyTblhdb, polyTblmdb;
+  db_number xdb, shiftedXMultdb, polyTblhdb, polyTblmdb;
   int xIntHi, expoX, k, M, index1, index2;
   double highPoly, tt1h, t1h, t1l, xSqh, xSql, xSqHalfh, xSqHalfl, xCubeh, xCubel, t2h, t2l, templ, tt3h, tt3l;
   double polyh, polyl, expm1h, expm1m, expm1l;
@@ -560,7 +560,7 @@ double expm1_rd(double x) {
   double highPolyWithSquare, tablesh, tablesl, t8, t9, t10, t11, t12, t13;
   double exph, expm, t1, t2, t3;
   double msLog2Div2LMultKh, msLog2Div2LMultKm, msLog2Div2LMultKl;
-
+  double middlePoly, doublePoly;
 
   xdb.d = x; 
 
@@ -635,30 +635,53 @@ double expm1_rd(double x) {
       /* If we are here, we must perform range reduction */
 
 
-      /* We start by producing 2^(-expoX-1) as a factor to x */
-      scaledb.i[HI] = ((-expoX-1)+1023) << 20;
-      scaledb.i[LO] = 0;
-      
-      /* We multiply x with the scale */
-      x = scaledb.d * x;
+      /* We multiply x by 2^(-expoX-1) by bit manipulation 
+	 x cannot be denormalized so there is no danger
+      */
+      xdb.i[HI] += (-expoX-1) << 20;
+
+      /* We reassign the new x and maintain xIntHi */
+
+      xIntHi = xdb.i[HI] & 0x7fffffff;
+      x = xdb.d;
     }
     
     /* Here, we have always |x| < 1/32 */
 
 
-    /* Double precision evaluation steps */
-#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-    highPoly = FMA(FMA(FMA(FMA(FMA(quickDirectpolyC9h ,x,quickDirectpolyC8h),x,quickDirectpolyC7h),x,
-                                   quickDirectpolyC6h),x,quickDirectpolyC5h),x,quickDirectpolyC4h);
-#else
-    highPoly = quickDirectpolyC4h + x * (quickDirectpolyC5h + x * (quickDirectpolyC6h + x * (
-	       quickDirectpolyC7h + x * (quickDirectpolyC8h + x *  quickDirectpolyC9h))));
-#endif
-
-    /* Double-double evaluation steps */
-    tt1h = x * highPoly;
+    /* Double precision evaluation steps and one double-double step */
 
     Mul12(&xSqh,&xSql,x,x);
+
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+    middlePoly = FMA(quickDirectpolyC5h,x,quickDirectpolyC4h);
+#else
+    middlePoly = quickDirectpolyC4h + x * quickDirectpolyC5h;
+#endif
+
+    doublePoly = middlePoly;
+
+    /* Special path: for small |x| we can truncate the polynomial */
+
+    if (xIntHi > SPECIALINTERVALBOUND) {
+
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+      highPoly = FMA(FMA(FMA(quickDirectpolyC9h ,x,quickDirectpolyC8h),x,
+                             quickDirectpolyC7h),x,quickDirectpolyC6h);
+#else
+      highPoly = quickDirectpolyC6h + x * (quickDirectpolyC7h + x * (
+	         quickDirectpolyC8h + x *  quickDirectpolyC9h));
+#endif
+
+      highPolyWithSquare = xSqh * highPoly;
+
+      doublePoly = middlePoly + highPolyWithSquare;
+
+    }
+    
+    /* Double-double evaluation steps */
+    tt1h = x * doublePoly;
+
     xSqHalfh = 0.5 * xSqh;
     xSqHalfl = 0.5 * xSql;
     Add12(t2h,templ,x,xSqHalfh);
@@ -838,7 +861,7 @@ double expm1_rd(double x) {
 }
 
 double expm1_ru(double x) {
-  db_number xdb, scaledb, shiftedXMultdb, polyTblhdb, polyTblmdb;
+  db_number xdb, shiftedXMultdb, polyTblhdb, polyTblmdb;
   int xIntHi, expoX, k, M, index1, index2;
   double highPoly, tt1h, t1h, t1l, xSqh, xSql, xSqHalfh, xSqHalfl, xCubeh, xCubel, t2h, t2l, templ, tt3h, tt3l;
   double polyh, polyl, expm1h, expm1m, expm1l;
@@ -851,7 +874,7 @@ double expm1_ru(double x) {
   double highPolyWithSquare, tablesh, tablesl, t8, t9, t10, t11, t12, t13;
   double exph, expm, t1, t2, t3;
   double msLog2Div2LMultKh, msLog2Div2LMultKm, msLog2Div2LMultKl;
-
+  double middlePoly, doublePoly;
 
   xdb.d = x; 
 
@@ -936,30 +959,53 @@ double expm1_ru(double x) {
       /* If we are here, we must perform range reduction */
 
 
-      /* We start by producing 2^(-expoX-1) as a factor to x */
-      scaledb.i[HI] = ((-expoX-1)+1023) << 20;
-      scaledb.i[LO] = 0;
-      
-      /* We multiply x with the scale */
-      x = scaledb.d * x;
+      /* We multiply x by 2^(-expoX-1) by bit manipulation 
+	 x cannot be denormalized so there is no danger
+      */
+      xdb.i[HI] += (-expoX-1) << 20;
+
+      /* We reassign the new x and maintain xIntHi */
+
+      xIntHi = xdb.i[HI] & 0x7fffffff;
+      x = xdb.d;
     }
     
     /* Here, we have always |x| < 1/32 */
 
 
-    /* Double precision evaluation steps */
-#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-    highPoly = FMA(FMA(FMA(FMA(FMA(quickDirectpolyC9h ,x,quickDirectpolyC8h),x,quickDirectpolyC7h),x,
-                                   quickDirectpolyC6h),x,quickDirectpolyC5h),x,quickDirectpolyC4h);
-#else
-    highPoly = quickDirectpolyC4h + x * (quickDirectpolyC5h + x * (quickDirectpolyC6h + x * (
-	       quickDirectpolyC7h + x * (quickDirectpolyC8h + x *  quickDirectpolyC9h))));
-#endif
-
-    /* Double-double evaluation steps */
-    tt1h = x * highPoly;
+    /* Double precision evaluation steps and one double-double step */
 
     Mul12(&xSqh,&xSql,x,x);
+
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+    middlePoly = FMA(quickDirectpolyC5h,x,quickDirectpolyC4h);
+#else
+    middlePoly = quickDirectpolyC4h + x * quickDirectpolyC5h;
+#endif
+
+    doublePoly = middlePoly;
+
+    /* Special path: for small |x| we can truncate the polynomial */
+
+    if (xIntHi > SPECIALINTERVALBOUND) {
+
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+      highPoly = FMA(FMA(FMA(quickDirectpolyC9h ,x,quickDirectpolyC8h),x,
+                             quickDirectpolyC7h),x,quickDirectpolyC6h);
+#else
+      highPoly = quickDirectpolyC6h + x * (quickDirectpolyC7h + x * (
+	         quickDirectpolyC8h + x *  quickDirectpolyC9h));
+#endif
+
+      highPolyWithSquare = xSqh * highPoly;
+
+      doublePoly = middlePoly + highPolyWithSquare;
+
+    }
+    
+    /* Double-double evaluation steps */
+    tt1h = x * doublePoly;
+
     xSqHalfh = 0.5 * xSqh;
     xSqHalfl = 0.5 * xSql;
     Add12(t2h,templ,x,xSqHalfh);
@@ -1137,9 +1183,9 @@ double expm1_ru(double x) {
   
   /* We cannot be here since we return before in any case */
 }
-
+ 
 double expm1_rz(double x) {
-  db_number xdb, scaledb, shiftedXMultdb, polyTblhdb, polyTblmdb;
+  db_number xdb, shiftedXMultdb, polyTblhdb, polyTblmdb;
   int xIntHi, expoX, k, M, index1, index2;
   double highPoly, tt1h, t1h, t1l, xSqh, xSql, xSqHalfh, xSqHalfl, xCubeh, xCubel, t2h, t2l, templ, tt3h, tt3l;
   double polyh, polyl, expm1h, expm1m, expm1l;
@@ -1152,7 +1198,7 @@ double expm1_rz(double x) {
   double highPolyWithSquare, tablesh, tablesl, t8, t9, t10, t11, t12, t13;
   double exph, expm, t1, t2, t3;
   double msLog2Div2LMultKh, msLog2Div2LMultKm, msLog2Div2LMultKl;
-
+  double middlePoly, doublePoly;
 
   xdb.d = x; 
 
@@ -1245,30 +1291,53 @@ double expm1_rz(double x) {
       /* If we are here, we must perform range reduction */
 
 
-      /* We start by producing 2^(-expoX-1) as a factor to x */
-      scaledb.i[HI] = ((-expoX-1)+1023) << 20;
-      scaledb.i[LO] = 0;
-      
-      /* We multiply x with the scale */
-      x = scaledb.d * x;
+      /* We multiply x by 2^(-expoX-1) by bit manipulation 
+	 x cannot be denormalized so there is no danger
+      */
+      xdb.i[HI] += (-expoX-1) << 20;
+
+      /* We reassign the new x and maintain xIntHi */
+
+      xIntHi = xdb.i[HI] & 0x7fffffff;
+      x = xdb.d;
     }
     
     /* Here, we have always |x| < 1/32 */
 
 
-    /* Double precision evaluation steps */
-#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-    highPoly = FMA(FMA(FMA(FMA(FMA(quickDirectpolyC9h ,x,quickDirectpolyC8h),x,quickDirectpolyC7h),x,
-                                   quickDirectpolyC6h),x,quickDirectpolyC5h),x,quickDirectpolyC4h);
-#else
-    highPoly = quickDirectpolyC4h + x * (quickDirectpolyC5h + x * (quickDirectpolyC6h + x * (
-	       quickDirectpolyC7h + x * (quickDirectpolyC8h + x *  quickDirectpolyC9h))));
-#endif
-
-    /* Double-double evaluation steps */
-    tt1h = x * highPoly;
+    /* Double precision evaluation steps and one double-double step */
 
     Mul12(&xSqh,&xSql,x,x);
+
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+    middlePoly = FMA(quickDirectpolyC5h,x,quickDirectpolyC4h);
+#else
+    middlePoly = quickDirectpolyC4h + x * quickDirectpolyC5h;
+#endif
+
+    doublePoly = middlePoly;
+
+    /* Special path: for small |x| we can truncate the polynomial */
+
+    if (xIntHi > SPECIALINTERVALBOUND) {
+
+#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
+      highPoly = FMA(FMA(FMA(quickDirectpolyC9h ,x,quickDirectpolyC8h),x,
+                             quickDirectpolyC7h),x,quickDirectpolyC6h);
+#else
+      highPoly = quickDirectpolyC6h + x * (quickDirectpolyC7h + x * (
+	         quickDirectpolyC8h + x *  quickDirectpolyC9h));
+#endif
+
+      highPolyWithSquare = xSqh * highPoly;
+
+      doublePoly = middlePoly + highPolyWithSquare;
+
+    }
+    
+    /* Double-double evaluation steps */
+    tt1h = x * doublePoly;
+
     xSqHalfh = 0.5 * xSqh;
     xSqHalfl = 0.5 * xSql;
     Add12(t2h,templ,x,xSqHalfh);
