@@ -113,6 +113,12 @@ extern double asin_rd(double); /* toward -inf */
 extern double asin_ru(double); /* toward +inf */
 extern double asin_rz(double); /* toward zero */
 
+/* arccosine */
+extern double acos_rn(double); /* to nearest */
+extern double acos_rd(double); /* toward -inf */
+extern double acos_ru(double); /* toward +inf */
+#define acos_rz acos_rd        /* toward zero */ 
+
 /* expm1 = e^x -1 */
 extern double expm1_rn(double); /* to nearest */
 extern double expm1_rd(double); /* toward -inf */

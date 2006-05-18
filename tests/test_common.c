@@ -317,6 +317,28 @@ double rand_for_asin_soaktest(){
   return (result.d);
 }
 
+/* Produces x with |x| in [2^(-127);1] and a random sign */
+double rand_for_acos_testperf(){
+  db_number result;
+  int e;
+  /*first the low bits of the mantissa*/
+  result.i[LO]=rand_int();
+  /* then the high bits of the mantissa */
+  result.i[HI]=  rand_int() & 0x000fffff;
+  /* Now set the exponent */
+  e = (rand_int() & 0x0000007f) + 0x00000380;
+  if (e == 0x000003ff) {
+    result.i[HI] = 0;
+    result.i[LO] = 0;
+  }
+  /* Now set the sign */
+  e += (rand_int() & 0x00000800);
+  result.i[HI] += e<<20;
+  return (result.d);
+}
+
+
+
 
 void test_rand()  {
   int i;
@@ -748,6 +770,32 @@ void test_init(/* pointers to returned value */
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_asin;
+#endif
+    }
+  else if (strcmp (func_name, "acos") == 0)
+    {
+      *randfun_perf     = rand_for_acos_testperf;
+      *randfun_soaktest = rand_for_asin_soaktest;
+      *worst_case = 1.0; /* TODO */
+      *testfun_libm   = acos;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = acos_ru;	break;
+      case RD:
+	*testfun_crlibm = acos_rd;	break;
+      case RZ:
+	*testfun_crlibm = acos_rz; 	break;
+      default:
+	*testfun_crlibm = acos_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_libultim  = uacos;  
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = NULL;   /* TODO */
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = mpfr_acos;
 #endif
     }
   else if (strcmp (func_name, "pow") == 0)

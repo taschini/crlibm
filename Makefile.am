@@ -25,7 +25,8 @@ libcrlibm_a_SOURCES =  \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
 	csh_fast.h csh_fast.c exp_accurate.h exp_accurate.c \
-	asin-td.h asin-td.c expm1.h expm1.c log1p.h log1p.c
+	asin-td.h asin-td.c expm1.h expm1.c log1p.h log1p.c \
+	acos-td.h acos-td.c
 else 
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c triple-double.h\
@@ -37,7 +38,8 @@ libcrlibm_a_SOURCES =  \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
 	csh_fast.h csh_fast.c exp_accurate.h exp_accurate.c \
-	asin-td.h asin-td.c expm1.h expm1.c log1p.h log1p.c
+	asin-td.h asin-td.c expm1.h expm1.c log1p.h log1p.c \
+	acos-td.h acos-td.c
 endif
 
 
@@ -70,6 +72,7 @@ EXTRA_DIST = VERSION TODO\
 	maple/log2-td.mpl maple/log10-td.mpl \
 	maple/trigo.mpl maple/atan.mpl \
 	maple/asin-td.mpl \
+	maple/acos-td.mpl \
 	maple/sqrt.mpl \
 	maple/expm1.mpl \
 	maple/log1p.mpl \
