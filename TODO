@@ -1,4 +1,6 @@
-TODO before 0.11 release (will we call it 1.0?)
+TODO before 0.14 release (which will be 1.0)
+
+Write log1p
 
 Serious bugs
 ------------
@@ -6,7 +8,7 @@ None left so far
 
 Proof stuff
 -----------
-Write proofs for log2-td, log10-td
+Write proofs for log2-td, log10-td, acos, expm1, log1p
 Check all the existing .gappa against last version of Gappa
  + set the paths right in the .mpls 
    (not done when we moved the .gappa from maple/ to gappa/) 
@@ -25,12 +27,11 @@ On x86, the test procedure is unfair to the default libm : it should put the pro
 
 Autotest stuff
 --------------
-Add some of Vincent's worst cases to log2 and log10 testdata
+Add some of Vincent's worst cases to acos, expm1, log1p, log2 and log10 testdata
 
 Optim stuff
 -----------
 Fuse atan-pentium and atan-itanium into atan-de
-
 
 ===========================================================================
 

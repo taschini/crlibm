@@ -1,3 +1,8 @@
+Summary of changes between version 0.13beta1 and version 0.11beta1
+==========================================================
+<Christoph Lauter>
+	Added expm1, acos
+	Corrected small possible bug in asin 
 Summary of changes between version 0.11beta1 and version 0.10beta
 ==========================================================
 <Christoph Lauter>

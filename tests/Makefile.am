@@ -16,6 +16,8 @@ crlibm_generate_test_vectors_SOURCES = generate_test_vectors.c test_common.c tes
 
 check_exp: crlibm_blindtest
 	echo ./crlibm_blindtest exp.testdata>check_exp; chmod a+rx check_exp
+check_expm1: crlibm_blindtest
+	echo ./crlibm_blindtest expm1.testdata>check_expm1; chmod a+rx check_expm1
 check_log: crlibm_blindtest
 	echo ./crlibm_blindtest log.testdata>check_log; chmod a+rx check_log
 check_log2: crlibm_blindtest
@@ -28,18 +30,20 @@ check_cos: crlibm_blindtest
 	echo ./crlibm_blindtest cos.testdata>check_cos; chmod a+rx check_cos
 check_tan: crlibm_blindtest
 	echo ./crlibm_blindtest tan.testdata>check_tan; chmod a+rx check_tan
+check_asin: crlibm_blindtest
+	echo ./crlibm_blindtest asin.testdata>check_asin; chmod a+rx check_asin
+check_acos: crlibm_blindtest
+	echo ./crlibm_blindtest acos.testdata>check_acos; chmod a+rx check_acos
 check_atan: crlibm_blindtest
 	echo ./crlibm_blindtest atan.testdata>check_atan; chmod a+rx check_atan
 check_sinh: crlibm_blindtest
 	echo ./crlibm_blindtest sinh.testdata>check_sinh; chmod a+rx check_sinh
 check_cosh: crlibm_blindtest
 	echo ./crlibm_blindtest cosh.testdata>check_cosh; chmod a+rx check_cosh
-check_asin: crlibm_blindtest
-	echo ./crlibm_blindtest asin.testdata>check_asin; chmod a+rx check_asin
 
-CRLIBM_CHECKLIST = check_exp check_log check_log2 check_log10  check_sin check_cos check_tan check_atan check_sinh check_cosh check_asin
+CRLIBM_CHECKLIST = check_exp check_expm1 check_log check_log2 check_log10 check_sin check_cos check_tan check_asin check_acos check_atan check_sinh check_cosh  
 TESTS = $(CRLIBM_CHECKLIST)
 
-EXTRA_DIST = exp.testdata log.testdata log2.testdata log10.testdata sin.testdata cos.testdata tan.testdata atan.testdata sinh.testdata cosh.testdata asin.testdata
+EXTRA_DIST = exp.testdata expm1.testdata log.testdata log2.testdata log10.testdata sin.testdata cos.testdata tan.testdata asin.testdata acos.testdata atan.testdata sinh.testdata cosh.testdata 
 
 CLEANFILES = $(CRLIBM_CHECKLIST)

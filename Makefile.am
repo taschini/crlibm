@@ -6,40 +6,37 @@ lib_LIBRARIES = libcrlibm.a
 #lib_LTLIBRARIES = libcrlibm.la
 
 
-# removed as of 0.10
-#	log_fast.c log_fast.h log_accurate.h log_accurate.c 
-#	exp_fast.h exp_fast.c exp_accurate.h exp_accurate.c 
-#	log10_accurate.h log10_accurate.c 
-#	log2_accurate.h  log2_accurate.c 
-
-# IMPORTANT: be sure that the extra_dist below includes all files for both alternatives
 
 if USE_HARDWARE_DE
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c double-extended.h\
-	exp-td.h exp-td.c \
-	log-de.c log-de.h  \
+	exp-td.h exp-td.c exp_accurate.h exp_accurate.c \
+	expm1.h expm1.c \
+	log-de.c log-de.h \
+	log1p.h log1p.c \
 	log10-td.h log10-td.c \
 	log2-td.h  log2-td.c \
 	rem_pio2_accurate.h rem_pio2_accurate.c \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
-	csh_fast.h csh_fast.c exp_accurate.h exp_accurate.c \
-	asin-td.h asin-td.c expm1.h expm1.c log1p.h log1p.c \
+	csh_fast.h csh_fast.c\
+	asin-td.h asin-td.c \
 	acos-td.h acos-td.c
 else 
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c triple-double.h\
-	exp-td.h exp-td.c \
-	log-td.c log-td.h  \
+	exp-td.h exp-td.c exp_accurate.h exp_accurate.c \
+	expm1.h expm1.c \
+	log-td.c log-td.h \
+	log1p.h log1p.c \
 	log10-td.h log10-td.c \
 	log2-td.h  log2-td.c \
 	rem_pio2_accurate.h rem_pio2_accurate.c \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
+	asin-td.h asin-td.c \
+	acos-td.h acos-td.c \
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
-	csh_fast.h csh_fast.c exp_accurate.h exp_accurate.c \
-	asin-td.h asin-td.c expm1.h expm1.c log1p.h log1p.c \
-	acos-td.h acos-td.c
+	csh_fast.h csh_fast.c 
 endif
 
 
