@@ -13,7 +13,7 @@ libcrlibm_a_SOURCES =  \
 	exp-td.h exp-td.c exp_accurate.h exp_accurate.c \
 	expm1.h expm1.c \
 	log-de.c log-de.h \
-	log1p.h log1p.c \
+	log1p.c \
 	log10-td.h log10-td.c \
 	log2-td.h  log2-td.c \
 	rem_pio2_accurate.h rem_pio2_accurate.c \
@@ -28,7 +28,7 @@ libcrlibm_a_SOURCES =  \
 	exp-td.h exp-td.c exp_accurate.h exp_accurate.c \
 	expm1.h expm1.c \
 	log-td.c log-td.h \
-	log1p.h log1p.c \
+	log1p.c \
 	log10-td.h log10-td.c \
 	log2-td.h  log2-td.c \
 	rem_pio2_accurate.h rem_pio2_accurate.c \
@@ -72,7 +72,6 @@ EXTRA_DIST = VERSION TODO\
 	maple/acos-td.mpl \
 	maple/sqrt.mpl \
 	maple/expm1.mpl \
-	maple/log1p.mpl \
 	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
 	gappa/trigoTanCase2.gappa \
 	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
@@ -91,5 +90,5 @@ EXTRA_DIST = VERSION TODO\
 	docs/latex/elem-fun.bib\
 	scs_lib/tests/tbx_timing.h \
 	log-de.c log-de.h double-extended.h log-td.c log-td.h triple-double.h atan-pentium.c atan-itanium.c \
-	maple/asin-td.mpl expm1.h expm1.c log1p.h log1p.c
+	maple/asin-td.mpl expm1.h expm1.c log1p.c
  
