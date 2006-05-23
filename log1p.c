@@ -181,8 +181,13 @@ void log1p_td_accurate(double *logh, double *logm, double *logl, double ed, int 
      return x;
    }
 
-   if (((xdb.i[HI] & 0x80000000) != 0) && (xdb.i[HI] >= 0x3ff00000)) {
-     /* We are less than -1 (also -inf and NaN), we return NaN */
+   if (((xdb.i[HI] & 0x80000000) != 0) && ((xdb.i[HI] & 0x7fffffff) >= 0x3ff00000)) {
+     /* We are less or equal than -1 (-inf and NaN, too), 
+	we return -inf for -1 and NaN otherwise 
+     */
+     if (x == -1.0) return x/0.0;
+
+     
      return (x-x)/0.0;
    }
 
@@ -464,8 +469,13 @@ double log1p_ru(double x) {
      return x;
    }
 
-   if (((xdb.i[HI] & 0x80000000) != 0) && (xdb.i[HI] >= 0x3ff00000)) {
-     /* We are less than -1 (also -inf and NaN), we return NaN */
+   if (((xdb.i[HI] & 0x80000000) != 0) && ((xdb.i[HI] & 0x7fffffff) >= 0x3ff00000)) {
+     /* We are less or equal than -1 (-inf and NaN, too), 
+	we return -inf for -1 and NaN otherwise 
+     */
+     if (x == -1.0) return x/0.0;
+
+     
      return (x-x)/0.0;
    }
 
@@ -746,8 +756,13 @@ double log1p_rd(double x) {
      return xdb.d;
    }
 
-   if (((xdb.i[HI] & 0x80000000) != 0) && (xdb.i[HI] >= 0x3ff00000)) {
-     /* We are less than -1 (also -inf and NaN), we return NaN */
+   if (((xdb.i[HI] & 0x80000000) != 0) && ((xdb.i[HI] & 0x7fffffff) >= 0x3ff00000)) {
+     /* We are less or equal than -1 (-inf and NaN, too), 
+	we return -inf for -1 and NaN otherwise 
+     */
+     if (x == -1.0) return x/0.0;
+
+     
      return (x-x)/0.0;
    }
 
@@ -1028,8 +1043,13 @@ double log1p_rz(double x) {
      return x;
    }
 
-   if (((xdb.i[HI] & 0x80000000) != 0) && (xdb.i[HI] >= 0x3ff00000)) {
-     /* We are less than -1 (also -inf and NaN), we return NaN */
+   if (((xdb.i[HI] & 0x80000000) != 0) && ((xdb.i[HI] & 0x7fffffff) >= 0x3ff00000)) {
+     /* We are less or equal than -1 (-inf and NaN, too), 
+	we return -inf for -1 and NaN otherwise 
+     */
+     if (x == -1.0) return x/0.0;
+
+     
      return (x-x)/0.0;
    }
 
