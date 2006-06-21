@@ -10,7 +10,7 @@ lib_LIBRARIES = libcrlibm.a
 if USE_HARDWARE_DE
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c double-extended.h\
-	exp-td.h exp-td.c exp-td-standalone.c  exp_accurate.h exp_accurate.c \
+	exp-td.h exp-td.c exp-td-standalone.c expm1-standalone.c exp_accurate.h exp_accurate.c \
 	expm1.h expm1.c \
 	log-de.c log-de.h \
 	log1p.c \
@@ -19,13 +19,13 @@ libcrlibm_a_SOURCES =  \
 	rem_pio2_accurate.h rem_pio2_accurate.c \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	asin-td.h asin-td.c \
-	acos-td.h acos-td.c
+	acos-td.h acos-td.c\
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
-	csh_fast.h csh_fast.c\
+	csh_fast.h csh_fast.c
 else 
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c triple-double.h\
-	exp-td.h exp-td.c exp-td-standalone.c exp_accurate.h exp_accurate.c \
+	exp-td.h exp-td.c exp-td-standalone.c expm1-standalone.c exp_accurate.h exp_accurate.c \
 	expm1.h expm1.c \
 	log-td.c log-td.h \
 	log1p.c \
