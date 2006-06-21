@@ -6,6 +6,12 @@
 #define AVOID_FMA 0
 
 
+extern void exp_td_accurate(double *polyTblh, double *polyTblm, double *polyTbll, 
+			    double rh, double rm, double rl, 
+			    double tbl1h, double tbl1m, double tbl1l,
+			    double tbl2h, double tbl2m, double tbl2l);
+
+
 /* Function exp13
 
    Computes exp(x) with an accuracy of 113 bits as
@@ -32,17 +38,6 @@ void exp13(int *exponent, double *exph, double *expm, double *expl, double x) {
   double t1, t2;
   db_number shiftedXMultdb, xdb;
   int k, M, index1, index2, xIntHi;
-  double highPoly, highPolyMulth, highPolyMultm, highPolyMultl;
-  double rhSquareh, rhSquarel, rhSquareHalfh, rhSquareHalfl;
-  double rhCubeh, rhCubem, rhCubel;
-  double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5, t6;
-  double lowPolyh, lowPolym, lowPolyl;
-  double ph, pm, pl, phnorm, pmnorm, rmlMultPh, rmlMultPl;
-  double qh, ql, fullPolyh, fullPolym, fullPolyl;
-  double polyWithTbl1h, polyWithTbl1m, polyWithTbl1l;
-  double polyAddOneh,polyAddOnem,polyAddOnel;
-  double polyWithTablesh, polyWithTablesm, polyWithTablesl;
-  double polyTblh, polyTblm, polyTbll;
    
   /* Argument reduction and filtering for special cases */
 
@@ -84,48 +79,9 @@ void exp13(int *exponent, double *exph, double *expm, double *expl, double x) {
   Add12Cond(rh,t2,t1,msLog2Div2LMultKm);
   Add12Cond(rm,rl,t2,msLog2Div2LMultKl);
 
-  /* Polynomial approximation */
-
-#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-  highPoly = FMA(FMA(accPolyC7,rh,accPolyC6),rh,accPolyC5);
-#else
-  highPoly = accPolyC5 + rh * (accPolyC6 + rh * accPolyC7);
-#endif
-
-  Mul12(&t1h,&t1l,rh,highPoly);
-  Add22(&t2h,&t2l,accPolyC4h,accPolyC4l,t1h,t1l);
-  Mul22(&t3h,&t3l,rh,0,t2h,t2l);
-  Add22(&t4h,&t4l,accPolyC3h,accPolyC3l,t3h,t3l);
-
-  Mul12(&rhSquareh,&rhSquarel,rh,rh);
-  Mul23(&rhCubeh,&rhCubem,&rhCubel,rh,0,rhSquareh,rhSquarel);
-
-  rhSquareHalfh = 0.5 * rhSquareh;
-  rhSquareHalfl = 0.5 * rhSquarel;  
-
-  Renormalize3(&lowPolyh,&lowPolym,&lowPolyl,rh,rhSquareHalfh,rhSquareHalfl);
-
-  Mul233(&highPolyMulth,&highPolyMultm,&highPolyMultl,t4h,t4l,rhCubeh,rhCubem,rhCubel);
-
-  Add33(&ph,&pm,&pl,lowPolyh,lowPolym,lowPolyl,highPolyMulth,highPolyMultm,highPolyMultl);
-
-  Add12(phnorm,pmnorm,ph,pm);
-  Mul22(&rmlMultPh,&rmlMultPl,rm,rl,phnorm,pmnorm);
-  Add22(&qh,&ql,rm,rl,rmlMultPh,rmlMultPl);
-
-  Add233Cond(&fullPolyh,&fullPolym,&fullPolyl,qh,ql,ph,pm,pl);
-  Add12(polyAddOneh,t5,1,fullPolyh);
-  Add12Cond(polyAddOnem,t6,t5,fullPolym);
-  polyAddOnel = t6 + fullPolyl;
-  Mul33(&polyWithTbl1h,&polyWithTbl1m,&polyWithTbl1l,tbl1h,tbl1m,tbl1l,polyAddOneh,polyAddOnem,polyAddOnel);
-  Mul33(&polyWithTablesh,&polyWithTablesm,&polyWithTablesl,
-	tbl2h,tbl2m,tbl2l,
-	polyWithTbl1h,polyWithTbl1m,polyWithTbl1l);
-
-  Renormalize3(&polyTblh,&polyTblm,&polyTbll,polyWithTablesh,polyWithTablesm,polyWithTablesl);
+  /* Polynomial approximation and reconstruction: factorized code */
+  
+  exp_td_accurate(exph, expm, expl, rh, rm, rl, tbl1h, tbl1m, tbl1l, tbl2h, tbl2m, tbl2l);
 
   *exponent = M;
-  *exph = polyTblh;
-  *expm = polyTblm;
-  *expl = polyTbll;
 }
