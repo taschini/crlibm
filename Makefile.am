@@ -10,7 +10,7 @@ lib_LIBRARIES = libcrlibm.a
 if USE_HARDWARE_DE
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c double-extended.h\
-	exp-td.h exp-td.c exp_accurate.h exp_accurate.c \
+	exp-td.h exp-td.c exp-td-standalone.c  exp_accurate.h exp_accurate.c \
 	expm1.h expm1.c \
 	log-de.c log-de.h \
 	log1p.c \

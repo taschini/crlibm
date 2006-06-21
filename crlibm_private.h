@@ -107,6 +107,7 @@ extern void exp_SC(scs_ptr res_scs, double x);
 extern double scs_exp_rn(double);
 extern double scs_exp_ru(double);
 extern double scs_exp_rd(double);
+void exp13(int *exponent, double *exph, double *expm, double *expl, double x);
 
 extern void scs_log(scs_ptr,db_number, int);
 
