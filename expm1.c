@@ -41,6 +41,7 @@ void expm1_direct_td(double *expm1h, double *expm1m, double *expm1l,
   double expm1hover, expm1mover, expm1lover;
   double r1h, r1m, r1l, r2h, r2m, r2l, r3h, r3m, r3l;
   double rr1h, rr1m, rr1l, rr2h, rr2m, rr2l, rr3h, rr3m, rr3l;
+  double polyhover, polymover, polylover;
 
   /* Double precision evaluation steps */
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
@@ -79,7 +80,9 @@ void expm1_direct_td(double *expm1h, double *expm1m, double *expm1l,
 
     Mul33(&fullHighPolyh,&fullHighPolym,&fullHighPolyl,xCubeh,xCubem,xCubel,t8h,t8m,t8l);
 
-    Add33(&polyh,&polym,&polyl,lowPolyh,lowPolym,lowPolyl,fullHighPolyh,fullHighPolym,fullHighPolyl);
+    Add33(&polyhover,&polymover,&polylover,lowPolyh,lowPolym,lowPolyl,fullHighPolyh,fullHighPolym,fullHighPolyl);
+
+    Renormalize3(&polyh,&polym,&polyl,polyhover,polymover,polylover);
 
     /* Reconstruction steps */
 
@@ -88,9 +91,9 @@ void expm1_direct_td(double *expm1h, double *expm1m, double *expm1l,
       /* If we are here, we must perform reconstruction */
 
       /* First reconstruction step */
+
       Add133(&r1h,&r1m,&r1l,2,polyh,polym,polyl);
       Mul33(&rr1h,&rr1m,&rr1l,r1h,r1m,r1l,polyh,polym,polyl);
-	
       if (expoX >= 1) {
 
 	/* Second reconstruction step */
@@ -112,7 +115,7 @@ void expm1_direct_td(double *expm1h, double *expm1m, double *expm1l,
 	} else {
 	  expm1hover = rr2h;
 	  expm1mover = rr2m;
-	  expm1lover = rr1l;
+	  expm1lover = rr2l;
 	}
 
       } else {

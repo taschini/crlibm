@@ -93,6 +93,7 @@ errDirectAccu := numapprox[infnorm](accuDirectpoly(x)/directF(x) -1,x=directA..d
 
 errSpecialPoly := numapprox[infnorm](specialPoly(x)/directF(x) -1,x=-specialBound..specialBound):
 
+errDirectAccuSpecial := numapprox[infnorm](accuDirectpoly(x)/directF(x) -1,x=2^(-12)..2^(-12)):
 
 printf("The relative approximation error of the direct interval quick polynomial is 2^(%f)\n",
 	evalf(log[2](abs(errDirectQuick)))):
@@ -100,6 +101,9 @@ printf("The relative approximation error of the direct interval accurate polynom
 	evalf(log[2](abs(errDirectAccu)))):
 printf("The relative approximation error of the special interval special polynomial is 2^(%f)\n",
 	evalf(log[2](abs(errSpecialPoly)))):
+printf("The relative approximation error of the direct interval accurate polynomial in special domain is 2^(%f)\n",
+	evalf(log[2](abs(errDirectAccuSpecial)))):
+
 
 
 # Third, we have the computation of the values for the common interval

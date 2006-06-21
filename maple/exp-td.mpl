@@ -118,6 +118,12 @@ epsilonApproxAccurateSpecial := numapprox[infnorm]( ((polyAccurate-1)/(exp(x)-1)
 printf("   approximation rel error for the accurate phase in the special interval (|r| \\leq 2^(-30)) is 2^(%2f)\n", 
 log2(epsilonApproxAccurateSpecial) ) :
 
+epsilonApproxAccurateSpecial2 := numapprox[infnorm]( ((polyAccurate-1)/(exp(x)-1))-1, x=-2^(-18)..2^(-18)):
+printf("   approximation rel error for the accurate phase in the special interval (|r| \\leq 2^(-18)) is 2^(%2f)\n", 
+log2(epsilonApproxAccurateSpecial2) ) :
+
+
+
 epsilon_quick := 2^(-64): # The Gappa proof will show this bound
 
 
