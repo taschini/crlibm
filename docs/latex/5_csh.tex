@@ -42,15 +42,20 @@ and
  $$\cosh(x) = \frac{e^x +  e^{-x}}{2}$$
 respectively.
 
-For large arguments, we will be able to neglect the smaller term. In
-the first step, we will determine a threshold at which
-$e^{-x}<2^{-65}e^x$. In the second step, the threshold will be such
-that $e^{-x}<2^{-130}e^x$. 
+For large arguments, we will be able to neglect the smaller term.
+\begin{itemize}
+\item $e^{-x}<2^{-65}e^x$ as soon as $x>23$ (this is the target precision of the first step) 
+\item $e^{-x}<2^{-115}e^x$ as soon as $x>40$ (this is the target precision of the second step)
+\end{itemize}
 
 Note that this has been used in the search for worst cases, too:
-knowing that the worst case for exp requires $2^{-113}$ accuracy, and
-the division by 2 being exact, we deduce that the worst cases for
-$\sinh$ and $\cosh$ will be the same that for the exponential.
+knowing that correct rounding of \texttt{exp} requires at most
+$2^{-113}$ accuracy for $x>2^{-30}$, and the division by 2 being
+exact, we deduce that the worst cases for $\sinh$ and $\cosh$ will be
+those of the exponential for all the input values greater
+than 40.
+
+
 However, due to the division by 2, the domain of $\sinh$ and $\cosh$
 is slightly larger than that of exp, so there is a little additional
 search to do (precisely between 709.78 and 710.75). For the same
@@ -61,12 +66,10 @@ $\cosh$.
 \subsection{Worst cases for correct rounding}
 The search for the worst-case accuracy required for correct rounding
 the hyperbolic sine and cosine and their inverses is completed. The
-$\sinh$ and $\sinh^{-1}$ functions require a relative accuracy of
-$2^{-126}$ in the worst case, while the $\cosh$ and $\cosh^{-1}$ require
-$2^{-115}$. The second step will use the accurate exponential, and
-will therefore be accurate to $2^{-150}$. This ensure coverage of all
-the most difficult cases.
-
+$\cosh$ function require a relative accuracy of
+$2^{-115}$ in the worst case, while $\sinh$ requires
+$2^{-126}$. However, for $x>2^{-12}$, $\sinh$ also requires only
+$2^{-109}$.
 
 
 \section{Quick phase}
@@ -232,8 +235,6 @@ We have $k = 0$, and there is no reduction, and no term of error.
 \end{itemize}
 \end{itemize} 
 
-
-\newpage
 \subsection{Details of computer program}
 
 The procedures \texttt{cosh\_quick} and \texttt{sinh\_quick} contain the computation respectively shared by the 
@@ -551,44 +552,23 @@ are ensured by the image domain of the cosh.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Accurate phase}
 
-An SCS-based exponential function already exists in \texttt{crlibm},
-accurate to $2^{-158}$, a large overkill for computing the yperbolic
-functions. We therefore use the equation
-
+It is reminded that correct rounding requires an intermediate accuracy
+of $2^{-115}$ for $\cosh$ and $2^{-126}$ for $\sinh$. The
+triple-double exponential function in \texttt{crlibm} is sufficiently
+accurate for computing the $\cosh$, using the equation
  $$\cosh(x) = \frac{e^x +  e^{-x}}{2}\quad.$$
 
- It is still possible to optimise out the $e^{-x}$ for large
- arguments. Indeed, for $|k|>65$ we have $e^{-x}<2^{-128}e^x$ so the
- relative error due to neglecting $e^{-x}$ is much smaller than the
- worst case accuracy required to decide rounding for such large values
- (in the order of $2^{-115}$ for both functions). This is reflected in the following code:
+ For $\sinh$, we use the \texttt{expm1} triple-double implementation
+ which is more accurate around $0$ as in the following equation:
+ $$\sinh(x) = \frac{e^x -  e^{-x}}{2}\quad = \frac{(e^x-1) -  (e^{-x}-1)}{2}\quad .$$
+
+ As already noted, the $e^{-x}$ term is optimised out for large
+ arguments. Indeed, for $|x|>40$ we have $e^{-x}<2^{-115}e^x$,
+ therefore the relative error due to neglecting $e^{-x}$ is much
+ smaller than the worst case accuracy required to decide rounding,
+ which is smaller than $2^{-111}$ for both functions in this range.
 
 
-\begin{lstlisting}[caption={Procedure \texttt{cosh\_accurate}},firstnumber=177]
-  if ((k > -65) && (k < 65)) {
-    exp_SC(exp_scs, x);
-    scs_inv(exp_minus_scs, exp_scs);
-    scs_add(res_scs, exp_scs, exp_minus_scs);
-    scs_div_2(res_scs);
-  }
-  else if (k >= 65) {
-    exp_SC(res_scs, x);
-    scs_div_2(res_scs);
-  }
-  else {
-    exp_SC(res_scs, -x);
-    scs_div_2(res_scs);
-  }
-\end{lstlisting}
-
-\begin{tabular}{ll}
-Line 177   & We will distinguish three cases, since if $|x|$ is large enough, we can ignore some computations. \\
-Line 178-181 & The formula used  is $\cosh(x) =  (exp(x) + \frac{1}{exp(x)})/2$. \\
-           & The final result has at least 150 bits of accuracy,\\
-           & and that is enough for a correct rounding \\
-Line 182   & If $|k| \geq 65$, $e^{-x}$ is negligible, since we have $e^{-x} \leq 2^{-128} e^x$. \\
-Line 186   & This case is symetric to the previous one. \\
-\end{tabular}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Analysis of cosh performance}
@@ -612,15 +592,13 @@ operating systems.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{|l|r|r|r|}
 \hline
- \multicolumn{4}{|c|}{Processor / system / compiler}   \\ 
+ \multicolumn{4}{|c|}{Pentium III / Linux 2.4 / gcc 3.2}   \\ 
  \hline
-                         & min time      & max time      & avg time \\ 
+                             & min time          & avg time     & max time       \\ 
  \hline
- \texttt{libm}           & 116          & 920           &        323 \\ 
+ default \texttt{libm}          & 242           &        272    & 304      \\ 
  \hline
-  \texttt{mpfr}          & 19464        & 224896        &      30338 \\ 
- \hline
- \texttt{crlibm}         & 132          & 55036         &        547 \\ 
+ \texttt{crlibm}                & 207           &        340    & 2638      \\ 
  \hline
 
  \hline
@@ -629,8 +607,6 @@ operating systems.
                          & min time      & max time      & avg time \\
  \hline
  \texttt{libm}           & 15           & 23            &         22 \\
- \hline
-  \texttt{mpfr}          & 1315         & 11021         &       1707 \\
  \hline
  \texttt{crlibm}         & 6            & 1195          &         24 \\
  \hline
