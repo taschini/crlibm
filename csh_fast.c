@@ -181,7 +181,7 @@ static void do_cosh_accurate(int* pexponent,
 
   if(x<0)
     x=-x;
-  if (x > 43.0) {  /* then exp(-x) < 2^-124 exp(x) */
+  if (x > 40.0) {  /* then exp(-x) < 2^-118 exp(x) */
     exp13(pexponent, presh, presm, presl, x);
   }
   else { 
@@ -505,18 +505,18 @@ static void do_sinh_accurate(int* pexponent,
   crlibm_second_step_taken++;
 #endif
 
-  if(x > 43.0) { /* then exp(-x) < 2^-124 exp(x) */ 
+  if(x > 40.0) { /* then exp(-x) < 2^-129 exp(x) */ 
     exp13(pexponent, presh, presm, presl, x);
     return;
   }
-  if(x < -43.0) { /* then exp(x) < 2^-124 exp(-x) */ 
+  if(x < -40.0) { /* then exp(x) < 2^-129 exp(-x) */ 
     exp13(pexponent, presh, presm, presl, -x);
     *presh = -*presh;
     *presm = -*presm;
     *presl = -*presl;
     return;
   }
-  /* Otherwise we are between -43 and 43, and we also know that |x| > 2^-25 */
+  /* Otherwise we are between -40 and 40, and we also know that |x| > 2^-25 */
   if(x>0.0) {
     exp13(pexponent, &expph, &exppm, &exppl, x);
     exp13(&exponentm, &(expmh.d), &(expmm.d), &(expml.d), -x);
