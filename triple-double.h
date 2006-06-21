@@ -1197,5 +1197,45 @@
 }
 
 
+/* recpr33()
+
+   Computes a triple-double reciprocal of a triple-double
+   
+   Should be provable to be exact to at least 140 bits
+
+   No special case handling is done
+
+   dh + dm + dl must be renormalized
+
+   The result is renormalized
+
+*/
+
+
+#define recpr33(resh, resm, resl, dh, dm, dl)                                                 \
+{                                                                                             \
+    double _r1, _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9, _t10, _t11, _t12, _t13, _t14;    \
+    double _r2h, _r2l, _t15, _t16, _t17, _t18, _t19, _t20, _t21, _t22, _t23;                  \
+                                                                                              \
+    _r1 = 1.0 / (dh);                                                                         \
+    Mul12(&_t1,&_t2,_r1,(dh));                                                                \
+    _t3 = _t1 - 1.0;                                                                          \
+    Add12Cond(_t4,_t5,_t3,_t2);                                                               \
+    Mul12(&_t6,&_t7,_r1,(dm));                                                                \
+    Add12(_t8,_t9,-1.0,_t6);                                                                  \
+    _t10 = _t9 + _t7;                                                                         \
+    Add12(_t11,_t12,_t8,_t10);                                                                \
+    _r1 = -_r1;                                                                               \
+    Add22Cond(&_t13,&_t14,_t4,_t5,_t11,_t12);                                                 \
+    Mul122(&_r2h,&_r2l,_r1,_t13,_t14);                                                        \
+    Mul233(&_t15,&_t16,&t_17,_r2h,_r2l,(dh),(dm),(dl));                                       \
+    Renormalize3(&_t18,&_t19,&_t20,_t15,_t16,_t17);                                           \
+    _t18 = -1.0;                                                                              \
+    Mul233(&_t21,&_t22,&_t23,_r2h,_r2l,_t18,_t19,_t20);                                       \
+    _t21 = -_t21; _t22 = -_t22; _t23 = -_t23;                                                 \
+    Renormalize3((resh),(resm),(resl),_t21,_t22,_t23);                                        \
+}
+
+
 
 #endif /*TRIPLE_DOUBLE_H*/
