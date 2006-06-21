@@ -165,7 +165,7 @@
    
    Results:         a triple double number resh, resm, resl
 
-   Preconditions:   abs(bh) <= 0.75 * abs(ah) (i)
+   Preconditions:   abs(bh) <= 0.75 * abs(ah)  OR  ( sign(bh) = sign(ah) AND abs(bh) <= abs(ah))  (i)
                     abs(am) <= 2^(-a_o) * abs(ah)
 		    abs(al) <= 2^(-a_u) * abs(am)
 		    abs(bm) <= 2^(-b_o) * abs(bh)
@@ -175,7 +175,7 @@
 		    b_u >= a_u >= 4
 
 		    Condition (i) may not be respected if 
-		    one can assume in this case that ah=am=al
+		    one can assume in this case that ah=am=al=0
 		    
    Guarantees:      resm and resl are non-overlapping
                     resm = round-to-nearest(resm + resl)

@@ -497,9 +497,8 @@ static void do_sinh_accurate(int* pexponent,
 			     double x){
   int k;
   double exph, expm, expl;
-  double expph, exppm, exppl;
+  double expph, exppm, exppl, expmh, expmm, expml;
   int exponentm, deltaexponent;
-  db_number  expmh, expmm, expml;
 
 #if EVAL_PERF==1
   crlibm_second_step_taken++;
@@ -518,32 +517,21 @@ static void do_sinh_accurate(int* pexponent,
   }
   /* Otherwise we are between -40 and 40, and we also know that |x| > 2^-25 */
   if(x>0.0) {
-    exp13(pexponent, &expph, &exppm, &exppl, x);
-    exp13(&exponentm, &(expmh.d), &(expmm.d), &(expml.d), -x);
-    /* align the mantissas. 
-       The exponent is increased but stays well below overflow threshold */
-    deltaexponent =  exponentm - *pexponent ; 
-    expmh.i[HI] += (deltaexponent << 20)  + 0x80000000; /* and we change the sign*/  
-    expmm.i[HI] += (deltaexponent << 20)  + 0x80000000;  
-    expml.i[HI] += (deltaexponent << 20)  + 0x80000000;  
-    Add33(&exph, &expm, &expl, expph, exppm, exppl,   expmh.d, expmm.d, expml.d);
+    expm1_13(&expph, &exppm, &exppl, x);
+    expm1_13(&expmh, &expmm, &expml, -x);
+    /* The following is OK because expph and  -expmh have the same sign */
+    Add33(&exph, &expm, &expl, expph, exppm, exppl,   -expmh, -expmm, -expml);
     Renormalize3(presh,presm,presl, exph, expm, expl);
+    *pexponent=0;
     return;
   }
   else  { /* x<0 */
-    exp13(pexponent, &expph, &exppm, &exppl, -x);
-    expph = -expph;
-    exppm = -exppm;
-    exppl = -exppl;
-    exp13(&exponentm, &(expmh.d), &(expmm.d), &(expml.d), x);
-    /* align the mantissas. 
-       The exponent is increased but stays well below overflow threshold */
-    deltaexponent =  exponentm - *pexponent ; 
-    expmh.i[HI] += (deltaexponent) << 20;  
-    expmm.i[HI] += (deltaexponent) << 20;  
-    expml.i[HI] += (deltaexponent) << 20;  
-    Add33(&exph, &expm, &expl, expph, exppm, exppl,   expmh.d, expmm.d, expml.d);
+    expm1_13(&expph, &exppm, &exppl, x);
+    expm1_13(&expmh, &expmm, &expml, -x);
+    /* The following is OK because expph and  -expmh have the same sign */
+    Add33(&exph, &expm, &expl,   -expmh, -expmm, -expml, expph, exppm, exppl);
     Renormalize3(presh,presm,presl, exph, expm, expl);
+    *pexponent=0;
     return;
   }
 }
