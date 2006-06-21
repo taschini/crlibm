@@ -18,7 +18,7 @@ extern void expm1_common_td(double *expm1h, double *expm1m, double *expm1l,
 
 /* Function expm1_13
 
-   Computes exp(x)-1 with an accuracy of 126 bits as
+   Computes exp(x)-1 with an accuracy of 120 bits (128 for |x| <= 2^(-5)) as
 
    (expm1h + expm1m + expm1l) \approx exp(x) - 1
 

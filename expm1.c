@@ -41,7 +41,7 @@ void expm1_direct_td(double *expm1h, double *expm1m, double *expm1l,
   double expm1hover, expm1mover, expm1lover;
   double r1h, r1m, r1l, r2h, r2m, r2l, r3h, r3m, r3l;
   double rr1h, rr1m, rr1l, rr2h, rr2m, rr2l, rr3h, rr3m, rr3l;
-  double polyhover, polymover, polylover;
+  double fullHighPolyhover, fullHighPolymover, fullHighPolylover;
 
   /* Double precision evaluation steps */
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
@@ -56,8 +56,8 @@ void expm1_direct_td(double *expm1h, double *expm1m, double *expm1l,
 
     /* Triple-double steps for x + x^2/2 and x^3*/
 
-    Add123(&lowPolyh,&lowPolym,&lowPolyl,x,xSqHalfh,xSqHalfl);
-    Mul123(&xCubeh,&xCubem,&xCubel,x,xSqh,xSql);
+    Add123(&lowPolyh,&lowPolym,&lowPolyl,x,xSqHalfh,xSqHalfl);                     /* infty - 52/53 */
+    Mul123(&xCubeh,&xCubem,&xCubel,x,xSqh,xSql);                                   /* 154 - 47/53 */
 
 
     /* Double-double evaluation steps */
@@ -72,17 +72,19 @@ void expm1_direct_td(double *expm1h, double *expm1m, double *expm1l,
 
     /* Triple-double evaluation steps */
 
-    Mul123(&tt6h,&tt6m,&tt6l,x,t6h,t6l);
-    Add233(&t7h,&t7m,&t7l,accuDirectpolyC4h,accuDirectpolyC4m,tt6h,tt6m,tt6l);
+    Mul123(&tt6h,&tt6m,&tt6l,x,t6h,t6l);                                          /* 154 - 47/53 */
+    Add233(&t7h,&t7m,&t7l,accuDirectpolyC4h,accuDirectpolyC4m,tt6h,tt6m,tt6l);    /* 150 - 43/53 */
    
-    Mul133(&tt7h,&tt7m,&tt7l,x,t7h,t7m,t7l);
-    Add33(&t8h,&t8m,&t8l,accuDirectpolyC3h,accuDirectpolyC3m,accuDirectpolyC3l,tt7h,tt7m,tt7l);
+    Mul133(&tt7h,&tt7m,&tt7l,x,t7h,t7m,t7l);                                      /* 143 - 38/53 */
+    Add33(&t8h,&t8m,&t8l,accuDirectpolyC3h,accuDirectpolyC3m,accuDirectpolyC3l,tt7h,tt7m,tt7l); /* 135 - 33/53 */
 
-    Mul33(&fullHighPolyh,&fullHighPolym,&fullHighPolyl,xCubeh,xCubem,xCubel,t8h,t8m,t8l);
+    Mul33(&fullHighPolyhover,&fullHighPolymover,&fullHighPolylover,xCubeh,xCubem,xCubel,t8h,t8m,t8l); /* 130 - 29/53 */
 
-    Add33(&polyhover,&polymover,&polylover,lowPolyh,lowPolym,lowPolyl,fullHighPolyh,fullHighPolym,fullHighPolyl);
+    Renormalize3(&fullHighPolyh,&fullHighPolym,&fullHighPolyl,
+		 fullHighPolyhover,fullHighPolymover,fullHighPolylover);                     /* infty - 52/53 */
 
-    Renormalize3(&polyh,&polym,&polyl,polyhover,polymover,polylover);
+    Add33(&polyh,&polym,&polyl,lowPolyh,lowPolym,lowPolyl,fullHighPolyh,fullHighPolym,fullHighPolyl);
+                                                                                             /* 149 - 47/53 */
 
     /* Reconstruction steps */
 
@@ -91,8 +93,8 @@ void expm1_direct_td(double *expm1h, double *expm1m, double *expm1l,
       /* If we are here, we must perform reconstruction */
 
       /* First reconstruction step */
-
-      Add133(&r1h,&r1m,&r1l,2,polyh,polym,polyl);
+                                                                             
+      Add133(&r1h,&r1m,&r1l,2,polyh,polym,polyl);                             
       Mul33(&rr1h,&rr1m,&rr1l,r1h,r1m,r1l,polyh,polym,polyl);
       if (expoX >= 1) {
 

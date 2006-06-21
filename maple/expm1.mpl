@@ -127,9 +127,9 @@ accuCommonpoly := X -> 1+X+1/2*X^2+(3660068549402285/18446744073709551616*X^4+64
 errCommonQuick := numapprox[infnorm](quickCommonpoly(x)/commonF(x) -1,x=commonA..commonB):
 errCommonAccu := numapprox[infnorm](accuCommonpoly(x)/commonF(x) -1,x=commonA..commonB):
 
-printf("The relative approximation error of the direct interval quick polynomial is 2^(%f)\n",
+printf("The relative approximation error of the common interval quick polynomial is 2^(%f)\n",
 	evalf(log[2](abs(errCommonQuick)))):
-printf("The relative approximation error of the direct interval accurate polynomial is 2^(%f)\n",
+printf("The relative approximation error of the common interval accurate polynomial is 2^(%f)\n",
 	evalf(log[2](abs(errCommonAccu)))):
 
 epsilonApproxRmAccurate := numapprox[infnorm]( ((1+x)/(exp(x)))-1, x=commonA*2^(-52)..commonB*2^(-52)):
