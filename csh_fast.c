@@ -27,7 +27,6 @@
 #include "crlibm.h"
 #include "crlibm_private.h"
 #include "csh_fast.h"
-#include "exp_accurate.h"
 #include "triple-double.h"
 
 
@@ -171,7 +170,6 @@ static void do_cosh(double x, double* preshi, double* preslo){
 static void do_cosh_accurate(int* pexponent, 
 			     double* presh, double* presm, double* presl, 
 			     double x){
-  int k;
   double exph, expm, expl;
   double expph, exppm, exppl;
   int exponentm, deltaexponent;
@@ -183,8 +181,10 @@ static void do_cosh_accurate(int* pexponent,
 
   if(x<0)
     x=-x;
-  DOUBLE2INT(k, x * inv_ln_2.d);
-  if (k < 65) {
+  if (x > 43.0) {  /* then exp(-x) < 2^-124 exp(x) */
+    exp13(pexponent, presh, presm, presl, x);
+  }
+  else { 
     exp13(pexponent, &expph, &exppm, &exppl, x);
     exp13(&exponentm, &(expmh.d), &(expmm.d), &(expml.d), -x);
     /* align the mantissas. 
@@ -195,9 +195,6 @@ static void do_cosh_accurate(int* pexponent,
     expml.i[HI] += (deltaexponent) << 20;  
     Add33(&exph, &expm, &expl, expph, exppm, exppl,   expmh.d, expmm.d, expml.d);
     Renormalize3(presh,presm,presl, exph, expm, expl);
-  }
-  else  {
-    exp13(pexponent, presh, presm, presl, x);
   }
 }
 
@@ -258,7 +255,6 @@ double cosh_ru(double x){
   db_number y;
   int hx;
   double rh, rl;
-  scs_t res_scs;
 
   y.d = x;
   hx = y.i[HI] & 0x7FFFFFFF; 
@@ -306,7 +302,6 @@ double cosh_rd(double x){
   db_number y;
   int hx;
   double rh, rl;
-  scs_t res_scs;
 
   y.d = x;
   hx = y.i[HI] & 0x7FFFFFFF; 
@@ -497,31 +492,62 @@ static void do_sinh(double x, double* prh, double* prl){
 
 
 
-static void do_sinh_accurate(double x, scs_ptr res_scs){
+static void do_sinh_accurate(int* pexponent, 
+			     double* presh, double* presm, double* presl, 
+			     double x){
   int k;
-  scs_t exp_scs, exp_minus_scs;
+  double exph, expm, expl;
+  double expph, exppm, exppl;
+  int exponentm, deltaexponent;
+  db_number  expmh, expmm, expml;
 
 #if EVAL_PERF==1
   crlibm_second_step_taken++;
 #endif
-  /* we'll use the sinh(x) == (exp(x) - 1/exp(x))/2 */
-  DOUBLE2INT(k, x * inv_ln_2.d);
-  if ((k > -65) && (k < 65)) {
-    exp_SC(exp_scs, x);
-    scs_inv(exp_minus_scs, exp_scs);
-    scs_sub(res_scs, exp_scs, exp_minus_scs);
-    scs_div_2(res_scs);
+
+  if(x > 43.0) { /* then exp(-x) < 2^-124 exp(x) */ 
+    exp13(pexponent, presh, presm, presl, x);
+    return;
   }
-  else if (k >= 65) {
-    exp_SC(res_scs, x);
-    scs_div_2(res_scs);
+  if(x < -43.0) { /* then exp(x) < 2^-124 exp(-x) */ 
+    exp13(pexponent, presh, presm, presl, -x);
+    *presh = -*presh;
+    *presm = -*presm;
+    *presl = -*presl;
+    return;
   }
-  else {
-    exp_SC(res_scs, -x);
-    res_scs->sign = -1;
-    scs_div_2(res_scs);
+  /* Otherwise we are between -43 and 43, and we also know that |x| > 2^-25 */
+  if(x>0.0) {
+    exp13(pexponent, &expph, &exppm, &exppl, x);
+    exp13(&exponentm, &(expmh.d), &(expmm.d), &(expml.d), -x);
+    /* align the mantissas. 
+       The exponent is increased but stays well below overflow threshold */
+    deltaexponent =  exponentm - *pexponent ; 
+    expmh.i[HI] += (deltaexponent << 20)  + 0x80000000; /* and we change the sign*/  
+    expmm.i[HI] += (deltaexponent << 20)  + 0x80000000;  
+    expml.i[HI] += (deltaexponent << 20)  + 0x80000000;  
+    Add33(&exph, &expm, &expl, expph, exppm, exppl,   expmh.d, expmm.d, expml.d);
+    Renormalize3(presh,presm,presl, exph, expm, expl);
+    return;
+  }
+  else  { /* x<0 */
+    exp13(pexponent, &expph, &exppm, &exppl, -x);
+    expph = -expph;
+    exppm = -exppm;
+    exppl = -exppl;
+    exp13(&exponentm, &(expmh.d), &(expmm.d), &(expml.d), x);
+    /* align the mantissas. 
+       The exponent is increased but stays well below overflow threshold */
+    deltaexponent =  exponentm - *pexponent ; 
+    expmh.i[HI] += (deltaexponent) << 20;  
+    expmm.i[HI] += (deltaexponent) << 20;  
+    expml.i[HI] += (deltaexponent) << 20;  
+    Add33(&exph, &expm, &expl, expph, exppm, exppl,   expmh.d, expmm.d, expml.d);
+    Renormalize3(presh,presm,presl, exph, expm, expl);
+    return;
   }
 }
+
 
 
 
@@ -529,7 +555,6 @@ double sinh_rn(double x){
   db_number y;
   int hx;
   double rh, rl;
-  scs_t res_scs;
     
 
   y.d = x;
@@ -559,9 +584,14 @@ double sinh_rn(double x){
 
   if (rh == (rh + (rl * round_cst_csh))) return rh;
   else{
-    do_sinh_accurate(x, res_scs);
-    scs_get_d(&rh, res_scs); 
-    return rh;
+    int exponent;
+    db_number res;
+    double  resh, resm, resl;
+
+    do_sinh_accurate(&exponent, &resh,&resm, &resl, x);
+    RoundToNearest3(&(res.d), resh, resm, resl);
+    res.i[HI] += (exponent-1) << 20; /* division by 2 done here*/  
+    return res.d;
   }  
 
 }
@@ -571,7 +601,6 @@ double sinh_rn(double x){
 double sinh_ru(double x){ 
   db_number y;
   double rh, rl;
-  scs_t res_scs;
 
 
   y.d = x;
@@ -603,17 +632,22 @@ double sinh_ru(double x){
   TEST_AND_RETURN_RU(rh, rl, maxepsilon_csh);
 
   /* if the previous block didn't return a value, launch accurate phase */
-  do_sinh_accurate(x, res_scs);
-  scs_get_d_pinf(&rh, res_scs); 
-  return rh;  
+  {
+    int exponent;
+    db_number res;
+    double resh, resm, resl;
+
+    do_sinh_accurate(&exponent, &resh,&resm, &resl, x);
+    RoundUpwards3(&(res.d), resh,resm,resl);
+    res.i[HI] += (exponent-1) << 20; /* division by 2 done here*/  
+    return res.d;
+  }  
 }
 
 
 double sinh_rd(double x){ 
   db_number y;
   double rh, rl;
-  scs_t res_scs;
-
 
   y.d = x;
   y.i[HI] = y.i[HI] & 0x7FFFFFFF;     /* to get the absolute value of the input */
@@ -643,9 +677,16 @@ double sinh_rd(double x){
   TEST_AND_RETURN_RD(rh, rl, maxepsilon_csh);
 
   /* if the previous block didn't return a value, launch accurate phase */
-  do_sinh_accurate(x, res_scs);
-  scs_get_d_minf(&rh, res_scs); 
-  return rh;  
+  {
+    int exponent;
+    db_number res;
+    double resh, resm, resl;
+
+    do_sinh_accurate(&exponent, &resh,&resm, &resl, x);
+    RoundDownwards3(&(res.d), resh,resm,resl);
+    res.i[HI] += (exponent-1) << 20; /* division by 2 done here*/  
+    return res.d;
+  }  
 }
 
 
