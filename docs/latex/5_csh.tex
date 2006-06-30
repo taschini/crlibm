@@ -67,9 +67,9 @@ $\cosh$.
 The search for the worst-case accuracy required for correct rounding
 the hyperbolic sine and cosine and their inverses is completed. The
 $\cosh$ function require a relative accuracy of
-$2^{-115}$ in the worst case, while $\sinh$ requires
-$2^{-126}$. However, for $x>2^{-12}$, $\sinh$ also requires only
-$2^{-109}$.
+$2^{-142}$ in the worst case, while $\sinh$ requires
+$2^{-126}$. However, for $x>2^{-12}$, both functions require only
+$2^{-111}$.
 
 
 \section{Quick phase}
@@ -553,13 +553,13 @@ are ensured by the image domain of the cosh.
 \section{Accurate phase}
 
 It is reminded that correct rounding requires an intermediate accuracy
-of $2^{-115}$ for $\cosh$ and $2^{-126}$ for $\sinh$. The
+of $2^{-142}$ for $\cosh$ and $2^{-126}$ for $\sinh$. The
 triple-double exponential function in \texttt{crlibm} is sufficiently
 accurate for computing the $\cosh$, using the equation
  $$\cosh(x) = \frac{e^x +  e^{-x}}{2}\quad.$$
 
- For $\sinh$, we use the \texttt{expm1} triple-double implementation
- which is more accurate around $0$ as in the following equation:
+ For $\sinh$, we use the \texttt{expm1} triple-double implementation:
+ This is more accurate around $0$, as the following equation shows:
  $$\sinh(x) = \frac{e^x -  e^{-x}}{2}\quad = \frac{(e^x-1) -  (e^{-x}-1)}{2}\quad .$$
 
  As already noted, the $e^{-x}$ term is optimised out for large
