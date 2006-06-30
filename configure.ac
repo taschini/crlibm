@@ -5,7 +5,7 @@ crlibm_version=`cat $srcdir/VERSION`
 dnl For Automake
 AM_INIT_AUTOMAKE(crlibm, $crlibm_version)
 
-AM_CONFIG_HEADER(crlibm_config.h)
+AC_CONFIG_HEADERS([crlibm_config.h])
 
 
 AC_SUBST(VERSION)
@@ -168,10 +168,10 @@ dnl Command-line arguments to ./configure:
 
 dnl A switch to disable use of double-extended optimised version
 AC_ARG_ENABLE(double-extended,        
-  [  --enable-double-extended        enable double-extended optimised versions of functions if hardware supports it  [[default=yes]]],
+  [  --enable-double-extended       enable double-extended optimised versions of functions if hardware supports it  [[default=yes]]],
   [case $enableval in
-  yes|no) ;;
-  *) AC_MSG_ERROR([bad value $enableval for --enable-double-extended, need yes or no]) ;;
+    yes|no) ;;
+    *) AC_MSG_ERROR([bad value $enableval for --enable-double-extended, need yes or no]) ;;
   esac],
   [enable_double_extended=yes])
 
@@ -179,63 +179,87 @@ dnl following line needs a little bit more work on log-de.c and double-extended.
 dnl AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_ia32_de = xtrue -a x$enable_double_extended = xyes   -o  x$has_ia64_de = xtrue -a x$CC = xicc -a x$enable_double_extended = xyes  )
 AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_ia32_de = xtrue -a x$enable_double_extended = xyes   )
 
+
+
+
+dnl switch for compiling the interval functions
+AC_ARG_ENABLE(interval-functions,
+  [  --enable-interval-functions    enables filib-compatible interval functions  [[default=no]]],
+  [case $enableval in
+    yes)
+      AC_DEFINE_UNQUOTED(BUILD_INTERVAL_FUNCTIONS,1,[Compile the filib-compatible interval functions]);;
+    no) ;;
+    *) AC_MSG_ERROR([bad value $enableval for --enable-interval-functions, need yes or no]) ;;
+  esac],
+  [enable_interval_functions=no])
+dnl Send this information to automake 
+AM_CONDITIONAL(USE_INTERVAL_FUNCTIONS, test x$enable_interval_functions = xyes   )
+dnl ...and add the corresponding define to config.h
+
+
+
+
 dnl If at some point we wish to include SPARC optimization back,
 dnl  the default should take the value 10 and 25 in this case 
 dnl  for around 200 bits of precision
 
 AC_ARG_ENABLE(nbdigits,
-	[  --enable-nbdigits=N      set the number of digits in the SCS structure to N [[default=8]] ],
-	[case $enableval in
+  [  --enable-nbdigits=N            set the number of digits in the SCS structure to N [[default=8]] ],
+  [case $enableval in
 	      *[[0-9]])  AC_DEFINE_UNQUOTED(SCS_NB_WORDS, $enableval, [Number of digits in the SCS structure]);;
 	      *) AC_MSG_ERROR([bad value $enableval for --enable-nbdigits, number expected]) ;;
 	 esac],
-	[AC_DEFINE_UNQUOTED(SCS_NB_WORDS, 8, [Number of digits in the SCS structure])]
+  [AC_DEFINE_UNQUOTED(SCS_NB_WORDS, 8, [Number of digits in the SCS structure])]
 )
 
 AC_ARG_ENABLE(digitsize,
-	[ --enable-digitsize=N      set the size of a digit to N bits [[default=30]] ],
-	[case $enableval in
+  [  --enable-digitsize=N           set the size of a digit to N bits [[default=30]] ],
+  [case $enableval in
 	      *[[0-9]])  AC_DEFINE_UNQUOTED(SCS_NB_BITS, $enableval, [Size of an SCS digit]);;
 	      *) AC_MSG_ERROR([bad value $enableval for --enable-digitsize, number expected]) ;;
 	 esac],
-	[AC_DEFINE_UNQUOTED(SCS_NB_BITS, 30, [Size of an SCS digit])]
+  [AC_DEFINE_UNQUOTED(SCS_NB_BITS, 30, [Size of an SCS digit])]
 )
 
 
 dnl  ... for  MPFR
-AC_ARG_ENABLE(mpfr,       [  --enable-mpfr           enable MPFR function [[default=no]]],
-[case $enableval in
-yes|no) ;;
-*) AC_MSG_ERROR([bad value $enableval for --enable-mpfr, need yes or no]) ;;
-esac],
-[enable_mpfr=no])
+AC_ARG_ENABLE(mpfr,       
+  [  --enable-mpfr                  enable MPFR function [[default=no]]],
+  [case $enableval in 
+     yes|no) ;;
+     *) AC_MSG_ERROR([bad value $enableval for --enable-mpfr, need yes or no]) ;;
+   esac],
+  [enable_mpfr=no])
 
 
 dnl  ... for GMP
-AC_ARG_ENABLE(gmp,        [  --enable-gmp            enable GMP function [[default=no]]],
-[case $enableval in
-yes|no) ;;
-*) AC_MSG_ERROR([bad value $enableval for --enable-gmp, need yes or no]) ;;
-esac],
-[enable_gmp=no])
+AC_ARG_ENABLE(gmp,
+  [  --enable-gmp                   enable GMP function [[default=no]]],
+  [case $enableval in
+     yes|no) ;;
+     *) AC_MSG_ERROR([bad value $enableval for --enable-gmp, need yes or no]) ;;
+   esac],
+  [enable_gmp=no])
 
 
 dnl  ... for IBM Accurate Portable Library
-AC_ARG_ENABLE(ultim,        [  --enable-ultim        enable libultim, IBM's Accurate Portable Math Library [[default=no]]],
-[case $enableval in
-yes|no) ;;
-*) AC_MSG_ERROR([bad value $enableval for --enable-ultim, need yes or no]) ;;
-esac],
-[enable_ultim=no])
+AC_ARG_ENABLE(ultim,
+  [  --enable-ultim                 enable comparison with libultim, IBM's Accurate Portable Math Library [[default=no]]],
+  [case $enableval in
+     yes|no) ;;
+     *) AC_MSG_ERROR([bad value $enableval for --enable-ultim, need yes or no]) ;;
+   esac],
+   [enable_ultim=no])
 
 
 dnl  ... for Sun's libmcr
-AC_ARG_ENABLE(mcr,        [  --enable-mcr        enable Sun's LIBMCR  [[default=no]]],
-[case $enableval in
-yes|no) ;;
-*) AC_MSG_ERROR([bad value $enableval for --enable-mcr, need yes or no]) ;;
-esac],
-[enable_mcr=no])
+AC_ARG_ENABLE(mcr,
+  [  --enable-mcr                   enable comparison with Sun's LIBMCR  [[default=no]]],
+  [case $enableval in
+     yes|no) ;;
+     *) AC_MSG_ERROR([bad value $enableval for --enable-mcr, need yes or no]) ;;
+   esac],
+  [enable_mcr=no])
 
 
 dnl Now consider the result of the previous to set directories:
@@ -244,11 +268,11 @@ dnl Now consider the result of the previous to set directories:
 dnl ... for GMP
 if test "$enable_gmp" = "yes" -o "$enable_mpfr" = "yes"; then
 
-AC_ARG_WITH(gmp_include, [ --with-gmp-include=DIR   GMP include directory ],
+AC_ARG_WITH(gmp_include, [  --with-gmp-include=DIR    GMP include directory ],
  with_gmp_include=$withval)
-AC_ARG_WITH(gmp_lib,     [ --with-gmp-lib=DIR       GMP lib directory ],
+AC_ARG_WITH(gmp_lib,     [  --with-gmp-lib=DIR        GMP lib directory ],
  with_gmp_lib=$withval)
-AC_ARG_WITH(gmp,         [ --with-gmp=DIR           GMP directory ],
+AC_ARG_WITH(gmp,         [  --with-gmp=DIR            GMP directory ],
  with_gmp_include=$withval/include with_gmp_lib=$withval/lib)
 
 if test -d "$with_gmp_include"; then
@@ -273,11 +297,11 @@ fi
 dnl  and for MPFR 
 
 if test "$enable_mpfr" = "yes"; then
-AC_ARG_WITH(mpfr_include, [ --with-mpfr-include=DIR  MPFR include directory ], 
+AC_ARG_WITH(mpfr_include, [  --with-mpfr-include=DIR   MPFR include directory ], 
 with_mpfr_include=$withval)
-AC_ARG_WITH(mpfr_lib,     [ --with-mpfr-lib=DIR      MPFR lib directory ], 
+AC_ARG_WITH(mpfr_lib,     [  --with-mpfr-lib=DIR       MPFR lib directory ], 
 with_mpfr_lib=$withval)
-AC_ARG_WITH(mpfr,         [ --with-mpfr=DIR          MPFR directory ],
+AC_ARG_WITH(mpfr,         [  --with-mpfr=DIR           MPFR directory ],
 with_mpfr_include=$withval/include with_mpfr_lib=$withval/lib)
 
 if test -d "$with_mpfr_include"; then
@@ -307,11 +331,11 @@ fi
 dnl ... for IBM
 if test "$enable_ultim" = "yes"; then
 
-AC_ARG_WITH(ultim_include, [ --with-ultim-include=DIR   ULTIM include directory ],
+AC_ARG_WITH(ultim_include, [  --with-ultim-include=DIR  ULTIM include directory ],
  with_ultim_include=$withval)
-AC_ARG_WITH(ultim_lib,     [ --with-ultim-lib=DIR       ULTIM lib directory ],
+AC_ARG_WITH(ultim_lib,     [  --with-ultim-lib=DIR      ULTIM lib directory ],
  with_ultim_lib=$withval)
-AC_ARG_WITH(ultim,         [ --with-ultim=DIR           ULTIM directory ],
+AC_ARG_WITH(ultim,         [  --with-ultim=DIR          ULTIM directory ],
  with_ultim_include=$withval/include with_ultim_lib=$withval/lib)
 
 if test -d "$with_ultim_include"; then
@@ -333,11 +357,11 @@ fi
 dnl ... for SUN
 if test "$enable_mcr" = "yes"; then
 
-AC_ARG_WITH(mcr_include, [ --with-mcr-include=DIR   LIBMCR include directory ],
+AC_ARG_WITH(mcr_include, [  --with-mcr-include=DIR    LIBMCR include directory ],
  with_mcr_include=$withval)
-AC_ARG_WITH(mcr_lib,     [ --with-mcr-lib=DIR   LIBMCR lib directory ],
+AC_ARG_WITH(mcr_lib,     [  --with-mcr-lib=DIR        LIBMCR lib directory ],
  with_mcr_lib=$withval)
-AC_ARG_WITH(mcr,         [ --with-mcr=DIR       LIBMCR directory ],
+AC_ARG_WITH(mcr,         [  --with-mcr=DIR            LIBMCR directory ],
  with_mcr_include=$withval/include with_mcr_lib=$withval/lib)
 
 if test -d "$with_mcr_include"; then
@@ -359,6 +383,7 @@ fi
 
 
 
-AC_OUTPUT(Makefile tests/Makefile scs_lib/Makefile)
+AC_CONFIG_FILES([Makefile tests/Makefile scs_lib/Makefile])
+AC_OUTPUT
 
 
