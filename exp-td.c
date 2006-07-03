@@ -22,6 +22,9 @@
 #include "crlibm_private.h"
 #include "triple-double.h"
 #include "exp-td.h"
+#ifdef BUILD_INTERVAL_FUNCTIONS
+#include "interval.h"
+#endif
 
 #define AVOID_FMA 0
 #define EVAL_PERF 1
@@ -959,4 +962,322 @@ double exp_rd(double x) {
     } /* Accurate phase launched after rounding test*/
 } 
  
+
+#ifdef BUILD_INTERVAL_FUNCTIONS
+interval j_exp(interval x)
+{
+  interval res;
+  double x_rd, x_ru;
+  double rh_ru, rm_ru, rl_ru, tbl1h_ru, tbl1m_ru, tbl1l_ru;
+  double tbl2h_ru, tbl2m_ru, tbl2l_ru;
+  double xMultLog2InvMult2L_ru, shiftedXMult_ru, kd_ru;
+  double msLog2Div2LMultKh_ru, msLog2Div2LMultKm_ru, msLog2Div2LMultKl_ru;
+  double t1_ru, t2_ru, polyTblh_ru, polyTblm_ru, polyTbll_ru;
+  db_number shiftedXMultdb_ru, xdb_ru, resdb_ru;
+  int k_ru, M_ru, index1_ru, index2_ru, xIntHi_ru, mightBeDenorm_ru, roundable;
+  double t8_ru, t9_ru, t10_ru, t11_ru, t12_ru, t13_ru;
+  double rhSquare_ru, rhSquareHalf_ru, rhC3_ru, rhFour_ru, monomialCube_ru;
+  double highPoly_ru, highPolyWithSquare_ru, monomialFour_ru;
+  double tablesh_ru, tablesl_ru;
+  double s1_ru, s2_ru, s3_ru, s4_ru, s5_ru;
+  double res_ru;
+
+  double rh_rd, rm_rd, rl_rd, tbl1h_rd, tbl1m_rd, tbl1l_rd;
+  double tbl2h_rd, tbl2m_rd, tbl2l_rd;
+  double xMultLog2InvMult2L_rd, shiftedXMult_rd, kd_rd;
+  double msLog2Div2LMultKh_rd, msLog2Div2LMultKm_rd, msLog2Div2LMultKl_rd;
+  double t1_rd, t2_rd, polyTblh_rd, polyTblm_rd, polyTbll_rd;
+  db_number shiftedXMultdb_rd, xdb_rd, resdb_rd;
+  int k_rd, M_rd, index1_rd, index2_rd, xIntHi_rd, mightBeDenorm_rd;
+  double t8_rd, t9_rd, t10_rd, t11_rd, t12_rd, t13_rd;
+  double rhSquare_rd, rhSquareHalf_rd, rhC3_rd, rhFour_rd, monomialCube_rd;
+  double highPoly_rd, highPolyWithSquare_rd, monomialFour_rd;
+  double tablesh_rd, tablesl_rd;
+  double s1_rd, s2_rd, s3_rd, s4_rd, s5_rd;
+  double res_rd;
+
+  double res_simple_rd, res_simple_ru;
+  int infDone=0; int supDone=0;
+
+  x_rd=LOW(x);
+  x_ru=UP(x);
+
+  /* Argument reduction and filtering for special cases */
+
+  /* Compute k as a double and as an int */
+  xdb_ru.d = x_ru;
+  xdb_rd.d = x_rd;
+  xMultLog2InvMult2L_ru = x_ru * log2InvMult2L;
+  xMultLog2InvMult2L_rd = x_rd * log2InvMult2L;
+  shiftedXMult_ru = xMultLog2InvMult2L_ru + shiftConst;
+  shiftedXMult_rd = xMultLog2InvMult2L_rd + shiftConst;
+  kd_ru = shiftedXMult_ru - shiftConst;
+  kd_rd = shiftedXMult_rd - shiftConst;
+  shiftedXMultdb_ru.d = shiftedXMult_ru;
+  shiftedXMultdb_rd.d = shiftedXMult_rd;
+
+
+  /* Special cases tests */
+  xIntHi_ru = xdb_ru.i[HI];
+  mightBeDenorm_ru = 0;
+
+  /* Special cases tests */
+  xIntHi_rd = xdb_rd.i[HI];
+  mightBeDenorm_rd = 0;
+
+  if ( __builtin_expect(
+       ((xIntHi_ru & 0x7ff00000) == 0)
+    || (((xIntHi_ru & 0x7ff00000) == 0)  && (x_ru == 0.0)) 
+    || (((xIntHi_ru & 0x7ff00000) == 0)  && (x_ru < 0.0))
+    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_ru & 0x7fffffff) >= 0x7ff00000))
+    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_ru & 0x7fffffff) >= 0x7ff00000) && (((xIntHi_ru & 0x000fffff) | xdb_ru.i[LO]) != 0))
+    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_ru & 0x7fffffff) >= 0x7ff00000) && ((xIntHi_ru & 0x80000000)==0))
+    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_ru > OVRFLWBOUND))
+    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_ru <= UNDERFLWBOUND))
+    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_ru <= DENORMBOUND))
+    || ((xIntHi_rd & 0x7ff00000) == 0)
+    || (((xIntHi_rd & 0x7ff00000) == 0) && (x_rd == 0.0))
+    || (((xIntHi_rd & 0x7ff00000) == 0) && (x_rd > 0.0))
+    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_rd & 0x7fffffff) >= 0x7ff00000))
+    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_rd & 0x7fffffff) >= 0x7ff00000) && (((xIntHi_rd & 0x000fffff) | xdb_rd.i[LO]) != 0))
+    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_rd & 0x7fffffff) >= 0x7ff00000) && ((xIntHi_rd & 0x80000000)==0))
+    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_rd > OVRFLWBOUND))
+    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_rd <= UNDERFLWBOUND))
+    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_rd <= DENORMBOUND))
+     ,FALSE))
+  {
+    ASSIGN_LOW(res,exp_rd(LOW(x)));
+    ASSIGN_UP(res,exp_ru(UP(x)));
+    return res;
+  }
+
+  /* Test if argument is a denormal or zero */
+  /* If we are here, we are sure to be neither +/- Inf nor NaN nor overflowed nor denormalized in the argument
+     but we might be denormalized in the result 
+
+     We continue the argument reduction for the quick phase and table reads for both phases
+  */
+
+  Mul12(&s1_ru,&s2_ru,msLog2Div2Lh,kd_ru);
+  Mul12(&s1_rd,&s2_rd,msLog2Div2Lh,kd_rd);
+  s3_ru = kd_ru * msLog2Div2Lm;
+  s3_rd = kd_rd * msLog2Div2Lm;
+  s4_ru = s2_ru + s3_ru; 
+  s4_rd = s2_rd + s3_rd; 
+  s5_ru = x_ru + s1_ru;
+  s5_rd = x_rd + s1_rd;
+  Add12Cond(rh_ru,rm_ru,s5_ru,s4_ru);
+  Add12Cond(rh_rd,rm_rd,s5_rd,s4_rd);
+  k_ru = shiftedXMultdb_ru.i[LO];
+  k_rd = shiftedXMultdb_rd.i[LO];
+  M_ru = k_ru >> L;
+  M_rd = k_rd >> L;
+  index1_ru = k_ru & INDEXMASK1;
+  index1_rd = k_rd & INDEXMASK1;
+  index2_ru = (k_ru & INDEXMASK2) >> LHALF;
+  index2_rd = (k_rd & INDEXMASK2) >> LHALF;
+
+  /* Table reads */
+  tbl1h_ru = twoPowerIndex1[index1_ru].hi;
+  tbl1h_rd = twoPowerIndex1[index1_rd].hi;
+  tbl1m_ru = twoPowerIndex1[index1_ru].mi;
+  tbl1m_rd = twoPowerIndex1[index1_rd].mi;
+  tbl2h_ru = twoPowerIndex2[index2_ru].hi;
+  tbl2h_rd = twoPowerIndex2[index2_rd].hi;
+  tbl2m_ru = twoPowerIndex2[index2_ru].mi;
+  tbl2m_rd = twoPowerIndex2[index2_rd].mi;
+
+
+
+
+  /* No more underflow nor denormal is possible. There may be the case where
+     M is 1024 and the value 2^M is to be multiplied may be less than 1
+     So the final result will be normalized and representable by the multiplication must be 
+     made in 2 steps
+  */
+
+  /* Quick phase starts here */
+
+  rhSquare_ru = rh_ru * rh_ru;
+  rhSquare_rd = rh_rd * rh_rd;
+  rhC3_ru = c3 * rh_ru;
+  rhC3_rd = c3 * rh_rd;
+  rhSquareHalf_ru = 0.5 * rhSquare_ru;
+  rhSquareHalf_rd = 0.5 * rhSquare_rd;
+  monomialCube_ru = rhC3_ru * rhSquare_ru;
+  monomialCube_rd = rhC3_rd * rhSquare_rd;
+  rhFour_ru = rhSquare_ru * rhSquare_ru;
+  rhFour_rd = rhSquare_rd * rhSquare_rd;
+  monomialFour_ru = c4 * rhFour_ru;
+  monomialFour_rd = c4 * rhFour_rd;
+  highPoly_ru = monomialCube_ru + monomialFour_ru;
+  highPoly_rd = monomialCube_rd + monomialFour_rd;
+  highPolyWithSquare_ru = rhSquareHalf_ru + highPoly_ru;
+  highPolyWithSquare_rd = rhSquareHalf_rd + highPoly_rd;
+  Mul22(&tablesh_ru,&tablesl_ru,tbl1h_ru,tbl1m_ru,tbl2h_ru,tbl2m_ru);
+  Mul22(&tablesh_rd,&tablesl_rd,tbl1h_rd,tbl1m_rd,tbl2h_rd,tbl2m_rd);
+  t8_ru = rm_ru + highPolyWithSquare_ru;
+  t8_rd = rm_rd + highPolyWithSquare_rd;
+  t9_ru = rh_ru + t8_ru;
+  t9_rd = rh_rd + t8_rd;
+  t10_ru = tablesh_ru * t9_ru;
+  t10_rd = tablesh_rd * t9_rd;
+  Add12(t11_ru,t12_ru,tablesh_ru,t10_ru);
+  Add12(t11_rd,t12_rd,tablesh_rd,t10_rd);
+  t13_ru = t12_ru + tablesl_ru;
+  t13_rd = t12_rd + tablesl_rd;
+  Add12(polyTblh_ru,polyTblm_ru,t11_ru,t13_ru);
+  Add12(polyTblh_rd,polyTblm_rd,t11_rd,t13_rd);
+  
+  /* Rounding test 
+     Since we know that the result of the final multiplication with 2^M 
+     will always be representable, we can do the rounding test on the 
+     factors and multiply only the final result.
+     We implement the multiplication in integer computations to overcome
+     the problem of the non-representability of 2^1024 if M = 1024
+  */
+
+  if (infDone==1) res_rd=res_simple_rd;
+  if (supDone==1) res_ru=res_simple_ru;
+
+  TEST_AND_COPY_RDRU_EXP(roundable,infDone,supDone,res_rd,polyTblh_rd,polyTblm_rd,res_ru,polyTblh_ru,polyTblm_ru,RDROUNDCST);
+  resdb_rd.d = res_rd;
+  resdb_ru.d = res_ru;
+
+  if (roundable==3)
+  {
+    if (infDone==0){
+      resdb_rd.i[HI] += M_rd << 20;
+    }
+    ASSIGN_LOW(res,resdb_rd.d);
+    if (supDone==0){
+      resdb_ru.i[HI] += M_ru << 20;
+    }
+    ASSIGN_UP(res,resdb_ru.d);
+    return res;
+  }
+  if(roundable==1)
+  {
+    if(infDone==0){
+      resdb_rd.i[HI] += M_rd << 20;
+    }
+    ASSIGN_LOW(res,resdb_rd.d);
+    if(supDone==0){
+    /* Rest of argument reduction for accurate phase */
+    Mul133(&msLog2Div2LMultKh_ru,&msLog2Div2LMultKm_ru,&msLog2Div2LMultKl_ru,kd_ru,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
+    t1_ru = x_ru + msLog2Div2LMultKh_ru;
+    Add12Cond(rh_ru,t2_ru,t1_ru,msLog2Div2LMultKm_ru);
+    Add12Cond(rm_ru,rl_ru,t2_ru,msLog2Div2LMultKl_ru);
+    /* Table reads for accurate phase */
+    tbl1l_ru = twoPowerIndex1[index1_ru].lo;
+    tbl2l_ru = twoPowerIndex2[index2_ru].lo;
+    /* Call accurate phase */
+    exp_td_accurate(&polyTblh_ru, &polyTblm_ru, &polyTbll_ru, rh_ru, rm_ru, rl_ru, tbl1h_ru, tbl1m_ru, tbl1l_ru, tbl2h_ru, tbl2m_ru, tbl2l_ru); 
+    /* Since the final multiplication is exact, we can do the final rounding before multiplying
+       We overcome this way also the cases where the final result is not underflowed whereas the
+       lower parts of the intermediate final result are.
+    */
+    RoundUpwards3(&res_ru,polyTblh_ru,polyTblm_ru,polyTbll_ru);
+    /* Final multiplication with 2^M 
+       We implement the multiplication in integer computations to overcome
+       the problem of the non-representability of 2^1024 if M = 1024
+    */
+    resdb_ru.d = res_ru;
+    resdb_ru.i[HI] += M_ru << 20;
+    }
+    ASSIGN_UP(res,resdb_ru.d);
+    return res;
+  } /* Accurate phase launched after rounding test*/
+    
+  if (roundable==2) {
+    if (infDone==0){
+    /* Rest of argument reduction for accurate phase */
+    Mul133(&msLog2Div2LMultKh_rd,&msLog2Div2LMultKm_rd,&msLog2Div2LMultKl_rd,kd_rd,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
+    t1_rd = x_rd + msLog2Div2LMultKh_rd;
+    Add12Cond(rh_rd,t2_rd,t1_rd,msLog2Div2LMultKm_rd);
+    Add12Cond(rm_rd,rl_rd,t2_rd,msLog2Div2LMultKl_rd);
+    /* Table reads for accurate phase */
+    tbl1l_rd = twoPowerIndex1[index1_rd].lo;
+    tbl2l_rd = twoPowerIndex2[index2_rd].lo;
+    /* Call accurate phase */
+    exp_td_accurate(&polyTblh_rd, &polyTblm_rd, &polyTbll_rd, rh_rd, rm_rd, rl_rd, tbl1h_rd, tbl1m_rd, tbl1l_rd, tbl2h_rd, tbl2m_rd, tbl2l_rd); 
+    /* Since the final multiplication is exact, we can do the final rounding before multiplying
+       We overcome this way also the cases where the final result is not underflowed whereas the
+       lower parts of the intermediate final result are.
+    */
+
+    RoundDownwards3(&res_rd,polyTblh_rd,polyTblm_rd,polyTbll_rd);
+    /* Final multiplication with 2^M 
+       We implement the multiplication in integer computations to overcome
+       the problem of the non-representability of 2^1024 if M = 1024
+    */
+
+    resdb_rd.d = res_rd;
+    resdb_rd.i[HI] += M_rd << 20;
+    }
+    ASSIGN_LOW(res,resdb_rd.d);
+    if(supDone==0){
+      resdb_ru.i[HI] += M_ru << 20;
+    }
+    ASSIGN_UP(res,resdb_ru.d);    
+    return res;
+  } /* Accurate phase launched after rounding test*/
+  if(roundable==0)
+  {
+    if(supDone==0){
+    /* Rest of argument reduction for accurate phase */
+    Mul133(&msLog2Div2LMultKh_ru,&msLog2Div2LMultKm_ru,&msLog2Div2LMultKl_ru,kd_ru,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
+    t1_ru = x_ru + msLog2Div2LMultKh_ru;
+    Add12Cond(rh_ru,t2_ru,t1_ru,msLog2Div2LMultKm_ru);
+    Add12Cond(rm_ru,rl_ru,t2_ru,msLog2Div2LMultKl_ru);
+    /* Table reads for accurate phase */
+    tbl1l_ru = twoPowerIndex1[index1_ru].lo;
+    tbl2l_ru = twoPowerIndex2[index2_ru].lo;
+    /* Call accurate phase */
+    exp_td_accurate(&polyTblh_ru, &polyTblm_ru, &polyTbll_ru, rh_ru, rm_ru, rl_ru, tbl1h_ru, tbl1m_ru, tbl1l_ru, tbl2h_ru, tbl2m_ru, tbl2l_ru); 
+    /* Since the final multiplication is exact, we can do the final rounding before multiplying
+       We overcome this way also the cases where the final result is not underflowed whereas the
+       lower parts of the intermediate final result are.
+    */
+    RoundUpwards3(&res_ru,polyTblh_ru,polyTblm_ru,polyTbll_ru);
+    /* Final multiplication with 2^M 
+       We implement the multiplication in integer computations to overcome
+       the problem of the non-representability of 2^1024 if M = 1024
+    */
+    resdb_ru.d = res_ru;
+    resdb_ru.i[HI] += M_ru << 20;
+    }
+    ASSIGN_UP(res,resdb_ru.d);
+    if (infDone==0){
+    /* Rest of argument reduction for accurate phase */
+    Mul133(&msLog2Div2LMultKh_rd,&msLog2Div2LMultKm_rd,&msLog2Div2LMultKl_rd,kd_rd,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
+    t1_rd = x_rd + msLog2Div2LMultKh_rd;
+    Add12Cond(rh_rd,t2_rd,t1_rd,msLog2Div2LMultKm_rd);
+    Add12Cond(rm_rd,rl_rd,t2_rd,msLog2Div2LMultKl_rd);
+    /* Table reads for accurate phase */
+    tbl1l_rd = twoPowerIndex1[index1_rd].lo;
+    tbl2l_rd = twoPowerIndex2[index2_rd].lo;
+    /* Call accurate phase */
+    exp_td_accurate(&polyTblh_rd, &polyTblm_rd, &polyTbll_rd, rh_rd, rm_rd, rl_rd, tbl1h_rd, tbl1m_rd, tbl1l_rd, tbl2h_rd, tbl2m_rd, tbl2l_rd); 
+    /* Since the final multiplication is exact, we can do the final rounding before multiplying
+       We overcome this way also the cases where the final result is not underflowed whereas the
+       lower parts of the intermediate final result are.
+    */
+
+    RoundDownwards3(&res_rd,polyTblh_rd,polyTblm_rd,polyTbll_rd);
+    /* Final multiplication with 2^M 
+       We implement the multiplication in integer computations to overcome
+       the problem of the non-representability of 2^1024 if M = 1024
+    */
+
+    resdb_rd.d = res_rd;
+    resdb_rd.i[HI] += M_rd << 20;
+    }
+    ASSIGN_LOW(res,resdb_rd.d);
+    return res;
+  } /* Accurate phase launched after rounding test*/
+
+  return res;
+}
+#endif
 
