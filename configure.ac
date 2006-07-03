@@ -165,6 +165,20 @@ fi
 
 dnl Command-line arguments to ./configure:
 
+dnl switch for compiling the interval functions
+AC_ARG_ENABLE(interval-functions,
+  [  --enable-interval-functions    enables filib-compatible interval functions  [[default=no]]],
+  [case $enableval in
+    yes)
+      AC_DEFINE_UNQUOTED(BUILD_INTERVAL_FUNCTIONS,1,[Compile the filib-compatible interval functions]);;
+    no) ;;
+    *) AC_MSG_ERROR([bad value $enableval for --enable-interval-functions, need yes or no]) ;;
+  esac],
+  [enable_interval_functions=no])
+dnl Send this information to automake 
+AM_CONDITIONAL(USE_INTERVAL_FUNCTIONS, test x$enable_interval_functions = xyes  )
+
+
 
 dnl A switch to disable use of double-extended optimised version
 AC_ARG_ENABLE(double-extended,        
@@ -177,24 +191,13 @@ AC_ARG_ENABLE(double-extended,
 
 dnl following line needs a little bit more work on log-de.c and double-extended.h
 dnl AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_ia32_de = xtrue -a x$enable_double_extended = xyes   -o  x$has_ia64_de = xtrue -a x$CC = xicc -a x$enable_double_extended = xyes  )
-AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_ia32_de = xtrue -a x$enable_double_extended = xyes   )
+
+AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_ia32_de = xtrue -a x$enable_double_extended = xyes -a x$enable_interval_functions = xno    )
+dnl  Note that at the moment, enabling intervals disables double-extended
 
 
 
 
-dnl switch for compiling the interval functions
-AC_ARG_ENABLE(interval-functions,
-  [  --enable-interval-functions    enables filib-compatible interval functions  [[default=no]]],
-  [case $enableval in
-    yes)
-      AC_DEFINE_UNQUOTED(BUILD_INTERVAL_FUNCTIONS,1,[Compile the filib-compatible interval functions]);;
-    no) ;;
-    *) AC_MSG_ERROR([bad value $enableval for --enable-interval-functions, need yes or no]) ;;
-  esac],
-  [enable_interval_functions=no])
-dnl Send this information to automake 
-AM_CONDITIONAL(USE_INTERVAL_FUNCTIONS, test x$enable_interval_functions = xyes   )
-dnl ...and add the corresponding define to config.h
 
 
 

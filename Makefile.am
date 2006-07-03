@@ -6,7 +6,7 @@ lib_LIBRARIES = libcrlibm.a
 #lib_LTLIBRARIES = libcrlibm.la
 
 
-
+# Note that at the moment, asking for intervals disables double-extended
 if USE_HARDWARE_DE
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c double-extended.h\
@@ -54,7 +54,7 @@ SUBDIRS = scs_lib . tests
 if COMPILER_ICC
 # mp means maintain precision. Should be useless with std=c99, this is an ICC bug
 AM_CFLAGS =  -std=c99 -mp -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe
-else
+else # default assumed to be gcc
 AM_CFLAGS =  -std=c99 -fPIC -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
 endif
 
