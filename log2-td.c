@@ -185,7 +185,7 @@ void log2_td_accurate(double *logb2h, double *logb2m, double *logb2l, int E, dou
      }
      /* Subnormal number */
      E = -52; 		
-     xdb.d *= ((db_number) ((double) two52)).d; 	  /* make x a normal number    */ 
+     xdb.d *= two52; 	  /* make x a normal number    */ 
    }
     
    if (xdb.i[HI] >= 0x7ff00000){
@@ -371,7 +371,7 @@ void log2_td_accurate(double *logb2h, double *logb2m, double *logb2l, int E, dou
      }
      /* Subnormal number */
      E = -52; 		
-     xdb.d *= ((db_number) ((double) two52)).d; 	  /* make x a normal number    */ 
+     xdb.d *= two52; 	  /* make x a normal number    */ 
    }
     
    if (xdb.i[HI] >= 0x7ff00000){
@@ -568,7 +568,7 @@ void log2_td_accurate(double *logb2h, double *logb2m, double *logb2l, int E, dou
      }
      /* Subnormal number */
      E = -52; 		
-     xdb.d *= ((db_number) ((double) two52)).d; 	  /* make x a normal number    */ 
+     xdb.d *= two52; 	  /* make x a normal number    */ 
    }
     
    if (xdb.i[HI] >= 0x7ff00000){
@@ -763,7 +763,7 @@ void log2_td_accurate(double *logb2h, double *logb2m, double *logb2l, int E, dou
      }
      /* Subnormal number */
      E = -52; 		
-     xdb.d *= ((db_number) ((double) two52)).d; 	  /* make x a normal number    */ 
+     xdb.d *= two52; 	  /* make x a normal number    */ 
    }
     
    if (xdb.i[HI] >= 0x7ff00000){
