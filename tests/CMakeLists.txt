@@ -1,0 +1,26 @@
+
+ADD_EXECUTABLE(blindtest blind_test.c test_common.c)
+
+
+FIND_PATH(INTTYPES_H
+	  inttypes.h
+	  /usr/include/ /usr/local/include/
+	  DOC "C99 file that defines int32_t, int64_t, etc"
+)
+
+IF(INTTYPES_H)
+  ADD_DEFINITIONS(-DHAVE_INTTYPES_H)
+  INCLUDE_DIRECTORIES(${INTTYPES_H})
+ENDIF(INTTYPES_H)
+
+
+
+FIND_PATH(CRLIBM_H  crlibm.h  ../ )
+IF(CRLIBM_H)
+  INCLUDE_DIRECTORIES(${CRLIBM_H})
+ENDIF(CRLIBM_H)
+
+FIND_LIBRARY(CRLIBM_LIB NAMES crlibm ../ )
+IF(CRLIBM_LIB)
+  LINK_DIRECTORIES(${CRLIBM_LIB})
+ENDIF(CRLIBM_LIB)

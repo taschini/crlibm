@@ -2,14 +2,19 @@ PROJECT(CRLIBM C)
 MESSAGE("Trying to build crlibm on a " ${CMAKE_SYSTEM_PROCESSOR} " under " ${CMAKE_SYSTEM_NAME} ", compiler is "${CMAKE_C_COMPILER})
 
 ADD_LIBRARY(crlibm SHARED
-	crlibm.h crlibm_private.h crlibm_private.c
-	exp_accurate.h exp_accurate.c exp_fast.h exp_fast.c
-	log_accurate.h log_accurate.c log_fast.c log_fast.h
-	log10_accurate.h	log10_accurate.c
-	log2_accurate.h  log2_accurate.c 
-	rem_pio2_accurate.h rem_pio2_accurate.c
-	trigo_accurate.c trigo_accurate.h trigo_fast.c trigo_fast.h
-	atan_accurate.h atan_accurate.c atan_fast.c atan_fast.h
+	crlibm.h crlibm_private.h crlibm_private.c triple-double.h
+	exp-td.h exp-td.c exp-td-standalone.c
+	expm1-standalone.c exp_accurate.h exp_accurate.c 
+	expm1.h expm1.c 
+	log-td.c log-td.h 
+	log1p.c 
+	log10-td.h log10-td.c 
+	log2-td.h  log2-td.c 
+	rem_pio2_accurate.h rem_pio2_accurate.c 
+	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h 
+	asin-td.h asin-td.c 
+	acos-td.h acos-td.c 
+	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c 
 	csh_fast.h csh_fast.c 
 	scs_lib/scs_private.c scs_lib/addition_scs.c
 	scs_lib/division_scs.c scs_lib/print_scs.c
@@ -18,9 +23,10 @@ ADD_LIBRARY(crlibm SHARED
 	scs_lib/tests/tbx_timing.h
 )
 
-SUBDIRS(tests)
-
 ADD_DEFINITIONS(-DSCS_NB_WORDS=8 -DSCS_NB_BITS=30)
+
+
+ADD_SUBDIRECTORY(tests)
 
 ENABLE_TESTING()
 
