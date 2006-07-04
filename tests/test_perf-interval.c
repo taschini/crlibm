@@ -474,7 +474,6 @@ int main (int argc, char *argv[]){
   nbarg=1;
   int i, j, n;
   double i1, i2;
-  char* rounding_mode;
   char* function_name;
   double worstcase;
   tbx_tick_t   t1, t2; 
@@ -486,11 +485,13 @@ int main (int argc, char *argv[]){
     mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc,
     libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc,
     libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc;
+  int sst, sst_inter; /*"second step taken" counter */
 /*
 #ifdef   HAVE_MATHLIB_H
   short Original_Mode;
 #endif*/
 
+  sst=0; sst_inter=0;
 
 /*  if ((argc != 3)) usage(argv[0]);*/
   {
@@ -539,9 +540,6 @@ int main (int argc, char *argv[]){
 
   /************  TESTS WITHOUT CACHES  *******************/
   srandom(n);
-#if EVAL_PERF==1  
-  crlibm_second_step_taken=0; 
-#endif
 
   /* take the min of N1 identical calls to leverage interruptions */
   /* As a consequence, the cache impact of these calls disappear...*/
@@ -549,32 +547,42 @@ int main (int argc, char *argv[]){
     i1 = randfun();
     i2 = randfun();
     if(!(i1<=i2))
-    {
-      double temp=i1;
-      i1=i2;
-      i2=temp;
-    }
-    /*    db_number ia,ib;
-    ia.i[HI]=0x31100afb;
-    ia.i[LO]=0x198a95fe;
-    ib.i[HI]=0x3d42897b;
-    ib.i[LO]=0x84591a4e;
-    i1=ia.d; i2=ib.d;*/
-    test_without_cache("crlibm", i1, i2, &crlibm_dtmin, &crlibm_dtmax, &crlibm_dtsum, 0);
-    test_without_cache_inter("crlibm interval", i1, i2, &crlibm_inter_dtmin, &crlibm_inter_dtmax, &crlibm_inter_dtsum, 0);
+      {
+	double temp=i1;
+	i1=i2;
+	i2=temp;
+      }
+
+
+#if EVAL_PERF==1  
+    crlibm_second_step_taken=0; 
+#endif
+    test_without_cache(       "crlibm (RU+RD)", i1, i2, &crlibm_dtmin, &crlibm_dtmax, &crlibm_dtsum, 0);
+    sst += crlibm_second_step_taken;
     
+
+#if EVAL_PERF==1  
+    crlibm_second_step_taken=0; 
+#endif
+    test_without_cache_inter("crlibm interval", i1, i2, &crlibm_inter_dtmin, &crlibm_inter_dtmax, &crlibm_inter_dtsum, 0);
+    sst_inter += crlibm_second_step_taken;
   } 
+
 
 #if EVAL_PERF==1  
 #ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
-	 printf("\nCRLIBM : Second step taken %d times out of %d\n",
-		crlibm_second_step_taken/(N1 * TIMING_ITER), n );
+	 printf("\n Crlibm (RU+RD) : Second step taken %d times out of %d\n",
+		sst/(N1 * TIMING_ITER), n );
+	 printf("\n Crlibm interval : Second step taken %d times out of %d\n",
+		sst_inter/(N1 * TIMING_ITER), n );
 #else
-	 printf("\nCRLIBM : Second step taken %d times out of %d\n",
-		crlibm_second_step_taken/N1, n );
+	 printf("\n Crlibm (RU+RD) : Second step taken %d times out of %d\n",
+		sst/N1, n );
+	 printf("\n Crlibm interval : Second step taken %d times out of %d\n",
+		sst_inter/N1, n );
+#endif
 #endif
 
-#endif
 
 
   /************  WORST CASE TESTS   *********************/
@@ -605,7 +613,7 @@ int main (int argc, char *argv[]){
   /******************* Latex output ****************/
   printf("\\multicolumn{4}{|c|}{Processor / system / compiler}   \\\\ \n \\hline");
   printf("\n                             & min time \t & avg time \t& max time \t  \\\\ \n \\hline\n");
-  latex_output("\\texttt{crlibm}        ", testfun_crlibm_low, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, n);
+  latex_output("\\texttt{crlibm (RU+RD)}      ", testfun_crlibm_low, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, n);
   latex_output("\\texttt{crlibm inter}        ", testfun_crlibm_interval, crlibm_inter_dtmin, crlibm_inter_dtmax, crlibm_inter_dtsum, crlibm_inter_dtwc, n);  
   }
   return 0;
