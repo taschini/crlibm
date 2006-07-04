@@ -1,6 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 
-bin_PROGRAMS =  crlibm_testval crlibm_soaktest crlibm_testperf crlibm_blindtest crlibm_generate_test_vectors
+if USE_INTERVAL_FUNCTIONS
+bin_PROGRAMS =  crlibm_testval crlibm_soaktest crlibm_soaktest_interval crlibm_testperf crlibm_testperf_interval crlibm_blindtest crlibm_generate_test_vectors
+else
+bin_PROGRAMS =  crlibm_testval crlibm_soaktest crlibm_testperf  crlibm_blindtest crlibm_generate_test_vectors
+endif
 
 LDADD= $(top_builddir)/libcrlibm.a
 INCLUDES=-I$(top_srcdir)
@@ -10,7 +14,9 @@ AM_CFLAGS = -g -O0 -std=c99
 
 crlibm_testval_SOURCES = test_val.c test_common.c test_common.h
 crlibm_soaktest_SOURCES = soak_test.c test_common.c test_common.h
+crlibm_soaktest_interval_SOURCES = soak_test-interval.c test_common.c test_common.h
 crlibm_testperf_SOURCES = test_perf.c test_common.c test_common.h
+crlibm_testperf_interval_SOURCES = test_perf-interval.c test_common.c test_common.h
 crlibm_blindtest_SOURCES = blind_test.c test_common.c test_common.h
 crlibm_generate_test_vectors_SOURCES = generate_test_vectors.c test_common.c test_common.h
 
