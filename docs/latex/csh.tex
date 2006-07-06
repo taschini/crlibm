@@ -1,5 +1,6 @@
-This chapter is contributed by Matthieu Gallet under the supervision of
-F. de~Dinechin.  
+This chapter was initially contributed by Matthieu Gallet under the
+supervision of F. de~Dinechin. The accurate phase was rewritten by Ch.
+Q. Lauter and F. de~Dinechin.
 
 
 \section{Overview}
@@ -592,23 +593,15 @@ operating systems.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{|l|r|r|r|}
 \hline
- \multicolumn{4}{|c|}{Pentium III / Linux 2.4 / gcc 3.2}   \\ 
+ \multicolumn{4}{|c|}{Pentium III / Linux 2.6 / gcc 4.0}   \\ 
  \hline
-                             & min time          & avg time     & max time       \\ 
+ \hline
+                             & min time          & avg time     & max time        \\ 
  \hline
  default \texttt{libm}          & 242           &        272    & 304      \\ 
  \hline
- \texttt{crlibm}                & 207           &        340    & 2638      \\ 
+ \texttt{crlibm}                & 212           &        344    & 2639      \\ 
  \hline
-
- \hline
-  \multicolumn{4}{|c|}{PowerPC G4 / MacOS X / gcc2.95}   \\
- \hline
-                         & min time      & max time      & avg time \\
- \hline
- \texttt{libm}           & 15           & 23            &         22 \\
- \hline
- \texttt{crlibm}         & 6            & 1195          &         24 \\
  \hline
 \end{tabular}
 \end{center}

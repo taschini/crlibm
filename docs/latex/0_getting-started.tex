@@ -89,10 +89,10 @@ function from \texttt{crlibm} library.
 int main(void){
   double x, res_libm, res_crlibm;
 
-  crlibm_init(); /* no need here to save the old processor state returned by crlibm_init() */ 
   printf("Enter a floating point number: ");
   scanf("%lf", &x);
   res_libm = cos(x);
+  crlibm_init(); /* no need here to save the old processor state returned by crlibm_init() */ 
   res_crlibm = cos_rn(x);
   printf("\n x=%.25e \n", x);
   printf("\n cos(x) with the system : %.25e \n", res_libm);
@@ -106,28 +106,61 @@ This example will be compiled with \texttt{gcc compare.c -lm -lcrlibm -o compare
 
 \section{Currently available functions}
 
-The currently available functions are summarized in the following
-table, where $x$ is of type $double$ and every function returns a
-double-precision number. For trigonometric functions the angles are
-expressed in radian.
-\begin{center}
-\begin{tabular}{|c|c|c|c|c|}    \hline
- & \multicolumn{4}{c|}{crlibm} \\ \cline{2-5}
- \raisebox{5pt}{C99} & to nearest & to $+ \infty$ & to $- \infty$ & to zero \\ \hline
-    cos(x) & cos\_rn(x) & cos\_ru(x) & cos\_rd(x) & cos\_rz(x) \\ \hline
-    sin(x) & sin\_rn(x) & sin\_ru(x) & sin\_rd(x) & sin\_rz(x) \\ \hline
-    tan(x) & tan\_rn(x) & tan\_ru(x) & tan\_rd(x) & tan\_rz(x) \\ \hline
-    cosh(x) & cosh\_rn(x) & cosh\_ru(x) & cosh\_rd(x) & cosh\_rz(x) \\ \hline
-    sinh(x) & sinh\_rn(x) & sinh\_ru(x) & sinh\_rd(x) & sinh\_rz(x) \\ \hline
-    atan(x) & atan\_rn(x) & atan\_ru(x) & atan\_rd(x) & atan\_rz(x) \\ \hline
-    asin(x) & asin\_rn(x) & asin\_ru(x) & asin\_rd(x) & asin\_rz(x) \\ \hline
-    exp(x) & exp\_rn(x) & exp\_ru(x) & exp\_rd(x) & exp\_rz(x) \\ \hline
-    log(x) & log\_rn(x) & log\_ru(x) & log\_rd(x) & log\_rz(x) \\ \hline
-    log2(x) & log2\_rn(x) & log2\_ru(x) & log2\_rd(x) & log2\_rz(x) \\ \hline
-    log10(x) & log10\_rn(x) & log10\_ru(x) & log10\_rd(x) & log10\_rz(x) \\ \hline
+The currently available functions are summarized in
+Table~\ref{tab:currentstate}.
+\begin{table}[t]
+  \begin{center}
+\begin{tabular}{|c|c|c|c|c||c|c|}    \hline
+ & \multicolumn{4}{c||}{\crlibm\ name} &\multicolumn{2}{c|}{State of the proof} \\ \cline{2-7}
+ \raisebox{5pt}{C99} & to nearest & to $+ \infty$ & to $- \infty$ & to zero
+ & Worst cases & Proof of the code \\ \hline\hline
+    exp & exp\_rn & exp\_ru & exp\_rd & exp\_rz & complete& complete (formal)\\ \hline
+    expm1 & expm1\_rn & expm1\_ru & expm1\_rd & expm1\_rz & complete & partial\\ \hline
+    log & log\_rn & log\_ru & log\_rd & log\_rz & complete& complete\\ \hline
+    log1p & log1p\_rn & log1p\_ru & log1p\_rd & log1p\_rz & complete& partial \\ \hline
+    log2 & log2\_rn & log2\_ru & log2\_rd & log2\_rz & complete& partial\\ \hline
+    log10 & log10\_rn & log10\_ru & log10\_rd & log10\_rz& complete& partial \\ \hline
+    sin & sin\_rn & sin\_ru & sin\_rd & sin\_rz & $[-\pi, \pi]$& complete (paper+formal)\\ \hline
+    cos & cos\_rn & cos\_ru & cos\_rd & cos\_rz & $[-\pi, \pi]$& complete (paper+formal)\\ \hline
+    tan & tan\_rn & tan\_ru & tan\_rd & tan\_rz & $[-\pi, \pi]$& complete (paper+formal)\\ \hline
+    asin & asin\_rn & asin\_ru & asin\_rd & asin\_rz & complete & partial \\ \hline
+    acos & acos\_rn & acos\_ru & acos\_rd & acos\_rz & complete & partial\\ \hline
+    atan & atan\_rn & atan\_ru & atan\_rd & atan\_rz & complete & complete (paper)\\ \hline
+    sinh & sinh\_rn & sinh\_ru & sinh\_rd & sinh\_rz & complete & complete (paper)\\ \hline
+    cosh & cosh\_rn & cosh\_ru & cosh\_rd & cosh\_rz & complete & complete (paper)\\ \hline
 \end{tabular}
 \end{center}
+  
+\caption{Current state of \crlibm.}
+\label{tab:currentstate}
+\end{table}
 
+Here are some comments on this table:
+\begin{itemize}
+\item Every function takes a double-precision number and returns a
+  double-precision number.
+\item For trigonometric functions the angles are
+  expressed in radian.
+\item The two last columns describe the state of the
+  proof:
+  \begin{itemize}
+  \item The first indicates the state of the search for worst cases
+    for correct rounding \cite{LMT98,Lef2000}. If it indicates
+    ``complete'', it means that the function is guaranteed to return
+    correct rounding on its whole floating-point input range.
+    Otherwise, it mentions the interval on which the function is
+    guaranteed to return correct rounding. Note that \crlibm\ is
+    designed in such a way that there is a very high probability that it
+    is correctly rounded everywhere, however this is not yet proven
+    formally. This question is explained in details in section
+    \ref{section:crlibm-presentation}.
+
+  \item The second indicates the state of the proof of the code
+    itself. Some (older) functions have a lengthy paper proof in this
+    document, some other have a partial or complete formal proof using
+    the Gappa proof assistant \cite{Melqu05,DinLauMel2005}.
+  \end{itemize}
+\end{itemize}
 
 
 \section{Writing portable floating-point programs}

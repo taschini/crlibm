@@ -1,11 +1,6 @@
 This chapter is contributed by Ch. Q. Lauter.
 
-\subsection{Main considerations, critical accuracy bounds}\label{subsec:criticalboundslog10}
-% 1/2 page
-% 
-% - Give the worst case bounds, compare and check that it is higher 
-% - Tell the principal idea to derive log10 from log
-% - Tell something about the storing of the constant + time consumption (higher accuracy needed)
+\section{Main considerations, critical accuracy bounds}\label{subsec:criticalboundslog10}
 If one wants to guarantee that an implementation of the logarithm in
 base $10$, $\log_{10}\left( x \right)$, in double precision is
 correctly rounded, one has to ensure that the final intermediate
@@ -14,46 +9,53 @@ of less than $2^{-122}$.
 
 An implementation of $\log_{10}\left(x\right)$ can also be derived from an
 implementation of the natural logarithm $\ln\left(x\right)$ using the formula:
-$$\log_{10}\left( x \right) = \frac{1}{\ln\left( 10 \right)} \cdot
-\ln\left( x \right)$$ When doing so, one must ensure that the constant
+
+\begin{equation}
+  \log_{10}\left( x \right) = \frac{1}{\ln\left( 10 \right)} \cdot
+\ln\left( x \right)\label{eq:log10}
+\end{equation}
+When doing so, one must ensure that the constant
 $\mathit{log10inv} = \frac{1}{\ln\left(10\right)}$ is stored with
 enough accuracy, that the approximation for $\ln\left( x \right)$ is
-exact enough and that the multiplication sequence does not introduce a
-too great error in order to be able to guarantee the correct rounding
-of the implementation. As we will see in the next section
-\ref{subsec:outlinelog10} this implies slight changes in the code for
+exact enough and that the multiplication sequence does not introduce 
+too great an error. As we will see in the next section
+\ref{subsec:outlinelog10}, this implies slight changes to the code for
 the natural logarithm with regard to what has been presented in
- \ref{chap:log}.
+ Chapter \ref{chap:log}.
 
-With regard to final rounding, the elementary function $\log_{10}$
-presents a particular issue that is somewhat singular amongst all
-considered elementary functions. For all inputs $x$ such that the
-image $f\left(x\right)$ of elementary function $f$ is algebraic and
-exactly representable in double precision, a final directed rounding
-is correct only if the approximation error is $0$ or if the case has
-been filtered out and handled apart. Indeed, the rounding
-$\diamond\left( f\left( x \right) \right)$ of the exactly
-representably value $f\left(x\right) \in \F$ is trivially
-$\diamond\left( f\left( x \right) \right) = f\left( x \right)$
-\cite{IEEE754}. In contrast, $\diamond\left( f\left( x \right) +
-\delta \right) \not = f\left( x \right) \in \F$ holds for all $\left
-\vert \delta \right \vert > 0$. Since it is impossible to bring the
-approximation error $\delta$ to absolutely $0$, the inputs $x$ for
-which $f\left(x\right) \in \F$, i.e. $f\left(x\right)$ is algebraic,
-must be filtered out. We did so for one argument, $x=1$, of $\ln\left(
-x \right)$ and for arguments $x = 2^k$, $k \in \Z$ of $\log_2\left(
-x\right)$.
+ With regard to final rounding, the elementary function $\log_{10}$
+ presents a particular issue that is somewhat singular amongst all
+ considered elementary functions: There exist a large set of input
+ double-precision numbers $x$ such that $\log_{10}(x)$ is a rational
+ and is representable as a double-precision number.
+
+ For such cases, a final directed rounding will be correct only if the
+ approximation error is exactly $0$. 
+ Indeed, the rounding $\diamond\left( f\left( x \right) \right)$ of
+ the exactly representably value $f\left(x\right) \in \F$ is trivially
+ $\diamond\left( f\left( x \right) \right) = f\left( x \right)$
+ \cite{IEEE754}. In contrast, $\diamond\left( f\left( x \right) +
+   \delta \right) \not = f\left( x \right) \in \F$ holds for all
+ $\left \vert \delta \right \vert > 0$. 
+
+ As it is impossible to achieve an approximation error exactly equal
+ to zero, it is preferable to filter out such cases and handle them
+ separately. Other functions described so far had only one such argument
+ ($x=1$ for $\log$, x=0 for the trigs). $\log_2$ has a set of such
+ cases ($x = 2^k$, $k \in \Z$) which is equally trivial to handle in
+ binary floating point.
+ 
 
 For $f = \log_{10}$, filtering much more difficult. In fact, $y =
 \log\left( x \right)$ is algebraic for exactly all $x = 10^k$, $k \in
 \Z$ \cite{Baker75}. Filtering means thus testing whether an input $x$
 can be written $x = 10^k$ with an integer $k \in \Z$. This is
 equivalent to testing if $\log_{10}\left( x \right)$ an integer,
-i.e. $\log_{10}\left( x \right) \in \Z$. Since $\log_{10}\left( x
-\right)$ can only be approximated, filtering acting this way is
+i.e. $\log_{10}\left( x \right) \in \Z$. However, since $\log_{10}\left( x
+\right)$ can only be approximated, filtering this way is
 impossible.
 
-One way out of this dilemma would be the following approach. In
+One possibility is the following approach. In
 floating point arithmetic, in order to be in a situation of difficult
 rounding, not only $\log_{10}\left( x \right)$ must be algebraic but
 also the corresponding $x = 10^k$, $k \in \Z$, must be representable
@@ -73,21 +75,23 @@ possible to filter out the $23$ arguments $x = 10^k$ with $k \in \left
 be relatively costly. It is not the way that has been chosen for the
 implementation presented here.
 
-Fortunately, we know the critical worst case accuracy of the
+Our approach uses the critical worst case accuracy of the
 elementary function $\log_{10}\left( x \right)$. As already mentioned,
-it is $122$ bits. Under the condition that we can provide an
-approximation to the function that is exact to at least $123$ bits, we
+it is $2^{-122}$. Under the condition that we can provide an
+approximation to the function that is exact to at least $2^{-123}$, we
 can decide the directed rounding using a modified final rounding
-sequence. We know that a $1$ after a long series of $0$s (respectively
+sequence: We know that a $1$ after a long series of $0$s (respectively
 a $0$ after a long series of $1$s) must be present at least at the
 $122$th bit of the intermediate mantissa.  If it is not, we can
 consider a potentially present $1$ after the $122$th bit to be an
 approximation error artefact. In fact this means neglecting $\delta$s
 relatively less than $2^{-122}$ when rounding $\diamond \left( f\left(
 x \right) + \delta \right)$ instead of $\diamond \left( f\left( x
-\right) \right)$. One shortcoming of this approach is that the
+\right) \right)$. 
+
+One shortcoming of this approach is that the
 accurate phase is launched for arguments where the quick phase's
-accuracy would principally suffice to return the correct result. As
+accuracy would suffice to return the correct result. As
 such arguments are extremely rare ($p = \frac{23}{2^{63}} \approx 2.5
 \cdot 10^{-18}$~!), this is not of an issue. The modification of the
 final rounding sequence is relatively lightweight: merely one floating
@@ -101,12 +105,13 @@ $23$ possible cases in input and without any accuracy limitation for
 intermediate computations yields to nontermination of the
 implementation of the function on such arguments $x = 10^k$.
 
-We remark that the implementation of the $\log_{10}\left(x\right)$
+An earlier \crlibm\ implementation of the $\log_{10}\left(x\right)$
 function based on the SCS format did not handle the problem and
-returned not correctly rounded results for inputs $x = 10^k$ in the
+returned incorrectly rounded results for inputs $x = 10^k$ in the
 directed rounding modes.
 
-\subsection{General outline of the algorithm and accuracy estimates}\label{subsec:outlinelog10}
+
+\section{General outline of the algorithm and accuracy estimates}\label{subsec:outlinelog10}
 % 1/2 page
 % 
 % - Multiply by the right constant, this time using a triple double for the constant => Mul33 which is costly
@@ -116,9 +121,10 @@ directed rounding modes.
 % - Mention that we launch the accurate phase even for results where the quick phase result suffices (10^n), 
 %   analyse the problem and mention that it is unique for log10 (in the usual list of elementary functions) 
 %   but that it is quasi impossible to get around it (tell that log10 in SCS did not correctly treat the problem)
+
 The quick phase of the implementation of the $\log_{10}\left( x
-\right)$ follows exactly the scheme given in previous section
-\ref{subsec:criticalboundslog10}. Similarly to the logarithm in base
+\right)$ follows exactly the scheme depicted by equation
+(\ref{eq:log10}) above. Similarly to the logarithm in base
 $2$, the natural logarithm's intermediate double-double result is
 multiplied by a double-double precision approximation of
 $\mathit{log10inv}$. The rounding test is slightly modified in order
@@ -128,7 +134,7 @@ Concerning the accurate phase, some modifications in the natural
 logarithm's code are necessary because of the tighter accuracy bound
 needed for the worst case. The natural logarithms accurate phase
 polynomial approximation relative error has already been less than
-$2^{-125}$ which is exactly enough for $\log_{10}\left( x
+$2^{-125}$ which is exact enough for $\log_{10}\left( x
 \right)$. The fact that the complete triple-double implementation is
 exact to only $119$ bits, is mainly due to the inexactness of the
 operators used in reconstruction phase. In turn, this inexactness is
@@ -136,60 +142,68 @@ caused by the relatively high overlap in the triple-double numbers
 handled. By adding two additional renormalisations the triple-double
 operators become exact enough.
 
-The constant $\mathit{log10inv}$ the natural logarithm's intermediate
-result is to multiplied with cannot be stored in double-double
-precision with an accuracy of at least $124$ bits. A triple-double
+The constant $\mathit{log10inv}$ cannot be stored in double-double
+precision with an accuracy of $124$ bits. A triple-double
 approximation is therefore used. Its relative approximation error is
-not greater than $2^{-159}$ which is hence sufficient. The final
-multiplication of the triple-double constant representing
-$\mathit{log10inv}$ and the triple-double natural logarithm result is
-thus of type \MulTT. The relative error of this operator on
-non-overlapping triple-doubles is not surely not greater than
-$2^{-140}$.
+smaller than $2^{-159}$. The final multiplication of the triple-double
+constant representing $\mathit{log10inv}$ and the triple-double
+natural logarithm result is performed by a \MulTT. The relative error
+of this operator on non-overlapping triple-doubles is not greater than
+$2^{-140}$. This last operation therefore offers a large accuracy
+overkill.
 
-As per accuracy estimates like given for $\log_2$ (TODO), one sees that the needed critical accuracy
-of $123$ bits is met. The function's implementation can thus be
-considered to be correctly rounding.
+TODO The combination of the previous errors should be verified in Gappa.
 
-\subsection{Timings}\label{subsec:timingslog10}
-% 1/2 page
-%
-% - Indicate some timings on sangria and doublejack, compare to the existing SCS log10
-% - Compare and analyse
-Once again, we compare the {\tt crlibm}'s portable triple-double
-implementation for $\log_{10}\left( x \right)$ to other correctly
-rounded and not-correctly rounded implementations.  ``{\tt crlibm}
-portable using {\tt scslib}'' still stands for a logarithm
-implementation in {\tt crlibm} before the work on triple-double. It is
-completely based on the SCS format and does not contain a quick phase
-implemented in double precision arithmetic. The values are given in
-arbitrary units and obtained on a IBM Power 5 processor with gcc 3.3.3
-on a Linux Kernel 2.6.5. The timings on other systems are comparable.
-\begin{center}
+
+\section{Timings}\label{subsec:timingslog10}
+
+We compare \crlibm's portable triple-double implementation
+for $\log_{10}\left( x \right)$ to other correctly rounded and
+not-correctly rounded implementations.  ``\crlibm\ portable using
+\scslib'' is the timing for the earlier implementation in {\tt
+  crlibm}, which has been superseded by the one depicted here since
+version 0.10$\beta$. This earlier implementation was completely based
+on the SCS format and did not contain a quick phase implemented in
+double precision arithmetic. The values are given in arbitrary units
+and obtained on a IBM Power 5 processor with gcc 3.3.3 on a Linux
+Kernel 2.6.5.
+ 
+\begin{table}[h]
+  \begin{center}
 \begin{tabular}{|l|r|r|}
  \hline
   Library                       &     avg time  & max time \\
  \hline
  \hline
+ \multicolumn{3}{|c|}{Power5 / Linux-2.6 / gcc-3.3}   \\ 
+ \hline
  \texttt{MPFR}   &   9490    & 84478        \\ 
  \hline
- \texttt{crlibm} portable using \texttt{scslib}   &   2624    & 2744        \\ 
+ \crlibm\ portable using \texttt{scslib}   &   2624    & 2744        \\ 
  \hline
- \texttt{crlibm} portable using triple-double      &        60    & 311        \\ 
+ \crlibm\ portable using triple-double      &        60    & 311        \\ 
  \hline
- \emph{default \texttt{libm} (not correctly rounded) }  &        66    & 71      \\ 
+ default \texttt{libm} (not correctly rounded)   &        66    & 71      \\ 
+ \hline
+ \hline
+ \multicolumn{3}{|c|}{PentiumM / Linux-2.6 / gcc-4.0}   \\ 
+ \hline
+ \crlibm\ portable using triple-double                  &        304    & 1529      \\ 
+ \hline
+ default \texttt{libm}  (not correctly rounded)          &        153    & 1904      \\ 
+ \hline
  \hline
 \end{tabular}
 \end{center}
-On average, our triple-double based implementation is even $10\%$ 
-faster than its not correctly rounding counterpart.
+\caption{Log10 timings on Power5 and PentiumM architectures}
+\label{Log10timings}
+\end{table}
 
-Concerning worst case timing, the following can be observed: the use of
-triple-double arithmetic instead of the SCS format allows for a
-speed-up of a factor of about $8.8$. The timing difference between
-average and worst-case is decreased to a factor of about $5.18$.
-
-
+On average, our triple-double based implementation is even $10\%$
+faster than its  incorrectly rounding counterpart on Power. On
+Pentium, we observe the usual factor 2 with respect to an
+implementation using double-extended arithmetic. Worst case timings
+are acceptable in both cases.
 
 
 

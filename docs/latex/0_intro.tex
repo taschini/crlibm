@@ -122,7 +122,7 @@ application.
 
 
 \section{The Correctly Rounded Mathematical Library}
-\label{section:crlibm}
+\label{section:crlibm-presentation}
 
 Our own library, called \crlibm\ for \emph{correctly rounded
   mathematical library}, is based on the work of
@@ -161,7 +161,7 @@ arithmetic. On some systems, this means preventing the
 compiler/processor combination to use advanced floating-point features
 such as fused multiply-and-add or extended double precision. It also
 means that the performance of our portable library will be lower than
-optimized libraries using these features (see \cite{DinGast2005} for
+optimized libraries using these features (see \cite{DinErshGast2005} for
 recent research on processor-specific correct-rounding).
 
 To ease these proofs, our first steps make wide use of classical, well
@@ -184,18 +184,44 @@ shared by most functions and is also carefully proven in the next
 chapter.
 
 
-\subsection{Software Carry-Save for an accurate second step}
-For the second step, we designed an ad-hoc multiple-precision library
-called Software Carry-Save library \emph{(scslib)} which is lighter
-and faster than other available libraries for this specific
-application \cite{DefDin2002,DinDef2003}. This choice is motivated by
-considerations of code size and performance, but also by the need to
-be independent of other libraries: Again, we need a library on which
-we may rely at the proof level. This library is included in \crlibm,
-but also distributed separately \cite{SCSweb}. This library is
-described in more details in \ref{sec:SCSLib}.
+\subsection{Ad-hoc, fast multiple precision for  accurate second step}
+For the second step, we may use two specific multiple-precision libraries:
+
+\begin{itemize}
+\item We first designed an ad-hoc multiple-precision library called Software
+  Carry-Save library \emph{(scslib)} which is lighter and faster than
+  other available libraries for this specific application
+  \cite{DefDin2002,DinDef2003}. This choice is motivated by
+  considerations of code size and performance, but also by the need to
+  be independent of other libraries: Again, we need a library on which
+  we may rely at the proof level. This library is included in \crlibm,
+  but also distributed separately \cite{SCSweb}. This library is
+  described in more details in \ref{sec:SCSLib}.
+\item More recently, we have been using redundant triple-double
+  arithmetic for the second step. This approach is lighter, about ten
+  times faster, and has the advantage of making it easier to reuse
+  information from the fast step in the accurate one. The drawback is
+  that it is more difficult to master. The basic triple-double
+  procedures, and associated usage theorems, are described in a
+  separate document (\texttt{tripledoubleprocedures.pdf}) also
+  available in this distribution.
+\end{itemize}
 
 
+\subsection{Relaxing portability}
+
+The \crlibm\ framework has been used to study the performance
+advantage of using double-extended (DE) arithmetic when available.
+More specifically, the first case may be implemented fully in DE
+precision, and the second step may be implemented fully in double-DE
+arithmetic. Experiments have been performed on the logarithm and
+arctangent functions \cite{DinErshGast2005}. On some systems (mostly
+Linux on an IA32 processor) the logarithm will by default use this
+technology.
+
+Another useful, non-portable hardware feature is the fused
+multiply-and-add available on Power/PowerPC and Itanium. The \crlibm\
+code does its best to use it when available.
 
 
 \subsection{Proving the correct rounding property}
@@ -209,21 +235,20 @@ Muller. Three cases may happen:
 \begin{itemize}
 \item The worst case have been computed over the whole domain of the
   function. In this case the correct rounding property for this
-  function is fully proven. As of \texttt{crlibm0.8}, this is the case
-  of the exponential and natural logarithm functions, and for the
-  hyperbolic sine and cosine. The inverse trigonometric functions
-  should follow soon.
+  function is fully proven. The state of this search for worst cases
+  is described in Table~\ref{tab:currentstate}
+  page~\pageref{tab:currentstate}.
 
 \item The worst cases have been computed only over a subdomain of the
   function. Then the correct rounding property is proven on this
   subdomain. Outside of this domain \texttt{crlibm} offers
   ``astronomical confidence'' that the function is correctly rounded:
-  to the best of current knowledge \cite{Gal86, DinGast2005}, the
+  to the best of current knowledge \cite{Gal86, DinErshGast2005}, the
   probability of the existence of a misrounded value in the function's
-  domain is lower than $2^{-40}$. As of \texttt{crlibm0.8}, this is
-  the case of the trigonometric functions and the arctangent. The
+  domain is lower than $2^{-40}$. This is
+  the case of the trigonometric functions, for instance. The
   actual domain on which the proof is complete is mentionned in the
-  respective chapter of this document, and summed up below in \ref{sec:current-state}.
+  respective chapter of this document, and summed up in Table~\ref{tab:currentstate}.
 \item The search for worst cases hasn't begun yet.
 \end{itemize}
 
@@ -275,6 +300,7 @@ which the required worst-case accuracy is unknown, a misround
 detection test at the end of the second step. This test will either
 print out on standard error a lengthy warning inviting to report this
 case, or launch MPFR computation, depending on a compilation switch.
+
 % TODO
 
 
@@ -374,52 +400,6 @@ Error terms to consider are the following:
 
 
 
-\subsection{Current state of \emph{crlibm} 
-\label{sec:current-state} }
-
-The \texttt{crlibm} library currently offers accurate parts for the exponential,
-logarithm in radix $2$, $10$ and $e$, sine, cosine, tangent,
-arctangent, arcsine, plus trigonometric argument reduction. The quick part and
-its proof have been written for the exponential, natural logarithm,
-sine, cosine tangent, arctangent, arcsine, and the hyperbolic sine and cosine
-thus far.
-
-The correct rounding property is fully proven (the worst-case required
-accuracy has been determined) on the following intervals ($\mathbb{F}$
-denotes the set of IEEE-754 doubles, and indicate a fully proven
-function):
-
-\begin{center}
-  \begin{tabular}{|c|c|}
-    \hline
-    Function & interval\\
-    \hline
-    \hline
-    $\exp$ & $\mathbb{F}$  \\
-    \hline
-    $\log$ & $\mathbb{F}$  \\
-    \hline
-    $\log2$ & $\mathbb{F}$  \\
-    \hline
-    $\log10$ & $\mathbb{F}$  \\
-    \hline
-    $\cosh$ & $\mathbb{F}$  \\
-    \hline
-    $\sinh$ & $\mathbb{F}$  \\
-    \hline
-    $\sin$  & $[-\pi/2, \pi/2]$  \\
-    \hline
-    $\arcsin$  & $\mathbb{F}$  \\
-    \hline
-    $\cos$  & $[-2, 2]$  \\
-    \hline
-    $\tan$  & $[-2^{-3}, 2^{-3}]$  \\
-    \hline
-    $\arctan$  & $[-\tan(2^{-3}), \tan(2^{-3})]$ \\
-    \hline
-  \end{tabular}
-
-\end{center}
 
 \section{An overview of other  available mathematical libraries\label{section:lib-overview}}
 
@@ -542,18 +522,17 @@ Again, this policy is open to discussion.
 
 \section{Organization of the source code}
 
-For each function, the file containing the source code for the
-accurate phase is named after the function with the
-\texttt{\_accurate} suffix (for instance \texttt{exp\_accurate.c},
-\texttt{log\_accurate.c}), and the quick phase, when available, is
-named with the \texttt{\_fast} suffix (for instance
-\texttt{exp\_fast.c}). The names of auxiliary files \texttt{.c} or
-\texttt{.h} files relative to a function are also prefixed with the
-name of the function.
+For recent functions implemented using triple-double arithmetic, both
+quick and accurate phase are provided in a single source file,
+\emph{e.g.} \texttt{exp-td.c}.
 
-The accurate phase relies on \texttt{scslib}, the \emph{software
-  carry-save} multiple-precision library written for this purpose.
-This library is contained in a subdirectory called \texttt{scs\_lib}.
+For older functions using the SCS library, each function is
+implemented as two files, one with the \texttt{\_accurate} suffix (for
+instance \texttt{trigo\_accurate.c}), the other named with the
+\texttt{\_fast} suffix (for instance \texttt{trigo\_fast.c}).
+
+The \emph{software carry-save} multiple-precision library is contained
+in a subdirectory called \texttt{scs\_lib}.
 
 The common C routines that are detailed in Chapter~\ref{chap:common} of
 this document are defined in \texttt{crlibm\_private.c} and
@@ -568,9 +547,10 @@ is also available.
 
 
 The code also includes programs to test the \texttt{crlibm} functions
-against MPFR and \texttt{libultim}, in terms of correctness and
+against MPFR, \texttt{libultim} or \texttt{libmcr}, in terms of correctness and
 performance. They are located in the \texttt{tests} directory.
 
+Gappa proof scripts are located in the \texttt{gappa} directory.
 
 %%% Local Variables: 
 %%% mode: latex

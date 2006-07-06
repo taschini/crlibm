@@ -42,7 +42,7 @@ For very small arguments,
 \begin{itemize}
 \item $\sin(x) = x-x^3/6 + O(x^5) = x(1-x^2/6) + O(x^5)$ where
   $O(x^5)$ has the sign of $x$. Therefore $\sin(x)$ is rounded to $x$
-  or one of its floating-point neighbours $|x|<2^{-26}$.
+  or one of its floating-point neighbours as soon as $|x|<2^{-26}$.
 \item $\cos(x) = 1-x^2/2 + O(x^4)$ where $O(x^4)$ is positive.
   Therefore $\cos(x)$ is rounded to $1$ in RN and RU mode if
   $x<\sqrt{2^{-53}}$. In RD and RZ modes, we have $\cos(0)=1$ and

@@ -1,7 +1,7 @@
 \documentclass[a4paper]{book} 
 
 \usepackage{fullpage}
-\usepackage{isolatin1} 
+%\usepackage{isolatin1} 
 \usepackage{graphicx}
 \usepackage{mathpazo}
 \usepackage{listings}
@@ -190,10 +190,10 @@ the code.
 \vfill
 \section*{Many thanks to...}
 \begin{itemize}
-\item Vincent Lefèvre, from \textsc{Inria}-Lorraine, without whom this
+\item Vincent Lef\`evre, from \textsc{Inria}-Lorraine, without whom this
   project would't have started, and who has since then lended a helpful hand in
   more than 17 occasions;
-\item The Arénaire project at ÉNS-Lyon, especially Marc Daumas,
+\item The Ar\'enaire project at ENS-Lyon, especially Marc Daumas,
   Sylvie Boldo, Guillaume Melquiond, Nathalie Revol and Arnaud
   Tisserand;
 \item Guillaume Melquiond for Gappa and its first-class hotline;
@@ -202,20 +202,20 @@ the code.
 \item The Intel Nizhniy-Novgorod Lab, especially Andrey Naraikin,
   Sergei Maidanov and Evgeny Gvozdev;
 \item The contributors of bits and pieces, Phil Defert and Eric
-  McIntosh from CERN, Patrick Pelissier from \textsc{Inria}.
+  McIntosh from CERN, Patrick Pelissier from \textsc{Inria};
 \item All the people who have reported bugs, hoping that they continue
   until they have to stop: Evgeny Gvozdev from Intel with special
-  thanks, Christoph Lauter from TUMünchen (before he joined the
+  thanks, Christoph Lauter from TUM\"unchen (before he joined the
   project), Eric McIntosh from CERN, Patrick Pelissier and Paul
-  Zimmermann from \textsc{Inria} Lorraine.
+  Zimmermann from \textsc{Inria} Lorraine;
 \item William Kahan at UCBerkeley, Peter Markstein at HP, Neil Toda at
   Sun, Shane Story at Intel, and many others for interesting and
-  sometimes heated discussions.
-\item Serge Torres for LIPForge 
+  sometimes heated discussions;
+\item Serge Torres for LIPForge.
 \end{itemize}
 
-This work was partly funded by the \textsc{Inria}, the ÉNS-Lyon and
-the Université de Perpignan.
+This work was partly funded by the \textsc{Inria}, the ENS-Lyon and
+the Universit\'e de Perpignan.
 
 \tableofcontents
 
@@ -229,26 +229,37 @@ the Université de Perpignan.
 \chapter{Common notations, theorems and procedures \label{chap:common}}
 \input{1_common.tex}
 
- \chapter{The natural logarithm \label{chap:log}}
- \input{3_log.tex}
+\chapter{The natural logarithm \label{chap:log}}
+\input{log.tex}
 
- \chapter{The logarithm in base 2 \label{chap:log2}}
- Todo. In between, see files log2-td.\{h,c,mpl,gappa\}.
+\chapter{The logarithm in base 2 \label{chap:log2}}
+\input{log2.tex}
 
- \chapter{The logarithm in base 10 \label{chap:log10}}
- Todo. In between, see files log10-td.\{h,c,mpl,gappa\}.
- \input{8_log10.tex}
+\chapter{The logarithm in base 10 \label{chap:log10}}
+\input{log10.tex}
  
- \chapter{The exponential \label{chap:exp}}
- \input{2_exp.tex}
- \chapter{The trigonometric functions \label{chap:trigo}}
-  \input{6_trigo.tex}
- \chapter{The arctangent \label{chap:atan}}
- \input{4_atan.tex}
+\chapter{The exponential \label{chap:exp}}
+\input{exp.tex}
+
+\chapter{The \texttt{expm1} function\label{chap:expm1}}
+\input{expm1.tex}
+
+\chapter{The \texttt{log1p} function\label{chap:log1p}}
+\input{log1p.tex}
+
+\chapter{The trigonometric functions \label{chap:trigo}}
+\input{trigo.tex}
+
 \chapter{The arcsine \label{chap:asin}}
-\input{7_asin.tex}
- \chapter{The hyperbolic sine and cosine \label{chap:csh}}
-\input{5_csh.tex}
+\input{asin.tex}
+
+\chapter{The arccosine \label{chap:acos}}
+\input{acos.tex}
+
+\chapter{The arctangent \label{chap:atan}}
+\input{atan.tex}
+\chapter{The hyperbolic sine and cosine \label{chap:csh}}
+\input{csh.tex}
 
 
 \appendix

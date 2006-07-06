@@ -2154,19 +2154,10 @@ multiplication.
 
 \subsection{Rounding}
 
-Procedure \texttt{compute\_rn\_constant} computes the best (smallest)
-possible constant for the round-to-nearest test of
-Theorem~\ref{th:roundingRN1}, for an input delta which is the overall
-relative error of the approximation scheme
+Procedure \texttt{compute\_rn\_constant} computes a good constant for
+the round-to-nearest test of Theorem~\ref{th:roundingRN1}. Its input
+is a bound of the overall relative error of the approximation scheme.
 
-\begin{lstlisting}[caption={compute\_rn\_constant},firstnumber=1]
-compute_rn_constant := proc(delta)
-  local k;
-  k := trunc(-log2(delta)) - 53: 
-  nearest(  1+ 2**(-52) + (2**(54+k)*delta)  /  ( (2**k-1) * (1-2**(-53)) )  ):
-end proc:
-\end{lstlisting}
-\vspace{0.5cm}
 
 
 
@@ -2178,7 +2169,7 @@ precision (64 bits of mantissa and 15 bits of exponent). This is
 currently used in experimental code only: The \crlibm\ CVS repository
 at \url{http://lipforge.ens-lyon.fr/} contains such code for
 exponential and arctangent on Itanium, and arctangent on IA32
-processors. For more details see \cite{DinDefLau2004LIP,DinGast2005}.
+processors. For more details see \cite{DinDefLau2004LIP,DinErshGast2005}.
 
 
 
