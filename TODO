@@ -3,11 +3,11 @@ TODO before 0.14 release (which will be 1.0)
 
 Serious bugs
 ------------
-No known serious bug left so far
+No known serious bug left so far. Exception raising should be improved.
 
 Proof stuff
 -----------
-Write proofs for log2-td, log10-td, acos, expm1, log1p
+Write Gappa proofs for log2-td, log10-td, acos, expm1, log1p
 Check all the existing .gappa against last version of Gappa
  + set the paths right in the .mpls 
    (not done when we moved the .gappa from maple/ to gappa/) 
@@ -17,7 +17,7 @@ Write proofs of the DE integer rounding tests.
 Cleaning up stuff
 -----------------
 Check .mpl with underscored variables (some versions of Maple don't like them)
-Check icc 9
+Ensure compilation on icc9 and SunStudio11
 At the moment, on itanium/icc, log-de only compiles without -mp-std=c99, and 4 of the other ones only compile with these options.
 Solution: check recent icc first. Then add FMADE macros everywhere FMA intended
 add make timings

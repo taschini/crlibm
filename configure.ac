@@ -167,7 +167,7 @@ dnl Command-line arguments to ./configure:
 
 dnl switch for compiling the interval functions
 AC_ARG_ENABLE(interval-functions,
-  [  --enable-interval-functions    enables filib-compatible interval functions  [[default=no]]],
+  [  --enable-interval-functions    enables filib-compatible interval functions (DOES NOT WORK YET)  [[default=no]]],
   [case $enableval in
     yes)
       AC_DEFINE_UNQUOTED(BUILD_INTERVAL_FUNCTIONS,1,[Compile the filib-compatible interval functions]);;

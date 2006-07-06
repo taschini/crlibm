@@ -1,8 +1,19 @@
-Summary of changes between version 0.13beta1 and version 0.11beta1
+Summary of changes between version 0.14beta1 and version 0.13beta1
+==========================================================
+<Christoph Lauter>
+	Added log1p
+	Added tests/computemd5list.sh
+<Florent de Dinechin> 
+	Documentation updates, added more worst cases
+<Alex Bernier and Florent de Dinechin>
+	Interval functions for exp and log (in the CVS, not yet in the release)
+
+Summary of changes between version 0.13beta1 (never released) and version 0.11beta1
 ==========================================================
 <Christoph Lauter>
 	Added expm1, acos
 	Corrected small possible bug in asin 
+
 Summary of changes between version 0.11beta1 and version 0.10beta
 ==========================================================
 <Christoph Lauter>

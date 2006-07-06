@@ -10,7 +10,7 @@ lib_LIBRARIES = libcrlibm.a
 if USE_HARDWARE_DE
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c double-extended.h\
-	exp-td.h exp-td.c exp-td-standalone.c expm1-standalone.c exp_accurate.h exp_accurate.c \
+	exp-td.h exp-td.c exp-td-standalone.c expm1-standalone.c  \
 	expm1.h expm1.c \
 	log-de.c log-de.h \
 	log1p.c \
@@ -25,7 +25,7 @@ libcrlibm_a_SOURCES =  \
 else 
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c triple-double.h\
-	exp-td.h exp-td.c exp-td-standalone.c expm1-standalone.c exp_accurate.h exp_accurate.c \
+	exp-td.h exp-td.c exp-td-standalone.c expm1-standalone.c  \
 	expm1.h expm1.c \
 	log-td.c log-td.h \
 	log1p.c \
@@ -61,15 +61,14 @@ endif
 
 
 EXTRA_DIST = VERSION TODO\
-	docs/crlibm.pdf \
+	docs/crlibm.pdf docs/tripledoubleprocedures.pdf\
 	maple/common-procedures.mpl \
 	maple/double-extended.mpl maple/triple-double.mpl\
 	maple/exp-td.mpl maple/csh.mpl \
 	maple/log-td.mpl  maple/log-de.mpl \
 	maple/log2-td.mpl maple/log10-td.mpl \
-	maple/trigo.mpl maple/atan.mpl \
-	maple/asin-td.mpl \
-	maple/acos-td.mpl \
+	maple/trigo.mpl maple/atan.mpl maple/atan-pentium.mpl \
+	maple/asin-td.mpl maple/acos-td.mpl \
 	maple/sqrt.mpl \
 	maple/expm1.mpl \
 	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
@@ -84,11 +83,15 @@ EXTRA_DIST = VERSION TODO\
 	gappa/exp-td-accurate1.gappa gappa/exp-td-accurate2.gappa gappa/exp-td-accurate3.gappa gappa/exp-td-accurate4.gappa gappa/exp-td-proof.sh \
 	docs/latex/crlibm.tex \
 	docs/latex/0_intro.tex docs/latex/0_getting-started.tex\
-	docs/latex/1_common.tex docs/latex/2_exp.tex docs/latex/3_log.tex\
-	docs/latex/4_atan.tex docs/latex/5_csh.tex docs/latex/6_trigo.tex \
+	docs/latex/1_common.tex docs/latex/sqrt.tex \
+	docs/latex/exp.tex docs/latex/expm1.tex \
+	docs/latex/log.tex docs/latex/log1p.tex docs/latex/log2.tex docs/latex/log10.tex\
+	docs/latex/asin.tex docs/latex/acos.tex docs/latex/atan.tex \
+	docs/latex/csh.tex docs/latex/trigo.tex \
 	docs/latex/fig_scs docs/latex/fig_exp\
 	docs/latex/elem-fun.bib\
 	scs_lib/tests/tbx_timing.h \
-	log-de.c log-de.h double-extended.h log-td.c log-td.h triple-double.h atan-pentium.c atan-itanium.c \
-	maple/asin-td.mpl expm1.h expm1.c log1p.c
+	triple-double.h double-extended.h \
+	log-de.c log-de.h log-td.c log-td.h\
+	atan-pentium.c atan-itanium.c 
  
