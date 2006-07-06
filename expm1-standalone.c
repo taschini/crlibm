@@ -33,7 +33,7 @@ extern void expm1_common_td(double *expm1h, double *expm1m, double *expm1l,
 */
 
 void expm1_13(double *expm1h, double *expm1m, double *expm1l, double x) {
-  db_number xdb, shiftedXMultdb, polyTblhdb, polyTblmdb;
+  db_number xdb, shiftedXMultdb;
   int xIntHi, expoX, k, M, index1, index2;
   double xSqh, xSql, xSqHalfh, xSqHalfl;
   double t1, t2;

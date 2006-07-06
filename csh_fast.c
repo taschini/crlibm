@@ -495,10 +495,8 @@ static void do_sinh(double x, double* prh, double* prl){
 static void do_sinh_accurate(int* pexponent, 
 			     double* presh, double* presm, double* presl, 
 			     double x){
-  int k;
   double exph, expm, expl;
   double expph, exppm, exppl, expmh, expmm, expml;
-  int exponentm, deltaexponent;
 
 #if EVAL_PERF==1
   crlibm_second_step_taken++;

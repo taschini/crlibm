@@ -169,19 +169,19 @@ double. See the chapter about the log for an example
 
 #define TEST_AND_RETURN_RU(__yh__, __yl__, __eps__)                    \
 {                                                                      \
-  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
-  yh.d = __yh__;    yl.d = __yl__;                                     \
-  yh_neg = (yh.i[HI] & 0x80000000);                                    \
-  yl_neg = (yl.i[HI] & 0x80000000);                                    \
-  yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
-  if(yl.d > __eps__ * u53.d){                                          \
+  db_number __yhdb__, __yldb__, u53;  int yh_neg, yl_neg;                          \
+  __yhdb__.d = __yh__;    __yldb__.d = __yl__;                                     \
+  yh_neg = (__yhdb__.i[HI] & 0x80000000);                                    \
+  yl_neg = (__yldb__.i[HI] & 0x80000000);                                    \
+  __yhdb__.l = __yhdb__.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  __yldb__.l = __yldb__.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  u53.l     = (__yhdb__.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
+  if(__yldb__.d > __eps__ * u53.d){                                          \
     if(!yl_neg) {  /* The case yl==0 is filtered by the above test*/   \
       /* return next up */                                             \
-      yh.d = __yh__;                                                   \
-      if(yh_neg) yh.l--;  else yh.l++; /* Beware: fails for zero */    \
-      return yh.d ;                                                    \
+      __yhdb__.d = __yh__;                                                   \
+      if(yh_neg) __yhdb__.l--;  else __yhdb__.l++; /* Beware: fails for zero */    \
+      return __yhdb__.d ;                                                    \
     }                                                                  \
     else  return __yh__;                                               \
   }                                                                    \
@@ -190,19 +190,19 @@ double. See the chapter about the log for an example
 
 #define TEST_AND_RETURN_RD(__yh__, __yl__, __eps__)                    \
 {                                                                      \
-  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
-  yh.d = __yh__;    yl.d = __yl__;                                     \
-  yh_neg = (yh.i[HI] & 0x80000000);                                    \
-  yl_neg = (yl.i[HI] & 0x80000000);                                    \
-  yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
-  if(yl.d > __eps__ * u53.d){                                          \
+  db_number __yhdb__, __yldb__, u53;  int yh_neg, yl_neg;                          \
+  __yhdb__.d = __yh__;    __yldb__.d = __yl__;                                     \
+  yh_neg = (__yhdb__.i[HI] & 0x80000000);                                    \
+  yl_neg = (__yldb__.i[HI] & 0x80000000);                                    \
+  __yhdb__.l = __yhdb__.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  __yldb__.l = __yldb__.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  u53.l     = (__yhdb__.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
+  if(__yldb__.d > __eps__ * u53.d){                                          \
     if(yl_neg) {   /* The case yl==0 is filtered by the above test*/   \
       /* return next down */                                           \
-      yh.d = __yh__;                                                   \
-      if(yh_neg) yh.l++;  else yh.l--; /* Beware: fails for zero */    \
-      return yh.d ;                                                    \
+      __yhdb__.d = __yh__;                                                   \
+      if(yh_neg) __yhdb__.l++;  else __yhdb__.l--; /* Beware: fails for zero */    \
+      return __yhdb__.d ;                                                    \
     }                                                                  \
     else  return __yh__;                                               \
   }                                                                    \
@@ -212,18 +212,18 @@ double. See the chapter about the log for an example
 
 #define TEST_AND_RETURN_RZ(__yh__, __yl__, __eps__)                    \
 {                                                                      \
-  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
-  yh.d = __yh__;    yl.d = __yl__;                                     \
-  yh_neg = (yh.i[HI] & 0x80000000);                                    \
-  yl_neg = (yl.i[HI] & 0x80000000);                                    \
-  yh.l = yh.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
-  yl.l = yl.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
-  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
-  if(yl.d > __eps__ * u53.d){                                          \
+  db_number __yhdb__, __yldb__, u53;  int yh_neg, yl_neg;                          \
+  __yhdb__.d = __yh__;    __yldb__.d = __yl__;                                     \
+  yh_neg = (__yhdb__.i[HI] & 0x80000000);                                    \
+  yl_neg = (__yldb__.i[HI] & 0x80000000);                                    \
+  __yhdb__.l = __yhdb__.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
+  __yldb__.l = __yldb__.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
+  u53.l     = (__yhdb__.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
+  if(__yldb__.d > __eps__ * u53.d){                                          \
     if(yl_neg!=yh_neg) {                                               \
-      yh.d = __yh__;                                                   \
-      yh.l--;                          /* Beware: fails for zero */    \
-      return yh.d ;                                                    \
+      __yhdb__.d = __yh__;                                                   \
+      __yhdb__.l--;                          /* Beware: fails for zero */    \
+      return __yhdb__.d ;                                                    \
     }                                                                  \
     else  return __yh__;                                               \
   }                                                                    \
@@ -233,21 +233,21 @@ double. See the chapter about the log for an example
 
 #define TEST_AND_COPY_RU(__cond__, __res__, __yh__, __yl__, __eps__)   \
 {                                                                      \
-  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
-  yh.d = __yh__;    yl.d = __yl__;                                     \
-  yh_neg = (yh.i[HI] & 0x80000000);                                    \
-  yl_neg = (yl.i[HI] & 0x80000000);                                    \
-  yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
+  db_number __yhdb__, __yldb__, u53;  int yh_neg, yl_neg;                          \
+  __yhdb__.d = __yh__;    __yldb__.d = __yl__;                                     \
+  yh_neg = (__yhdb__.i[HI] & 0x80000000);                                    \
+  yl_neg = (__yldb__.i[HI] & 0x80000000);                                    \
+  __yhdb__.l = __yhdb__.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  __yldb__.l = __yldb__.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  u53.l     = (__yhdb__.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
   __cond__ = 0;                                                        \
-  if(yl.d > __eps__ * u53.d){                                          \
+  if(__yldb__.d > __eps__ * u53.d){                                          \
      __cond__ = 1;                                                     \
     if(!yl_neg) {  /* The case yl==0 is filtered by the above test*/   \
       /* return next up */                                             \
-      yh.d = __yh__;                                                   \
-      if(yh_neg) yh.l--;  else yh.l++; /* Beware: fails for zero */    \
-      __res__ = yh.d ;                                                 \
+      __yhdb__.d = __yh__;                                                   \
+      if(yh_neg) __yhdb__.l--;  else __yhdb__.l++; /* Beware: fails for zero */    \
+      __res__ = __yhdb__.d ;                                                 \
     }                                                                  \
     else {                                                             \
       __res__ = __yh__;                                                \
@@ -257,21 +257,21 @@ double. See the chapter about the log for an example
 
 #define TEST_AND_COPY_RD(__cond__, __res__, __yh__, __yl__, __eps__)   \
 {                                                                      \
-  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
-  yh.d = __yh__;    yl.d = __yl__;                                     \
-  yh_neg = (yh.i[HI] & 0x80000000);                                    \
-  yl_neg = (yl.i[HI] & 0x80000000);                                    \
-  yh.l = yh.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  yl.l = yl.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
-  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
+  db_number __yhdb__, __yldb__, u53;  int yh_neg, yl_neg;                          \
+  __yhdb__.d = __yh__;    __yldb__.d = __yl__;                                     \
+  yh_neg = (__yhdb__.i[HI] & 0x80000000);                                    \
+  yl_neg = (__yldb__.i[HI] & 0x80000000);                                    \
+  __yhdb__.l = __yhdb__.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  __yldb__.l = __yldb__.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ \
+  u53.l     = (__yhdb__.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
   __cond__ = 0;                                                        \
-  if(yl.d > __eps__ * u53.d){                                          \
+  if(__yldb__.d > __eps__ * u53.d){                                          \
     __cond__ = 1;                                                      \
     if(yl_neg) {  /* The case yl==0 is filtered by the above test*/    \
       /* return next down */                                           \
-      yh.d = __yh__;                                                   \
-      if(yh_neg) yh.l++;  else yh.l--; /* Beware: fails for zero */    \
-      __res__ = yh.d ;                                                 \
+      __yhdb__.d = __yh__;                                                   \
+      if(yh_neg) __yhdb__.l++;  else __yhdb__.l--; /* Beware: fails for zero */    \
+      __res__ = __yhdb__.d ;                                                 \
     }                                                                  \
     else {                                                             \
       __res__ = __yh__;                                                \
@@ -282,19 +282,19 @@ double. See the chapter about the log for an example
 
 #define TEST_AND_COPY_RZ(__cond__, __res__, __yh__, __yl__, __eps__)   \
 {                                                                      \
-  db_number yh, yl, u53;  int yh_neg, yl_neg;                          \
-  yh.d = __yh__;    yl.d = __yl__;                                     \
-  yh_neg = (yh.i[HI] & 0x80000000);                                    \
-  yl_neg = (yl.i[HI] & 0x80000000);                                    \
-  yh.l = yh.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
-  yl.l = yl.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
-  u53.l     = (yh.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
+  db_number __yhdb__, __yldb__, u53;  int yh_neg, yl_neg;                          \
+  __yhdb__.d = __yh__;    __yldb__.d = __yl__;                                     \
+  yh_neg = (__yhdb__.i[HI] & 0x80000000);                                    \
+  yl_neg = (__yldb__.i[HI] & 0x80000000);                                    \
+  __yhdb__.l = __yhdb__.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
+  __yldb__.l = __yldb__.l & ULL(7fffffffffffffff);  /* compute the absolute value*/\
+  u53.l     = (__yhdb__.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); \
   __cond__ = 0;                                                        \
-  if(yl.d > __eps__ * u53.d){                                          \
+  if(__yldb__.d > __eps__ * u53.d){                                          \
     if(yl_neg!=yh_neg) {                                               \
-      yh.d = __yh__;                                                   \
-      yh.l--;                          /* Beware: fails for zero */    \
-      __res__ = yh.d ;                                                 \
+      __yhdb__.d = __yh__;                                                   \
+      __yhdb__.l--;                          /* Beware: fails for zero */    \
+      __res__ = __yhdb__.d ;                                                 \
       __cond__ = 1;                                                    \
     }                                                                  \
     else {                                                             \

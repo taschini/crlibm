@@ -74,7 +74,7 @@ double_ext  eh,el,  t13, t12, t11, t10, t9, t8,
   FMA22_ext(&t1h, &t1l,   z,0,   t2h,t2l,    c1h,c1l);
   FMA22_ext(&t0h, &t0l,   z,0,   t1h,t1l,    argredtable[index].logirh, argredtable[index].logirl);
   
-  Mul22_ext(&eh, &el,   log2h,log2l, E, 0);
+  Mul22_ext(&eh, &el,   log2H,log2L, E, 0);
   Add22_ext(prh, prl,   eh,el,  t0h,t0l);
 }
 
@@ -177,7 +177,7 @@ double log_rn(double x) {
    z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
    z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
    p07 = p03 + z4*p47;
-   logde = p07 + E*log2h;
+   logde = p07 + E*log2H;
 #if 0 /* to time the first step only */
    BACK_TO_DOUBLE_MODE; return (double)t;
 #endif
@@ -290,7 +290,7 @@ double log_rd(double x) {
    z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
    z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
    p07 = p03 + z4*p47;
-   logde = p07 + E*log2h;
+   logde = p07 + E*log2H;
 #if 0 /* to time the first step only */
    BACK_TO_DOUBLE_MODE; return (double)t;
 #endif
@@ -403,7 +403,7 @@ double log_ru(double x) {
    z2 = z*z;    p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
    z4 = z2*z2;  p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
    p07 = p03 + z4*p47;
-   logde = p07 + E*log2h;
+   logde = p07 + E*log2H;
 #if 0 /* to time the first step only */
    BACK_TO_DOUBLE_MODE; return (double)t;
 #endif
