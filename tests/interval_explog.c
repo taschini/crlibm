@@ -22,6 +22,7 @@ int i;
 
 int main() {
   interval x, y;
+  crlibm_init();
   x.INF = 1.5;
   x.SUP = 1.5;
 
@@ -33,6 +34,10 @@ int main() {
   for (i=0; i<100; i++) {
     y=j_log(x);
     x=j_exp(y);
+    printHexa("yinf:",y.INF);
+    printHexa("ysup:",y.SUP);
+    printHexa("xinf:",x.INF);
+    printHexa("xsup:",x.SUP);
   }
   printf("y: [%1.30e  ,   %1.30e]     ", y.INF, y.SUP);
   printf("Result: [%1.30e  ,   %1.30e]\n", x.INF, x.SUP);
