@@ -1,0 +1,113 @@
+
+
+
+
+\subsection{$\cos(\pi x)$ for small arguments}
+
+
+  \begin{equation}
+    \cos(\pi x) = 1-(\pi x)^2/2 + O(x^4)\label{eq:cospiTaylor}
+  \end{equation}
+ where $O(x^4)$ is positive.
+
+  Therefore $\cos(\pi x)$ is rounded to $1$ in RN and RU mode if
+  $\pi x<\sqrt{2^{-53}}$. In RD and RZ modes, we have $\cos(0)=1$ and
+  $\cos(x)=1-2^{-53}$ for $|x|<2^{-26}$.
+
+
+
+
+\subsection{$\sin(\pi x)$ for small arguments}
+The Taylor expansion is
+\begin{equation}
+  \sin(\pi x) = \pi x - (\pi x)^3/6 + O(x^5) = \pi x(1-(\pi
+  x)^2/6) + O(x^5)\label{eq:sinpiTaylor}
+\end{equation}
+  where $O(x^5)$ has the sign of $x$. 
+
+The situation is therefore more complex than for the radian
+trigonometrics. We chose to use a two-step approach even for the small
+arguments.  We therefore want a bound on the error of approximating
+$sin(\pi x)$ with $sin(\pi x)$ which is between $2^{-60}$ and
+$2^{-64}$.  This bound is given by (\ref{eq:sinpiTaylor}): For
+$x<2^{-31}$, we have $(\pi x)^2/6 <<2^{-61.28}$.  We may then use an
+algorithm that efficiently computes an approximation to $\pi x$ with a
+relative rounding error smaller than $2^{-74}$. The total relative
+error will be smaller than $2^{-61}$.
+
+
+\subsection{$\sin(\pi x)$ for small arguments}
+The Taylor expansion is
+\begin{equation}
+  \sin(\pi x) = \pi x - (\pi x)^3/3 + O(x^5) = \pi x(1-(\pi
+  x)^2/3) + O(x^5)\label{eq:tanpiTaylor}
+\end{equation}
+where $O(x^5)$ has the sign of $x$.
+
+The situation is therefore similar to the previous case, and we will get an
+overall relative error smaller than $2^{-60}$ for $x<2^{-31}$.
+
+
+\subsection{Computing $\pi x$}
+
+There exists an algorithm, due to Brisebarre and Muller, which
+computes the correctly rounded value of $\pi x$, for any
+double-precision number $x$, in two FMA operations.  Its proof is a
+variation of the Kahan/Douglas algorithm mentionned in Chapter
+\ref{chap:trigo}. Unfortunately, it is of little use here. A first
+problem is that it requires an FMA, however an equivalent algorithm
+using double-double arithmetic should be easy to derive. A more
+important problem is that it is only relevant if one may prove that
+the correctly rounded value of $\pi x$ is also the correctly rounded
+value of $\sin(\pi x)$. This happens when the relative difference
+between $\pi x$ and $\sin(\pi x)$ is smaller than the worst-case
+critical accuracy, which is $2^{-100}$ (TODO mis au hasard) for
+$x<2^{-31}$. We conclude, again from (\ref{eq:sinpiTaylor}) that this
+algorithm is useful for $x<2^{-55}$ (TODO voir le TODO precedent :).
+As we have a two-step approach anyway, the cost of the additional test
+is difficult to justify. 
+
+However, if an FMA is available, we will use the same sequence of two
+FMAs to evaluate $\pi x$ using  a double-double
+approximation to $\pi$.
+
+In the general case, we will be contented with an approximation of
+$\pi x$ accurate to anything much more than $2^{-60}$, as suggested
+before. Let us start with the straightforward double-double multiplication:\\
+\texttt{ Mul12(&rh,&rl, x,0, PIH, PIL);}\\
+where $x$ is completed with a zero and \texttt{PIH} and \texttt{PIL}
+form a double-double approximation of $\pi$. This would provide much
+too much accuracy, so the algorithm is adapted to the specific case as
+follows:
+\begin{itemize}
+\item In the previous algorithm, all the multiplications by zero are of course optimised out;
+\item The previous algorithm first splits \texttt{x} into \texttt{xh}
+  and \texttt{xl}, and does the same for \texttt{PIH}. An obvious
+  optimisation is to pre-split \texttt{PIH} into \texttt{PIH} and
+  \texttt{PIM}.
+\item A last optimisation is to neglect the term \texttt{xl*PIL}.
+\end{itemize}
+
+The final algorithm is therefore :
+\begin{lstlisting}[caption={Multiplication by $\pi$ \label{lst:trigpi:pix}},firstnumber=1]
+  const double c  = 134217729.; /* 2^27 +1 */   
+  double t, xh, xl;                           
+
+  /* Splitting of x. Both xh and xl have at least 26 consecutive LSB zeroes */
+  t = x*c;     
+  xh = (x-t)+t;
+  xl = x-xh;   
+
+  Add12(rh,rl, xh*PIH, (xl*PIH + xh*PIM) + (xh*PIL + xl*PIM) );               
+\end{lstlisting}
+
+The splitting is exact (Dekker). In the Add12, all the multiplications
+are exact except \texttt{xh*PIL}. The \texttt{Add12} itself is also
+exact. The error is therefore purely due to the three additions, and
+lead to a conservative majoration of the relative error of $2^{-53-22}
+= 2^{-75}$. 
+
+This bound could probably be refined if needed. In
+particular, it might be that the two additions \texttt{(xl*PIH +
+  xh*PIM)} and (xh*PIL + xl*PIM) are both exact if \texttt{PIH} and
+\texttt{PIM} have at least 27 LSB zeroes.
