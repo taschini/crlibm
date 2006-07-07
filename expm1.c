@@ -212,9 +212,15 @@ void expm1_common_td(double *expm1h, double *expm1m, double *expm1l,
   polyWithTablesmdb.d = polyWithTablesm;
   polyWithTablesldb.d = polyWithTablesl;
 
-  polyWithTableshdb.i[HI] += M << 20;
-  polyWithTablesmdb.i[HI] += M << 20;
-  polyWithTablesldb.i[HI] += M << 20;
+  /* TODO FIXME probably at least the first of these tests is useless,
+     but I leave this to Christoph to check it. Let us be
+     conservative. Florent  */
+  if(polyWithTableshdb.d!=0)
+    polyWithTableshdb.i[HI] += M << 20;
+  if(polyWithTablesmdb.d!=0)
+    polyWithTablesmdb.i[HI] += M << 20;
+  if(polyWithTablesldb.d!=0)
+    polyWithTablesldb.i[HI] += M << 20;
 
   exph = polyWithTableshdb.d;
   expm = polyWithTablesmdb.d;
@@ -227,9 +233,10 @@ void expm1_common_td(double *expm1h, double *expm1m, double *expm1l,
 
   Add133Cond(&expm1hover,&expm1mover,&expm1lover,-1,exph,expm,expl);
 
-  /* Renormalization */
+  /* Renormalization */    
 
   Renormalize3(expm1h,expm1m,expm1l,expm1hover,expm1mover,expm1lover);
+
 }
 
 
@@ -1281,6 +1288,7 @@ double expm1_rz(double x) {
   /* Test if we have |x| <= 1/4-1/2ulp(1/4) for knowing if we use exp(x) or approximate directly */
 
   if (xIntHi < DIRECTINTERVALBOUND) {
+
     /* We approximate expm1 directly after a range reduction as follows
 
        expm1(x) = (expm1(x/2) + 2) * expm1(x/2)
@@ -1306,7 +1314,6 @@ double expm1_rz(double x) {
       xIntHi = xdb.i[HI] & 0x7fffffff;
       x = xdb.d;
     }
-    
     /* Here, we have always |x| < 1/32 */
 
 
@@ -1499,6 +1506,7 @@ double expm1_rz(double x) {
   /* Rounding test */
   TEST_AND_RETURN_RZ(expm1h, expm1m, ROUNDCSTCOMMONRD);
   {
+
     /* Rest of argument reduction for accurate phase */
     
     Mul133(&msLog2Div2LMultKh,&msLog2Div2LMultKm,&msLog2Div2LMultKl,kd,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
