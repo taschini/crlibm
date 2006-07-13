@@ -1140,7 +1140,56 @@ interval j_exp(interval x)
   if (infDone==1) res_rd=res_simple_rd;
   if (supDone==1) res_ru=res_simple_ru;
 
-  TEST_AND_COPY_RDRU_EXP(roundable,infDone,supDone,res_rd,polyTblh_rd,polyTblm_rd,res_ru,polyTblh_ru,polyTblm_ru,RDROUNDCST);
+//  TEST_AND_COPY_RDRU_EXP(roundable,infDone,supDone,res_rd,polyTblh_rd,polyTblm_rd,res_ru,polyTblh_ru,polyTblm_ru,RDROUNDCST);
+  db_number yh_rd, yl_rd, u53_rd, yh_ru, yl_ru, u53_ru;
+  int yh_rd_neg, yl_rd_neg, yh_ru_neg, yl_ru_neg;
+  int rd_ok, ru_ok;
+  double save_res_rd=res_rd;
+  double save_res_ru=res_ru;
+  yh_rd.d = polyTblh_rd;    yl_rd.d = polyTblm_rd;
+  yh_rd_neg = (yh_rd.i[HI] & 0x80000000);
+  yl_rd_neg = (yl_rd.i[HI] & 0x80000000);
+  yh_rd.l = yh_rd.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
+  yl_rd.l = yl_rd.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
+  u53_rd.l     = (yh_rd.l & ULL(7ff0000000000000)) +  ULL(0010000000000000);
+  yh_ru.d = polyTblh_ru;    yl_ru.d = polyTblm_ru;
+  yh_ru_neg = (yh_ru.i[HI] & 0x80000000);
+  yl_ru_neg = (yl_ru.i[HI] & 0x80000000);
+  yh_ru.l = yh_ru.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
+  yl_ru.l = yl_ru.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
+  u53_ru.l     = (yh_ru.l & ULL(7ff0000000000000)) +  ULL(0010000000000000);
+  roundable = 0;
+  rd_ok=(yl_rd.d > RDROUNDCST * u53_rd.d);
+  ru_ok=(yl_ru.d > RDROUNDCST * u53_ru.d);
+     if(yl_rd_neg) {  /* The case yl==0 is filtered by the above test*/
+      /* return next down */
+       yh_rd.d = polyTblh_rd;
+      if(yh_rd_neg) yh_rd.l++;  else yh_rd.l--; /* Beware: fails for zero */
+      res_rd = yh_rd.d;
+    }
+    else {
+      res_rd = polyTblh_rd;
+    }
+    if(!yl_ru_neg) {  /* The case yl==0 is filtered by the above test*/
+      /* return next up */
+      yh_ru.d = polyTblh_ru;
+      if(yh_ru_neg) yh_ru.l--;  else yh_ru.l++; /* Beware: fails for zero */
+      res_ru = yh_ru.d;
+    }
+    else {
+      res_ru = polyTblh_ru;
+    }
+  if(infDone) res_rd=save_res_rd;
+  if(supDone) res_ru=save_res_ru;
+  if(rd_ok && ru_ok){
+    roundable=3;
+  }
+  else if (rd_ok){
+    roundable=1;
+  }
+  else if (ru_ok){
+     roundable=2;
+  }
   resdb_rd.d = res_rd;
   resdb_ru.d = res_ru;
 
