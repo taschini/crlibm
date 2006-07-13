@@ -1074,7 +1074,60 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
    if(cs_rd) { res_rd=res_simple_rd; }
    if(cs_ru) { res_ru=res_simple_ru; }
-   TEST_AND_COPY_RDRU_LOG(roundable,res_rd,logh_rd,logm_rd,res_ru,logh_ru,logm_ru,roundcst);
+   //TEST_AND_COPY_RDRU_LOG(roundable,res_rd,logh_rd,logm_rd,res_ru,logh_ru,logm_ru,roundcst);
+
+//#define TEST_AND_COPY_RDRU_LOG(__cond__, __res_rd__, __yh_rd__, __yl_rd__, __res_ru__, __yh_ru__, __yl_ru__, __eps__)  
+                                                                      
+  db_number yh_rd, yl_rd, u53_rd, yh_ru, yl_ru, u53_ru;                    
+  int yh_rd_neg, yl_rd_neg, yh_ru_neg, yl_ru_neg;                             
+  int rd_ok, ru_ok;                                                        
+  double save_res_rd=res_rd;                                              
+  yh_rd.d = logh_rd;    yl_rd.d = logm_rd;
+  yh_rd_neg = (yh_rd.i[HI] & 0x80000000);                                    
+  yl_rd_neg = (yl_rd.i[HI] & 0x80000000);                                    
+  yh_rd.l = yh_rd.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
+  yl_rd.l = yl_rd.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
+  u53_rd.l     = (yh_rd.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); 
+  yh_ru.d = logh_ru;    yl_ru.d = logm_ru;
+  yh_ru_neg = (yh_ru.i[HI] & 0x80000000);                                    
+  yl_ru_neg = (yl_ru.i[HI] & 0x80000000);                                    
+  yh_ru.l = yh_ru.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
+  yl_ru.l = yl_ru.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
+  u53_ru.l     = (yh_ru.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); 
+  roundable = 0;
+  rd_ok=(yl_rd.d > roundcst * u53_rd.d);
+  ru_ok=(yl_ru.d > roundcst * u53_ru.d);
+     if(yl_rd_neg) {  /* The case yl==0 is filtered by the above test*/    
+      /* return next down */                                           
+      yh_rd.d = logh_rd;                                                   
+      if(yh_rd_neg) yh_rd.l++;  else yh_rd.l--; /* Beware: fails for zero */
+      res_rd = yh_rd.d ;
+    }
+    else {
+      res_rd = logh_rd;
+    }
+    if(!yl_ru_neg) {  /* The case yl==0 is filtered by the above test*/
+      /* return next up */
+      yh_ru.d = logh_ru;
+      if(yh_ru_neg) yh_ru.l--;  else yh_ru.l++; /* Beware: fails for zero */    
+      res_ru = yh_ru.d ;                                                 
+    }                                                                  
+    else {
+      res_ru = logh_ru;
+    }
+  if(save_res_rd==-1.0/0.0) res_rd=-1.0/0.0;
+  if(rd_ok && ru_ok){
+    ASSIGN_LOW(res,res_rd);
+    ASSIGN_UP(res,res_ru);
+    return(res);
+  }
+  else if (rd_ok){
+    roundable=1;
+  }
+  else if (ru_ok){
+     roundable=2;
+  }
+
 
 #if DEBUG
    printf("Going for Accurate Phase for x=%1.50e\n",x);
