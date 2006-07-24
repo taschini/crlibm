@@ -231,8 +231,9 @@ void acos_accurate_higher(double *acosh, double *acosm, double *acosl, double z,
   double t14h, t14m, t14l, t15h, t15m, t15l, t16h, t16m, t16l, t17h, t17m, t17l;
   double tt18h, tt18m, tt18l, polyh, polym, polyl;
   double sqrtzh, sqrtzm, sqrtzl, twoZ, pTimesSh, pTimesSm, pTimesSl;
-  double allhover, allmover, alllover, allh, allm, alll;
+  double allh, allm, alll;
   double tt13hover, tt13mover, tt13lover, tt16hover, tt16mover, tt16lover;
+  double polyhover, polymover, polylover;
 
 #if EVAL_PERF
   crlibm_second_step_taken++;
@@ -262,9 +263,7 @@ void acos_accurate_higher(double *acosh, double *acosm, double *acosl, double z,
      already in double precision
 
      Compute than sqrt(2*z) as a triple-double
-     multiply in triple-double and add Pi/2
-     We will cancel no bit in the addition since
-     f(z) < 0.5 * Pi/2
+     multiply in triple-double.
 
   */
 
@@ -322,7 +321,9 @@ void acos_accurate_higher(double *acosh, double *acosm, double *acosl, double z,
   Mul133(&tt17h,&tt17m,&tt17l,z,t16h,t16m,t16l);                                                  /* 147 - 42/53 */
   Add33(&t17h,&t17m,&t17l,tbl[TBLIDX10+0],tbl[TBLIDX10+1],tbl[TBLIDX10+2],tt17h,tt17m,tt17l);     /* 139 - 37/53 */
   Mul133(&tt18h,&tt18m,&tt18l,z,t17h,t17m,t17l);                                                  /* 137 - 32/53 */
-  Add133(&polyh,&polym,&polyl,-1,tt18h,tt18m,tt18l);                                              /* 136 - 30/53 */
+  Add133(&polyhover,&polymover,&polylover,-1,tt18h,tt18m,tt18l);                                  /* 136 - 30/53 */
+
+  Renormalize3(&polyh,&polym,&polyl,polyhover,polymover,polylover);                               /* infty - 52/53 */
 
   /* Compute sqrt(2*z) as a triple-double */
 
@@ -331,7 +332,7 @@ void acos_accurate_higher(double *acosh, double *acosm, double *acosl, double z,
 
   /* Multiply p(z) by sqrt(2*z) */
 
-  Mul33(&pTimesSh,&pTimesSm,&pTimesSl,polyh,polym,polyl,sqrtzh,sqrtzm,sqrtzl);                    /* 128 - 26/53 */
+  Mul33(&pTimesSh,&pTimesSm,&pTimesSl,polyh,polym,polyl,sqrtzh,sqrtzm,sqrtzl);                    /* 139 - 48/53 */
 
   /* Reconstruction: 
 
@@ -349,17 +350,18 @@ void acos_accurate_higher(double *acosh, double *acosm, double *acosl, double z,
 
   if (sign > 0) {
 
-    allhover = -1.0 * pTimesSh;
-    allmover = -1.0 * pTimesSm;
-    alllover = -1.0 * pTimesSl;                                                                   /* 128 - 26/53 */
+    allh = -1.0 * pTimesSh;    
+    allm = -1.0 * pTimesSm;    
+    alll = -1.0 * pTimesSl;                                                                       /* 139 - 48/53 */
 
   } else {
 
-    Add33(&allhover,&allmover,&alllover,PIH,PIM,PIL,pTimesSh,pTimesSm,pTimesSl);                  /* 126 - 21/53 */
+    Add33(&allh,&allm,&alll,PIH,PIM,PIL,pTimesSh,pTimesSm,pTimesSl);                              /* 130 - 43/53 */
 
   }
 
-  Renormalize3(&allh,&allm,&alll,allhover,allmover,alllover);                                     /* infty - 52/53 */
+  Renormalize3(acosh,acosm,acosl,allh,allm,alll);                                                 /* infty - 52/53 */
+
 }
 
 
