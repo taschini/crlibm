@@ -76,7 +76,7 @@ EXTRA_DIST = VERSION TODO\
 	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
 	gappa/trigoTanCase2.gappa \
 	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
-	gappa/sqrt12.gappa gappa/sqrt13.gappa sqrt-proof.sh sqrt.sed \
+	gappa/sqrt12.gappa gappa/sqrt13.gappa gappa/sqrt-proof.sh gappa/sqrt.sed \
 	gappa/log-de-acc-index0-E0.gappa    gappa/log-de-index0-E0.gappa \
 	gappa/log-de-acc-index0-E1N.gappa   gappa/log-de-index0-E1N.gappa \
 	gappa/log-de-acc-index1N-E0.gappa   gappa/log-de-index1N-E0N.gappa \
