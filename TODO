@@ -7,7 +7,7 @@ No known serious bug left so far. Exception raising should be improved.
 
 Proof stuff
 -----------
-Write Gappa proofs for log2-td, log10-td, acos, expm1, log1p
+Write Gappa proofs for log2-td, log10-td, asin, acos, expm1, log1p
 Check all the existing .gappa against last version of Gappa
  + set the paths right in the .mpls 
    (not done when we moved the .gappa from maple/ to gappa/) 

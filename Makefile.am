@@ -71,6 +71,8 @@ EXTRA_DIST = VERSION TODO\
 	maple/asin-td.mpl maple/acos-td.mpl \
 	maple/sqrt.mpl \
 	maple/expm1.mpl \
+	maple/gal.mpl \
+	maple/atan-itanium.mpl \
 	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
 	gappa/trigoTanCase2.gappa \
 	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
