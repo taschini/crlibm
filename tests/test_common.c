@@ -193,11 +193,25 @@ double rand_for_log(){
 */
 double rand_for_log1p() {
   db_number result;
-
+  /* int e; */
+  
   result.d = rand_for_log();
+
+  /* If you find the MPFR errors in directed rounding modes for small values
+     annoying replace the previous line by the following ones: */
+
+  /*
+  result.i[LO] = rand_int();
+  result.i[HI] = 0x000fffff & rand_int();
+  
+  e = 0x3c9 + (0x3ff & rand_int());
+
+  result.i[HI] |= e << 20;
+  */
+
   if (result.d < 1.0) {
     if (rand_int() && 0x1) 
-      result.i[HI] = 0x80000000 & result.i[HI];
+      result.i[HI] = 0x80000000 | result.i[HI];
   }
 
   return result.d;
