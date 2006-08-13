@@ -92,7 +92,8 @@ void test_all() {
   long long int i;
   double worst_err, global_worst_err=-200;
   db_number global_worst_inpt, global_worst_inpt2;
-
+  mp_exp_t e;
+  char *str;
 
 
 
@@ -148,10 +149,13 @@ void test_all() {
 		 res_crlibm.d, 
 		 res_crlibm.i[HI], 
 		 res_crlibm.i[LO]);
-	  printf("MPFR gives      %.50e \n         (%08x %08x) \n\n", 
+	  printf("MPFR gives      %.50e \n         (%08x %08x) \n", 
 		 res_mpfr.d, 
 		 res_mpfr.i[HI], 
 		 res_mpfr.i[LO]);
+	  str = mpfr_get_str(NULL, &e, 2, 0, mp_res, GMP_RNDN);
+	  printf("MPFR intermediate value mantissa is '%s'\n\n",str);
+	  mpfr_free_str(str);
 #endif
 #if WORST_ERROR_REPORT
 	  mpfr_set_d(mp_inpt, res_crlibm.d, GMP_RNDN);  
@@ -304,7 +308,7 @@ int main (int argc, char *argv[])
 	      function_name,
 	      rounding_mode ) ;
     
-    mpfr_init2(mp_res,  153);
+    mpfr_init2(mp_res,  200);
     mpfr_init2(mp_inpt, 53);
     mpfr_init2(mp_inpt2, 53);
     if      (strcmp(rounding_mode,"RU")==0) mpfr_rnd_mode = GMP_RNDU;
