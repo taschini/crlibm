@@ -849,5 +849,9 @@ extern void sqrt12(double *resh, double *resl, double x);
 
 #endif /*SQRT_AS_FUNCTIONS*/
 
+/* Declaration of the debug function */
+
+void printHexa(char* s, double x);
+
 
 #endif /*CRLIBM_PRIVATE_H*/
