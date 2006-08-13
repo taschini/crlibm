@@ -94,7 +94,12 @@ else
          exponent := expmin;
          fi;
          infmantissa := x*2^(52-exponent);
-	 if frac(infmantissa) <> 0 then mantissa := ceil(infmantissa)
+	 if frac(infmantissa) <> 0 then
+         if (sgn > 0) then
+             mantissa := ceil(infmantissa);
+         else
+             mantissa := floor(infmantissa);
+         fi;
             else
               mantissa := infmantissa;
             fi;
@@ -142,7 +147,12 @@ else
          exponent := expmin;
          fi;
          infmantissa := x*2^(52-exponent);
-	 if frac(infmantissa) <> 0 then mantissa := floor(infmantissa)
+	 if frac(infmantissa) <> 0 then
+         if (sgn < 0) then
+             mantissa := ceil(infmantissa);
+         else
+             mantissa := floor(infmantissa);
+         fi;
             else
               mantissa := infmantissa;
             fi;
@@ -244,10 +254,10 @@ local  hex2, xx, longint, expo, sgn, frac, resultat:
     resultat:
 end proc:
 
-ieeehexaString := proc(x) 
+ieeehexaString := proc(x)
 	local hex, result:
 	hex := ieeehexa(x):
-	result := cat(hex[1],hex[2]):	
+	result := cat(hex[1],hex[2]):
 	return result:
 end proc:
 
