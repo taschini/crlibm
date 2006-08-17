@@ -83,8 +83,8 @@ typedef unsigned long long uint64_t;
     internal purpose only */
 
 typedef union {
-  int32_t i[2]; /* Signed (may be useful) */                
   int64_t l;    /* Signed (may be useful) */
+  int32_t i[2]; /* Signed (may be useful) */                
   double d;
 } db_number;
 
