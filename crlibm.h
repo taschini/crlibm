@@ -144,7 +144,16 @@ extern double exp2_ru(double); /* toward +inf */
  extern double pow_rn(double, double); */
 
 
+/* fi_lib-compatible interval functions (EXPERIMENTAL) */ 
+
+#ifdef BUILD_INTERVAL_FUNCTIONS
+#include "interval.h"
+interval j_log(interval x);
+interval j_exp(interval x);
+#endif /* BUILD_INTERVAL_FUNCTIONS */
+
 #if defined (__cplusplus)
+
 }
 #endif
 

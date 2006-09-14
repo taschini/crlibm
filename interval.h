@@ -14,6 +14,7 @@ typedef struct interval { double INF, SUP;} interval ;
 #define FALSE (1+1==3)
 
 interval j_log();
+interval j_exp();
 
 #define TEST_AND_COPY_RDRU_LOG(__cond__, __res_rd__, __yh_rd__, __yl_rd__, __res_ru__, __yh_ru__, __yl_ru__, __eps__)  \
 {                                                                      \

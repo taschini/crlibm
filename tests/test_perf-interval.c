@@ -8,10 +8,10 @@ Beware to compile without optimizations
 #include <stdarg.h>
 #include <math.h>
 
+#include "interval.h"
 #include "crlibm.h"
 #include "crlibm_private.h"
 #include "test_common.h"
-#include "interval.h"
 
 #include "scs_lib/tests/tbx_timing.h"
 
@@ -94,8 +94,6 @@ static double inputs2[TESTSIZE];
 #endif /* TEST_CACHE */
 
 
-interval j_log(interval x);
-interval j_exp(interval x);
 
 /* indicate the number of argument taken by the function */
 static int nbarg;          
@@ -493,7 +491,7 @@ int main (int argc, char *argv[]){
 
   sst=0; sst_inter=0;
 
-/*  if ((argc != 3)) usage(argv[0]);*/
+  if ((argc != 3)) usage(argv[0]);
   {
     function_name = argv[1];
     sscanf(argv[2],"%d", &n);
