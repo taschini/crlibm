@@ -140,8 +140,11 @@ extern double exp2_rn(double); /* to nearest  */
 extern double exp2_rd(double); /* toward -inf */ 
 extern double exp2_ru(double); /* toward +inf */ 
 
-/*  pow 
- extern double pow_rn(double, double); */
+/*  pow */
+/* ATTENTION: THIS FUNCTION IS UNDER DEVELOPMENT 
+   AND CURRENTLY NOT CORRECTLY ROUNDED 
+*/
+extern double pow_rn(double, double); 
 
 
 /* fi_lib-compatible interval functions (EXPERIMENTAL) */ 
