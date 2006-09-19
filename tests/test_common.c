@@ -827,7 +827,7 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = NULL;	break;
       default:
 	/*	*testfun_crlibm = pow_rn;*/
-	*testfun_crlibm = NULL;
+	*testfun_crlibm = pow_rn;
 
       }
 #ifdef HAVE_MATHLIB_H

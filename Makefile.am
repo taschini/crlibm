@@ -20,6 +20,7 @@ libcrlibm_a_SOURCES =  \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	asin-td.h asin-td.c \
 	acos-td.h acos-td.c\
+	pow.h pow.c\
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
 	csh_fast.h csh_fast.c
 else 
@@ -35,6 +36,7 @@ libcrlibm_a_SOURCES =  \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	asin-td.h asin-td.c \
 	acos-td.h acos-td.c \
+	pow.h pow.c\
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
 	csh_fast.h csh_fast.c 
 endif
@@ -72,6 +74,7 @@ EXTRA_DIST = VERSION TODO\
 	maple/sqrt.mpl \
 	maple/expm1.mpl \
 	maple/gal.mpl \
+	maple/pow.mpl \
 	maple/atan-itanium.mpl \
 	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
 	gappa/trigoTanCase2.gappa \
