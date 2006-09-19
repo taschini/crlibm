@@ -1332,7 +1332,7 @@ double pow_rn(double x, double y) {
 
   /* If we are here, we could not decide the rounding */
 
-  printf("We could not decide the rounding nor detect an exact case\n");
+  /*  printf("We could not decide the rounding nor detect an exact case\n"); */
 
   return sign * res;
 }
