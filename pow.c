@@ -827,6 +827,14 @@ int checkForExactCase(double x, double y, int H, double kh, double kl) {
   */
 
   if (F < 0) {
+    if (F < -5) {
+      /* F is less than -5 
+	 By the above proof, if the case is exact, F must be greater or equal to -5
+	 The case is thus inexact.
+      */
+      return 0;
+    }
+
     isPowerSquareCase = isPowerSquare(&j,F,m);
 
     if (!isPowerSquareCase) {
