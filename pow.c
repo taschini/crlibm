@@ -366,6 +366,7 @@ int checkForExactCase(double x, double y, int H, double kh, double kl) {
   double khn, kln;
   double j, z, ph, pl, zh, zl, qh, ql;
   int isPowerSquareCase, tt;
+  double rest, yEdh, yEdl;
 
 #if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
   db_number tmppdb;
@@ -413,23 +414,45 @@ int checkForExactCase(double x, double y, int H, double kh, double kl) {
     }
 
     /* If we are here, x is an integer power of 2.
-       Check now if y is integer 
+       Compute E, the exponent of x.
+       Check then if E * y is integer 
 
-       The double y is not integer if it is less than 1 in
-       magnitude. Otherwise, we compute the integer
-       nearest to y and compare the difference with 0.
+       Check first if E * y is less than 1.0 in magnitude.
+       If yes, check if E * y is zero and return.
+    
+       Otherwise, we compute the integer
+       nearest to E * y and compare the difference with 0.
+
+       E * y must be written on a double-double. 
+       If the high order word is less than 2^(52), we can work
+       only on the high order word and verify the low order word
+       is equal to 0. Otherwise, the high order word is already an
+       integer and we can work on the low order word.
+
+       The Dekker sequence is always exact because is y is always 
+       less than 2^64 and E is always less than 2^10.
+
     */
 
-    if (y > -1.0) {
-      /* y is not integer because less than 1.0 in magnitude
-	 x^y can thus not be an exact case 
-      */
-      return 0;
+    E = (xdb.i[HI] >> 20) - 1023;
+    Ed = E;
+
+    Mul12(&yEdh,&yEdl,y,Ed);
+
+    if (yEdh < TWO52) {
+      if (yEdl != 0.0) {
+	/* yEdl is not equal to 0 and yEdh may still have a fractional part */
+	return 0;
+      }
+      rest = yEdh;
+    } else {
+      /* yEdh is always integer, we work only on yEdl */
+      rest = yEdl;
     }
 
-    /* Compute the integer nearest to y by subnormal rounding */
+    /* Compute the integer nearest to r by subnormal rounding */
 
-    t1 = TWOM53 * y;
+    t1 = TWOM53 * rest;
     tmpdb.d = TWOM1021 * t1;
     
     /* If we are on x86, we must force the compile to go through memory in order to have 
@@ -448,9 +471,9 @@ int checkForExactCase(double x, double y, int H, double kh, double kl) {
     
     /* Compute the difference */
 
-    t4 = t3 - y;
+    t4 = t3 - rest;
 
-    /* If the difference is 0.0, y is an integer and the case is exact 
+    /* If the difference is 0.0, E * y is an integer and the case is exact 
        Otherwise the case is not exact.
        In the case we return "yes, exact case", we do not check 
        that actually x^y = 2^H * (kh + kl) but rely on the fact that 
