@@ -45,6 +45,8 @@ mpfr_t mp_res, mp_inpt, mp_inpt2;
 
 interval j_exp(interval x);
 interval j_log(interval x);
+interval j_expm1(interval x);
+interval j_log2(interval x);
 
 double (*randfun)       () = NULL;
 double (*randfun_perf)       () = NULL;
@@ -308,7 +310,7 @@ int main (int argc, char *argv[])
   else{
     function_name = argv[1];
     sscanf(argv[2],"%d", &seed);
-    if ((strcmp(function_name,"exp")!=0) && (strcmp(function_name,"j_exp")!=0) && (strcmp(function_name,"log")!=0) && (strcmp(function_name,"j_log")!=0) )
+    if ((strcmp(function_name,"exp")!=0) && (strcmp(function_name,"j_exp")!=0) && (strcmp(function_name,"log")!=0) && (strcmp(function_name,"j_log")!=0) && (strcmp(function_name,"expm1")!=0) && (strcmp(function_name,"j_expm1")!=0) && (strcmp(function_name,"log2")!=0) && (strcmp(function_name,"j_log2")!=0))
     {
       fprintf (stderr, "\nUnknown function:  %s \n", function_name);
       return 1;
@@ -321,6 +323,14 @@ int main (int argc, char *argv[])
       testfun_crlibm_up = log_ru;
       testfun_mpfr = mpfr_log;
     }
+    if ((strcmp(function_name,"log2")==0) || (strcmp(function_name,"j_log2")==0))
+    {
+      randfun = rand_for_log;
+      testfun_crlibm_interval = j_log2;
+      testfun_crlibm_low = log2_rd;
+      testfun_crlibm_up = log2_ru;
+      testfun_mpfr = mpfr_log2;
+    }
     if ((strcmp(function_name,"exp")==0) || (strcmp(function_name,"j_exp")==0))
     {
       randfun = rand_generic;
@@ -329,15 +339,23 @@ int main (int argc, char *argv[])
       testfun_crlibm_up = exp_ru;
       testfun_mpfr = mpfr_exp;
     }
+    if ((strcmp(function_name,"expm1")==0) || (strcmp(function_name,"j_expm1")==0))
+    {
+      randfun = rand_for_expm1_soaktest;
+      testfun_crlibm_interval = j_expm1;
+      testfun_crlibm_low = expm1_rd;
+      testfun_crlibm_up = expm1_ru;
+      testfun_mpfr = mpfr_expm1;
+    }
 
     crlibm_init();
 
 
-    mpfr_init2(mp_res,  153);
+    mpfr_init2(mp_res,  200);
     mpfr_init2(mp_inpt, 53);
     mpfr_init2(mp_inpt2, 53);
 
-  printf("Testing j_log function \n");
+  printf("Testing %s function \n",function_name);
 
 
   srand(seed);

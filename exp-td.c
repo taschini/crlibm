@@ -967,83 +967,83 @@ double exp_rd(double x) {
 interval j_exp(interval x)
 {
   interval res;
-  double x_rd, x_ru;
-  double rh_ru, rm_ru, rl_ru, tbl1h_ru, tbl1m_ru, tbl1l_ru;
-  double tbl2h_ru, tbl2m_ru, tbl2l_ru;
-  double xMultLog2InvMult2L_ru, shiftedXMult_ru, kd_ru;
-  double msLog2Div2LMultKh_ru, msLog2Div2LMultKm_ru, msLog2Div2LMultKl_ru;
-  double t1_ru, t2_ru, polyTblh_ru, polyTblm_ru, polyTbll_ru;
-  db_number shiftedXMultdb_ru, xdb_ru, resdb_ru;
-  int k_ru, M_ru, index1_ru, index2_ru, xIntHi_ru, mightBeDenorm_ru, roundable;
-  double t8_ru, t9_ru, t10_ru, t11_ru, t12_ru, t13_ru;
-  double rhSquare_ru, rhSquareHalf_ru, rhC3_ru, rhFour_ru, monomialCube_ru;
-  double highPoly_ru, highPolyWithSquare_ru, monomialFour_ru;
-  double tablesh_ru, tablesl_ru;
-  double s1_ru, s2_ru, s3_ru, s4_ru, s5_ru;
-  double res_ru;
+  double x_inf, x_sup;
+  double rh_sup, rm_sup, rl_sup, tbl1h_sup, tbl1m_sup, tbl1l_sup;
+  double tbl2h_sup, tbl2m_sup, tbl2l_sup;
+  double xMultLog2InvMult2L_sup, shiftedXMult_sup, kd_sup;
+  double msLog2Div2LMultKh_sup, msLog2Div2LMultKm_sup, msLog2Div2LMultKl_sup;
+  double t1_sup, t2_sup, polyTblh_sup, polyTblm_sup, polyTbll_sup;
+  db_number shiftedXMultdb_sup, xdb_sup, resdb_sup;
+  int k_sup, M_sup, index1_sup, index2_sup, xIntHi_sup, mightBeDenorm_sup, roundable;
+  double t8_sup, t9_sup, t10_sup, t11_sup, t12_sup, t13_sup;
+  double rhSquare_sup, rhSquareHalf_sup, rhC3_sup, rhFour_sup, monomialCube_sup;
+  double highPoly_sup, highPolyWithSquare_sup, monomialFour_sup;
+  double tablesh_sup, tablesl_sup;
+  double s1_sup, s2_sup, s3_sup, s4_sup, s5_sup;
+  double res_sup;
 
-  double rh_rd, rm_rd, rl_rd, tbl1h_rd, tbl1m_rd, tbl1l_rd;
-  double tbl2h_rd, tbl2m_rd, tbl2l_rd;
-  double xMultLog2InvMult2L_rd, shiftedXMult_rd, kd_rd;
-  double msLog2Div2LMultKh_rd, msLog2Div2LMultKm_rd, msLog2Div2LMultKl_rd;
-  double t1_rd, t2_rd, polyTblh_rd, polyTblm_rd, polyTbll_rd;
-  db_number shiftedXMultdb_rd, xdb_rd, resdb_rd;
-  int k_rd, M_rd, index1_rd, index2_rd, xIntHi_rd, mightBeDenorm_rd;
-  double t8_rd, t9_rd, t10_rd, t11_rd, t12_rd, t13_rd;
-  double rhSquare_rd, rhSquareHalf_rd, rhC3_rd, rhFour_rd, monomialCube_rd;
-  double highPoly_rd, highPolyWithSquare_rd, monomialFour_rd;
-  double tablesh_rd, tablesl_rd;
-  double s1_rd, s2_rd, s3_rd, s4_rd, s5_rd;
-  double res_rd;
+  double rh_inf, rm_inf, rl_inf, tbl1h_inf, tbl1m_inf, tbl1l_inf;
+  double tbl2h_inf, tbl2m_inf, tbl2l_inf;
+  double xMultLog2InvMult2L_inf, shiftedXMult_inf, kd_inf;
+  double msLog2Div2LMultKh_inf, msLog2Div2LMultKm_inf, msLog2Div2LMultKl_inf;
+  double t1_inf, t2_inf, polyTblh_inf, polyTblm_inf, polyTbll_inf;
+  db_number shiftedXMultdb_inf, xdb_inf, resdb_inf;
+  int k_inf, M_inf, index1_inf, index2_inf, xIntHi_inf, mightBeDenorm_inf;
+  double t8_inf, t9_inf, t10_inf, t11_inf, t12_inf, t13_inf;
+  double rhSquare_inf, rhSquareHalf_inf, rhC3_inf, rhFour_inf, monomialCube_inf;
+  double highPoly_inf, highPolyWithSquare_inf, monomialFour_inf;
+  double tablesh_inf, tablesl_inf;
+  double s1_inf, s2_inf, s3_inf, s4_inf, s5_inf;
+  double res_inf;
 
-  double res_simple_rd, res_simple_ru;
+  double res_simple_inf, res_simple_sup;
   int infDone=0; int supDone=0;
 
-  x_rd=LOW(x);
-  x_ru=UP(x);
+  x_inf=LOW(x);
+  x_sup=UP(x);
 
   /* Argument reduction and filtering for special cases */
 
   /* Compute k as a double and as an int */
-  xdb_ru.d = x_ru;
-  xdb_rd.d = x_rd;
-  xMultLog2InvMult2L_ru = x_ru * log2InvMult2L;
-  xMultLog2InvMult2L_rd = x_rd * log2InvMult2L;
-  shiftedXMult_ru = xMultLog2InvMult2L_ru + shiftConst;
-  shiftedXMult_rd = xMultLog2InvMult2L_rd + shiftConst;
-  kd_ru = shiftedXMult_ru - shiftConst;
-  kd_rd = shiftedXMult_rd - shiftConst;
-  shiftedXMultdb_ru.d = shiftedXMult_ru;
-  shiftedXMultdb_rd.d = shiftedXMult_rd;
+  xdb_sup.d = x_sup;
+  xdb_inf.d = x_inf;
+  xMultLog2InvMult2L_sup = x_sup * log2InvMult2L;
+  xMultLog2InvMult2L_inf = x_inf * log2InvMult2L;
+  shiftedXMult_sup = xMultLog2InvMult2L_sup + shiftConst;
+  shiftedXMult_inf = xMultLog2InvMult2L_inf + shiftConst;
+  kd_sup = shiftedXMult_sup - shiftConst;
+  kd_inf = shiftedXMult_inf - shiftConst;
+  shiftedXMultdb_sup.d = shiftedXMult_sup;
+  shiftedXMultdb_inf.d = shiftedXMult_inf;
 
 
   /* Special cases tests */
-  xIntHi_ru = xdb_ru.i[HI];
-  mightBeDenorm_ru = 0;
+  xIntHi_sup = xdb_sup.i[HI];
+  mightBeDenorm_sup = 0;
 
   /* Special cases tests */
-  xIntHi_rd = xdb_rd.i[HI];
-  mightBeDenorm_rd = 0;
+  xIntHi_inf = xdb_inf.i[HI];
+  mightBeDenorm_inf = 0;
 
   if ( __builtin_expect(
-       ((xIntHi_ru & 0x7ff00000) == 0)
-    || (((xIntHi_ru & 0x7ff00000) == 0)  && (x_ru == 0.0)) 
-    || (((xIntHi_ru & 0x7ff00000) == 0)  && (x_ru < 0.0))
-    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_ru & 0x7fffffff) >= 0x7ff00000))
-    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_ru & 0x7fffffff) >= 0x7ff00000) && (((xIntHi_ru & 0x000fffff) | xdb_ru.i[LO]) != 0))
-    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_ru & 0x7fffffff) >= 0x7ff00000) && ((xIntHi_ru & 0x80000000)==0))
-    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_ru > OVRFLWBOUND))
-    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_ru <= UNDERFLWBOUND))
-    || (((xIntHi_ru & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_ru <= DENORMBOUND))
-    || ((xIntHi_rd & 0x7ff00000) == 0)
-    || (((xIntHi_rd & 0x7ff00000) == 0) && (x_rd == 0.0))
-    || (((xIntHi_rd & 0x7ff00000) == 0) && (x_rd > 0.0))
-    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_rd & 0x7fffffff) >= 0x7ff00000))
-    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_rd & 0x7fffffff) >= 0x7ff00000) && (((xIntHi_rd & 0x000fffff) | xdb_rd.i[LO]) != 0))
-    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_rd & 0x7fffffff) >= 0x7ff00000) && ((xIntHi_rd & 0x80000000)==0))
-    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_rd > OVRFLWBOUND))
-    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_rd <= UNDERFLWBOUND))
-    || (((xIntHi_rd & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_rd <= DENORMBOUND))
+       ((xIntHi_sup & 0x7ff00000) == 0)
+    || (((xIntHi_sup & 0x7ff00000) == 0)  && (x_sup == 0.0)) 
+    || (((xIntHi_sup & 0x7ff00000) == 0)  && (x_sup < 0.0))
+    || (((xIntHi_sup & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_sup & 0x7fffffff) >= 0x7ff00000))
+    || (((xIntHi_sup & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_sup & 0x7fffffff) >= 0x7ff00000) && (((xIntHi_sup & 0x000fffff) | xdb_sup.i[LO]) != 0))
+    || (((xIntHi_sup & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_sup & 0x7fffffff) >= 0x7ff00000) && ((xIntHi_sup & 0x80000000)==0))
+    || (((xIntHi_sup & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_sup > OVRFLWBOUND))
+    || (((xIntHi_sup & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_sup <= UNDERFLWBOUND))
+    || (((xIntHi_sup & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_sup <= DENORMBOUND))
+    || ((xIntHi_inf & 0x7ff00000) == 0)
+    || (((xIntHi_inf & 0x7ff00000) == 0) && (x_inf == 0.0))
+    || (((xIntHi_inf & 0x7ff00000) == 0) && (x_inf > 0.0))
+    || (((xIntHi_inf & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_inf & 0x7fffffff) >= 0x7ff00000))
+    || (((xIntHi_inf & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_inf & 0x7fffffff) >= 0x7ff00000) && (((xIntHi_inf & 0x000fffff) | xdb_inf.i[LO]) != 0))
+    || (((xIntHi_inf & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && ((xIntHi_inf & 0x7fffffff) >= 0x7ff00000) && ((xIntHi_inf & 0x80000000)==0))
+    || (((xIntHi_inf & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_inf > OVRFLWBOUND))
+    || (((xIntHi_inf & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_inf <= UNDERFLWBOUND))
+    || (((xIntHi_inf & 0x7fffffff) >= OVRUDRFLWSMPLBOUND) && (x_inf <= DENORMBOUND))
      ,FALSE))
   {
     ASSIGN_LOW(res,exp_rd(LOW(x)));
@@ -1058,34 +1058,34 @@ interval j_exp(interval x)
      We continue the argument reduction for the quick phase and table reads for both phases
   */
 
-  Mul12(&s1_ru,&s2_ru,msLog2Div2Lh,kd_ru);
-  Mul12(&s1_rd,&s2_rd,msLog2Div2Lh,kd_rd);
-  s3_ru = kd_ru * msLog2Div2Lm;
-  s3_rd = kd_rd * msLog2Div2Lm;
-  s4_ru = s2_ru + s3_ru; 
-  s4_rd = s2_rd + s3_rd; 
-  s5_ru = x_ru + s1_ru;
-  s5_rd = x_rd + s1_rd;
-  Add12Cond(rh_ru,rm_ru,s5_ru,s4_ru);
-  Add12Cond(rh_rd,rm_rd,s5_rd,s4_rd);
-  k_ru = shiftedXMultdb_ru.i[LO];
-  k_rd = shiftedXMultdb_rd.i[LO];
-  M_ru = k_ru >> L;
-  M_rd = k_rd >> L;
-  index1_ru = k_ru & INDEXMASK1;
-  index1_rd = k_rd & INDEXMASK1;
-  index2_ru = (k_ru & INDEXMASK2) >> LHALF;
-  index2_rd = (k_rd & INDEXMASK2) >> LHALF;
+  Mul12(&s1_sup,&s2_sup,msLog2Div2Lh,kd_sup);
+  Mul12(&s1_inf,&s2_inf,msLog2Div2Lh,kd_inf);
+  s3_sup = kd_sup * msLog2Div2Lm;
+  s3_inf = kd_inf * msLog2Div2Lm;
+  s4_sup = s2_sup + s3_sup; 
+  s4_inf = s2_inf + s3_inf; 
+  s5_sup = x_sup + s1_sup;
+  s5_inf = x_inf + s1_inf;
+  Add12Cond(rh_sup,rm_sup,s5_sup,s4_sup);
+  Add12Cond(rh_inf,rm_inf,s5_inf,s4_inf);
+  k_sup = shiftedXMultdb_sup.i[LO];
+  k_inf = shiftedXMultdb_inf.i[LO];
+  M_sup = k_sup >> L;
+  M_inf = k_inf >> L;
+  index1_sup = k_sup & INDEXMASK1;
+  index1_inf = k_inf & INDEXMASK1;
+  index2_sup = (k_sup & INDEXMASK2) >> LHALF;
+  index2_inf = (k_inf & INDEXMASK2) >> LHALF;
 
   /* Table reads */
-  tbl1h_ru = twoPowerIndex1[index1_ru].hi;
-  tbl1h_rd = twoPowerIndex1[index1_rd].hi;
-  tbl1m_ru = twoPowerIndex1[index1_ru].mi;
-  tbl1m_rd = twoPowerIndex1[index1_rd].mi;
-  tbl2h_ru = twoPowerIndex2[index2_ru].hi;
-  tbl2h_rd = twoPowerIndex2[index2_rd].hi;
-  tbl2m_ru = twoPowerIndex2[index2_ru].mi;
-  tbl2m_rd = twoPowerIndex2[index2_rd].mi;
+  tbl1h_sup = twoPowerIndex1[index1_sup].hi;
+  tbl1h_inf = twoPowerIndex1[index1_inf].hi;
+  tbl1m_sup = twoPowerIndex1[index1_sup].mi;
+  tbl1m_inf = twoPowerIndex1[index1_inf].mi;
+  tbl2h_sup = twoPowerIndex2[index2_sup].hi;
+  tbl2h_inf = twoPowerIndex2[index2_inf].hi;
+  tbl2m_sup = twoPowerIndex2[index2_sup].mi;
+  tbl2m_inf = twoPowerIndex2[index2_inf].mi;
 
 
 
@@ -1098,36 +1098,36 @@ interval j_exp(interval x)
 
   /* Quick phase starts here */
 
-  rhSquare_ru = rh_ru * rh_ru;
-  rhSquare_rd = rh_rd * rh_rd;
-  rhC3_ru = c3 * rh_ru;
-  rhC3_rd = c3 * rh_rd;
-  rhSquareHalf_ru = 0.5 * rhSquare_ru;
-  rhSquareHalf_rd = 0.5 * rhSquare_rd;
-  monomialCube_ru = rhC3_ru * rhSquare_ru;
-  monomialCube_rd = rhC3_rd * rhSquare_rd;
-  rhFour_ru = rhSquare_ru * rhSquare_ru;
-  rhFour_rd = rhSquare_rd * rhSquare_rd;
-  monomialFour_ru = c4 * rhFour_ru;
-  monomialFour_rd = c4 * rhFour_rd;
-  highPoly_ru = monomialCube_ru + monomialFour_ru;
-  highPoly_rd = monomialCube_rd + monomialFour_rd;
-  highPolyWithSquare_ru = rhSquareHalf_ru + highPoly_ru;
-  highPolyWithSquare_rd = rhSquareHalf_rd + highPoly_rd;
-  Mul22(&tablesh_ru,&tablesl_ru,tbl1h_ru,tbl1m_ru,tbl2h_ru,tbl2m_ru);
-  Mul22(&tablesh_rd,&tablesl_rd,tbl1h_rd,tbl1m_rd,tbl2h_rd,tbl2m_rd);
-  t8_ru = rm_ru + highPolyWithSquare_ru;
-  t8_rd = rm_rd + highPolyWithSquare_rd;
-  t9_ru = rh_ru + t8_ru;
-  t9_rd = rh_rd + t8_rd;
-  t10_ru = tablesh_ru * t9_ru;
-  t10_rd = tablesh_rd * t9_rd;
-  Add12(t11_ru,t12_ru,tablesh_ru,t10_ru);
-  Add12(t11_rd,t12_rd,tablesh_rd,t10_rd);
-  t13_ru = t12_ru + tablesl_ru;
-  t13_rd = t12_rd + tablesl_rd;
-  Add12(polyTblh_ru,polyTblm_ru,t11_ru,t13_ru);
-  Add12(polyTblh_rd,polyTblm_rd,t11_rd,t13_rd);
+  rhSquare_sup = rh_sup * rh_sup;
+  rhSquare_inf = rh_inf * rh_inf;
+  rhC3_sup = c3 * rh_sup;
+  rhC3_inf = c3 * rh_inf;
+  rhSquareHalf_sup = 0.5 * rhSquare_sup;
+  rhSquareHalf_inf = 0.5 * rhSquare_inf;
+  monomialCube_sup = rhC3_sup * rhSquare_sup;
+  monomialCube_inf = rhC3_inf * rhSquare_inf;
+  rhFour_sup = rhSquare_sup * rhSquare_sup;
+  rhFour_inf = rhSquare_inf * rhSquare_inf;
+  monomialFour_sup = c4 * rhFour_sup;
+  monomialFour_inf = c4 * rhFour_inf;
+  highPoly_sup = monomialCube_sup + monomialFour_sup;
+  highPoly_inf = monomialCube_inf + monomialFour_inf;
+  highPolyWithSquare_sup = rhSquareHalf_sup + highPoly_sup;
+  highPolyWithSquare_inf = rhSquareHalf_inf + highPoly_inf;
+  Mul22(&tablesh_sup,&tablesl_sup,tbl1h_sup,tbl1m_sup,tbl2h_sup,tbl2m_sup);
+  Mul22(&tablesh_inf,&tablesl_inf,tbl1h_inf,tbl1m_inf,tbl2h_inf,tbl2m_inf);
+  t8_sup = rm_sup + highPolyWithSquare_sup;
+  t8_inf = rm_inf + highPolyWithSquare_inf;
+  t9_sup = rh_sup + t8_sup;
+  t9_inf = rh_inf + t8_inf;
+  t10_sup = tablesh_sup * t9_sup;
+  t10_inf = tablesh_inf * t9_inf;
+  Add12(t11_sup,t12_sup,tablesh_sup,t10_sup);
+  Add12(t11_inf,t12_inf,tablesh_inf,t10_inf);
+  t13_sup = t12_sup + tablesl_sup;
+  t13_inf = t12_inf + tablesl_inf;
+  Add12(polyTblh_sup,polyTblm_sup,t11_sup,t13_sup);
+  Add12(polyTblh_inf,polyTblm_inf,t11_inf,t13_inf);
   
   /* Rounding test 
      Since we know that the result of the final multiplication with 2^M 
@@ -1137,50 +1137,50 @@ interval j_exp(interval x)
      the problem of the non-representability of 2^1024 if M = 1024
   */
 
-  if (infDone==1) res_rd=res_simple_rd;
-  if (supDone==1) res_ru=res_simple_ru;
+  if (infDone==1) res_inf=res_simple_inf;
+  if (supDone==1) res_sup=res_simple_sup;
 
-//  TEST_AND_COPY_RDRU_EXP(roundable,infDone,supDone,res_rd,polyTblh_rd,polyTblm_rd,res_ru,polyTblh_ru,polyTblm_ru,RDROUNDCST);
-  db_number yh_rd, yl_rd, u53_rd, yh_ru, yl_ru, u53_ru;
-  int yh_rd_neg, yl_rd_neg, yh_ru_neg, yl_ru_neg;
+//  TEST_AND_COPY_RDRU_EXP(roundable,infDone,supDone,res_inf,polyTblh_inf,polyTblm_inf,res_sup,polyTblh_sup,polyTblm_sup,RDROUNDCST);
+  db_number yh_inf, yl_inf, u53_inf, yh_sup, yl_sup, u53_sup;
+  int yh_inf_neg, yl_inf_neg, yh_sup_neg, yl_sup_neg;
   int rd_ok, ru_ok;
-  double save_res_rd=res_rd;
-  double save_res_ru=res_ru;
-  yh_rd.d = polyTblh_rd;    yl_rd.d = polyTblm_rd;
-  yh_rd_neg = (yh_rd.i[HI] & 0x80000000);
-  yl_rd_neg = (yl_rd.i[HI] & 0x80000000);
-  yh_rd.l = yh_rd.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
-  yl_rd.l = yl_rd.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
-  u53_rd.l     = (yh_rd.l & ULL(7ff0000000000000)) +  ULL(0010000000000000);
-  yh_ru.d = polyTblh_ru;    yl_ru.d = polyTblm_ru;
-  yh_ru_neg = (yh_ru.i[HI] & 0x80000000);
-  yl_ru_neg = (yl_ru.i[HI] & 0x80000000);
-  yh_ru.l = yh_ru.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
-  yl_ru.l = yl_ru.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
-  u53_ru.l     = (yh_ru.l & ULL(7ff0000000000000)) +  ULL(0010000000000000);
+  double save_res_inf=res_inf;
+  double save_res_sup=res_sup;
+  yh_inf.d = polyTblh_inf;    yl_inf.d = polyTblm_inf;
+  yh_inf_neg = (yh_inf.i[HI] & 0x80000000);
+  yl_inf_neg = (yl_inf.i[HI] & 0x80000000);
+  yh_inf.l = yh_inf.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
+  yl_inf.l = yl_inf.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
+  u53_inf.l     = (yh_inf.l & ULL(7ff0000000000000)) +  ULL(0010000000000000);
+  yh_sup.d = polyTblh_sup;    yl_sup.d = polyTblm_sup;
+  yh_sup_neg = (yh_sup.i[HI] & 0x80000000);
+  yl_sup_neg = (yl_sup.i[HI] & 0x80000000);
+  yh_sup.l = yh_sup.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
+  yl_sup.l = yl_sup.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/
+  u53_sup.l     = (yh_sup.l & ULL(7ff0000000000000)) +  ULL(0010000000000000);
   roundable = 0;
-  rd_ok=(yl_rd.d > RDROUNDCST * u53_rd.d);
-  ru_ok=(yl_ru.d > RDROUNDCST * u53_ru.d);
-     if(yl_rd_neg) {  /* The case yl==0 is filtered by the above test*/
+  rd_ok=(yl_inf.d > RDROUNDCST * u53_inf.d);
+  ru_ok=(yl_sup.d > RDROUNDCST * u53_sup.d);
+     if(yl_inf_neg) {  /* The case yl==0 is filtered by the above test*/
       /* return next down */
-       yh_rd.d = polyTblh_rd;
-      if(yh_rd_neg) yh_rd.l++;  else yh_rd.l--; /* Beware: fails for zero */
-      res_rd = yh_rd.d;
+       yh_inf.d = polyTblh_inf;
+      if(yh_inf_neg) yh_inf.l++;  else yh_inf.l--; /* Beware: fails for zero */
+      res_inf = yh_inf.d;
     }
     else {
-      res_rd = polyTblh_rd;
+      res_inf = polyTblh_inf;
     }
-    if(!yl_ru_neg) {  /* The case yl==0 is filtered by the above test*/
+    if(!yl_sup_neg) {  /* The case yl==0 is filtered by the above test*/
       /* return next up */
-      yh_ru.d = polyTblh_ru;
-      if(yh_ru_neg) yh_ru.l--;  else yh_ru.l++; /* Beware: fails for zero */
-      res_ru = yh_ru.d;
+      yh_sup.d = polyTblh_sup;
+      if(yh_sup_neg) yh_sup.l--;  else yh_sup.l++; /* Beware: fails for zero */
+      res_sup = yh_sup.d;
     }
     else {
-      res_ru = polyTblh_ru;
+      res_sup = polyTblh_sup;
     }
-  if(infDone) res_rd=save_res_rd;
-  if(supDone) res_ru=save_res_ru;
+  if(infDone) res_inf=save_res_inf;
+  if(supDone) res_sup=save_res_sup;
   if(rd_ok && ru_ok){
     roundable=3;
   }
@@ -1190,139 +1190,139 @@ interval j_exp(interval x)
   else if (ru_ok){
      roundable=2;
   }
-  resdb_rd.d = res_rd;
-  resdb_ru.d = res_ru;
+  resdb_inf.d = res_inf;
+  resdb_sup.d = res_sup;
 
   if (roundable==3)
   {
     if (infDone==0){
-      resdb_rd.i[HI] += M_rd << 20;
+      resdb_inf.i[HI] += M_inf << 20;
     }
-    ASSIGN_LOW(res,resdb_rd.d);
+    ASSIGN_LOW(res,resdb_inf.d);
     if (supDone==0){
-      resdb_ru.i[HI] += M_ru << 20;
+      resdb_sup.i[HI] += M_sup << 20;
     }
-    ASSIGN_UP(res,resdb_ru.d);
+    ASSIGN_UP(res,resdb_sup.d);
     return res;
   }
   if(roundable==1)
   {
     if(infDone==0){
-      resdb_rd.i[HI] += M_rd << 20;
+      resdb_inf.i[HI] += M_inf << 20;
     }
-    ASSIGN_LOW(res,resdb_rd.d);
+    ASSIGN_LOW(res,resdb_inf.d);
     if(supDone==0){
     /* Rest of argument reduction for accurate phase */
-    Mul133(&msLog2Div2LMultKh_ru,&msLog2Div2LMultKm_ru,&msLog2Div2LMultKl_ru,kd_ru,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
-    t1_ru = x_ru + msLog2Div2LMultKh_ru;
-    Add12Cond(rh_ru,t2_ru,t1_ru,msLog2Div2LMultKm_ru);
-    Add12Cond(rm_ru,rl_ru,t2_ru,msLog2Div2LMultKl_ru);
+    Mul133(&msLog2Div2LMultKh_sup,&msLog2Div2LMultKm_sup,&msLog2Div2LMultKl_sup,kd_sup,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
+    t1_sup = x_sup + msLog2Div2LMultKh_sup;
+    Add12Cond(rh_sup,t2_sup,t1_sup,msLog2Div2LMultKm_sup);
+    Add12Cond(rm_sup,rl_sup,t2_sup,msLog2Div2LMultKl_sup);
     /* Table reads for accurate phase */
-    tbl1l_ru = twoPowerIndex1[index1_ru].lo;
-    tbl2l_ru = twoPowerIndex2[index2_ru].lo;
+    tbl1l_sup = twoPowerIndex1[index1_sup].lo;
+    tbl2l_sup = twoPowerIndex2[index2_sup].lo;
     /* Call accurate phase */
-    exp_td_accurate(&polyTblh_ru, &polyTblm_ru, &polyTbll_ru, rh_ru, rm_ru, rl_ru, tbl1h_ru, tbl1m_ru, tbl1l_ru, tbl2h_ru, tbl2m_ru, tbl2l_ru); 
+    exp_td_accurate(&polyTblh_sup, &polyTblm_sup, &polyTbll_sup, rh_sup, rm_sup, rl_sup, tbl1h_sup, tbl1m_sup, tbl1l_sup, tbl2h_sup, tbl2m_sup, tbl2l_sup); 
     /* Since the final multiplication is exact, we can do the final rounding before multiplying
        We overcome this way also the cases where the final result is not underflowed whereas the
        lower parts of the intermediate final result are.
     */
-    RoundUpwards3(&res_ru,polyTblh_ru,polyTblm_ru,polyTbll_ru);
+    RoundUpwards3(&res_sup,polyTblh_sup,polyTblm_sup,polyTbll_sup);
     /* Final multiplication with 2^M 
        We implement the multiplication in integer computations to overcome
        the problem of the non-representability of 2^1024 if M = 1024
     */
-    resdb_ru.d = res_ru;
-    resdb_ru.i[HI] += M_ru << 20;
+    resdb_sup.d = res_sup;
+    resdb_sup.i[HI] += M_sup << 20;
     }
-    ASSIGN_UP(res,resdb_ru.d);
+    ASSIGN_UP(res,resdb_sup.d);
     return res;
   } /* Accurate phase launched after rounding test*/
     
   if (roundable==2) {
     if (infDone==0){
     /* Rest of argument reduction for accurate phase */
-    Mul133(&msLog2Div2LMultKh_rd,&msLog2Div2LMultKm_rd,&msLog2Div2LMultKl_rd,kd_rd,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
-    t1_rd = x_rd + msLog2Div2LMultKh_rd;
-    Add12Cond(rh_rd,t2_rd,t1_rd,msLog2Div2LMultKm_rd);
-    Add12Cond(rm_rd,rl_rd,t2_rd,msLog2Div2LMultKl_rd);
+    Mul133(&msLog2Div2LMultKh_inf,&msLog2Div2LMultKm_inf,&msLog2Div2LMultKl_inf,kd_inf,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
+    t1_inf = x_inf + msLog2Div2LMultKh_inf;
+    Add12Cond(rh_inf,t2_inf,t1_inf,msLog2Div2LMultKm_inf);
+    Add12Cond(rm_inf,rl_inf,t2_inf,msLog2Div2LMultKl_inf);
     /* Table reads for accurate phase */
-    tbl1l_rd = twoPowerIndex1[index1_rd].lo;
-    tbl2l_rd = twoPowerIndex2[index2_rd].lo;
+    tbl1l_inf = twoPowerIndex1[index1_inf].lo;
+    tbl2l_inf = twoPowerIndex2[index2_inf].lo;
     /* Call accurate phase */
-    exp_td_accurate(&polyTblh_rd, &polyTblm_rd, &polyTbll_rd, rh_rd, rm_rd, rl_rd, tbl1h_rd, tbl1m_rd, tbl1l_rd, tbl2h_rd, tbl2m_rd, tbl2l_rd); 
+    exp_td_accurate(&polyTblh_inf, &polyTblm_inf, &polyTbll_inf, rh_inf, rm_inf, rl_inf, tbl1h_inf, tbl1m_inf, tbl1l_inf, tbl2h_inf, tbl2m_inf, tbl2l_inf); 
     /* Since the final multiplication is exact, we can do the final rounding before multiplying
        We overcome this way also the cases where the final result is not underflowed whereas the
        lower parts of the intermediate final result are.
     */
 
-    RoundDownwards3(&res_rd,polyTblh_rd,polyTblm_rd,polyTbll_rd);
+    RoundDownwards3(&res_inf,polyTblh_inf,polyTblm_inf,polyTbll_inf);
     /* Final multiplication with 2^M 
        We implement the multiplication in integer computations to overcome
        the problem of the non-representability of 2^1024 if M = 1024
     */
 
-    resdb_rd.d = res_rd;
-    resdb_rd.i[HI] += M_rd << 20;
+    resdb_inf.d = res_inf;
+    resdb_inf.i[HI] += M_inf << 20;
     }
-    ASSIGN_LOW(res,resdb_rd.d);
+    ASSIGN_LOW(res,resdb_inf.d);
     if(supDone==0){
-      resdb_ru.i[HI] += M_ru << 20;
+      resdb_sup.i[HI] += M_sup << 20;
     }
-    ASSIGN_UP(res,resdb_ru.d);    
+    ASSIGN_UP(res,resdb_sup.d);    
     return res;
   } /* Accurate phase launched after rounding test*/
   if(roundable==0)
   {
     if(supDone==0){
     /* Rest of argument reduction for accurate phase */
-    Mul133(&msLog2Div2LMultKh_ru,&msLog2Div2LMultKm_ru,&msLog2Div2LMultKl_ru,kd_ru,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
-    t1_ru = x_ru + msLog2Div2LMultKh_ru;
-    Add12Cond(rh_ru,t2_ru,t1_ru,msLog2Div2LMultKm_ru);
-    Add12Cond(rm_ru,rl_ru,t2_ru,msLog2Div2LMultKl_ru);
+    Mul133(&msLog2Div2LMultKh_sup,&msLog2Div2LMultKm_sup,&msLog2Div2LMultKl_sup,kd_sup,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
+    t1_sup = x_sup + msLog2Div2LMultKh_sup;
+    Add12Cond(rh_sup,t2_sup,t1_sup,msLog2Div2LMultKm_sup);
+    Add12Cond(rm_sup,rl_sup,t2_sup,msLog2Div2LMultKl_sup);
     /* Table reads for accurate phase */
-    tbl1l_ru = twoPowerIndex1[index1_ru].lo;
-    tbl2l_ru = twoPowerIndex2[index2_ru].lo;
+    tbl1l_sup = twoPowerIndex1[index1_sup].lo;
+    tbl2l_sup = twoPowerIndex2[index2_sup].lo;
     /* Call accurate phase */
-    exp_td_accurate(&polyTblh_ru, &polyTblm_ru, &polyTbll_ru, rh_ru, rm_ru, rl_ru, tbl1h_ru, tbl1m_ru, tbl1l_ru, tbl2h_ru, tbl2m_ru, tbl2l_ru); 
+    exp_td_accurate(&polyTblh_sup, &polyTblm_sup, &polyTbll_sup, rh_sup, rm_sup, rl_sup, tbl1h_sup, tbl1m_sup, tbl1l_sup, tbl2h_sup, tbl2m_sup, tbl2l_sup); 
     /* Since the final multiplication is exact, we can do the final rounding before multiplying
        We overcome this way also the cases where the final result is not underflowed whereas the
        lower parts of the intermediate final result are.
     */
-    RoundUpwards3(&res_ru,polyTblh_ru,polyTblm_ru,polyTbll_ru);
+    RoundUpwards3(&res_sup,polyTblh_sup,polyTblm_sup,polyTbll_sup);
     /* Final multiplication with 2^M 
        We implement the multiplication in integer computations to overcome
        the problem of the non-representability of 2^1024 if M = 1024
     */
-    resdb_ru.d = res_ru;
-    resdb_ru.i[HI] += M_ru << 20;
+    resdb_sup.d = res_sup;
+    resdb_sup.i[HI] += M_sup << 20;
     }
-    ASSIGN_UP(res,resdb_ru.d);
+    ASSIGN_UP(res,resdb_sup.d);
     if (infDone==0){
     /* Rest of argument reduction for accurate phase */
-    Mul133(&msLog2Div2LMultKh_rd,&msLog2Div2LMultKm_rd,&msLog2Div2LMultKl_rd,kd_rd,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
-    t1_rd = x_rd + msLog2Div2LMultKh_rd;
-    Add12Cond(rh_rd,t2_rd,t1_rd,msLog2Div2LMultKm_rd);
-    Add12Cond(rm_rd,rl_rd,t2_rd,msLog2Div2LMultKl_rd);
+    Mul133(&msLog2Div2LMultKh_inf,&msLog2Div2LMultKm_inf,&msLog2Div2LMultKl_inf,kd_inf,msLog2Div2Lh,msLog2Div2Lm,msLog2Div2Ll);
+    t1_inf = x_inf + msLog2Div2LMultKh_inf;
+    Add12Cond(rh_inf,t2_inf,t1_inf,msLog2Div2LMultKm_inf);
+    Add12Cond(rm_inf,rl_inf,t2_inf,msLog2Div2LMultKl_inf);
     /* Table reads for accurate phase */
-    tbl1l_rd = twoPowerIndex1[index1_rd].lo;
-    tbl2l_rd = twoPowerIndex2[index2_rd].lo;
+    tbl1l_inf = twoPowerIndex1[index1_inf].lo;
+    tbl2l_inf = twoPowerIndex2[index2_inf].lo;
     /* Call accurate phase */
-    exp_td_accurate(&polyTblh_rd, &polyTblm_rd, &polyTbll_rd, rh_rd, rm_rd, rl_rd, tbl1h_rd, tbl1m_rd, tbl1l_rd, tbl2h_rd, tbl2m_rd, tbl2l_rd); 
+    exp_td_accurate(&polyTblh_inf, &polyTblm_inf, &polyTbll_inf, rh_inf, rm_inf, rl_inf, tbl1h_inf, tbl1m_inf, tbl1l_inf, tbl2h_inf, tbl2m_inf, tbl2l_inf); 
     /* Since the final multiplication is exact, we can do the final rounding before multiplying
        We overcome this way also the cases where the final result is not underflowed whereas the
        lower parts of the intermediate final result are.
     */
 
-    RoundDownwards3(&res_rd,polyTblh_rd,polyTblm_rd,polyTbll_rd);
+    RoundDownwards3(&res_inf,polyTblh_inf,polyTblm_inf,polyTbll_inf);
     /* Final multiplication with 2^M 
        We implement the multiplication in integer computations to overcome
        the problem of the non-representability of 2^1024 if M = 1024
     */
 
-    resdb_rd.d = res_rd;
-    resdb_rd.i[HI] += M_rd << 20;
+    resdb_inf.d = res_inf;
+    resdb_inf.i[HI] += M_inf << 20;
     }
-    ASSIGN_LOW(res,resdb_rd.d);
+    ASSIGN_LOW(res,resdb_inf.d);
     return res;
   } /* Accurate phase launched after rounding test*/
 

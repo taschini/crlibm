@@ -27,4 +27,5 @@ double rand_for_log(void);
 
 double rand_for_exp_normal(void);
 
+double rand_for_expm1_soaktest(void);
 

@@ -851,46 +851,46 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
  {
    interval res;
    int roundable;
-   int cs_rd=0; int cs_ru=0;
-   double x_rd,x_ru;
-   x_rd=LOW(x);
-   x_ru=UP(x);
-   double res_rd, res_ru, res_simple_rd, res_simple_ru;
+   int cs_inf=0; int cs_sup=0;
+   double x_inf,x_sup;
+   x_inf=LOW(x);
+   x_sup=UP(x);
+   double res_inf, res_sup, res_simple_inf, res_simple_sup;
 
-   db_number xdb_ru;
-   double y_ru, ed_ru, ri_ru, logih_ru, logim_ru, yrih_ru, yril_ru, th_ru, zh_ru, zl_ru;
-   double polyHorner_ru, zhSquareh_ru, zhSquarel_ru, polyUpper_ru, zhSquareHalfh_ru, zhSquareHalfl_ru;
-   double t1h_ru, t1l_ru, t2h_ru, t2l_ru, ph_ru, pl_ru, log2edh_ru, log2edl_ru, logTabPolyh_ru, logTabPolyl_ru, logh_ru, logm_ru, logl_ru, roundcst;
-   int E_ru, index_ru;
+   db_number xdb_sup;
+   double y_sup, ed_sup, ri_sup, logih_sup, logim_sup, yrih_sup, yril_sup, th_sup, zh_sup, zl_sup;
+   double polyHorner_sup, zhSquareh_sup, zhSquarel_sup, polyUpper_sup, zhSquareHalfh_sup, zhSquareHalfl_sup;
+   double t1h_sup, t1l_sup, t2h_sup, t2l_sup, ph_sup, pl_sup, log2edh_sup, log2edl_sup, logTabPolyh_sup, logTabPolyl_sup, logh_sup, logm_sup, logl_sup, roundcst;
+   int E_sup, index_sup;
    
 
-   db_number xdb_rd;
-   double y_rd, ed_rd, ri_rd, logih_rd, logim_rd, yrih_rd, yril_rd, th_rd, zh_rd, zl_rd;
-   double polyHorner_rd, zhSquareh_rd, zhSquarel_rd, polyUpper_rd, zhSquareHalfh_rd, zhSquareHalfl_rd;
-   double t1h_rd, t1l_rd, t2h_rd, t2l_rd, ph_rd, pl_rd, log2edh_rd, log2edl_rd, logTabPolyh_rd, logTabPolyl_rd, logh_rd, logm_rd, logl_rd;
-   int E_rd, index_rd;
+   db_number xdb_inf;
+   double y_inf, ed_inf, ri_inf, logih_inf, logim_inf, yrih_inf, yril_inf, th_inf, zh_inf, zl_inf;
+   double polyHorner_inf, zhSquareh_inf, zhSquarel_inf, polyUpper_inf, zhSquareHalfh_inf, zhSquareHalfl_inf;
+   double t1h_inf, t1l_inf, t2h_inf, t2l_inf, ph_inf, pl_inf, log2edh_inf, log2edl_inf, logTabPolyh_inf, logTabPolyl_inf, logh_inf, logm_inf, logl_inf;
+   int E_inf, index_inf;
 
-   E_rd=0;
-   xdb_rd.d=x_rd;
-   E_ru=0;
-   xdb_ru.d=x_ru;
+   E_inf=0;
+   xdb_inf.d=x_inf;
+   E_sup=0;
+   xdb_sup.d=x_sup;
 
    if (__builtin_expect(
-      (x_rd == 1.0) || (!(x_rd<=x_ru)) || (xdb_ru.i[HI] < 0) 
-   || (xdb_rd.i[HI] < 0x00100000) || (((xdb_rd.i[HI] & 0x7fffffff)|xdb_rd.i[LO])==0) 
-   || (xdb_rd.i[HI] < 0)
-   || (xdb_rd.i[HI] >= 0x7ff00000)
-   || (x_ru == 1.0)
-   || (xdb_ru.i[HI] < 0x00100000)
-   || (((xdb_ru.i[HI] & 0x7fffffff)|xdb_ru.i[LO])==0)
-   || (xdb_ru.i[HI] < 0)
-   || (xdb_ru.i[HI] >= 0x7ff00000)
-   || ((xdb_rd.d<00) && (xdb_ru.d>0) )
+      (x_inf == 1.0) || (!(x_inf<=x_sup)) || (xdb_sup.i[HI] < 0) 
+   || (xdb_inf.i[HI] < 0x00100000) || (((xdb_inf.i[HI] & 0x7fffffff)|xdb_inf.i[LO])==0) 
+   || (xdb_inf.i[HI] < 0)
+   || (xdb_inf.i[HI] >= 0x7ff00000)
+   || (x_sup == 1.0)
+   || (xdb_sup.i[HI] < 0x00100000)
+   || (((xdb_sup.i[HI] & 0x7fffffff)|xdb_sup.i[LO])==0)
+   || (xdb_sup.i[HI] < 0)
+   || (xdb_sup.i[HI] >= 0x7ff00000)
+   || ((xdb_inf.d<00) && (xdb_sup.d>0) )
    ,FALSE))
    {
-     if (!(x_rd<=x_ru)) RETURN_EMPTY_INTERVAL;
-     if (xdb_ru.i[HI] < 0) RETURN_EMPTY_INTERVAL;
-     if ((xdb_rd.d<00) && (xdb_ru.d>0) )
+     if (!(x_inf<=x_sup)) RETURN_EMPTY_INTERVAL;
+     if (xdb_sup.i[HI] < 0) RETURN_EMPTY_INTERVAL;
+     if ((xdb_inf.d<00) && (xdb_sup.d>0) )
      {
        ASSIGN_LOW(res,-1.0/0.0);
        ASSIGN_UP(res,log_ru(UP(x)));
@@ -905,31 +905,31 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
       yielding to E holding the exponent and
       y the mantissa between sqrt(2)/2 and sqrt(2)
    */
-   E_rd += (xdb_rd.i[HI]>>20)-1023;             /* extract the exponent */
-   E_ru += (xdb_ru.i[HI]>>20)-1023;             /* extract the exponent */
-   index_rd = (xdb_rd.i[HI] & 0x000fffff);
-   index_ru = (xdb_ru.i[HI] & 0x000fffff);
-   xdb_rd.i[HI] =  index_rd | 0x3ff00000;	/* do exponent = 0 */
-   xdb_ru.i[HI] =  index_ru | 0x3ff00000;	/* do exponent = 0 */
-   index_rd = (index_rd + (1<<(20-L-1))) >> (20-L);
-   index_ru = (index_ru + (1<<(20-L-1))) >> (20-L);
+   E_inf += (xdb_inf.i[HI]>>20)-1023;             /* extract the exponent */
+   E_sup += (xdb_sup.i[HI]>>20)-1023;             /* extract the exponent */
+   index_inf = (xdb_inf.i[HI] & 0x000fffff);
+   index_sup = (xdb_sup.i[HI] & 0x000fffff);
+   xdb_inf.i[HI] =  index_inf | 0x3ff00000;	/* do exponent = 0 */
+   xdb_sup.i[HI] =  index_sup | 0x3ff00000;	/* do exponent = 0 */
+   index_inf = (index_inf + (1<<(20-L-1))) >> (20-L);
+   index_sup = (index_sup + (1<<(20-L-1))) >> (20-L);
    /* reduce  such that sqrt(2)/2 < xdb.d < sqrt(2) */
-   if (index_rd >= MAXINDEX){ /* corresponds to xdb>sqrt(2)*/
-     xdb_rd.i[HI] -= 0x00100000; 
-     E_rd++;
+   if (index_inf >= MAXINDEX){ /* corresponds to xdb>sqrt(2)*/
+     xdb_inf.i[HI] -= 0x00100000; 
+     E_inf++;
    }
    /* reduce  such that sqrt(2)/2 < xdb.d < sqrt(2) */
-   if (index_ru >= MAXINDEX){ /* corresponds to xdb>sqrt(2)*/
-     xdb_ru.i[HI] -= 0x00100000; 
-     E_ru++;
+   if (index_sup >= MAXINDEX){ /* corresponds to xdb>sqrt(2)*/
+     xdb_sup.i[HI] -= 0x00100000; 
+     E_sup++;
    }
-   y_rd = xdb_rd.d;
-   y_ru = xdb_ru.d;
-   index_rd = index_rd & INDEXMASK;
-   index_ru = index_ru & INDEXMASK;
+   y_inf = xdb_inf.d;
+   y_sup = xdb_sup.d;
+   index_inf = index_inf & INDEXMASK;
+   index_sup = index_sup & INDEXMASK;
    /* Cast integer E into double ed for multiplication later */
-   ed_rd = (double) E_rd;
-   ed_ru = (double) E_ru;
+   ed_inf = (double) E_inf;
+   ed_sup = (double) E_sup;
    /* 
       Read tables:
       Read one float for ri
@@ -938,18 +938,18 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
       one struct entry per index, the struct entry containing 
       r, logih, logim and logil in this order
    */
-   ri_rd = argredtable[index_rd].ri;
-   ri_ru = argredtable[index_ru].ri;
+   ri_inf = argredtable[index_inf].ri;
+   ri_sup = argredtable[index_sup].ri;
    /* 
       Actually we don't need the logarithm entries now
       Move the following two lines to the eventual reconstruction
       As long as we don't have any if in the following code, we can overlap 
       memory access with calculations 
    */
-   logih_rd = argredtable[index_rd].logih;
-   logih_ru = argredtable[index_ru].logih;
-   logim_rd = argredtable[index_rd].logim;
-   logim_ru = argredtable[index_ru].logim;
+   logih_inf = argredtable[index_inf].logih;
+   logih_sup = argredtable[index_sup].logih;
+   logim_inf = argredtable[index_inf].logim;
+   logim_sup = argredtable[index_sup].logim;
    /* Do range reduction:
       zh + zl = y * ri - 1.0 correctly
       Correctness is assured by use of Mul12 and Add12
@@ -957,10 +957,10 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
       Discard zl for higher monome degrees
    */
 
-   Mul12(&yrih_rd, &yril_rd, y_rd, ri_rd);
-   Mul12(&yrih_ru, &yril_ru, y_ru, ri_ru);
-   th_rd = yrih_rd - 1.0; 
-   th_ru = yrih_ru - 1.0; 
+   Mul12(&yrih_inf, &yril_inf, y_inf, ri_inf);
+   Mul12(&yrih_sup, &yril_sup, y_sup, ri_sup);
+   th_inf = yrih_inf - 1.0; 
+   th_sup = yrih_sup - 1.0; 
    /* Do range reduction:
       zh + zl = y * ri - 1.0 correctly
       Correctness is assured by use of Mul12 and Add12
@@ -969,8 +969,8 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
    */
 
 
-   Add12Cond(zh_rd, zl_rd, th_rd, yril_rd); 
-   Add12Cond(zh_ru, zl_ru, th_ru, yril_ru); 
+   Add12Cond(zh_inf, zl_inf, th_inf, yril_inf); 
+   Add12Cond(zh_sup, zl_sup, th_sup, yril_sup); 
    /* 
       Polynomial evaluation
       Use a 7 degree polynomial
@@ -982,27 +982,27 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 
 
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-   polyHorner_rd = FMA(FMA(FMA(FMA(c7,zh_rd,c6),zh_rd,c5),zh_rd,c4),zh_rd,c3);
-   polyHorner_ru = FMA(FMA(FMA(FMA(c7,zh_ru,c6),zh_ru,c5),zh_ru,c4),zh_ru,c3);
+   polyHorner_inf = FMA(FMA(FMA(FMA(c7,zh_inf,c6),zh_inf,c5),zh_inf,c4),zh_inf,c3);
+   polyHorner_sup = FMA(FMA(FMA(FMA(c7,zh_sup,c6),zh_sup,c5),zh_sup,c4),zh_sup,c3);
 #else
-   polyHorner_rd = c3 + zh_rd * (c4 + zh_rd * (c5 + zh_rd * (c6 + zh_rd * c7)));
-   polyHorner_ru = c3 + zh_ru * (c4 + zh_ru * (c5 + zh_ru * (c6 + zh_ru * c7)));
+   polyHorner_inf = c3 + zh_inf * (c4 + zh_inf * (c5 + zh_inf * (c6 + zh_inf * c7)));
+   polyHorner_sup = c3 + zh_sup * (c4 + zh_sup * (c5 + zh_sup * (c6 + zh_sup * c7)));
 #endif
 
-   Mul12(&zhSquareh_rd, &zhSquarel_rd, zh_rd, zh_rd);
-   Mul12(&zhSquareh_ru, &zhSquarel_ru, zh_ru, zh_ru);
-   polyUpper_rd = polyHorner_rd * (zh_rd * zhSquareh_rd);
-   polyUpper_ru = polyHorner_ru * (zh_ru * zhSquareh_ru);
-   zhSquareHalfh_rd = zhSquareh_rd * -0.5;
-   zhSquareHalfh_ru = zhSquareh_ru * -0.5;
-   zhSquareHalfl_rd = zhSquarel_rd * -0.5;
-   zhSquareHalfl_ru = zhSquarel_ru * -0.5;
-   Add12(t1h_rd, t1l_rd, polyUpper_rd, -1 * (zh_rd * zl_rd));
-   Add12(t1h_ru, t1l_ru, polyUpper_ru, -1 * (zh_ru * zl_ru));
-   Add22(&t2h_rd, &t2l_rd, zh_rd, zl_rd, zhSquareHalfh_rd, zhSquareHalfl_rd);
-   Add22(&t2h_ru, &t2l_ru, zh_ru, zl_ru, zhSquareHalfh_ru, zhSquareHalfl_ru);
-   Add22(&ph_rd, &pl_rd, t2h_rd, t2l_rd, t1h_rd, t1l_rd);
-   Add22(&ph_ru, &pl_ru, t2h_ru, t2l_ru, t1h_ru, t1l_ru);
+   Mul12(&zhSquareh_inf, &zhSquarel_inf, zh_inf, zh_inf);
+   Mul12(&zhSquareh_sup, &zhSquarel_sup, zh_sup, zh_sup);
+   polyUpper_inf = polyHorner_inf * (zh_inf * zhSquareh_inf);
+   polyUpper_sup = polyHorner_sup * (zh_sup * zhSquareh_sup);
+   zhSquareHalfh_inf = zhSquareh_inf * -0.5;
+   zhSquareHalfh_sup = zhSquareh_sup * -0.5;
+   zhSquareHalfl_inf = zhSquarel_inf * -0.5;
+   zhSquareHalfl_sup = zhSquarel_sup * -0.5;
+   Add12(t1h_inf, t1l_inf, polyUpper_inf, -1 * (zh_inf * zl_inf));
+   Add12(t1h_sup, t1l_sup, polyUpper_sup, -1 * (zh_sup * zl_sup));
+   Add22(&t2h_inf, &t2l_inf, zh_inf, zl_inf, zhSquareHalfh_inf, zhSquareHalfl_inf);
+   Add22(&t2h_sup, &t2l_sup, zh_sup, zl_sup, zhSquareHalfh_sup, zhSquareHalfl_sup);
+   Add22(&ph_inf, &pl_inf, t2h_inf, t2l_inf, t1h_inf, t1l_inf);
+   Add22(&ph_sup, &pl_sup, t2h_sup, t2l_sup, t1h_sup, t1l_sup);
    /* Reconstruction 
 
       Read logih and logim in the tables (already done)
@@ -1027,7 +1027,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
       and both are scaled by ed
    */
 
-   Add12(log2edh_rd, log2edl_rd, log2h * ed_rd, log2m * ed_rd);
+   Add12(log2edh_inf, log2edl_inf, log2h * ed_inf, log2m * ed_inf);
 
    /* 
       We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
@@ -1042,7 +1042,7 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
       and both are scaled by ed
    */
 
-   Add12(log2edh_ru, log2edl_ru, log2h * ed_ru, log2m * ed_ru);
+   Add12(log2edh_sup, log2edl_sup, log2h * ed_sup, log2m * ed_sup);
 
 
    /* Add logih and logim to ph and pl 
@@ -1050,75 +1050,75 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
       We must use conditioned Add22 as logih can move over ph
    */
 
-   Add22Cond(&logTabPolyh_rd, &logTabPolyl_rd, logih_rd, logim_rd, ph_rd, pl_rd);
+   Add22Cond(&logTabPolyh_inf, &logTabPolyl_inf, logih_inf, logim_inf, ph_inf, pl_inf);
 
    /* Add log2edh + log2edl to logTabPolyh + logTabPolyl */
   
-   Add22Cond(&logh_rd, &logm_rd, log2edh_rd, log2edl_rd, logTabPolyh_rd, logTabPolyl_rd);
+   Add22Cond(&logh_inf, &logm_inf, log2edh_inf, log2edl_inf, logTabPolyh_inf, logTabPolyl_inf);
 
    /* Add logih and logim to ph and pl 
 
       We must use conditioned Add22 as logih can move over ph
    */
 
-   Add22Cond(&logTabPolyh_ru, &logTabPolyl_ru, logih_ru, logim_ru, ph_ru, pl_ru);
+   Add22Cond(&logTabPolyh_sup, &logTabPolyl_sup, logih_sup, logim_sup, ph_sup, pl_sup);
 
    /* Add log2edh + log2edl to logTabPolyh + logTabPolyl */
 
-   Add22Cond(&logh_ru, &logm_ru, log2edh_ru, log2edl_ru, logTabPolyh_ru, logTabPolyl_ru);
+   Add22Cond(&logh_sup, &logm_sup, log2edh_sup, log2edl_sup, logTabPolyh_sup, logTabPolyl_sup);
 
 
    /* Rounding test and eventual return or call to the accurate function */
 
    roundcst = RDROUNDCST1;
 
-   if(cs_rd) { res_rd=res_simple_rd; }
-   if(cs_ru) { res_ru=res_simple_ru; }
-   //TEST_AND_COPY_RDRU_LOG(roundable,res_rd,logh_rd,logm_rd,res_ru,logh_ru,logm_ru,roundcst);
+   if(cs_inf) { res_inf=res_simple_inf; }
+   if(cs_sup) { res_sup=res_simple_sup; }
+   //TEST_AND_COPY_RDRU_LOG(roundable,res_inf,logh_inf,logm_inf,res_sup,logh_sup,logm_sup,roundcst);
 
-//#define TEST_AND_COPY_RDRU_LOG(__cond__, __res_rd__, __yh_rd__, __yl_rd__, __res_ru__, __yh_ru__, __yl_ru__, __eps__)  
+//#define TEST_AND_COPY_RDRU_LOG(__cond__, __res_inf__, __yh_inf__, __yl_inf__, __res_sup__, __yh_sup__, __yl_sup__, __eps__)  
                                                                       
-  db_number yh_rd, yl_rd, u53_rd, yh_ru, yl_ru, u53_ru;                    
-  int yh_rd_neg, yl_rd_neg, yh_ru_neg, yl_ru_neg;                             
+  db_number yh_inf, yl_inf, u53_inf, yh_sup, yl_sup, u53_sup;                    
+  int yh_inf_neg, yl_inf_neg, yh_sup_neg, yl_sup_neg;                             
   int rd_ok, ru_ok;                                                        
-  double save_res_rd=res_rd;                                              
-  yh_rd.d = logh_rd;    yl_rd.d = logm_rd;
-  yh_rd_neg = (yh_rd.i[HI] & 0x80000000);                                    
-  yl_rd_neg = (yl_rd.i[HI] & 0x80000000);                                    
-  yh_rd.l = yh_rd.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
-  yl_rd.l = yl_rd.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
-  u53_rd.l     = (yh_rd.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); 
-  yh_ru.d = logh_ru;    yl_ru.d = logm_ru;
-  yh_ru_neg = (yh_ru.i[HI] & 0x80000000);                                    
-  yl_ru_neg = (yl_ru.i[HI] & 0x80000000);                                    
-  yh_ru.l = yh_ru.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
-  yl_ru.l = yl_ru.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
-  u53_ru.l     = (yh_ru.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); 
+  double save_res_inf=res_inf;                                              
+  yh_inf.d = logh_inf;    yl_inf.d = logm_inf;
+  yh_inf_neg = (yh_inf.i[HI] & 0x80000000);                                    
+  yl_inf_neg = (yl_inf.i[HI] & 0x80000000);                                    
+  yh_inf.l = yh_inf.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
+  yl_inf.l = yl_inf.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
+  u53_inf.l     = (yh_inf.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); 
+  yh_sup.d = logh_sup;    yl_sup.d = logm_sup;
+  yh_sup_neg = (yh_sup.i[HI] & 0x80000000);                                    
+  yl_sup_neg = (yl_sup.i[HI] & 0x80000000);                                    
+  yh_sup.l = yh_sup.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
+  yl_sup.l = yl_sup.l & 0x7fffffffffffffffLL;  /* compute the absolute value*/ 
+  u53_sup.l     = (yh_sup.l & ULL(7ff0000000000000)) +  ULL(0010000000000000); 
   roundable = 0;
-  rd_ok=(yl_rd.d > roundcst * u53_rd.d);
-  ru_ok=(yl_ru.d > roundcst * u53_ru.d);
-     if(yl_rd_neg) {  /* The case yl==0 is filtered by the above test*/    
+  rd_ok=(yl_inf.d > roundcst * u53_inf.d);
+  ru_ok=(yl_sup.d > roundcst * u53_sup.d);
+     if(yl_inf_neg) {  /* The case yl==0 is filtered by the above test*/    
       /* return next down */                                           
-      yh_rd.d = logh_rd;                                                   
-      if(yh_rd_neg) yh_rd.l++;  else yh_rd.l--; /* Beware: fails for zero */
-      res_rd = yh_rd.d ;
+      yh_inf.d = logh_inf;                                                   
+      if(yh_inf_neg) yh_inf.l++;  else yh_inf.l--; /* Beware: fails for zero */
+      res_inf = yh_inf.d ;
     }
     else {
-      res_rd = logh_rd;
+      res_inf = logh_inf;
     }
-    if(!yl_ru_neg) {  /* The case yl==0 is filtered by the above test*/
+    if(!yl_sup_neg) {  /* The case yl==0 is filtered by the above test*/
       /* return next up */
-      yh_ru.d = logh_ru;
-      if(yh_ru_neg) yh_ru.l--;  else yh_ru.l++; /* Beware: fails for zero */    
-      res_ru = yh_ru.d ;                                                 
+      yh_sup.d = logh_sup;
+      if(yh_sup_neg) yh_sup.l--;  else yh_sup.l++; /* Beware: fails for zero */    
+      res_sup = yh_sup.d ;                                                 
     }                                                                  
     else {
-      res_ru = logh_ru;
+      res_sup = logh_sup;
     }
-  if(save_res_rd==-1.0/0.0) res_rd=-1.0/0.0;
+  if(save_res_inf==-1.0/0.0) res_inf=-1.0/0.0;
   if(rd_ok && ru_ok){
-    ASSIGN_LOW(res,res_rd);
-    ASSIGN_UP(res,res_ru);
+    ASSIGN_LOW(res,res_inf);
+    ASSIGN_UP(res,res_sup);
     return(res);
   }
   else if (rd_ok){
@@ -1134,24 +1134,24 @@ void log_td_accurate(double *logh, double *logm, double *logl, int E, double ed,
 #endif
    if (roundable==1)
    {
-     log_td_accurate(&logh_ru, &logm_ru, &logl_ru, E_ru, ed_ru, index_ru, zh_ru, zl_ru, logih_ru, logim_ru); 
-     RoundUpwards3(&res_ru, logh_ru, logm_ru, logl_ru);
+     log_td_accurate(&logh_sup, &logm_sup, &logl_sup, E_sup, ed_sup, index_sup, zh_sup, zl_sup, logih_sup, logim_sup); 
+     RoundUpwards3(&res_sup, logh_sup, logm_sup, logl_sup);
    }
 
    if (roundable==2)
    {
-     log_td_accurate(&logh_rd, &logm_rd, &logl_rd, E_rd, ed_rd, index_rd, zh_rd, zl_rd, logih_rd, logim_rd); 
-     RoundDownwards3(&res_rd, logh_rd, logm_rd, logl_rd);
+     log_td_accurate(&logh_inf, &logm_inf, &logl_inf, E_inf, ed_inf, index_inf, zh_inf, zl_inf, logih_inf, logim_inf); 
+     RoundDownwards3(&res_inf, logh_inf, logm_inf, logl_inf);
    }
    if (roundable==0)
    {
-     log_td_accurate(&logh_rd, &logm_rd, &logl_rd, E_rd, ed_rd, index_rd, zh_rd, zl_rd, logih_rd, logim_rd); 
-     RoundDownwards3(&res_rd, logh_rd, logm_rd, logl_rd);
-     log_td_accurate(&logh_ru, &logm_ru, &logl_ru, E_ru, ed_ru, index_ru, zh_ru, zl_ru, logih_ru, logim_ru); 
-     RoundUpwards3(&res_ru, logh_ru, logm_ru, logl_ru);
+     log_td_accurate(&logh_inf, &logm_inf, &logl_inf, E_inf, ed_inf, index_inf, zh_inf, zl_inf, logih_inf, logim_inf); 
+     RoundDownwards3(&res_inf, logh_inf, logm_inf, logl_inf);
+     log_td_accurate(&logh_sup, &logm_sup, &logl_sup, E_sup, ed_sup, index_sup, zh_sup, zl_sup, logih_sup, logim_sup); 
+     RoundUpwards3(&res_sup, logh_sup, logm_sup, logl_sup);
    }
-   ASSIGN_LOW(res,res_rd);
-   ASSIGN_UP(res,res_ru);
+   ASSIGN_LOW(res,res_inf);
+   ASSIGN_UP(res,res_sup);
    return res;
  }
 #endif
