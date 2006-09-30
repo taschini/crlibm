@@ -260,9 +260,15 @@ double sinpi_rd(double x){
   if (rem>0.5) rem=x-(k2.d+1.0);
   if(x-k2.d<0) sgn=-sgn;
   if (rem<0.0) rem=-rem;
+  if (rem==0.0) 
+  {
+    if(sgn==1) { xd.d=0.0; } else { xd.d=-0.0; xd.l++; }
+    return xd.d;
+  }
   if (rem==0.5) 
   {
-    if(sgn==1) return 1.0; else return -1.0;
+    if(sgn==1) { xd.d=1.0; xd.l--;} else { xd.d=-1.0; }
+    return xd.d;
   }
 
   /* Now, we have 0<=x<0.5 */
@@ -281,7 +287,6 @@ double sinpi_rd(double x){
   }
   /* We have 0<=y<4/512 */
   y=rem-kover256;
-
   sah=sincosTable[index<<1].hi;
   sal=sincosTable[index<<1].mi;
   cah=sincosTable[(index<<1)+1].hi;
@@ -373,7 +378,7 @@ double sinpi_ru(double x){
   /* x is an integer if it is greater than this bound, so we return 0 */
   if(xd.i[HI]>=0x43400000)
   {
-    if (infzero==1) return -0.0; else return 0.0;
+    if (infzero==1) return -SMALLEST; else return SMALLEST;
   }
   /* We multiply by 2^1074 in two steps; k2 is the nearest integer of x */
   k2.d=k2.d*TWOPOWER124;
@@ -383,9 +388,15 @@ double sinpi_ru(double x){
   if (rem>0.5) rem=x-(k2.d+1.0);
   if(x-k2.d<0) sgn=-sgn;
   if (rem<0.0) rem=-rem;
-  if (rem==0.5) 
+  if (rem==0.0) 
   {
-    if(sgn==1) return 1.0; else return -1.0;
+    if(sgn==1) { xd.d=0.0; xd.l++; } else { xd.d=-0.0; }
+    return xd.d;
+  }
+  if ((rem==0.5)) 
+  {
+    if(sgn==1) { xd.d=1.0; } else { xd.d=- 1.0;xd.l--; }
+    return xd.d;
   }
 
   /* Now, we have 0<=x<0.5 */
@@ -506,6 +517,18 @@ double sinpi_rz(double x){
   if (rem>0.5) rem=x-(k2.d+1.0);
   if(x-k2.d<0) sgn=-sgn;
   if (rem<0.0) rem=-rem;
+
+  if (rem==0.0) 
+  {
+    if(sgn==1) { xd.d=0.0; } else { xd.d=-0.0; }
+    return xd.d;
+  }
+  if (rem==0.5) 
+  {
+    if(sgn==1) { xd.d=1.0; xd.l--;} else { xd.d=-1.0; xd.l--; }
+    return xd.d;
+  }
+
   if (rem==0.5) 
   {
     if(sgn==1) return 1.0; else return -1.0;
@@ -577,5 +600,3 @@ double sinpi_rz(double x){
   RoundTowardsZero3(&res,resh,resm,resl);
   return res;
 }
-
-

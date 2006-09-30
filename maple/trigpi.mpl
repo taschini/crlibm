@@ -5,6 +5,7 @@ read "triple-double.mpl":
 with(orthopoly):
 mkdir("TEMPTRIG"):
 
+smallest := 2^(-1023) * 1 * 2^(-51):
 oneover256:=1/256:
 twoPowerm124:=2^(-124):
 twoPower124:=2^(124):
@@ -54,7 +55,8 @@ fprintf(fd, "#define TWOPOWER124        %1.25f \n", twoPower124):
 fprintf(fd, "\n"):
 fprintf(fd, "#define TWOPOWER950        %1.25f \n", twoPower950):
 fprintf(fd, "\n"):
-
+fprintf(fd, "#define SMALLEST %1.50e\n",smallest):
+fprintf(fd, "\n"):
 fprintf(fd, "#define RN_CST_SINCOS  %1.25f \n", rnconstantSinCos):
 fprintf(fd, "\n"):
 fprintf(fd, "#define RDROUNDCST %1.50e\n", maxepstotalSinCos):
@@ -63,20 +65,26 @@ fprintf(fd, "\n"):
 fprintf(fd,  "%s\n",  outputHighPart("XMAX_RETURN_PIX_FOR_SIN", xmax_return_pix_for_sin) ):
 fprintf(fd, "\n"):
 
+fprintf(fd,"#ifdef WORDS_BIGENDIAN\n"):
+for isbig from 1 to 0 by -1 do
+
+  if(isbig=0) then
+    fprintf(fd,"#else\n"):
+  fi:
+
   pih, pim, pil := hi_mi_lo(Pi):
   fprintf(fd, "static db_number const pi_hi = "):
-  printendian(fd, pih, 0):
+  printendian(fd, pih, isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const pi_mi = "):
-  printendian(fd, pim, 0):
+  printendian(fd, pim, isbig):
   fprintf(fd, ";\n"):
   fprintf(fd, "static db_number const pi_lo = "):
-  printendian(fd, pil, 0):
+  printendian(fd, pil, isbig):
   fprintf(fd, ";\n"):
 
 
 
-  isbig:=0:
   s0h, s0m, s0l := hi_mi_lo(coeff(polyTs,x,0)):
   fprintf(fd, "static db_number const s0h = "):
   printendian(fd, s0h, isbig):
@@ -259,27 +267,30 @@ fprintf(fd, "\n"):
   fprintf(fd, "static db_number const c13l = "):
   printendian(fd, c13l, isbig):
   fprintf(fd, ";\n"):
+od:
+fprintf(fd,"#endif /* WORDS_BIGENDIAN */\n\n\n"):
 
 
-  # Table
-  fprintf(fd, "typedef struct tPi_t_tag {double hi; double mi; double lo;} tPi_t;\n");
-  fprintf(fd, "static const tPi_t sincosTable[%d] =\n{\n",  (SinCosSize+2)):
-  for i from 0 to SinCosSize/2 do
-      sh,sm,sl:=hi_mi_lo(sin(i*Pi/(2*SinCosSize))):
-      ch,cm,cl:=hi_mi_lo(cos(i*Pi/(2*SinCosSize))):
-      fprintf(fd, "  { \n"):
-      fprintf(fd, "    %1.50e, /* sin([%d]*pi/256) */ \n", sh, i):
-      fprintf(fd, "    %1.50e, \n", sm):
-      fprintf(fd, "    %1.50e, \n", sl):
-      fprintf(fd, "  } "):
-      fprintf(fd, ", \n"):
-      fprintf(fd, "  { \n"):
-      fprintf(fd, "    %1.50e, /* cos([%d]*pi/256) */ \n", ch, i):
-      fprintf(fd, "    %1.50e, \n", cm):
-      fprintf(fd, "    %1.50e, \n", cl):
-      fprintf(fd, "  } "):
-      if(i<SinCosSize/2) then  fprintf(fd, ", \n"): fi
-  od:
+
+# Table
+fprintf(fd, "typedef struct tPi_t_tag {double hi; double mi; double lo;} tPi_t;\n");
+fprintf(fd, "static const tPi_t sincosTable[%d] =\n{\n",  (SinCosSize+2)):
+for i from 0 to SinCosSize/2 do
+    sh,sm,sl:=hi_mi_lo(sin(i*Pi/(2*SinCosSize))):
+    ch,cm,cl:=hi_mi_lo(cos(i*Pi/(2*SinCosSize))):
+    fprintf(fd, "  { \n"):
+    fprintf(fd, "    %1.50e, /* sin([%d]*pi/256) */ \n", sh, i):
+    fprintf(fd, "    %1.50e, \n", sm):
+    fprintf(fd, "    %1.50e, \n", sl):
+    fprintf(fd, "  } "):
+    fprintf(fd, ", \n"):
+    fprintf(fd, "  { \n"):
+    fprintf(fd, "    %1.50e, /* cos([%d]*pi/256) */ \n", ch, i):
+    fprintf(fd, "    %1.50e, \n", cm):
+    fprintf(fd, "    %1.50e, \n", cl):
+    fprintf(fd, "  } "):
+    if(i<SinCosSize/2) then  fprintf(fd, ", \n"): fi
+od:
 fprintf(fd, "}; \n \n"):
 
 

@@ -10,12 +10,71 @@
 
 #define TWOPOWER950        9516908214257811601907599988159363584840065290620124537956939899622020205826587990689077212775400643774711832257235027522909345571487396529861315719055325605011013378863743193233193022939505515969530853007049198118833591724018432564205433218231411731277088674906521042072098232413978624.0000000000000000000000000 
 
+#define SMALLEST 4.94065645841246544176568792868221372365059802614325e-324
+
 #define RN_CST_SINCOS  1.0158730158730159858144204 
 
 #define RDROUNDCST 8.67361737988403547205962240695953369140625000000000e-19
 
 #define XMAX_RETURN_PIX_FOR_SIN 0x3E345F2F        /* .47431823e-8 */
 
+#ifdef WORDS_BIGENDIAN
+static db_number const pi_hi = {{0x400921FB,0x54442D18}} /* +3.1415926536e+00 */;
+static db_number const pi_mi = {{0x3CA1A626,0x33145C07}} /* +1.2246467991e-16 */;
+static db_number const pi_lo = {{0xB92F1976,0xB7ED8FBC}} /* -2.9947698097e-33 */;
+static db_number const s0h = {{0x400921FB,0x54442D18}} /* +3.1415926536e+00 */;
+static db_number const s0m = {{0x3CA1A626,0x33145C07}} /* +1.2246467991e-16 */;
+static db_number const s0l = {{0xB92F19A4,0xE86BDBFF}} /* -2.9948376790e-33 */;
+static db_number const s2h = {{0xC014ABBC,0xE625BE53}} /* -5.1677127800e+00 */;
+static db_number const s2m = {{0x3CB05511,0xC68476A8}} /* +2.2665622826e-16 */;
+static db_number const s2l = {{0x395CCD04,0x1F3F7DEC}} /* +2.2187363267e-32 */;
+static db_number const s4h = {{0x400466BC,0x6775AAE2}} /* +2.5501640399e+00 */;
+static db_number const s4l = {{0xBC96DC0C,0xBDDB109D}} /* -7.9310063453e-17 */;
+static db_number const s6h = {{0xBFE32D2C,0xCE62BD86}} /* -5.9926452932e-01 */;
+static db_number const s6l = {{0x3C806684,0x7A091569}} /* +2.8450261130e-17 */;
+static db_number const s8h = {{0x3FB50783,0x487EE782}} /* +8.2145886611e-02 */;
+static db_number const s8l = {{0xBC51BE15,0x51594FCF}} /* -3.8472941810e-18 */;
+static db_number const s10h = {{0xBF7E3074,0xFDE8871F}} /* -7.3704309457e-03 */;
+static db_number const s10l = {{0x00000000,0x00000000}} /* +0.0000000000e+00 */;
+static db_number const s12h = {{0x3F3E8F43,0x4D018D62}} /* +4.6630280577e-04 */;
+static db_number const s12l = {{0x00000000,0x00000000}} /* +0.0000000000e+00 */;
+static db_number const s14h = {{0xBEF6FADB,0x9F154CB8}} /* -2.1915353448e-05 */;
+static db_number const s14l = {{0x00000000,0x00000000}} /* +0.0000000000e+00 */;
+static db_number const s16h = {{0x3EAAAEC3,0x2A93F2B1}} /* +7.9520539944e-07 */;
+static db_number const s16l = {{0x00000000,0x00000000}} /* +0.0000000000e+00 */;
+static db_number const s18h = {{0xBE58A401,0xC57ED334}} /* -2.2948395489e-08 */;
+static db_number const s18l = {{0x00000000,0x00000000}} /* +0.0000000000e+00 */;
+static db_number const s20h = {{0x3E027F7E,0x4D55F340}} /* +5.3836326601e-10 */;
+static db_number const s20l = {{0x00000000,0x00000000}} /* +0.0000000000e+00 */;
+static db_number const c0h = {{0x3FF00000,0x00000000}} /* +1.0000000000e+00 */;
+static db_number const c0l = {{0x382B6BF4,0x6D5E99C1}} /* +4.0292564469e-38 */;
+static db_number const c1h = {{0xB914FEAF,0xE5ADB7E3}} /* -1.0108662914e-33 */;
+static db_number const c1l = {{0xB5AE8928,0xB0DF435B}} /* -4.0807473773e-50 */;
+static db_number const c2h = {{0xC013BD3C,0xC9BE45DE}} /* -4.9348022005e+00 */;
+static db_number const c2l = {{0xBCB692B7,0x1366CBAF}} /* -3.1326477544e-16 */;
+static db_number const c3h = {{0xBA810EFB,0x0721568A}} /* -6.8898805030e-27 */;
+static db_number const c3l = {{0xB7297468,0x246A5E2A}} /* -5.7071442811e-43 */;
+static db_number const c4h = {{0x40103C1F,0x081B5AC4}} /* +4.0587121264e+00 */;
+static db_number const c4l = {{0xBCB32B33,0xF160EB69}} /* -2.6602000235e-16 */;
+static db_number const c5h = {{0xBBAC7B63,0xC0A1E35E}} /* -3.0156480819e-21 */;
+static db_number const c5l = {{0x37ED2466,0x1E612430}} /* +2.6762868540e-39 */;
+static db_number const c6h = {{0xBFF55D3C,0x7E3CBFFA}} /* -1.3352627689e+00 */;
+static db_number const c6l = {{0x3C5348CC,0x10D7F9E4}} /* +4.1816298247e-18 */;
+static db_number const c7h = {{0xBCB03801,0xDD48D94C}} /* -2.2508076581e-16 */;
+static db_number const c7l = {{0x39444870,0xA463A202}} /* +7.8127153879e-33 */;
+static db_number const c8h = {{0x3FCE1F50,0x6891BFB3}} /* +2.3533063036e-01 */;
+static db_number const c8l = {{0xBC6EB593,0x6505F35D}} /* -1.3318027373e-17 */;
+static db_number const c9h = {{0xBD912434,0x617B6BD8}} /* -3.8975086380e-12 */;
+static db_number const c9l = {{0x3A390754,0x45EF8BD2}} /* +3.1590571916e-28 */;
+static db_number const c10h = {{0xBF9A6D1F,0x24F0426E}} /* -2.5806891088e-02 */;
+static db_number const c10l = {{0xBC3036F5,0x25C75561}} /* -8.7899946410e-19 */;
+static db_number const c11h = {{0xBE513F60,0x5E01F692}} /* -1.6063045894e-08 */;
+static db_number const c11l = {{0xBAF432DC,0x33AFCDF0}} /* -1.0442468939e-24 */;
+static db_number const c12h = {{0x3F5F9F90,0x930664DC}} /* +1.9301330432e-03 */;
+static db_number const c12l = {{0xBBCB2B47,0xBB44F5B9}} /* -1.1506545875e-20 */;
+static db_number const c13h = {{0xBEE7FFB0,0x57DB9C81}} /* -1.1443512217e-05 */;
+static db_number const c13l = {{0x00000000,0x00000000}} /* +0.0000000000e+00 */;
+#else
 static db_number const pi_hi = {{0x54442D18,0x400921FB}} /* +3.1415926536e+00 */;
 static db_number const pi_mi = {{0x33145C07,0x3CA1A626}} /* +1.2246467991e-16 */;
 static db_number const pi_lo = {{0xB7ED8FBC,0xB92F1976}} /* -2.9947698097e-33 */;
@@ -71,6 +130,9 @@ static db_number const c12h = {{0x930664DC,0x3F5F9F90}} /* +1.9301330432e-03 */;
 static db_number const c12l = {{0xBB44F5B9,0xBBCB2B47}} /* -1.1506545875e-20 */;
 static db_number const c13h = {{0x57DB9C81,0xBEE7FFB0}} /* -1.1443512217e-05 */;
 static db_number const c13l = {{0x00000000,0x00000000}} /* +0.0000000000e+00 */;
+#endif /* WORDS_BIGENDIAN */
+
+
 typedef struct tPi_t_tag {double hi; double mi; double lo;} tPi_t;
 static const tPi_t sincosTable[130] =
 {
