@@ -54,6 +54,11 @@ double sinpi_rz();
 
 double rand_for_trig_perf();
 
+double (*randfun)       () = NULL;
+double (*testfun_crlibm)() = NULL;
+int    (*testfun_mpfr)  () = NULL;
+mp_rnd_t mpfr_rnd_mode;
+
 /*
  * Give the number of missrounded results 
  */
@@ -75,16 +80,13 @@ void test_all() {
   i=0; 
   while(1+1==2)
   {
-    input.d = rand_for_trig_perf();
-    db_number pi;
-    pi.i[HI]=0x400921FB;
-    pi.i[LO]=0x54442D18;
-    res_crlibm.d = sinpi_rn(input.d);
+    input.d = randfun();
+    res_crlibm.d = testfun_crlibm(input.d);
     mpfr_const_pi (mp_pi,GMP_RNDN);
     mpfr_set_d(mp_inpt, input.d, GMP_RNDN);
     mpfr_mul(mp_piinpt,mp_pi,mp_inpt,GMP_RNDN);
-    mpfr_sin(mp_res, mp_piinpt, GMP_RNDN);
-    res_mpfr.d = mpfr_get_d(mp_res, GMP_RNDN);
+    testfun_mpfr(mp_res, mp_piinpt, mpfr_rnd_mode);
+    res_mpfr.d = mpfr_get_d(mp_res, mpfr_rnd_mode);
 /*    printHexa("resul crlibm low:",res_crlibm_low.d);
     printHexa("resul crlibm up:",res_crlibm_up.d);
     printHexa("resul mpfr low:",res_mpfr_low.d);
@@ -163,23 +165,45 @@ void usage(char *fct_name){
 int main (int argc, char *argv[]) 
 { 
   int seed;
-
-    crlibm_init();
-
-
-    mpfr_init2(mp_res,  130);
-    mpfr_init2(mp_inpt, 53);
-    mpfr_init2(mp_inpt2, 53);
-    mpfr_init2(mp_pi, 5000);
-    mpfr_init2(mp_piinpt, 10000);
-
-  printf("Testing sinpi function \n");
+  char* function_name;
+  char* rounding_mode;
 
 
-  srand(seed);
+  crlibm_init();
+  mpfr_init2(mp_res,  130);
+  mpfr_init2(mp_inpt, 53);
+  mpfr_init2(mp_inpt2, 53);
+  mpfr_init2(mp_pi, 5000);
+  mpfr_init2(mp_piinpt, 10000);
 
-//  test_filter_cases();
-  test_all();
+
+  if ((argc != 4)) usage(argv[0]);
+  else{
+    function_name = argv[1];
+    rounding_mode = argv[2];
+    sscanf(argv[2],"%d", &seed);
+    if ((strcmp(function_name,"sinpi")!=0))
+    {
+      fprintf (stderr, "\nUnknown function:  %s \n", function_name);
+      return 1;
+    }
+    if ((strcmp(function_name,"sinpi")==0))
+    {
+      randfun = rand_for_trig_perf;
+      testfun_mpfr = mpfr_sin;
+    }
+    if      (strcmp(rounding_mode,"RU")==0) { mpfr_rnd_mode = GMP_RNDU; testfun_crlibm = sinpi_ru; }
+    else if (strcmp(rounding_mode,"RD")==0) { mpfr_rnd_mode = GMP_RNDD; testfun_crlibm = sinpi_rd; }
+    else if (strcmp(rounding_mode,"RZ")==0) { mpfr_rnd_mode = GMP_RNDZ; testfun_crlibm = sinpi_rz; }
+    else {
+      mpfr_rnd_mode = GMP_RNDN;
+      testfun_crlibm = sinpi_rn;
+      rounding_mode="RN" ;
+    }
+    printf("Testing %s function with rounding mode : %s \n", function_name, rounding_mode);
+    srand(seed);
+    test_all();
+  }
   return 0;
 }
 
