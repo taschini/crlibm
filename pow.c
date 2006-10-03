@@ -248,7 +248,7 @@ int isPowerSquare(double *j, int F, double m) {
 
   */
 
-  /* We have to check whether there exists an odd integer j such that 
+  /* We have to check whether there exists an integer j such that 
      
      j^(2^(-F)) = m      i.e.    j = m^(2^F);
 
@@ -641,7 +641,7 @@ int checkForExactCase(double x, double y, int H, double kh, double kl) {
 
      One can show that for 
 
-     E,F,G integer and m,n,k odd integers 
+     E,F,G integer and m,n odd integers and r integer
 
      this implies that 
 
@@ -771,13 +771,13 @@ int checkForExactCase(double x, double y, int H, double kh, double kl) {
 	  prime factor must be 3, i.e. for all i, p_i >= 3. Since m is
 	  less or equal to 2^(53), each valuation a_i must thus be bounded by
 	  
-	  a_i <= 53 * ln(2)/ln(3) < 37
+	  a_i <= 53 * ln(2)/ln(3) <= 34
 
 	  The valuation a_i is an integer. Let be g the valuation of the 
 	  prime factor 2 of a_i (i.e. let u be an odd integer and g an intger 
-	  such that a_i = 2^g * u). Since a_i <= 36, g is bounded by 
+	  such that a_i = 2^g * u). Since a_i <= 34, g is bounded by 
 
-	  g <= ln(36)/ln(2) < 5
+	  g <= ln(34)/ln(2) < 5
 
 	  Since n is odd, -F is bounded by g and therefore bounded by 5.
 
@@ -874,7 +874,7 @@ int checkForExactCase(double x, double y, int H, double kh, double kl) {
 
   /* If we are here, we have 
   
-     F >= 0, 2^F * n <= 2^(53) 
+     F >= 0 
      m odd, m >= 3
 
      We must check 
@@ -913,11 +913,11 @@ int checkForExactCase(double x, double y, int H, double kh, double kl) {
 
   tt = tdb.d;
 
-  /* The loop will go to tt-2 */
-  tt -= 2;
+  /* The loop will go to tt-1 */
+  tt -= 1;
 
-  /* Initialize z with m */
-  z = m;
+  /* Initialize z with 1 */
+  z = 1;
 
   /* Loop for multiplying */
   while (tt > 0) {
