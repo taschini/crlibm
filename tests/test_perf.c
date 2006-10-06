@@ -111,16 +111,20 @@ static void usage(char *fct_name){
 
 #if TEST_CACHE
 
-static void fill_and_flush(int seed) {
+static void fill_and_flush(int seed, int args) {
   int i;
   srandom(seed);
   for (i=0; i<TESTSIZE; i++){
-    inputs[i] = randfun();
-    inputs2[i] = randfun();
+    if (args==1) {
+      inputs[i] = randfun();
+      inputs2[i] = randfun();
+    } else {
+      inputs[i] = (*((double (*)(double *))randfun))(&(inputs2[i]));
+    }
   }
 }
 
-static void test_with_cache(const char *name, double (*testfun)(), int n){
+static void test_with_cache(const char *name, double (*testfun)(), int n, int args){
   int i, j, k;
   double i1, i2, rd;
   tbx_tick_t   t1, t2; 
@@ -131,7 +135,7 @@ static void test_with_cache(const char *name, double (*testfun)(), int n){
     for(i=1; i<=10000; i*=10) { /* i=1,10,100...*/
       min_dtsum=1<<30; 
       for(k=0;k<10;k++) { /* do the whole test 10 times and take the min */
-	fill_and_flush(n);
+	fill_and_flush(n,args);
 	dtsum=0;
 	for (j=0; j<i; j++) {
 	  i1 = inputs[i];
@@ -464,15 +468,15 @@ int main (int argc, char *argv[]){
 
   /* libm */
   printf("TEST WITH CACHE CONSIDERATION \n");
-  test_with_cache("LIBM", testfun_libm, n);
-  test_with_cache("CRLIBM", testfun_crlibm, n);
+  test_with_cache("LIBM", testfun_libm, n, nbarg);
+  test_with_cache("CRLIBM", testfun_crlibm, n, nbarg);
 #ifdef HAVE_MATHLIB_H
   Original_Mode = Init_Lib();
-  test_with_cache("IBM", testfun_libultim, n);
+  test_with_cache("IBM", testfun_libultim, n, nbarg);
   Exit_Lib(Original_Mode);
 #endif
 #ifdef HAVE_LIBMCR_H
-  test_with_cache("SUN", testfun_libmcr, n);
+  test_with_cache("SUN", testfun_libmcr, n, nbarg);
 #endif
 
 #endif /* TEST_CACHE*/
@@ -486,8 +490,12 @@ int main (int argc, char *argv[]){
   /* take the min of N1 identical calls to leverage interruptions */
   /* As a consequence, the cache impact of these calls disappear...*/
   for(i=0; i< n; i++){ 
-    i1 = randfun();
-    i2 = randfun();
+    if (nbarg==1) {
+      i1 = randfun();
+      i2 = randfun();
+    } else {
+      i1 = (*((double (*)(double *))randfun))(&i2);
+    }
     
     test_without_cache("libm", testfun_libm, i1, i2, &libm_dtmin, &libm_dtmax, &libm_dtsum, 0);
     test_without_cache("crlibm", testfun_crlibm, i1, i2, &crlibm_dtmin, &crlibm_dtmax, &crlibm_dtsum, 0);
@@ -519,7 +527,7 @@ int main (int argc, char *argv[]){
   /************  WORST CASE TESTS   *********************/
   /* worst case test */
   i1 = worstcase;
-  i2 = 0 ; /* TODO when we have worst cases for power...*/
+  i2 = 3 ; /* TODO when we have worst cases for power...*/
 
   test_worst_case(testfun_libm, i1, i2, &libm_dtwc, 0);
   test_worst_case(testfun_crlibm, i1, i2, &crlibm_dtwc, 0);

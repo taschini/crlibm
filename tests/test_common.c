@@ -269,27 +269,58 @@ double rand_for_atan_soaktest(){
 
 }
 
-/* For pow we need to test the whole range of floating point numbers
- * However these definition should be slightly modified (keep x^y fp).
- */
-#define rand_for_pow_soaktest rand_for_exp_perf
 
-double rand_for_pow_perf(){
-  db_number result;
-  int e;
 
-  /*first the low bits of the mantissa*/
-  result.i[LO]=rand_int();
-  /* then the high bits of the mantissa, and the sign bit */
-  result.i[HI]=  rand_int() & 0x800fffff;
-  /* Now set the exponent between -7 and 7, 
-     enough to cover the useful range (does not overflow) */
-  e =  (int) ( (rand_double_normal()-1) * 14 );
-  result.i[HI] += (1023 + e -7)<<20;
-  return result.d;
+
+
+/* For power, we must generate two values x and y
+   The function returns x and sets y by a sideeffect
+   We must cast the function correctly.
+
+   We generate x and y such that over- or
+   underflow is unlikely
+   The value x is always positive.
+
+   We will have no idea on the randomness
+
+   We generate first x and z on the whole 
+   positive double range. 
+   We compute than y1 = log_rn(z) /arith log_rn(x)
+
+   We generate than eps in the range [0;2^(-32)]
+   If z > 1 then we return y2 = y1 -arith y1 *arith eps
+            else we return y2 = y1 +arith y1 *arith eps
+
+*/
+double rand_for_pow_perf(double *yr){
+  double x,z,y1,y2,logz,logx,delta;
+  db_number tempdb;
+
+  tempdb.i[LO] = rand_int();
+  tempdb.i[HI] = rand_int() & 0x7fffffff;
+  x = tempdb.d;
+
+  tempdb.i[LO] = rand_int();
+  tempdb.i[HI] = rand_int() & 0x7fffffff;
+  z = tempdb.d;
+
+  logx = log_rn(x);
+  logz = log_rn(z);
+
+  y1 = logx / logz;
+ 
+  tempdb.i[LO] = rand_int();
+  tempdb.i[HI] = (rand_int() & 0x000fffff) | ((1023 - (rand_int() & 0x1f)) << 20);
+ 
+  delta = y1 * tempdb.d;
+
+  if (z > 1.0) y2 = y1 - delta; else y2 = y1 + delta;
+ 
+  *yr = y2;
+  return x;
 }
 
-
+#define rand_for_pow_soaktest rand_for_pow_perf
 
 /* Produces x with |x| in [2^(-31);1] and a random sign */
 double rand_for_asin_testperf(){
@@ -814,9 +845,9 @@ void test_init(/* pointers to returned value */
     }
   else if (strcmp (func_name, "pow") == 0)
     {
-      *randfun_perf     = rand_for_pow_perf;
-      *randfun_soaktest = rand_for_pow_soaktest;
-      *worst_case= 1;
+      *randfun_perf     = (double (*)()) rand_for_pow_perf;
+      *randfun_soaktest = (double (*)()) rand_for_pow_soaktest;
+      *worst_case= 1.25;
       *testfun_libm   = pow;
       switch(crlibm_rnd_mode){
       case RU:

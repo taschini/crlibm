@@ -99,8 +99,7 @@ void test_all() {
 
   i=0; 
   while(1+1==2){
-    input.d = randfun();
-    input2.d = randfun();  
+    if (nbarg==1) input.d = randfun(); else input.d = (*((double (*)(double *))randfun))(&input2.d);
     if (nbarg==1){
       res_crlibm.d = testfun_crlibm(input.d);
       res_libm.d = testfun_libm(input.d);

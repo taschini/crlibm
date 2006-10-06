@@ -6,6 +6,9 @@
 #include "pow.h"
 
 
+#define DEBUG 0
+#define DEBUG2 0
+
 void log2_12(double* logxh, double* logxl, double x) {
   int E, index;
   db_number xdb;
@@ -233,18 +236,80 @@ void exp2_12(int *E, double* exp2h, double* exp2l, double xh, double xl) {
 
 }
 
-int isPowerSquare(double *j, int F, double m) {
-  double logmh, logml, tFMlmh, tFMlml, uh, ul, jh, jl;
+
+double exp2_30bits(double x) {
+  double nd, z;
+  db_number shiftedXdb, twoPowNdb;
+  int n;
+  double p67, p45, p23, p01, p47, p03, p, zSq, zFour;
+  double exp2res;
+
+  /* Compute 2^x * (1 + eps) with abs(eps) <= 2^(-30) 
+     
+     x is supposed to be in the range 2^(-53) <= x <= 32
+
+     We do no special case handling for NaN etc.
+
+     Compute 
+
+     2^x = 2^(n + z) = 2^n * 2^z = 2^n * p(z) * (1 + eps) 
+
+     with n the integer nearest to x
+
+     p(z) is of degree 7, we perform an Estrin evaluation
+
+     First compute n and z 
+     Compute n with the shift method as a double and as an int.
+     z = x - nd is exact by Sterbenz' lemma.
+
+  */
+
+  shiftedXdb.d = x + SHIFTCONSTANT;
+  nd = shiftedXdb.d - SHIFTCONSTANT;
+  n = shiftedXdb.i[LO] & 0x3ff;
+  z = x - nd;
+
+  /* Perform Estrin */
+  
+  p01 = exp2InaccuCoeff0 + exp2InaccuCoeff1 * z;
+  p23 = exp2InaccuCoeff2 + exp2InaccuCoeff3 * z;
+  p45 = exp2InaccuCoeff4 + exp2InaccuCoeff5 * z;
+  p67 = exp2InaccuCoeff6 + exp2InaccuCoeff7 * z;
+  zSq = z * z;
+
+  p47 = p45 + zSq * p67;
+  p03 = p01 + zSq * p23;
+  zFour = zSq * zSq;
+
+  p = p03 + zFour * p47;
+
+  /* Compute 2^n */
+  twoPowNdb.i[HI] = (n + 1023) << 20;
+  twoPowNdb.i[LO] = 0;
+  
+  /* Reconstruct */
+
+  exp2res = twoPowNdb.d * p;
+ 
+  return exp2res;
+}
+
+
+
+int isPowerSquare(double *j, int F, double m, double logx, double E) {
+  double logm, tFMlm;
   db_number tempdb;
-  int E, i;
-  double shiftedJh, delta, jP, shiftedJ, corr;
+  int i;
+  double shiftedJp, jp;
   double s, th, tl;
   
 
   /* Preconditions:
 
-     (i)  m an odd integer greater or eqal 3 and less than 2^(53)
-     (ii) -5 <= F <= -1
+     (i)   m an odd integer greater or eqal 3 and less than 2^(53)
+     (ii)  -5 <= F <= -1
+     (iii) x = 2^E * m, logx = log2(x) * (1 + eps), abs(eps) <= 2^(-52)
+     (iv)  E is an integer number, abs(E) <= 2^(11)
 
   */
 
@@ -269,57 +334,48 @@ int isPowerSquare(double *j, int F, double m) {
 	   j'^(2^(-F)) is equal to m.
   
 
-     We start by computing the approximation jh + jl = m^(2^F) * (1 + eps) as
+     We start by computing the approximation jp = m^(2^F) * (1 + eps) as
 
-     jh + jl = 2^(2^F * log2(m)) * (1 + eps) 
+     jp = 2^(2^F * log2(m)) * (1 + eps) 
 
-     At the beginning, we compute log2(m).
+     At the beginning, we compute log2(m) out of log2(x):
+
+     We have x = 2^E * m, i.e. m = 2^(-E) * x
+     Thus
+    
+     log2(m) = -E + log2(x)
+
+     Since E is an integer on at most 11 bits, we cancel out at most 11 bits
+     so logm obtained by this method has at least 52 - 11 = 41 bits.
+     
+     Since m^(2^F) is bounded by 2^27, 2^F * log2(m) is bounded by 27 < 32 = 2^5
+     Thus the amplification of the relative error in logm w.r.t log2(m) 
+     will not be greater than 2^6 which leaves at least 
+     35 correct bits in 2^(2^F * logm)
    
   */
 
-  log2_12(&logmh, &logml, m);
+  logm = logx - E;
+  
 
   /* Represent 2^F */
   tempdb.i[HI] = (F + 1023) << 20;
   tempdb.i[LO] = 0;
 
   /* Multiply log2(m) by 2^F */
-  tFMlmh = tempdb.d * logmh;
-  tFMlml = tempdb.d * logml;
+  tFMlm = tempdb.d * logm;
 
-  /* Compute 2^(2^F * log2(m)) as 2^E * (uh + ul) */
-  exp2_12(&E, &uh, &ul, tFMlmh, tFMlml);
-
-  /* Represent 2^E */
-  tempdb.i[HI] = (E + 1023) << 20;
-  tempdb.i[LO] = 0;
-
-  /* Compute jh + jl = 2^E * (uh + ul) 
-
-     Since -5 <= F <= -1 and 3 <= m <= 2^53, there is no 
-     overflow nor underflow on this multiplication.
-
-  */
-  jh = tempdb.d * uh;
-  jl = tempdb.d * ul;
+  /* Compute 2^(2^F * log2(m)) */
+  jp = exp2_30bits(tFMlm);
   
-  /* Round now jh + jl to the nearest integer 
+  /* Round now jp to the nearest integer 
 
-     Since jh + jl = m^(2^F) is bounded by 2^(27), we can use the 
+     Since jp = m^(2^F) is bounded by 2^(27), we can use the 
      shift method.
      
-     We round first jh to jP. We compute then the rounding rest 
-     delta = jh - jP. We add then jl to delta and this arithmetical sum 
-     to shiftedJh. This should correct jP to the possibly nearer j in most cases.
-     The rounding is not correct, anyway.
-
   */
-  shiftedJh = jh + SHIFTCONSTANT;
-  jP = shiftedJh - SHIFTCONSTANT;
-  delta = jh - jP;
-  corr = delta + jl;
-  shiftedJ = shiftedJh + corr;
-  *j = shiftedJ - SHIFTCONSTANT;
+  shiftedJp = jp + SHIFTCONSTANT;
+  *j = shiftedJp - SHIFTCONSTANT;
 
   /* Compute now j^(2^(-F)) by repeated squaring.
      As explained above, each intermediate must be able to be written on 
@@ -347,7 +403,7 @@ int isPowerSquare(double *j, int F, double m) {
     /* s = j^(2^(-F)) is not equal to m. Since j is equal to m^(2^F) if
        there exists an integer j' such that j'^(2^(-F)) = m, there does
        not exist any such integer j'.
-    */
+    */    
     return 0;
   }
 
@@ -355,7 +411,7 @@ int isPowerSquare(double *j, int F, double m) {
 }
 
 
-int checkForExactCase(double x, double y, int H, double kh, double kl) {
+int checkForExactCase(double x, double y, int H, double kh, double kl, double logx) {
   int32_t E, F, G;
   db_number xdb, ydb, tmpdb, khdb, tdb;
   double t1, t2, t3, t4;
@@ -669,7 +725,7 @@ int checkForExactCase(double x, double y, int H, double kh, double kl) {
 
   Mul12(&eMyh,&eMyl,Ed,y);
   
-  if ((eMyl != 0.0) || (eMyh != G)) {
+  if ((eMyl != 0.0) || (eMyh != Gd)) {
     /* eMyl is not equal to 0 or eMyh is different from G, thus eMyh + eMyl is different
        from G. Hence the case is not exact nor midway.
     */
@@ -835,7 +891,7 @@ int checkForExactCase(double x, double y, int H, double kh, double kl) {
       return 0;
     }
 
-    isPowerSquareCase = isPowerSquare(&j,F,m);
+    isPowerSquareCase = isPowerSquare(&j,F,m,logx,Ed);
 
     if (!isPowerSquareCase) {
       /* There exists no j integer such that 
@@ -847,6 +903,16 @@ int checkForExactCase(double x, double y, int H, double kh, double kl) {
 	 m^(2^F * n) cannot be exact.
 
       */
+
+#if DEBUG2 
+      printf("isPowerSquareCase has been false on\n");
+      printHexa("x",x);
+      printHexa("y",y);
+      printf("H = %d\n",H);
+      printHexa("kh",kh);
+      printHexa("kl",kl);
+#endif
+
       return 0;
     }
 
@@ -1025,6 +1091,10 @@ double pow_rn(double x, double y) {
   double tt1, tt2, tt3, tt4, tt5;
   double roundingBound, tmp1, correctedRes;
   int exactCase;
+
+  int ESafe;
+  double resScaledSafe, deltaSafe;
+
 
 #if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
   db_number t2pdb, temp2db;
@@ -1246,6 +1316,11 @@ double pow_rn(double x, double y) {
     miulp = ABS(0.5 * (tempdb.d - powh));
   }
 
+  resScaledSafe = resScaled;
+  deltaSafe = delta;
+  ESafe = E;
+
+
   /* Rounding test and checking for possible exact cases 
 
      We have mainly two cases to check
@@ -1282,11 +1357,12 @@ double pow_rn(double x, double y) {
        Bring delta to a standard form, i.e. set it to sgn(delta) * miulp;
        Attention: the double-double resScaled + delta is not normalized w.r.t. even rounding
 
+       The exactCase check may need a 52 bit approximation to log(x)
     */
         
     if (delta < 0.0) delta = -miulp; else delta = miulp;
-    exactCase = checkForExactCase(x,y,E,resScaled,delta);
-
+    exactCase = checkForExactCase(x,y,E,resScaled,delta,logxh);
+    
     if (exactCase) {
       /* If we are here, we know that x^y = 2^E * (resScaled + delta) exactly 
 
@@ -1302,6 +1378,12 @@ double pow_rn(double x, double y) {
 	 result is a subnormal.
 
       */
+
+#if DEBUG
+      printf("Midway case detected on ");
+      printHexa("x",x);
+      printHexa("y",y);
+#endif
 
       correctedRes = resScaled + delta;
 
@@ -1331,15 +1413,23 @@ double pow_rn(double x, double y) {
     }
   } else {
     /* Case (i) not detected, check now for case (ii) */
-
     if (ABS(delta) <= roundingBound) {
       /* Case (ii) detected, bring delta to a standard form by ignoring it 
 	 The double-double resScaled + 0.0 stays normalized.
+
+	 The exactCase check may need a 52 bit approximation to log(x)
       */
 
-      exactCase = checkForExactCase(x,y,E,resScaled,0.0);
+      exactCase = checkForExactCase(x,y,E,resScaled,0.0,logxh);
 
       if (exactCase) {
+
+#if DEBUG
+	printf("Exact case detected on ");
+	printHexa("x",x);
+	printHexa("y",y);
+#endif
+
 	/* Exact case
 	   TODO: restore the inexact flag to the status it had when entering the function 
 	*/
@@ -1363,7 +1453,15 @@ double pow_rn(double x, double y) {
 
   /* If we are here, we could not decide the rounding */
 
-  /*  printf("We could not decide the rounding nor detect an exact case\n"); */
+#if DEBUG
+  printf("We could not decide the rounding nor detect an exact case\n");
+
+  printf("E = %d\n",ESafe);
+  printHexa("resScaled",resScaledSafe);
+  printHexa("delta",deltaSafe);
+  printHexa("powh",powh);
+  printHexa("powl",powl);
+#endif  
 
   return sign * res;
 }
