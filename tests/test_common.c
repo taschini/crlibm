@@ -511,7 +511,7 @@ void test_init(/* pointers to returned value */
       *testfun_libultim    = ulog2;
 #endif
 #ifdef HAVE_LIBMCR_H
-      *testfun_libmcr    = __libmcr_log2;
+      *testfun_libmcr    = NULL;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_log2;
@@ -543,7 +543,7 @@ void test_init(/* pointers to returned value */
       */
 
 #ifdef HAVE_LIBMCR_H
-      *testfun_libmcr    = __libmcr_log10;
+      *testfun_libmcr    = NULL;
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_log10;
@@ -847,7 +847,7 @@ void test_init(/* pointers to returned value */
     {
       *randfun_perf     = (double (*)()) rand_for_pow_perf;
       *randfun_soaktest = (double (*)()) rand_for_pow_soaktest;
-      *worst_case= 1.25;
+      *worst_case = 0.248449387824314426215111463779903336823375525900730415e170;
       *testfun_libm   = pow;
       switch(crlibm_rnd_mode){
       case RU:

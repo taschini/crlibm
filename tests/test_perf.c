@@ -37,7 +37,7 @@ Beware to compile without optimizations
 
 #define N1 20
 
-#define TIMING_ITER 200
+#define TIMING_ITER 2000
 
 #define DETAILED_REPORT 0
 
@@ -527,7 +527,7 @@ int main (int argc, char *argv[]){
   /************  WORST CASE TESTS   *********************/
   /* worst case test */
   i1 = worstcase;
-  i2 = 3 ; /* TODO when we have worst cases for power...*/
+  i2 = 0.968750000000000000000000000000000000000000000000000000e0; /* TODO when we have worst cases for power...*/
 
   test_worst_case(testfun_libm, i1, i2, &libm_dtwc, 0);
   test_worst_case(testfun_crlibm, i1, i2, &crlibm_dtwc, 0);

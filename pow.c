@@ -7,7 +7,7 @@
 
 
 #define DEBUG 0
-#define DEBUG2 0
+
 
 void log2_12(double* logxh, double* logxl, double x) {
   int E, index;
@@ -16,7 +16,7 @@ void log2_12(double* logxh, double* logxl, double x) {
   double t11h, t11m, t12h, t12m, t13h, t13m, t14h, t14m;
   double highPoly, logManth, logMantl, t15, t16, t17;
   
-  E=0;
+  E=0; 
   xdb.d=x;
   
   /* Filter cases */
@@ -295,146 +295,32 @@ double exp2_30bits(double x) {
 }
 
 
-
-int isPowerSquare(double *j, int F, double m, double logx, double E) {
-  double logm, tFMlm;
-  db_number tempdb;
-  int i;
-  double shiftedJp, jp;
-  double s, th, tl;
-  
-
-  /* Preconditions:
-
-     (i)   m an odd integer greater or eqal 3 and less than 2^(53)
-     (ii)  -5 <= F <= -1
-     (iii) x = 2^E * m, logx = log2(x) * (1 + eps), abs(eps) <= 2^(-52)
-     (iv)  E is an integer number, abs(E) <= 2^(11)
-
-  */
-
-  /* We have to check whether there exists an integer j such that 
-     
-     j^(2^(-F)) = m      i.e.    j = m^(2^F);
-
-     We perform this as follows:
-     
-     (i)   We compute an approximation jh + jl to m^(2^F). This approximation
-           is exact to at least 53 bits. 
-     (ii)  We round jh + jl to the nearest integer j. This rounding is 
-           subject to the Table Maker's Dilemma iff m is such that m^(2^F) is not integer.
-	   Thus if there exists an integer j' such that j'^(2^(-F)) = m, the computed j is
-	   equal to the exact j'.
-     (iii) We compute j^(2^(-F)) exactly by repeated squaring. 
-           Since m is written on at most 53 bits, and j is an integer, 
-	   if one of the square operations must be written on more than 
-	   53 bits, there exists no integer j' such that j'^(2^(-F)) = m. 
-     (iv)  If all squarings produce results that can be hold on 53 bits, the final result
-           j^(2^(-F)) must be equal to m. Otherwise, there exists no integer j' such that 
-	   j'^(2^(-F)) is equal to m.
-  
-
-     We start by computing the approximation jp = m^(2^F) * (1 + eps) as
-
-     jp = 2^(2^F * log2(m)) * (1 + eps) 
-
-     At the beginning, we compute log2(m) out of log2(x):
-
-     We have x = 2^E * m, i.e. m = 2^(-E) * x
-     Thus
-    
-     log2(m) = -E + log2(x)
-
-     Since E is an integer on at most 11 bits, we cancel out at most 11 bits
-     so logm obtained by this method has at least 52 - 11 = 41 bits.
-     
-     Since m^(2^F) is bounded by 2^27, 2^F * log2(m) is bounded by 27 < 32 = 2^5
-     Thus the amplification of the relative error in logm w.r.t log2(m) 
-     will not be greater than 2^6 which leaves at least 
-     35 correct bits in 2^(2^F * logm)
-   
-  */
-
-  logm = logx - E;
-  
-
-  /* Represent 2^F */
-  tempdb.i[HI] = (F + 1023) << 20;
-  tempdb.i[LO] = 0;
-
-  /* Multiply log2(m) by 2^F */
-  tFMlm = tempdb.d * logm;
-
-  /* Compute 2^(2^F * log2(m)) */
-  jp = exp2_30bits(tFMlm);
-  
-  /* Round now jp to the nearest integer 
-
-     Since jp = m^(2^F) is bounded by 2^(27), we can use the 
-     shift method.
-     
-  */
-  shiftedJp = jp + SHIFTCONSTANT;
-  *j = shiftedJp - SHIFTCONSTANT;
-
-  /* Compute now j^(2^(-F)) by repeated squaring.
-     As explained above, each intermediate must be able to be written on 
-     at most 53 bits. 
-
-     Since m is bounded by 2^(53), none of the Dekker sequences will overflow.
-  */
-  i = -F;
-  s = *j;
-  while (i > 0) {
-    Mul12(&th,&tl,s,s);
-    if (tl != 0.0) {
-      /* An intermediate squaring cannot be written on 53 bits. 
-	 Since j is equal to m^(2^F) if there exists an integer j' 
-	 such that j'^(2^(-F)) = m, there does not exist any such integer j'.
-      */
-      return 0;
-    }
-    s = th;
-    i--;
-  }
-  /* Check now whether s = j^(2^(-F)) is equal to m. */
-
-  if (s != m) {
-    /* s = j^(2^(-F)) is not equal to m. Since j is equal to m^(2^F) if
-       there exists an integer j' such that j'^(2^(-F)) = m, there does
-       not exist any such integer j'.
-    */    
-    return 0;
-  }
-
-  return 1;
-}
-
-
 int checkForExactCase(double x, double y, int H, double kh, double kl, double logx) {
   int32_t E, F, G;
-  db_number xdb, ydb, tmpdb, khdb, tdb;
-  double t1, t2, t3, t4;
-  int d;
+  db_number xdb, ydb, tmpdb, khdb, tempdb;
+  int d, i;
   int32_t tempInt;
   double m, n, r;
   double Ed, Gd, eMyh, eMyl;
   double khn, kln;
   double j, z, ph, pl, zh, zl, qh, ql;
-  int isPowerSquareCase, tt;
-  double rest, yEdh, yEdl;
+  int tt;
+  double yEdh, yEdl;
+  double delt, delt2;
+  double logm, tFMlm, jp, shiftedJp, s, th, tl;
+  double shiftedyEdh, yEdhI;
+  double h, twoPowFMultn;
 
-#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-  db_number tmppdb;
-#endif
 
   /* Preconditions: 
 
      (i)   x is positive and different from 0
      (ii)  y is different from 0
      (iii) y is different from 1
-     (iv)  x^y does not overflow nor is flushed to 0
-     (v)   kh + kl can be written on at most 54 bits
+     (iv)  y is not subnormal
+     (v)   x^y does not overflow nor is flushed to 0
+     (vi)  kh + kl can be written on at most 54 bits
+     (vii) kh is not subnormal
   
   */
 
@@ -454,13 +340,17 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
 
        The check is simple if x is normal. For subnormal x
        we multiply by 2^1000 and check on the resulting normal.
+       
+       We extract the exponent of x at the same time.
 
     */
     if ((xdb.i[HI] & 0xfff00000) == 0) {
       /* x is subnormal */
       tmpdb.d = x * TWO1000;
+      E = (tmpdb.i[HI] >> 20) - 2023;
     } else {
       tmpdb.d = xdb.d;
+      E = (xdb.i[HI] >> 20) - 1023;
     }
 
     if (((tmpdb.i[HI] & 0x000fffff) | tmpdb.i[LO]) != 0) {
@@ -471,7 +361,10 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
 
     /* If we are here, x is an integer power of 2.
        Compute E, the exponent of x.
-       Check then if E * y is integer 
+       Check then if E * y is integer and less that 2^11 in magnitude.
+       This covers the whole exponent range, also in the subnormals.
+
+       Check the magnitude first.
 
        Check first if E * y is less than 1.0 in magnitude.
        If yes, check if E * y is zero and return.
@@ -479,64 +372,39 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
        Otherwise, we compute the integer
        nearest to E * y and compare the difference with 0.
 
-       E * y must be written on a double-double. 
-       If the high order word is less than 2^(52), we can work
-       only on the high order word and verify the low order word
-       is equal to 0. Otherwise, the high order word is already an
-       integer and we can work on the low order word.
-
+       E * y must be written on a double-double. Since it must be less
+       than 2^11, we check that the low order word is zero and compute
+       than the difference with the integer nearest to the high order word.
+       Since the integer must be less than 2^11 in magnitude, we can use the
+       shift method. 
+       
        The Dekker sequence is always exact because is y is always 
        less than 2^64 and E is always less than 2^10.
 
     */
 
-    E = (xdb.i[HI] >> 20) - 1023;
     Ed = E;
 
     Mul12(&yEdh,&yEdl,y,Ed);
 
-    if (yEdh < TWO52) {
-      if (yEdl != 0.0) {
-	/* yEdl is not equal to 0 and yEdh may still have a fractional part */
-	return 0;
-      }
-      rest = yEdh;
-    } else {
-      /* yEdh is always integer, we work only on yEdl */
-      rest = yEdl;
-    }
-
-    /* Compute the integer nearest to r by subnormal rounding */
-
-    t1 = TWOM53 * rest;
-    tmpdb.d = TWOM1021 * t1;
-    
-    /* If we are on x86, we must force the compile to go through memory in order to have 
-       correct double subnormals 
+    /* If the low order word is not equal to 0, we are not integer 
+       or the magnitude of the whole yEdh + yEdl is too great.
+       If yEd h is greater than 2^11 in magnitude, return false, too.
     */
-#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-    tmppdb.i[HI] = tmpdb.i[HI];
-    tmppdb.i[LO] = tmpdb.i[LO];
-    tmpdb.d = tmppdb.d;
-#endif
-    
-    /* Remultiply */
+    if ((yEdl != 0.0) || (ABS(yEdh) > TWO11)) return 0;
 
-    t2 = TWO1021 * tmpdb.d;
-    t3 = TWO53 * t2;
-    
-    /* Compute the difference */
+    /* Compute the integer nearest to yEdh */
+    shiftedyEdh = yEdh + SHIFTCONSTANT;
+    yEdhI = shiftedyEdh - SHIFTCONSTANT;
 
-    t4 = t3 - rest;
-
-    /* If the difference is 0.0, E * y is an integer and the case is exact 
-       Otherwise the case is not exact.
+    /* If yEdh and yEdhI are equal, their difference is 0, E * y is an integer and 
+       the case is exact. Otherwise the case is not exact.
        In the case we return "yes, exact case", we do not check 
        that actually x^y = 2^H * (kh + kl) but rely on the fact that 
        the value kh + kl = x^y * (1 + eps) is exact enough for correct rounding
        without occurence of the Table Maker's dilemma. 
     */
-    return (t4 == 0.0);
+    return (yEdh == yEdhI);
   }
 
   /* Here y is always positive */
@@ -558,8 +426,17 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
 
   /* Extract the exponent and remove it form x 
      Compute the exponent E so that the corresponding mantissa is integer 
+
+     We have a special case for exponent extraction if the number is subnormal
   */
-  E = (xdb.i[HI] >> 20) - 1023 - 52;
+  E = 0;
+  if ((xdb.i[HI] & 0xfff00000) == 0) {
+    /* The number is subnormal */
+    xdb.d = x * TWO1000;
+    E = -1000;
+  }
+
+  E += (xdb.i[HI] >> 20) - 1023 - 52;
   xdb.i[HI] = xdb.i[HI] & 0x000fffff;
 
   /* Check how often x * 2^(-E) can be divided by 2 in integer */
@@ -582,35 +459,6 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
   xdb.i[HI] |= (52 + 1023 - d) << 20;
   m = xdb.d;
   E += d;
-
-  /* Continue with y */
-
-  /* Extract the exponent and remove it form y 
-     Compute the exponent F so that the corresponding mantissa is integer 
-  */
-  F = (ydb.i[HI] >> 20) - 1023 - 52;
-  ydb.i[HI] = ydb.i[HI] & 0x000fffff;
-
-  /* Check how often y * 2^(-F) can be divided by 2 in integer */
-
-  if (ydb.i[LO] == 0) {
-    d = 32;
-    tempInt = ydb.i[HI] | 0x00100000;
-  } else {
-    d = 0;
-    tempInt = ydb.i[LO];
-  }
-
-  while ((tempInt & 0x1) == 0) {
-    tempInt >>= 1;
-    d++;
-  }
-
-  /* Correct now F and set the appropriate exponent in ydb which becomes n */
-  
-  ydb.i[HI] |= (52 + 1023 - d) << 20;
-  n = ydb.d;
-  F += d;
 
   /* Compute now r such that      
      
@@ -640,6 +488,9 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
   if (kln == 0.0) {
     /* Extract the exponent and remove it from kh
        Compute the exponent G so that the corresponding mantissa is integer 
+       
+       Here, khdb.d cannot be subnormal any longer; 2^G scales it if necessary
+       and reflects the subnormality of khn this way.
     */
     G = (khdb.i[HI] >> 20) - 1023 - 52;
     khdb.i[HI] = khdb.i[HI] & 0x000fffff;
@@ -675,10 +526,10 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
   }
   /* Take into account the scaling 2^H */
   G += H;
-  
+
   /* In order to show that a case is exact (or midway) 
      we have to show 
-
+     
      x^y = 2^H * (kh + kl) 
 
      Using the equalities
@@ -729,23 +580,14 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
     /* eMyl is not equal to 0 or eMyh is different from G, thus eMyh + eMyl is different
        from G. Hence the case is not exact nor midway.
     */
+    
     return 0;
   }
 
-  /* If we are here, we know that 
-     
-     (i)  E * 2^F * n = G
-
-     We have to check now that 
-
-     (ii) m^(2^F * n) = 2 * r + 1
-
-     We have first a special case to eliminate.
-
-     If m = 1, r must be equal to 0. Otherwise the case is inexact.
-     
+  /* Check already for the special case m = 1. 
+     The case is exact iff r = 0.
   */
- 
+
   if (m == 1.0) {
     /* Special case: m = 1 */
     if (r == 0.0) {
@@ -781,6 +623,61 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
       return 0;
     }
   }
+
+  /* Finish by the decomposition of y */
+
+  /* Extract the exponent and remove it form y 
+     Compute the exponent F so that the corresponding mantissa is integer 
+
+     Remark that y cannot be subnormal, so we can extract its exponent easily.
+
+  */
+  F = (ydb.i[HI] >> 20) - 1023 - 52;
+  ydb.i[HI] = ydb.i[HI] & 0x000fffff;
+
+  /* Check how often y * 2^(-F) can be divided by 2 in integer */
+
+  if (ydb.i[LO] == 0) {
+    d = 32;
+    tempInt = ydb.i[HI] | 0x00100000;
+  } else {
+    d = 0;
+    tempInt = ydb.i[LO];
+  }
+
+  while ((tempInt & 0x1) == 0) {
+    tempInt >>= 1;
+    d++;
+  }
+
+  /* Correct now F and set the appropriate exponent in ydb which becomes n */
+  
+  ydb.i[HI] |= (52 + 1023 - d) << 20;
+  n = ydb.d;
+  F += d;
+
+#if DEBUG
+  printf("E = %d\nF = %d\nG= %d\n",E,F,G);
+  printHexa("m",m);
+  printHexa("n",n);
+  printHexa("r",r);
+#endif
+
+
+  /* If we are here, we know that 
+     
+     (i)  E * 2^F * n = G
+
+     We have to check now that 
+
+     (ii) m^(2^F * n) = 2 * r + 1
+
+     We have already eliminated the special case m = 1.0 
+
+  */
+  
+  /* In the moment, twoPowFMultn = 2^F * n = y */
+  twoPowFMultn = y;
 
   /* If we are here, m >= 3 since m != 0, m != 1 and m is odd 
 
@@ -891,27 +788,107 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
       return 0;
     }
 
-    isPowerSquareCase = isPowerSquare(&j,F,m,logx,Ed);
+    /* We have to check whether there exists an integer j such that 
+       
+       j^(2^(-F)) = m      i.e.    j = m^(2^F);
 
-    if (!isPowerSquareCase) {
-      /* There exists no j integer such that 
+       We perform this as follows:
+     
+       (i)   We compute an approximation jp to m^(2^F). This approximation
+             is exact to at least 30 bits. 
+       (ii)  We round jp to the nearest integer j. This rounding is 
+             subject to the Table Maker's Dilemma iff m is such that m^(2^F) is not integer.
+	     Thus if there exists an integer j' such that j'^(2^(-F)) = m, the computed j is
+	     equal to the exact j'.
+       (iii) We compute j^(2^(-F)) exactly by repeated squaring. 
+             Since m is written on at most 53 bits, and j is an integer, 
+	     if one of the square operations must be written on more than 
+	     53 bits, there exists no integer j' such that j'^(2^(-F)) = m. 
+       (iv)  If all squarings produce results that can be hold on 53 bits, the final result
+             j^(2^(-F)) must be equal to m. Otherwise, there exists no integer j' such that 
+	     j'^(2^(-F)) is equal to m.
+  
 
-         j^(2^(-F)) = m 
-	 
-	 Thus, as per the proof given above, we know that 
-	 
-	 m^(2^F * n) cannot be exact.
+       We start by computing the approximation jp = m^(2^F) * (1 + eps) as
 
+       jp = 2^(2^F * log2(m)) * (1 + eps) 
+
+       At the beginning, we compute log2(m) out of log2(x):
+
+       We have x = 2^E * m, i.e. m = 2^(-E) * x
+       Thus
+    
+        log2(m) = -E + log2(x)
+
+       Since E is an integer on at most 11 bits, we cancel out at most 11 bits
+       so logm obtained by this method has at least 52 - 11 = 41 bits.
+     
+       Since m^(2^F) is bounded by 2^27, 2^F * log2(m) is bounded by 27 < 32 = 2^5
+       Thus the amplification of the relative error in logm w.r.t log2(m) 
+       will not be greater than 2^6 which leaves at least 
+       35 correct bits in 2^(2^F * logm)
+   
+    */
+
+    logm = logx - E;
+  
+
+    /* Represent 2^F */
+    tempdb.i[HI] = (F + 1023) << 20;
+    tempdb.i[LO] = 0;
+    
+    /* Multiply log2(m) by 2^F */
+    tFMlm = tempdb.d * logm;
+    
+    /* Compute 2^(2^F * log2(m)) */
+    jp = exp2_30bits(tFMlm);
+    
+    /* Round now jp to the nearest integer 
+       
+       Since jp = m^(2^F) is bounded by 2^(27), we can use the 
+       shift method.
+    
+    */
+    shiftedJp = jp + SHIFTCONSTANT;
+    j = shiftedJp - SHIFTCONSTANT;
+
+    /* Compute now j^(2^(-F)) by repeated squaring.
+       As explained above, each intermediate must be able to be written on 
+       at most 53 bits. 
+
+       Since m is bounded by 2^(53), none of the Dekker sequences will overflow.
+
+       If tl is not equal to zero, it is at least 1 because integer and 
+       bounded by 2^53 - 1. Further 5 * 2^106 <= 2^110.
+
+    */
+    i = -F;
+    s = j;
+    delt = 0.0;
+    while (i > 0) {
+      Mul12(&th,&tl,s,s);
+      delt = delt + tl * tl;
+      s = th;
+      i--;
+    }
+
+    /* Check if all immediate steps have been exact */
+    if (delt > 0.0) {
+      /* An intermediate squaring could not be written on 53 bits. 
+	 Since j is equal to m^(2^F) if there exists an integer j' 
+	 such that j'^(2^(-F)) = m, there does not exist any such integer j'.
       */
 
-#if DEBUG2 
-      printf("isPowerSquareCase has been false on\n");
-      printHexa("x",x);
-      printHexa("y",y);
-      printf("H = %d\n",H);
-      printHexa("kh",kh);
-      printHexa("kl",kl);
-#endif
+      return 0;
+    }
+
+    /* Check now whether s = j^(2^(-F)) is equal to m. */
+    
+    if (s != m) {
+      /* s = j^(2^(-F)) is not equal to m. Since j is equal to m^(2^F) if
+	 there exists an integer j' such that j'^(2^(-F)) = m, there does
+	 not exist any such integer j'.
+      */    
 
       return 0;
     }
@@ -934,8 +911,7 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
     */
 
     m = j;
-    F = 0;
-    
+    twoPowFMultn = n;
   }
 
   /* If we are here, we have 
@@ -952,21 +928,9 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
      Then we apply the algorithm given above. All the Dekker operations
      are exact because all checks before bound the results by 2^(53) << 2^(1024)
 
-     We construct t = 2^F * n as a double precision variable.
-     We check then and if the check does not fail, produce an integer
-     variable tt = t. This operation is errorfree because 2^F * n is integer and 
-     less or equal to 35. We count then on this integer variable.
-
-     We can construct 2^F * n without overflow in any case.
-     If F has not been reduced because it had been negative, 2^F * n is 
-     equal to y which is representable. If F is result of this
-     reduction, it is equal to 0. The integer n is never equal to 0.
   */
 
-  tdb.d = n;
-  tdb.i[HI] += F << 20;
-
-  if (tdb.d > 35.0) {
+  if (twoPowFMultn > 35.0) {
     /* 2^F * n is greater than 35 
        There can therefore not be any exact case as per the explications above.
     */
@@ -977,32 +941,44 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
      by construction. We convert it to an integer variable.
   */
 
-  tt = tdb.d;
+  tt = twoPowFMultn;
 
   /* The loop will go to tt-1 */
   tt -= 1;
 
   /* Initialize z with 1 */
-  z = 1;
+  z = 1.0;
 
-  /* Loop for multiplying */
+  delt = 0.0;
+  delt2 = 0.0;
+  /* Loop for multiplying 
+     
+     Since m is integer, pl will be 0 or an integer.
+     So no underflow in pl * pl is possible if pl != 0
+  
+  */
+
+  h = m;
   while (tt > 0) {
-    /* Multiply the accumulator z exactly by m */
-    Mul12(&ph,&pl,z,m);
-   
-    /* Check if the result can be represented on at most 53 bits. */
-    if (pl != 0.0) {
-      /* The result cannot be represented on at most 53 bits.
-	 Therefore, as per the arguments given above, the case is 
-	 not exact.
-      */
-      return 0;
+    if ((tt & 1) != 0) {
+      Mul12(&ph,&pl,z,h);
+      delt2 = delt2 + pl * pl;
+      z = ph;
     }
+    Mul12(&ph,&pl,h,h);
+    delt = delt + pl * pl;
+    h = ph;
+    tt >>= 1;
+  }
+  delt = delt + delt2;
 
-    /* Here, pl == 0. We make no rounding on setting z = ph + pl by setting z = ph. */
-
-    z = ph;
-    tt--;
+  /* Check if each intermediate result was exact. */
+  if (delt > 0.0) {
+    /* At least one intermediate result could not be represented on at most 53 bits.
+       Therefore, as per the arguments given above, the case is 
+       not exact.
+    */
+    return 0;
   }
   
   /* If we are here, we have 
@@ -1037,18 +1013,8 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
 
   Add12(qh,ql,2.0 * r,1.0);
 
-  if (zh != qh) {
-    /* The high order word of zh + zl and qh + ql is different.
-       The value zh + zl is therefore different from qh + ql. 
-       The case is thus inexact.
-    */
-    return 0;
-  }
-
-  /* If we are here, zh = qh, check now the lower words */
-
-  if (ql != ql) {
-    /* The low order word of zh + zl and qh + ql is different.
+  if ((zh != qh) || (zl != ql)) {
+    /* One of the words of of zh + zl and qh + ql is different.
        The value zh + zl is therefore different from qh + ql. 
        The case is thus inexact.
     */
@@ -1110,6 +1076,8 @@ double pow_rn(double x, double y) {
 
   /* WE DO NOT HANDLE INF, NAN, OVERFLOW AND UNDERFLOW BY NOW (OR NOT COMPLETELY) */
 
+  absy = ABS(y);
+
   /* Handle the sign of x */
   sign = 1.0;
   if (x < 0.0) {
@@ -1118,9 +1086,6 @@ double pow_rn(double x, double y) {
        We can always strip off the sign of x 
     */
     x = -x;
-
-    /* Test if abs(y) is integer */
-    absy = ABS(y);
     
     /* If abs(y) is less than 1.0, it cannot be integer; 0.0 has been filtered out */
     if (absy < 1.0) {
@@ -1194,16 +1159,55 @@ double pow_rn(double x, double y) {
 
   /* x is now always positive */
 
+  /* Check if y is in the correct range 
+
+     For abs(y) < 2^(-64), x^y clearly rounds to 1
+     For abs(y) > 2^(+64), x^y clearly under- or overflows
+
+
+  */
+
+  if (absy <= TWOM64) {
+    /* abs(y) < 2^(-64), x^y rounds to sign * 1.0 in each case 
+       The formula is for setting the inexact bit.
+    */
+    return sign * (1.0 + SMALLEST);
+  }
+
+
+  if (absy >= TWO64) {
+    /* abs(y) > 2^(+64) */
+    
+    /* If y is positive, we have overflow for x > 1 and underflow for x < 1 
+       If y is negative, we have underflow for x > 1 and overflow for x < 1
+    */
+    
+    if (y > 0.0) {
+      /* y is positive */
+      if (x > 1.0) {
+	/* x^y overflows */
+	return (sign * LARGEST) * LARGEST;
+      } else {
+	/* x^y underflows */
+	return (sign * SMALLEST) * SMALLEST;
+      }
+    } else {
+      /* y is negative */
+      if (x > 1.0) {
+	/* x^y underflows */
+	return (sign * SMALLEST) * SMALLEST;
+      } else {
+	/* x^y overflows */
+	return (sign * LARGEST) * LARGEST;
+      }    
+    }
+  } 
+
   /* Compute log2(x) as a double-double */
 
   log2_12(&logxh, &logxl, x);
 
   /* Compute y * log2(x) as a double-double */
-
-  /* ATTENTION: y might be a subnormal or so small that 
-     the Mul122 operator is no longer correct 
-     We have to check this in the future (TODO)
-  */
 
   Mul122(&ylogxh,&ylogxl,y,logxh,logxl); 
 
@@ -1219,17 +1223,17 @@ double pow_rn(double x, double y) {
   */
 
   if (E >= 1025) {
-    /* Overflow, return Inf 
+    /* Overflow, return sign * Inf 
        The formula is for setting the inexact flag
     */
-    return LARGEST * (1.0 + SMALLEST);
+    return (sign * LARGEST) * LARGEST;
   }
   
   if (E <= -1076) {
     /* Surely flushed to zero 
        The formula is for setting the inexact flag
     */
-    return SMALLEST * SMALLEST;
+    return (sign * SMALLEST) * SMALLEST;
   }
 
   /* Tentative final rounding
@@ -1319,7 +1323,6 @@ double pow_rn(double x, double y) {
   resScaledSafe = resScaled;
   deltaSafe = delta;
   ESafe = E;
-
 
   /* Rounding test and checking for possible exact cases 
 
@@ -1420,6 +1423,10 @@ double pow_rn(double x, double y) {
 	 The exactCase check may need a 52 bit approximation to log(x)
       */
 
+#if DEBUG
+      printf("Check for exact case\n");
+#endif
+
       exactCase = checkForExactCase(x,y,E,resScaled,0.0,logxh);
 
       if (exactCase) {
@@ -1462,6 +1469,8 @@ double pow_rn(double x, double y) {
   printHexa("powh",powh);
   printHexa("powl",powl);
 #endif  
+
+  crlibm_second_step_taken++;
 
   return sign * res;
 }
