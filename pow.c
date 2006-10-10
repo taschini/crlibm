@@ -7,7 +7,7 @@
 
 
 #define DEBUG 0
-
+#define DEBUG2 0
 
 void log2_12(double* logxh, double* logxl, double x) {
   int E, index;
@@ -310,7 +310,6 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
   double logm, tFMlm, jp, shiftedJp, s, th, tl;
   double shiftedyEdh, yEdhI;
   double h, twoPowFMultn;
-
 
   /* Preconditions: 
 
@@ -638,8 +637,13 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
   /* Check how often y * 2^(-F) can be divided by 2 in integer */
 
   if (ydb.i[LO] == 0) {
-    d = 32;
-    tempInt = ydb.i[HI] | 0x00100000;
+    if ((ydb.i[HI] & 0x0003ffff) == 0) {
+      d = 46;
+      tempInt = (ydb.i[HI] >> 14) | 0x00000040;
+    } else {
+      d = 32;
+      tempInt = ydb.i[HI] | 0x00100000;
+    }
   } else {
     d = 0;
     tempInt = ydb.i[LO];
@@ -841,6 +845,7 @@ int checkForExactCase(double x, double y, int H, double kh, double kl, double lo
     tFMlm = tempdb.d * logm;
     
     /* Compute 2^(2^F * log2(m)) */
+    
     jp = exp2_30bits(tFMlm);
     
     /* Round now jp to the nearest integer 
@@ -1058,8 +1063,6 @@ double pow_rn(double x, double y) {
   double roundingBound, tmp1, correctedRes;
   int exactCase;
 
-  int ESafe;
-  double resScaledSafe, deltaSafe;
 
 
 #if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
@@ -1320,10 +1323,6 @@ double pow_rn(double x, double y) {
     miulp = ABS(0.5 * (tempdb.d - powh));
   }
 
-  resScaledSafe = resScaled;
-  deltaSafe = delta;
-  ESafe = E;
-
   /* Rounding test and checking for possible exact cases 
 
      We have mainly two cases to check
@@ -1343,8 +1342,8 @@ double pow_rn(double x, double y) {
      multiply miulp by 2^(-(b - 54)). This constant APPROXBOUNDFACTOR
      is produced by a Maple script.
      
-     We check then case (i) by subtracting miulp from delta and comparing to roundingBound.
-     We check then case (ii) by comparing delta directly to roundingBound.
+     We check then case (ii) by subtracting miulp from delta and comparing to roundingBound.
+     We check then case (i) by comparing delta directly to roundingBound.
 
      Before launching the exact case test, we have to round the result for x^y to 54 bits,
      i.e. bring delta to a standard form (0.11111... -> 1.00000...; 0.000101... -> 0.00000...).
@@ -1353,106 +1352,113 @@ double pow_rn(double x, double y) {
 
   roundingBound = APPROXBOUNDFACTOR * miulp;
 
-  tmp1 = miulp - ABS(delta);
-  if (tmp1 <= roundingBound) {
-    /* Case (i) detected 
-
-       Bring delta to a standard form, i.e. set it to sgn(delta) * miulp;
-       Attention: the double-double resScaled + delta is not normalized w.r.t. even rounding
-
+  if (ABS(delta) <= roundingBound) {
+    /* Case (ii) detected, bring delta to a standard form by ignoring it 
+       The double-double resScaled + 0.0 stays normalized.
+       
        The exactCase check may need a 52 bit approximation to log(x)
     */
-        
-    if (delta < 0.0) delta = -miulp; else delta = miulp;
-    exactCase = checkForExactCase(x,y,E,resScaled,delta,logxh);
+    
+#if DEBUG
+    printf("Check for exact case\n");
+#endif
+    
+    exactCase = checkForExactCase(x,y,E,resScaled,0.0,logxh);
     
     if (exactCase) {
-      /* If we are here, we know that x^y = 2^E * (resScaled + delta) exactly 
-
-         Since the double-double resScaled + delta is not normalized
-	 w.r.t. even rounding, we must reperform the final
-	 rounding. We first add resScaled and delta arithmetically to
-	 obtain correctedRes. This operation rounds correctly
-	 resScaled to the nearest even if we have a final normal
-	 result and is exact (TODO: paper proof) if the final result
-	 is subnormal.  We multiply then by 2^E by two different
-	 methods depending on E like above. This operation is exact if
-	 the final result is a normal or rounds correctly if the
-	 result is a subnormal.
-
-      */
-
+      
 #if DEBUG
-      printf("Midway case detected on ");
+      printf("Exact case detected on ");
       printHexa("x",x);
       printHexa("y",y);
 #endif
-
-      correctedRes = resScaled + delta;
-
-      if (E < -1021) {
-	/* Possible subnormal rounding */
-
-	tt1 = correctedRes * TWOM1000;
-	
-	tempdb.i[HI] = (E + 2023) << 20;
-	tempdb.i[LO] = 0;
-	tempdb.d *= tt1;
-#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-	temp2db.i[HI] = tempdb.i[HI];
-	temp2db.i[LO] = tempdb.i[LO];
-	tempdb.d = temp2db.d;
-#endif
-	
-	res = tempdb.d;
-
-      } else {
-	/* Normal rounding */
-	tempdb.d = correctedRes;
-	tempdb.i[HI] += E << 20;
-	res = tempdb.d;
-      }
+      
+      /* Exact case
+	 TODO: restore the inexact flag to the status it had when entering the function 
+      */
+      return sign * res;
+    } else {
+      /* Inexact but roundable case 
+	 TODO: correct handling of the inexact flag
+      */
       return sign * res;
     }
   } else {
-    /* Case (i) not detected, check now for case (ii) */
-    if (ABS(delta) <= roundingBound) {
-      /* Case (ii) detected, bring delta to a standard form by ignoring it 
-	 The double-double resScaled + 0.0 stays normalized.
+    
+    /* Case (ii) not detected, check now for case (i) */
 
+    tmp1 = miulp - ABS(delta);
+    if (tmp1 <= roundingBound) {
+      /* Case (i) detected 
+	 
+         Bring delta to a standard form, i.e. set it to sgn(delta) * miulp;
+	 Attention: the double-double resScaled + delta is not normalized w.r.t. even rounding
+      
 	 The exactCase check may need a 52 bit approximation to log(x)
       */
 
 #if DEBUG
-      printf("Check for exact case\n");
+    printf("Check for midway case\n");
 #endif
 
-      exactCase = checkForExactCase(x,y,E,resScaled,0.0,logxh);
-
+        
+      if (delta < 0.0) delta = -miulp; else delta = miulp;
+      exactCase = checkForExactCase(x,y,E,resScaled,delta,logxh);
+      
       if (exactCase) {
+	/* If we are here, we know that x^y = 2^E * (resScaled + delta) exactly 
+	   
+           Since the double-double resScaled + delta is not normalized
+	   w.r.t. even rounding, we must reperform the final
+	   rounding. We first add resScaled and delta arithmetically to
+	   obtain correctedRes. This operation rounds correctly
+	   resScaled to the nearest even if we have a final normal
+	   result and is exact (TODO: paper proof) if the final result
+	   is subnormal.  We multiply then by 2^E by two different
+	   methods depending on E like above. This operation is exact if
+	   the final result is a normal or rounds correctly if the
+	   result is a subnormal.
+	   
+	*/
 
 #if DEBUG
-	printf("Exact case detected on ");
+	printf("Midway case detected on ");
 	printHexa("x",x);
 	printHexa("y",y);
 #endif
 
-	/* Exact case
-	   TODO: restore the inexact flag to the status it had when entering the function 
-	*/
-	return sign * res;
-      } else {
-	/* Inexact but roundable case 
-	   TODO: correct handling of the inexact flag
-	*/
+	correctedRes = resScaled + delta;
+	
+	if (E < -1021) {
+	  /* Possible subnormal rounding */
+	  
+	  tt1 = correctedRes * TWOM1000;
+	  
+	  tempdb.i[HI] = (E + 2023) << 20;
+	  tempdb.i[LO] = 0;
+	  tempdb.d *= tt1;
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
+	  temp2db.i[HI] = tempdb.i[HI];
+	  temp2db.i[LO] = tempdb.i[LO];
+	  tempdb.d = temp2db.d;
+#endif
+	
+	  res = tempdb.d;
+	  
+	} else {
+	  /* Normal rounding */
+	  tempdb.d = correctedRes;
+	  tempdb.i[HI] += E << 20;
+	  res = tempdb.d;
+	}
 	return sign * res;
       }
     } else {
       /* Neither case (i) nor case (ii) could be detected
 	 We can decide the rounding and are inexact.
-
+	 
 	 TODO: correct handling of the inexact flag
-
+       
       */
       return sign * res;
     }
@@ -1460,12 +1466,12 @@ double pow_rn(double x, double y) {
 
   /* If we are here, we could not decide the rounding */
 
-#if DEBUG
+#if DEBUG2
   printf("We could not decide the rounding nor detect an exact case\n");
 
-  printf("E = %d\n",ESafe);
-  printHexa("resScaled",resScaledSafe);
-  printHexa("delta",deltaSafe);
+  printHexa("x",x);
+  printHexa("y",y);
+  printf("E = %d\n",E);
   printHexa("powh",powh);
   printHexa("powl",powl);
 #endif  

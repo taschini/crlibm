@@ -112,7 +112,7 @@ void test_all() {
       res_libmcr.d = testfun_libmcr(input.d);
 #endif
     mpfr_set_d(mp_inpt, input.d, GMP_RNDN);
-    testfun_mpfr(mp_res, mp_inpt, mpfr_rnd_mode);
+    testfun_mpfr(mp_res, mp_inpt, mpfr_rnd_mode);           
     res_mpfr.d = mpfr_get_d(mp_res, mpfr_rnd_mode);
     }
 
