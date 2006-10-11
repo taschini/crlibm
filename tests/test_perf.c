@@ -383,6 +383,297 @@ static void latex_output(const char *name,
 }
 
 
+void generate_pow_exact_case(double *x, double *y, int doSubnormals) {
+  int ok,E,F,i,maskN,n,expoBound,maxM,maskM,valM,a,b,EP,EPP,maxA;
+  db_number xdb, ydb, zdb;
+  double m;
+
+  /* Decide first if we generate a positive or negative y */
+
+  if (rand_int() & 1) {
+
+    /* Positive y */
+
+    ok = 0;
+    
+    while (!ok) {
+
+      /* First generate an appropriate exponent F for y 
+	 The exponent must be between -5 and 5
+      */
+      do {
+	F = (rand_int() & 0xf) - 8;
+      } while ((F < -5) || (F > -5));
+      
+      /* Generate E 
+	 If F is positive, E may be a random integer between 0 and 15 
+	 If F is negative, E must be divisible by 2^(-F), and less than 
+	 927
+	 
+	 So we generate an integer between 0 and 15 and multiply by 2^(-F) if 
+	 F is negative
+	 
+      */
+      
+      E = rand_int() & 0x0f;
+      
+      EP = E;
+
+      if (F < 0) {
+	if (E != 0) { 
+	  while ((E & 1) == 0) E >>= 1; 
+	}
+	E <<= -F;
+      }
+      
+      EPP = E;
+
+      
+      /* Generate n 
+	 If F is negative, n may be in the range 1..32
+	 If F is positive, n may be in the range 1..(32 / 2^F)
+	 
+	 We will generate n - 1 in a range 0..31 or 0..((32 / 2^F) - 1)
+	 We will than bring n to the next odd number lower than it.
+	 
+	 If F = 0, n may not be equal 1, we take 3 instead.
+	 
+	 We generate first an appropriate mask.
+	 
+      */
+      
+      if (F < 0) {
+	maskN = 0x1f;
+      } else {
+	maskN = 0;
+	for (i=0;i<F;i++) maskN = maskN * 2 + 1;
+      }
+      
+      n = (rand_int() & maskN) + 1;
+      
+      if ((n & 1) != 1) n--;
+      
+      if ((F == 0) && (n == 1)) n = 3;
+
+      
+      /* Generate now ydb.d = 2^F * n */
+      
+      ydb.d = n;
+      ydb.i[HI] += F << 20;
+      
+      /* Generate now m 
+	 
+         If F is negative generate j and take m = j^(2^-F)
+	 If F is positive generate m 
+	 
+	 j must be such that j^(2^-F) is less than 2^53 - 1
+	 m must be such that m^(2^F * n) is less than 2^53 - 1
+	 
+	 Call 2^-F and 2^F * n respectively expoBound. expoBound is less or
+	 equal to 32.
+	 Out of expoBound, compute the maximum value for m or j
+	 If F negative take m = j^(2^(-F)) else take the value for m
+	 
+      */
+      
+      if (F < 0) {
+	expoBound = 1 << -F;
+      } else {
+	expoBound = n << F;
+      }
+      
+      switch (expoBound) {
+      case 2: 
+	maxM = 94906265; maskM = 134217727;
+	break;
+      case 3:
+	maxM = 208063; maskM = 262143;
+	break;
+      case 4:
+	maxM = 9741; maskM = 16383;
+	break;
+      case 5:
+	maxM = 1552; maskM = 2047;
+	break;
+      case 6:
+	maxM = 456; maskM = 511;
+	break;
+      case 7:
+	maxM = 190; maskM = 255;
+	break;
+      case 8:
+	maxM = 98; maskM = 127;
+	break;
+      case 9:
+	maxM = 59; maskM = 63;
+	break;
+      case 10:
+	maxM = 39; maskM = 63;
+	break;
+      case 11:
+	maxM = 28; maskM = 31;
+	break;
+      case 12:
+	maxM = 21; maskM = 31;
+	break;
+      case 13:
+	maxM = 16; maskM = 15;
+	break;
+      case 14:
+	maxM = 13; maskM = 15;
+	break;
+      case 15:
+	maxM = 11; maskM = 15;
+	break;
+      case 16:
+	maxM = 9; maskM = 15;
+	break;
+      case 17:
+	maxM = 8; maskM = 7;
+	break;
+      case 18:
+	maxM = 7; maskM = 7;
+	break;
+      case 19:
+      case 20:
+	maxM = 6; maskM = 7;
+	break;
+      case 21:
+      case 22:
+	maxM = 5; maskM = 7;
+	break;
+      case 23:
+      case 24:
+      case 25:
+      case 26:
+	maxM = 4; maskM = 3;
+	break;
+      case 27:
+      case 28:
+      case 29:
+      case 30:
+      case 31:
+      case 32:
+	maxM = 3; maskM = 3;
+      default:
+	maxM = 1; maskM = 0;
+      }
+      
+      /* Compute now an odd value valM such that 1 <= valM <= maxM */
+      
+      if (maxM == 1) {
+	valM = 1;
+      } else {
+	while ((valM = ((rand_int() & maskM) + 1)) > maxM);
+      }
+      
+      if ((valM & 1) == 0) valM--;
+      
+      if (F >= 0) {
+	m = valM;
+      } else {
+	m = valM;
+	for (i=-F;i>0;i--) m *= m;
+      }
+      
+      /* Generate now xdb.d = 2^E * m */
+      
+      xdb.d = m;
+      xdb.i[HI] += E << 20;
+      
+      if (doSubnormals) {
+	if ((xdb.d != 0.0)  && (xdb.d != 1.0) && (ydb.d != 1.0) && (ydb.d != 0.0)) ok = 1;
+      } else {
+    
+	/* Test if we produce a subnormal */
+     
+	zdb.d = pow_rn(xdb.d,ydb.d);
+
+	/* If we produce a subnormal, we restart the procedure */
+
+	if ((zdb.i[HI] & 0xfff00000) != 0) {
+	  /* We are not subnormal and thus okay */
+	  if ((xdb.d != 0.0)  && (xdb.d != 1.0) && (ydb.d != 1.0) && (ydb.d != 0.0)) ok = 1;
+	}
+      }
+    }
+
+  } else {
+    
+    /* Negative y */
+
+    ok = 0;
+    
+    while (!ok) {
+
+      /* Generate an exponent b such that 
+
+	 -32 <= b <= 31, b != 0
+
+	 Take x = 2^b
+
+	 abs(y) must be bounded by 32
+      */
+    
+
+      b = (rand_int() & 0x3f) - 32;
+
+      if (b == 0) b = -1;
+             
+      
+      /* Compute a bound for a such that a * b is bounded by 32 in absolute value */
+      
+      if (b < 0) b = -b;
+      
+      maxA = 1;
+      while (b < 16) {
+	maxA *= 2;
+	b *= 2;
+      } 
+      
+      do {
+	a = (rand_int() & 0x1f);
+      } while (a > maxA);
+      
+      a *= b;
+      
+      if (a > 0) a = -a;
+
+      if (a * b >= 1024) {
+	b >>= 1;
+      }
+     
+      xdb.i[HI] = (b + 1023) << 20;
+      xdb.i[LO] = 0;
+
+      ydb.d = a;
+
+      if (doSubnormals) {
+	if ((xdb.d != 0.0)  && (xdb.d != 1.0) && (ydb.d != 1.0) && (ydb.d != 0.0)) ok = 1;
+      } else {
+    
+	/* Test if we produce a subnormal */
+     
+	zdb.d = pow_rn(xdb.d,ydb.d);
+
+	/* If we produce a subnormal, we restart the procedure */
+
+	if ((zdb.i[HI] & 0xfff00000) != 0) {
+	  /* We are not subnormal and thus okay */
+	  if ((xdb.d != 0.0)  && (xdb.d != 1.0) && (ydb.d != 1.0) && (ydb.d != 0.0)) ok = 1;
+	}
+      }
+    }
+  }
+    
+  /* Assign now x and y */
+
+  *x = xdb.d;
+  *y = ydb.d;
+    
+}
+
+
 
 int main (int argc, char *argv[]){ 
   int i, j, n;
@@ -397,7 +688,17 @@ int main (int argc, char *argv[]){
     crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc,
     mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc,
     libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc,
-    libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc;
+    libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc,
+    libm_dtecSample, crlibm_dtecSample, mpfr_dtecSample, libmcr_dtecSample,
+    libm_dtecMin, crlibm_dtecMin, mpfr_dtecMin, libmcr_dtecMin,
+    libm_dtecMax, crlibm_dtecMax, mpfr_dtecMax, libmcr_dtecMax,
+    libm_dtecSum, crlibm_dtecSum, mpfr_dtecSum, libmcr_dtecSum;
+  double libm_dtecMinX, crlibm_dtecMinX, mpfr_dtecMinX, libmcr_dtecMinX;
+  double libm_dtecMinY, crlibm_dtecMinY, mpfr_dtecMinY, libmcr_dtecMinY;
+  double libm_dtecMaxX, crlibm_dtecMaxX, mpfr_dtecMaxX, libmcr_dtecMaxX;
+  double libm_dtecMaxY, crlibm_dtecMaxY, mpfr_dtecMaxY, libmcr_dtecMaxY;
+
+
 #ifdef   HAVE_MATHLIB_H
   short Original_Mode;
 #endif
@@ -542,6 +843,238 @@ int main (int argc, char *argv[]){
 #ifdef   HAVE_LIBMCR_H
   test_worst_case(testfun_libmcr, i1, i2, &libmcr_dtwc, 0);
 #endif /*HAVE_LIBMCR_H*/
+
+
+  /************* Exact cases of power ****************/
+
+  if (strcmp(function_name,"pow")==0) {
+    /* Generate n exact cases of power, take the timings */
+
+    printf("Power exact cases:\n");
+
+    libm_dtecMin = 4294967295;
+    crlibm_dtecMin = 4294967295;
+    mpfr_dtecMin = 4294967295;
+    libmcr_dtecMin = 4294967295;
+
+    libm_dtecMax = 0;
+    crlibm_dtecMax = 0;
+    mpfr_dtecMax = 0;
+    libmcr_dtecMax = 0;
+
+    libm_dtecSum = 0;
+    crlibm_dtecSum = 0;
+    mpfr_dtecSum = 0;
+    libmcr_dtecSum = 0;
+
+    libm_dtecMaxX = 0.0;
+    crlibm_dtecMaxX = 0.0;
+    mpfr_dtecMaxX = 0.0;
+    libmcr_dtecMaxX = 0.0;
+
+    libm_dtecMinX = 0.0;
+    crlibm_dtecMinX = 0.0;
+    mpfr_dtecMinX = 0.0;
+    libmcr_dtecMinX = 0.0;
+
+
+    for (i=0;i<10 * n;i++) {
+      generate_pow_exact_case(&i1,&i2,1);
+
+      test_worst_case(testfun_libm, i1, i2, &libm_dtecSample, 0);
+      if (libm_dtecSample > libm_dtecMax) {
+	libm_dtecMax = libm_dtecSample;
+	libm_dtecMaxX = i1; libm_dtecMaxY = i2;
+      }
+      if (libm_dtecSample < libm_dtecMin) {
+	libm_dtecMin = libm_dtecSample;
+	libm_dtecMinX = i1; libm_dtecMinY = i2;
+      }
+      libm_dtecSum += libm_dtecSample;
+      test_worst_case(testfun_crlibm, i1, i2, &crlibm_dtecSample, 0);
+      if (crlibm_dtecSample > crlibm_dtecMax) {
+	crlibm_dtecMax = crlibm_dtecSample;
+	crlibm_dtecMaxX = i1; crlibm_dtecMaxY = i2;
+      }
+      if (crlibm_dtecSample < crlibm_dtecMin) {
+	crlibm_dtecMin = crlibm_dtecSample;
+	crlibm_dtecMinX = i1; crlibm_dtecMinY = i2;
+      }
+      crlibm_dtecSum += crlibm_dtecSample;
+#ifdef   HAVE_MPFR_H
+      test_worst_case((double(*)())testfun_mpfr, i1, i2, &mpfr_dtecSample, 1);
+      if (mpfr_dtecSample > mpfr_dtecMax) {
+	mpfr_dtecMax = mpfr_dtecSample;
+	mpfr_dtecMaxX = i1; mpfr_dtecMaxY = i2;
+      }
+      if (mpfr_dtecSample < mpfr_dtecMin) {
+	mpfr_dtecMin = mpfr_dtecSample;
+	mpfr_dtecMinX = i1; mpfr_dtecMinY = i2;
+      }
+      mpfr_dtecSum += mpfr_dtecSample;
+#endif /*HAVE_MPFR_H*/
+#ifdef   HAVE_LIBMCR_H
+      test_worst_case(testfun_libmcr, i1, i2, &libmcr_dtecSample, 0);
+      if (libmcr_dtecSample > libmcr_dtecMax) {
+	libmcr_dtecMax = libmcr_dtecSample;
+	libmcr_dtecMaxX = i1; libmcr_dtecMaxY = i2;
+      }
+      if (libmcr_dtecSample < libmcr_dtecMin) {
+	libmcr_dtecMin = libmcr_dtecSample;
+	libmcr_dtecMinX = i1; libmcr_dtecMinY = i2;
+      }
+
+      libmcr_dtecSum += libmcr_dtecSample;
+#endif /*HAVE_LIBMCR_H*/
+ 
+    }
+
+    printf("LIBM: min = %lld, avg = %f, max = %lld\n",libm_dtecMin,((double) libm_dtecSum)/((double) (10 * n)),libm_dtecMax);
+    printf("Minimum value on:\n");
+    printHexa("x",libm_dtecMinX);
+    printHexa("y",libm_dtecMinY);
+    printf("Maximum value on:\n");
+    printHexa("x",libm_dtecMaxX);
+    printHexa("y",libm_dtecMaxY);
+    printf("CRLIBM: min = %lld, avg = %f, max = %lld\n",crlibm_dtecMin,((double) crlibm_dtecSum)/((double) (10 * n)),crlibm_dtecMax);
+    printf("Minimum value on:\n");
+    printHexa("x",crlibm_dtecMinX);
+    printHexa("y",crlibm_dtecMinY);
+    printf("Maximum value on:\n");
+    printHexa("x",crlibm_dtecMaxX);
+    printHexa("y",crlibm_dtecMaxY);
+#ifdef   HAVE_MPFR_H
+    printf("MPFR: min = %lld, avg = %f, max = %lld\n",mpfr_dtecMin,((double) mpfr_dtecSum)/((double) (10 * n)),mpfr_dtecMax);
+    printf("Minimum value on:\n");
+    printHexa("x",mpfr_dtecMinX);
+    printHexa("y",mpfr_dtecMinY);
+    printf("Maximum value on:\n");
+    printHexa("x",mpfr_dtecMaxX);
+    printHexa("y",mpfr_dtecMaxY);
+#endif /*HAVE_MPFR_H*/
+#ifdef   HAVE_LIBMCR_H
+    printf("LIBMCR: min = %lld, avg = %f, max = %lld\n",libmcr_dtecMin,((double) libmcr_dtecSum)/((double) (10 * n)),libmcr_dtecMax);
+    printf("Minimum value on:\n");
+    printHexa("x",libmcr_dtecMinX);
+    printHexa("y",libmcr_dtecMinY);
+    printf("Maximum value on:\n");
+    printHexa("x",libmcr_dtecMaxX);
+    printHexa("y",libmcr_dtecMaxY);
+#endif /*HAVE_LIBMCR_H*/
+
+    printf("Power exact cases excluding subnormal results:\n");
+
+    libm_dtecMin = 4294967295;
+    crlibm_dtecMin = 4294967295;
+    mpfr_dtecMin = 4294967295;
+    libmcr_dtecMin = 4294967295;
+
+    libm_dtecMax = 0;
+    crlibm_dtecMax = 0;
+    mpfr_dtecMax = 0;
+    libmcr_dtecMax = 0;
+
+    libm_dtecSum = 0;
+    crlibm_dtecSum = 0;
+    mpfr_dtecSum = 0;
+    libmcr_dtecSum = 0;
+
+    libm_dtecMaxX = 0.0;
+    crlibm_dtecMaxX = 0.0;
+    mpfr_dtecMaxX = 0.0;
+    libmcr_dtecMaxX = 0.0;
+
+    libm_dtecMinX = 0.0;
+    crlibm_dtecMinX = 0.0;
+    mpfr_dtecMinX = 0.0;
+    libmcr_dtecMinX = 0.0;
+
+
+    for (i=0;i<10 * n;i++) {
+      generate_pow_exact_case(&i1,&i2,0);
+
+      test_worst_case(testfun_libm, i1, i2, &libm_dtecSample, 0);
+      if (libm_dtecSample > libm_dtecMax) {
+	libm_dtecMax = libm_dtecSample;
+	libm_dtecMaxX = i1; libm_dtecMaxY = i2;
+      }
+      if (libm_dtecSample < libm_dtecMin) {
+	libm_dtecMin = libm_dtecSample;
+	libm_dtecMinX = i1; libm_dtecMinY = i2;
+      }
+      libm_dtecSum += libm_dtecSample;
+      test_worst_case(testfun_crlibm, i1, i2, &crlibm_dtecSample, 0);
+      if (crlibm_dtecSample > crlibm_dtecMax) {
+	crlibm_dtecMax = crlibm_dtecSample;
+	crlibm_dtecMaxX = i1; crlibm_dtecMaxY = i2;
+      }
+      if (crlibm_dtecSample < crlibm_dtecMin) {
+	crlibm_dtecMin = crlibm_dtecSample;
+	crlibm_dtecMinX = i1; crlibm_dtecMinY = i2;
+      }
+      crlibm_dtecSum += crlibm_dtecSample;
+#ifdef   HAVE_MPFR_H
+      test_worst_case((double(*)())testfun_mpfr, i1, i2, &mpfr_dtecSample, 1);
+      if (mpfr_dtecSample > mpfr_dtecMax) {
+	mpfr_dtecMax = mpfr_dtecSample;
+	mpfr_dtecMaxX = i1; mpfr_dtecMaxY = i2;
+      }
+      if (mpfr_dtecSample < mpfr_dtecMin) {
+	mpfr_dtecMin = mpfr_dtecSample;
+	mpfr_dtecMinX = i1; mpfr_dtecMinY = i2;
+      }
+      mpfr_dtecSum += mpfr_dtecSample;
+#endif /*HAVE_MPFR_H*/
+#ifdef   HAVE_LIBMCR_H
+      test_worst_case(testfun_libmcr, i1, i2, &libmcr_dtecSample, 0);
+      if (libmcr_dtecSample > libmcr_dtecMax) {
+	libmcr_dtecMax = libmcr_dtecSample;
+	libmcr_dtecMaxX = i1; libmcr_dtecMaxY = i2;
+      }
+      if (libmcr_dtecSample < libmcr_dtecMin) {
+	libmcr_dtecMin = libmcr_dtecSample;
+	libmcr_dtecMinX = i1; libmcr_dtecMinY = i2;
+      }
+
+      libmcr_dtecSum += libmcr_dtecSample;
+#endif /*HAVE_LIBMCR_H*/
+ 
+    }
+
+    printf("LIBM: min = %lld, avg = %f, max = %lld\n",libm_dtecMin,((double) libm_dtecSum)/((double) (10 * n)),libm_dtecMax);
+    printf("Minimum value on:\n");
+    printHexa("x",libm_dtecMinX);
+    printHexa("y",libm_dtecMinY);
+    printf("Maximum value on:\n");
+    printHexa("x",libm_dtecMaxX);
+    printHexa("y",libm_dtecMaxY);
+    printf("CRLIBM: min = %lld, avg = %f, max = %lld\n",crlibm_dtecMin,((double) crlibm_dtecSum)/((double) (10 * n)),crlibm_dtecMax);
+    printf("Minimum value on:\n");
+    printHexa("x",crlibm_dtecMinX);
+    printHexa("y",crlibm_dtecMinY);
+    printf("Maximum value on:\n");
+    printHexa("x",crlibm_dtecMaxX);
+    printHexa("y",crlibm_dtecMaxY);
+#ifdef   HAVE_MPFR_H
+    printf("MPFR: min = %lld, avg = %f, max = %lld\n",mpfr_dtecMin,((double) mpfr_dtecSum)/((double) (10 * n)),mpfr_dtecMax);
+    printf("Minimum value on:\n");
+    printHexa("x",mpfr_dtecMinX);
+    printHexa("y",mpfr_dtecMinY);
+    printf("Maximum value on:\n");
+    printHexa("x",mpfr_dtecMaxX);
+    printHexa("y",mpfr_dtecMaxY);
+#endif /*HAVE_MPFR_H*/
+#ifdef   HAVE_LIBMCR_H
+    printf("LIBMCR: min = %lld, avg = %f, max = %lld\n",libmcr_dtecMin,((double) libmcr_dtecSum)/((double) (10 * n)),libmcr_dtecMax);
+    printf("Minimum value on:\n");
+    printHexa("x",libmcr_dtecMinX);
+    printHexa("y",libmcr_dtecMinY);
+    printf("Maximum value on:\n");
+    printHexa("x",libmcr_dtecMaxX);
+    printHexa("y",libmcr_dtecMaxY);
+#endif /*HAVE_LIBMCR_H*/
+
+  }
 
     /*************Normal output*************************/
   normal_output("LIBM", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, n);
