@@ -37,7 +37,7 @@ Beware to compile without optimizations
 
 #define N1 20
 
-#define TIMING_ITER 10000
+#define TIMING_ITER 100
 
 #define DETAILED_REPORT 0
 
@@ -878,7 +878,7 @@ int main (int argc, char *argv[]){
     libmcr_dtecMinX = 0.0;
 
 
-    for (i=0;i<10 * n;i++) {
+    for (i=0;i<2* n;i++) {
       generate_pow_exact_case(&i1,&i2,1);
 
       test_worst_case(testfun_libm, i1, i2, &libm_dtecSample, 0);
@@ -929,14 +929,14 @@ int main (int argc, char *argv[]){
  
     }
 
-    printf("LIBM: min = %lld, avg = %f, max = %lld\n",libm_dtecMin,((double) libm_dtecSum)/((double) (10 * n)),libm_dtecMax);
+    printf("LIBM: min = %lld, avg = %f, max = %lld\n",libm_dtecMin,((double) libm_dtecSum)/((double) (2 * n)),libm_dtecMax);
     printf("Minimum value on:\n");
     printHexa("x",libm_dtecMinX);
     printHexa("y",libm_dtecMinY);
     printf("Maximum value on:\n");
     printHexa("x",libm_dtecMaxX);
     printHexa("y",libm_dtecMaxY);
-    printf("CRLIBM: min = %lld, avg = %f, max = %lld\n",crlibm_dtecMin,((double) crlibm_dtecSum)/((double) (10 * n)),crlibm_dtecMax);
+    printf("CRLIBM: min = %lld, avg = %f, max = %lld\n",crlibm_dtecMin,((double) crlibm_dtecSum)/((double) (2 * n)),crlibm_dtecMax);
     printf("Minimum value on:\n");
     printHexa("x",crlibm_dtecMinX);
     printHexa("y",crlibm_dtecMinY);
@@ -944,7 +944,7 @@ int main (int argc, char *argv[]){
     printHexa("x",crlibm_dtecMaxX);
     printHexa("y",crlibm_dtecMaxY);
 #ifdef   HAVE_MPFR_H
-    printf("MPFR: min = %lld, avg = %f, max = %lld\n",mpfr_dtecMin,((double) mpfr_dtecSum)/((double) (10 * n)),mpfr_dtecMax);
+    printf("MPFR: min = %lld, avg = %f, max = %lld\n",mpfr_dtecMin,((double) mpfr_dtecSum)/((double) (2 * n)),mpfr_dtecMax);
     printf("Minimum value on:\n");
     printHexa("x",mpfr_dtecMinX);
     printHexa("y",mpfr_dtecMinY);
@@ -953,7 +953,7 @@ int main (int argc, char *argv[]){
     printHexa("y",mpfr_dtecMaxY);
 #endif /*HAVE_MPFR_H*/
 #ifdef   HAVE_LIBMCR_H
-    printf("LIBMCR: min = %lld, avg = %f, max = %lld\n",libmcr_dtecMin,((double) libmcr_dtecSum)/((double) (10 * n)),libmcr_dtecMax);
+    printf("LIBMCR: min = %lld, avg = %f, max = %lld\n",libmcr_dtecMin,((double) libmcr_dtecSum)/((double) (2 * n)),libmcr_dtecMax);
     printf("Minimum value on:\n");
     printHexa("x",libmcr_dtecMinX);
     printHexa("y",libmcr_dtecMinY);
@@ -990,7 +990,7 @@ int main (int argc, char *argv[]){
     libmcr_dtecMinX = 0.0;
 
 
-    for (i=0;i<10 * n;i++) {
+    for (i=0;i<2 * n;i++) {
       generate_pow_exact_case(&i1,&i2,0);
 
       test_worst_case(testfun_libm, i1, i2, &libm_dtecSample, 0);
@@ -1041,14 +1041,14 @@ int main (int argc, char *argv[]){
  
     }
 
-    printf("LIBM: min = %lld, avg = %f, max = %lld\n",libm_dtecMin,((double) libm_dtecSum)/((double) (10 * n)),libm_dtecMax);
+    printf("LIBM: min = %lld, avg = %f, max = %lld\n",libm_dtecMin,((double) libm_dtecSum)/((double) (2 * n)),libm_dtecMax);
     printf("Minimum value on:\n");
     printHexa("x",libm_dtecMinX);
     printHexa("y",libm_dtecMinY);
     printf("Maximum value on:\n");
     printHexa("x",libm_dtecMaxX);
     printHexa("y",libm_dtecMaxY);
-    printf("CRLIBM: min = %lld, avg = %f, max = %lld\n",crlibm_dtecMin,((double) crlibm_dtecSum)/((double) (10 * n)),crlibm_dtecMax);
+    printf("CRLIBM: min = %lld, avg = %f, max = %lld\n",crlibm_dtecMin,((double) crlibm_dtecSum)/((double) (2 * n)),crlibm_dtecMax);
     printf("Minimum value on:\n");
     printHexa("x",crlibm_dtecMinX);
     printHexa("y",crlibm_dtecMinY);
@@ -1056,7 +1056,7 @@ int main (int argc, char *argv[]){
     printHexa("x",crlibm_dtecMaxX);
     printHexa("y",crlibm_dtecMaxY);
 #ifdef   HAVE_MPFR_H
-    printf("MPFR: min = %lld, avg = %f, max = %lld\n",mpfr_dtecMin,((double) mpfr_dtecSum)/((double) (10 * n)),mpfr_dtecMax);
+    printf("MPFR: min = %lld, avg = %f, max = %lld\n",mpfr_dtecMin,((double) mpfr_dtecSum)/((double) (2 * n)),mpfr_dtecMax);
     printf("Minimum value on:\n");
     printHexa("x",mpfr_dtecMinX);
     printHexa("y",mpfr_dtecMinY);
@@ -1065,7 +1065,7 @@ int main (int argc, char *argv[]){
     printHexa("y",mpfr_dtecMaxY);
 #endif /*HAVE_MPFR_H*/
 #ifdef   HAVE_LIBMCR_H
-    printf("LIBMCR: min = %lld, avg = %f, max = %lld\n",libmcr_dtecMin,((double) libmcr_dtecSum)/((double) (10 * n)),libmcr_dtecMax);
+    printf("LIBMCR: min = %lld, avg = %f, max = %lld\n",libmcr_dtecMin,((double) libmcr_dtecSum)/((double) (2 * n)),libmcr_dtecMax);
     printf("Minimum value on:\n");
     printHexa("x",libmcr_dtecMinX);
     printHexa("y",libmcr_dtecMinY);
