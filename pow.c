@@ -191,7 +191,7 @@ void exp2_12(int *E, double* exp2h, double* exp2l, double xh, double xl) {
 
   /* We start by computing a floating-point and integer representation of the 
      integer nearest to (2^(12) * xh) 
-     Since the integer is representable on at most 11 bits, we can use the 
+     Since the integer is representable on at most 23 bits, we can use the 
      shift method 
   */
 
@@ -216,7 +216,7 @@ void exp2_12(int *E, double* exp2h, double* exp2l, double xh, double xl) {
   /* Polynomial approximation */
 
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-  q = z * FMA(FMA(FMA(exp2coeff4,z,exp2coeff3),z,exp2coeff2),z,exp2coeff2);
+  q = z * FMA(FMA(FMA(exp2coeff4,z,exp2coeff3),z,exp2coeff2),z,exp2coeff1);
 #else
   q = z * (exp2coeff1 + z * (exp2coeff2 + z * (exp2coeff3 + z * exp2coeff4)));
 #endif
@@ -1217,7 +1217,6 @@ double pow_rn(double x, double y) {
   /* Compute 2^(y * log2(x)) as a double-double and an exponent */
 
   exp2_12(&E,&powh,&powl,ylogxh,ylogxl);
-
 
   /* Final overflow and underflow handling
      Rounding test
