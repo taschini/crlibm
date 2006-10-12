@@ -7,7 +7,7 @@
 
 
 #define DEBUG 0
-#define DEBUG2 0
+#define DEBUG2 1
 
 void log2_12(double* logxh, double* logxl, double x) {
   int E, index;
@@ -1386,7 +1386,7 @@ double pow_rn(double x, double y) {
     
     /* Case (ii) not detected, check now for case (i) */
 
-    tmp1 = miulp - ABS(delta);
+    tmp1 = ABS(miulp - ABS(delta));
     if (tmp1 <= roundingBound) {
       /* Case (i) detected 
 	 
