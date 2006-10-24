@@ -99,7 +99,7 @@ epsilon_round = (logz-PolyLog1pz)/PolyLog1pz;
 /\  epsilon_approx in [-_epsilonApproxQuick, _epsilonApproxQuick]
 /\  (PolyLog1pz - Log1pz) in [-_deltaApproxQuick, _deltaApproxQuick]
 ->
-epsilon in [-1b-61, 1b-61]
+epsilon in [-1b-63, 1b-63]
 }
 
 epsilon -> epsilon_approx + epsilon_round + epsilon_approx*epsilon_round;

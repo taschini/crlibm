@@ -68,12 +68,22 @@ printf("zminmin = -2^(%2f)   zmaxmax = 2^(%2f)\n", log2(-zminmin), log2(zmaxmax)
 PolyDegreeQuick:=7:
 
 #Keep -zmaxmax..zmaxmax to keep c1=1, which is useful in the proof
+
+if(1+1=3) then # The polynomial used to be computed here,
 polyQuick:= polyExact2Ext(x  * numapprox[minimax](  log(1+x)/x,  x=-zmaxmax..zmaxmax,  [PolyDegreeQuick-1,0], 1 ,  'deltaApprox'), 0):
 
 epsilonApproxQuick := numapprox[infnorm]( 1-polyQuick/log(1+x), x=zminmin..zmaxmax):
-printf("   approximation rel error for the quick phase is 2^(%2f)\n", log2(epsilonApproxQuick) ) :
 deltaApproxQuick := numapprox[infnorm]( polyQuick-log(1+x), x=zminmin..zmaxmax):
-printf("   approximation abs error for the quick phase is 2^(%2f)\n", log2(deltaApproxQuick) ) :
+else
+# magical polynomial given by Sylvain's tool
+polyQuick := x * (1 + (x * ((-0.50000000000000000000000000000000000000000000000000000000000000e0) + (x * (0.33333333333333342585191871876304503530263900756835937500000000e0 + (x * ((-0.24999999998423708125194764306797878816723823547363281250000000e0) + (x * (0.19999999996748479835773082413652446120977401733398437500000000e0 + (x * ((-0.16666957260954737285452154083031928166747093200683593750000000e0) + (x * 0.14286056338555042088955815415829420089721679687500000000000000e0)))))))))))):
+
+# validated infinite norms given by Christoph's tool
+epsilonApproxQuick := 2^(-64.119667587220):
+deltaApproxQuick := 2^(-72.230387592106):
+fi:
+printf(" rel approximation error for the quick phase is 2^(%2f)\n", log2(epsilonApproxQuick) ) :
+printf(" abs approximation error for the quick phase is 2^(%2f)\n", log2(deltaApproxQuick) ) :
 
 # For the Paterson/Stockmayer method
 polyQuick0:= x  * numapprox[minimax](  log(1+x)/x,  x=-zmaxmax..zmaxmax,  [PolyDegreeQuick-1,0], 1 ,  'deltaApprox'):

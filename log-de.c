@@ -168,29 +168,31 @@ double log_rn(double x) {
      logirh = argredtable[index].logirh;
      z = y*r - 1. ; /* even without an FMA, all exact */
 
+#if 0
    if(E==0)
      roundtestmask=ACCURATE_TO_61_BITS;
     else
+      roundtestmask=ACCURATE_TO_61_BITS;
+#else
       roundtestmask=ACCURATE_TO_62_BITS;
+#endif
       
 #ifdef ESTRIN
   /* Estrin polynomial evaluation  */
   double_ext z2,z4, p01, p23, p45, p67, p03, p47,p07;
     
-  z2  = z*z;              p67 = c6 + z*c7;       p45 = c4 + z*c5;      p23 = c2 + z*c3;    p01 = logirh + z;
-  z4  = z2*z2;            p47 = p45 + z2*p67;    p03 = p01 + z2*p23; 
+  z2  = z*z;      p67 = c6 + z*c7;     p45 = c4 + z*c5;   p23 = c2 + z*c3;    p01 = logirh + z;
+  z4  = z2*z2;    p47 = p45 + z2*p67;  p03 = p01 + z2*p23; 
   p07 = p03 + z4*p47;
   logde = p07 + E*log2H;
 #endif
   
-#ifdef PATTERSON
+#ifdef PATERSON
   double_ext z4,z2,t0,t1,t2,t3,t4,t5,t6,t7,t8;
   
-  z2 = z * z;        t1 = z + ps_alpha;        t2 = z + ps_beta;        t3 = c3 * z + c2;        t4 = z + logirh;
-  z4 = z2 * z2;      t5 = z2 + ps_c;           t6 = t3 * z2 + t4;    
-  
-  t7 = t5 * t1 + t2; t0 = z4 * c7;             t8 = t7 * t0 + t6; 
-  
+  z2 = z * z;        t1 = z + ps_alpha;   t2 = z + ps_beta;  t3 = c3 * z + c2;  t4 = z + logirh;
+  z4 = z2 * z2;      t5 = z2 + ps_c;      t6 = t3 * z2 + t4;    
+  t7 = t5 * t1 + t2; t0 = z4 * c7;        t8 = t7 * t0 + t6; 
   logde = t8 + E*log2H;
 #endif
   
@@ -312,7 +314,7 @@ double log_rd(double x) {
   logde = p07 + E*log2H;
 #endif
   
-#ifdef PATTERSON
+#ifdef PATERSON
   double_ext z4,z2,t0,t1,t2,t3,t4,t5,t6,t7,t8;
   
   z2 = z * z;        t1 = z + ps_alpha;        t2 = z + ps_beta;        t3 = c3 * z + c2;        t4 = z + logirh;
@@ -441,7 +443,7 @@ double log_ru(double x) {
   logde = p07 + E*log2H;
 #endif
   
-#ifdef PATTERSON
+#ifdef PATERSON
   double_ext z4,z2,t0,t1,t2,t3,t4,t5,t6,t7,t8;
   
   z2 = z * z;        t1 = z + ps_alpha;        t2 = z + ps_beta;        t3 = c3 * z + c2;        t4 = z + logirh;

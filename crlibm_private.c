@@ -57,6 +57,8 @@ unsigned long long crlibm_init() {
 #ifndef CRLIBM_TYPEOS_BSD
 #if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
   unsigned short oldcw, cw;
+
+#if 0 /* gcc */
   /* save old state */
   _FPU_GETCW(oldcw);
   /* Set FPU flags to use double, not double extended, 
@@ -64,6 +66,11 @@ unsigned long long crlibm_init() {
   cw = (_FPU_DEFAULT & ~_FPU_EXTENDED)|_FPU_DOUBLE;
   _FPU_SETCW(cw);
   return (unsigned long long) oldcw;
+#else  /* Sun Studio  */
+  __asm__ ("movw    $639, -22(%ebp)");
+  __asm__ ("fldcw -22(%ebp)");
+#endif
+
 
 #elif defined(CRLIBM_TYPECPU_ITANIUM) 
   /* On Itanium we assume that SF2 is used fo speculation, and use only SF3 */

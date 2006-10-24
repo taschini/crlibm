@@ -183,6 +183,9 @@ double rand_for_log(){
   /* then the high bits of the mantissa, and the sign bit */
   result.i[HI]=  rand_int() & 0x7fffffff;
   /* printf("x = %1.5e\n", result.d);*/
+#if 0 /* to avoid NaNs and subnormals which kill fi_lib */ 
+  if(0x7ff==result.i[HI]>>20  ||  0==result.i[HI]>>20) return rand_for_log();
+#endif
   return result.d;
 }
 

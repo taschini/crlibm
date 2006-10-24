@@ -75,7 +75,7 @@ epsilon = (logz - Mlogz)/Mlogz;
 /\  Logirhl - Logir in [-1b-129, 1b-129]  
 /\  (PolyLog1pz - Log1pz) in [-_deltaApproxQuick, _deltaApproxQuick]
 ->
-epsilon in [-1b-62, 1b-62]
+epsilon in [-1b-63, 1b-63]
 
 }
 

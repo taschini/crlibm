@@ -1,6 +1,12 @@
 /* 
 Beware to compile without optimizations
 
+How to link with fi_lib:
+
+gcc  -O0 -std=c99    -o crlibm_testperf_interval  test_perf-interval.o test_common.o ../fi_lib.a ../libcrlibm.a -lm -z muldefs
+
+However there is a modification to make to rand_for_log, see in this function.
+
 */
 #include <stdio.h>
 #include <stdlib.h>
