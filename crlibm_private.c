@@ -58,7 +58,7 @@ unsigned long long crlibm_init() {
 #if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
   unsigned short oldcw, cw;
 
-#if 0 /* gcc */
+#if 1 /* gcc */
   /* save old state */
   _FPU_GETCW(oldcw);
   /* Set FPU flags to use double, not double extended, 
