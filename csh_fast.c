@@ -239,8 +239,13 @@ double cosh_rn(double x){
 
     do_cosh_accurate(&exponent, &resh,&resm, &resl, x);
     RoundToNearest3(&(res.d), resh, resm, resl);
-    res.i[HI] += (exponent-1) << 20; /* division by 2 done here*/  
-    return res.d;
+
+    /* Now we have to set the exponent of res as exponent -1 (division
+       by 2). However, as res may sometimes end up infinite, we first
+       set the exponent to exponent -11 and then multiply by 2^10,
+       which will cater for overflow  */  
+    res.i[HI] += (exponent-11) << 20;  
+    return 1024. * res.d;
   }  
 }
 
@@ -291,8 +296,13 @@ double cosh_ru(double x){
 
     do_cosh_accurate(&exponent, &resh,&resm, &resl, x);
     RoundUpwards3(&(res.d), resh,resm,resl);
-    res.i[HI] += (exponent-1) << 20; /* division by 2 done here*/  
-    return res.d;
+
+    /* Now we have to set the exponent of res as exponent -1 (division
+       by 2). However, as res may sometimes end up infinite, we first
+       set the exponent to exponent -11 and then multiply by 2^10,
+       which will cater for overflow  */  
+    res.i[HI] += (exponent-11) << 20;  
+    return 1024. * res.d;
   }  
 }
 
@@ -337,8 +347,13 @@ double cosh_rd(double x){
 
     do_cosh_accurate(&exponent, &resh,&resm, &resl, x);
     RoundDownwards3(&(res.d), resh,resm,resl);
-    res.i[HI] += (exponent-1) << 20; /* division by 2 done here*/  
-    return res.d;
+
+    /* Now we have to set the exponent of res as exponent -1 (division
+       by 2). However, as res may sometimes end up infinite, we first
+       set the exponent to exponent -11 and then multiply by 2^10,
+       which will cater for overflow  */  
+    res.i[HI] += (exponent-11) << 20;  
+    return 1024. * res.d;
   }  
 }
 
@@ -576,8 +591,13 @@ double sinh_rn(double x){
 
     do_sinh_accurate(&exponent, &resh,&resm, &resl, x);
     RoundToNearest3(&(res.d), resh, resm, resl);
-    res.i[HI] += (exponent-1) << 20; /* division by 2 done here*/  
-    return res.d;
+
+    /* Now we have to set the exponent of res as exponent -1 (division
+       by 2). However, as res may sometimes end up infinite, we first
+       set the exponent to exponent -11 and then multiply by 2^10,
+       which will cater for overflow  */  
+    res.i[HI] += (exponent-11) << 20;  
+    return 1024. * res.d;
   }  
 
 }
@@ -625,8 +645,13 @@ double sinh_ru(double x){
 
     do_sinh_accurate(&exponent, &resh,&resm, &resl, x);
     RoundUpwards3(&(res.d), resh,resm,resl);
-    res.i[HI] += (exponent-1) << 20; /* division by 2 done here*/  
-    return res.d;
+
+    /* Now we have to set the exponent of res as exponent -1 (division
+       by 2). However, as res may sometimes end up infinite, we first
+       set the exponent to exponent -11 and then multiply by 2^10,
+       which will cater for overflow  */  
+    res.i[HI] += (exponent-11) << 20;  
+    return 1024. * res.d;
   }  
 }
 
@@ -670,8 +695,13 @@ double sinh_rd(double x){
 
     do_sinh_accurate(&exponent, &resh,&resm, &resl, x);
     RoundDownwards3(&(res.d), resh,resm,resl);
-    res.i[HI] += (exponent-1) << 20; /* division by 2 done here*/  
-    return res.d;
+
+    /* Now we have to set the exponent of res as exponent -1 (division
+       by 2). However, as res may sometimes end up infinite, we first
+       set the exponent to exponent -11 and then multiply by 2^10,
+       which will cater for overflow  */  
+    res.i[HI] += (exponent-11) << 20;  
+    return 1024. * res.d;
   }  
 }
 

@@ -4,7 +4,7 @@
 #define MAXINDEX 53
 #define INDEXMASK 127
 static const double two64 = 1.84467440737095516160000000000000000000000000000000e+19 ;
-#if 0
+#if 1
 #define ESTRIN
 #else
 #define PATERSON
