@@ -89,10 +89,10 @@ double log_rn(double x) {
 #if defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64)
   db_number xdb;
   int E, index, index0, roundtestmask;
-#else
+#else /* assuming Itanium here */
   int64_t  E, i;
   uint64_t index, roundtestmask;
-  double_ext c1,c2,c3,c4,c5,c6,c7;
+  double c2,c3,c4,c5,c6,c7;
 #endif
 
 
