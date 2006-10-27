@@ -37,7 +37,7 @@ Beware to compile without optimizations
 
 #define N1 20
 
-#define TIMING_ITER 100
+#define TIMING_ITER 30
 
 #define DETAILED_REPORT 0
 

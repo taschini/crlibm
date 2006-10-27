@@ -108,8 +108,8 @@ void log2_13(double* logxh, double* logxm, double* logxl, double x) {
   /* Polynomial approximation */
  
 #if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-  highPoly = zh * FMA(FMA(FMA(FMA(log212coeff15h,zh,log213coeff14h),zh,log213coeff13h),
-                                                 zh,log213coeff12h),zh,log212coeff11h);
+  highPoly = zh * FMA(FMA(FMA(FMA(log213coeff15h,zh,log213coeff14h),zh,log213coeff13h),
+                                                 zh,log213coeff12h),zh,log213coeff11h);
 #else
   highPoly = zh * (log213coeff11h + zh * (log213coeff12h + zh * (log213coeff13h + 
 	     zh * (log213coeff14h + zh *  log213coeff15h ))));
