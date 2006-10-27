@@ -280,6 +280,74 @@
     Add12((*(resm)),(*(resl)),_t1,(bl));                        \
 }
 
+/* Add213
+
+   Procedure for adding a double double number to a double 
+   number resulting in a triple double number
+
+
+   Arguments:       a double double number ah, al 
+                    a double number b
+   
+   Results:         a triple double number resh, resm, resl
+
+   Preconditions:   abs(b) <= 2^(-2) * abs(ah)
+		    abs(al) <= 2^(-53) * abs(ah)
+		    
+   Guarantees:      resm and resl are non-overlapping
+                    resm = round-to-nearest(resm + resl)
+		    abs(resm) <= 2^(-\gamma) * abs(resh)
+		    where
+		    
+		    \gamma >= 52
+
+		    resh+resm+resl=(a + (bh+bm+bl)) exactly
+		    
+
+   Details:         resh, resm and resl are considered to be pointers
+*/
+#define Add213(resh, resm, resl, ah, al, b)                     \
+{                                                               \
+    double _t1;                                                 \
+                                                                \
+    Add12((*(resh)),_t1,(ah),(b));                              \
+    Add12Cond((*(resm)),(*(resl)),(al),(b));                    \
+}
+
+
+
+/* Add23
+
+   Procedure for adding a double-double number to a double-double 
+   number resulting in a triple double number
+
+
+   Arguments:       a double double number ah, al
+                    a double double number bh, bl
+   
+   Results:         a triple double number resh, resm, resl
+
+   Preconditions:   abs(bh) <= 2^(-2) * abs(ah)
+                    abs(al) <= 2^(-53) * abs(ah)
+		    abs(bl) <= 2^(-53) * abs(bh)
+		    
+   Guarantees:      TO DO
+		    
+
+   Details:         resh, resm and resl are considered to be pointers
+*/
+#define Add23(resh, resm, resl, ah, al, bh, bl)                 \
+{                                                               \
+    double _t1, _t2, _t3, _t4, _t5, _t6;                        \
+                                                                \
+    Add12((*(resh)),_t1,(ah),(bh));                             \
+    Add12Cond(_t2,_t3,(al),(bl));                               \
+    Add12Cond(_t4,_t5,_t1,_t2);                                 \
+    _t6 = _t3 + _t5;                                            \
+    Add12Cond((*(resm)),(*(resl)),_t4,_t6);                     \
+}
+
+
 
 
 /* Add133

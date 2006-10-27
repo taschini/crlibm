@@ -719,6 +719,23 @@ double mh, ml;                                        \
     Add12((*(resh)),(*(resl)),_t3,_t10);             \
 }
 
+#define Add122(resh,resl,a,bh,bl)                    \
+{                                                    \
+    double _t1, _t2, _t3;                            \
+                                                     \
+    Add12(_t1,_t2,(a),(bh));                         \
+    _t3 = _t2 + (bl);                                \
+    Add12((*(resh)),(*(resl)),_t1,_t3);              \
+}    
+
+#define Add212(resh,resl,ah,al,b)                    \
+{                                                    \
+    double _t1, _t2, _t3;                            \
+                                                     \
+    Add12(_t1,_t2,(ah),b);                           \
+    _t3 = _t2 + (al);                                \
+    Add12((*(resh)),(*(resl)),_t1,_t3);              \
+}
 
 
 /* In the following the one-line computation of _cl was split so that
