@@ -169,6 +169,10 @@ static void test_without_cache(const char *name,
 			unsigned long long *lib_dtmin,
 			unsigned long long *lib_dtmax,
 			unsigned long long *lib_dtsum,
+			double *lib_dtmini1,
+			double *lib_dtmini2,
+			double *lib_dtmaxi1,
+			double *lib_dtmaxi2,
 			int func_type){
   double result;
   unsigned long long dt, dtmin;
@@ -181,6 +185,7 @@ static void test_without_cache(const char *name,
   mpfr_t mp_res, mp_inpt;
   mpfr_t mp_inpt2; /* For the pow function */
   int inexact;
+  double dtmini1, dtmini2;
 
   mpfr_init2(mp_res,  53);
   mpfr_init2(mp_inpt, 53);
@@ -242,11 +247,23 @@ static void test_without_cache(const char *name,
       }
 
       dt = TBX_TICK_RAW_DIFF(t1, t2)-tbx_time;
-      if (dt<dtmin)  dtmin=dt;
+      if (dt<dtmin)  {
+	dtmin=dt;
+	dtmini1 = i1;
+	dtmini2 = i2;
+      }
     }
     *lib_dtsum+=dtmin;
-    if (dtmin<*lib_dtmin)  *lib_dtmin=dtmin;
-    if (dtmin>*lib_dtmax)  *lib_dtmax=dtmin;
+    if (dtmin<*lib_dtmin)  {
+      *lib_dtmin=dtmin;
+      *lib_dtmini1 = dtmini1;
+      *lib_dtmini2 = dtmini2;
+    }
+    if (dtmin>*lib_dtmax)  {
+      *lib_dtmax=dtmin;
+      *lib_dtmaxi1 = dtmini1;
+      *lib_dtmaxi2 = dtmini2;
+    }
 #if      DETAILED_REPORT
     printf("\n input=%1.15e\tT%s=%lld", i1, name, dtmin);
 #endif /*DETAILED_REPORT*/
@@ -361,10 +378,29 @@ static void normal_output(const char *name,
 		   unsigned long long lib_dtmax,
 		   unsigned long long lib_dtsum,
 		   unsigned long long lib_dtwc,
-		   int n){
+		   double lib_dtmini1, 
+		   double lib_dtmini2, 
+		   double lib_dtmaxi1,
+		   double lib_dtmaxi2,  
+		   int n, int args){
+  db_number dtmini1, dtmini2, dtmaxi1, dtmaxi2;
+
+  dtmini1.d = lib_dtmini1;
+  dtmini2.d = lib_dtmini2;
+  dtmaxi1.d = lib_dtmaxi1;
+  dtmaxi2.d = lib_dtmaxi2;
+
   if(testfun!=NULL) { /* some functions are missing in libultim (cosh, ...  */
-    printf("\n%s\nTmin = %lld ticks,\t Tmax = %lld ticks\t avg = %f\tT worst case = %lld\n",
-	   name, lib_dtmin, lib_dtmax, ((double)lib_dtsum) / ((double) n), lib_dtwc);
+    if (args == 1) {
+      printf("\n%s\nTmin = %lld ticks (0x%08x%08x),\t Tmax = %lld ticks (0x%08x%08x),\t avg = %f\tT worst case = %lld\n",
+	     name, lib_dtmin, dtmini1.i[HI], dtmini1.i[LO], lib_dtmax, dtmaxi1.i[HI], dtmaxi1.i[LO], 
+	     ((double)lib_dtsum) / ((double) n), lib_dtwc);
+    } else {
+      printf("\n%s\nTmin = %lld ticks (0x%08x%08x 0x%08x%08x),\t Tmax = %lld ticks (0x%08x%08x 0x%08x%08x),\t avg = %f\tT worst case = %lld\n",
+	     name, lib_dtmin, dtmini1.i[HI], dtmini1.i[LO], dtmini2.i[HI], dtmini2.i[LO], 
+	     lib_dtmax, dtmaxi1.i[HI], dtmaxi1.i[LO], dtmaxi2.i[HI], dtmaxi2.i[LO], 
+	     ((double)lib_dtsum) / ((double) n), lib_dtwc);
+    }
   }
 }
 
@@ -693,6 +729,9 @@ int main (int argc, char *argv[]){
     libm_dtecMin, crlibm_dtecMin, mpfr_dtecMin, libmcr_dtecMin,
     libm_dtecMax, crlibm_dtecMax, mpfr_dtecMax, libmcr_dtecMax,
     libm_dtecSum, crlibm_dtecSum, mpfr_dtecSum, libmcr_dtecSum;
+  double libm_dtmini1,libm_dtmini2,crlibm_dtmini1,crlibm_dtmini2,libmcr_dtmini1,libmcr_dtmini2,
+    mpfr_dtmini1, mpfr_dtmini2, libm_dtmaxi1, libm_dtmaxi2,crlibm_dtmaxi1,crlibm_dtmaxi2,libmcr_dtmaxi1,libmcr_dtmaxi2,
+    mpfr_dtmaxi1, mpfr_dtmaxi2, libultim_dtmini1,libultim_dtmini2, libultim_dtmaxi1,libultim_dtmaxi2;
   double libm_dtecMinX, crlibm_dtecMinX, mpfr_dtecMinX, libmcr_dtecMinX;
   double libm_dtecMinY, crlibm_dtecMinY, mpfr_dtecMinY, libmcr_dtecMinY;
   double libm_dtecMaxX, crlibm_dtecMaxX, mpfr_dtecMaxX, libmcr_dtecMaxX;
@@ -798,18 +837,18 @@ int main (int argc, char *argv[]){
       i1 = (*((double (*)(double *))randfun))(&i2);
     }
     
-    test_without_cache("libm", testfun_libm, i1, i2, &libm_dtmin, &libm_dtmax, &libm_dtsum, 0);
-    test_without_cache("crlibm", testfun_crlibm, i1, i2, &crlibm_dtmin, &crlibm_dtmax, &crlibm_dtsum, 0);
+    test_without_cache("libm", testfun_libm, i1, i2, &libm_dtmin, &libm_dtmax, &libm_dtsum, &libm_dtmini1, &libm_dtmini2, &libm_dtmaxi1, &libm_dtmaxi2, 0);
+    test_without_cache("crlibm", testfun_crlibm, i1, i2, &crlibm_dtmin, &crlibm_dtmax, &crlibm_dtsum, &crlibm_dtmini1, &crlibm_dtmini2, &crlibm_dtmaxi1, &crlibm_dtmaxi2, 0);
 #ifdef   HAVE_MATHLIB_H
     Original_Mode = Init_Lib(); 
-    test_without_cache("ultim", testfun_libultim, i1, i2, &libultim_dtmin, &libultim_dtmax, &libultim_dtsum, 0);
+    test_without_cache("ultim", testfun_libultim, i1, i2, &libultim_dtmin, &libultim_dtmax, &libultim_dtsum, &libultim_dtmini1, &libultim_dtmini2, &libultim_dtmaxi1, &libultim_dtmaxi2, 0);
     Exit_Lib(Original_Mode);
 #endif /*HAVE_MATHLIB_H*/
 #ifdef   HAVE_LIBMCR_H
-    test_without_cache("libmcr", testfun_libmcr, i1, i2, &libmcr_dtmin, &libmcr_dtmax, &libmcr_dtsum, 0);
+    test_without_cache("libmcr", testfun_libmcr, i1, i2, &libmcr_dtmin, &libmcr_dtmax, &libmcr_dtsum, &libmcr_dtmini1, &libmcr_dtmini2, &libmcr_dtmaxi1, &libmcr_dtmaxi2, 0);
 #endif /*HAVE_LIBMCR_H*/
 #ifdef   HAVE_MPFR_H
-    test_without_cache("mpfr", (double(*)()) testfun_mpfr, i1, i2, &mpfr_dtmin, &mpfr_dtmax, &mpfr_dtsum, 1);
+    test_without_cache("mpfr", (double(*)()) testfun_mpfr, i1, i2, &mpfr_dtmin, &mpfr_dtmax, &mpfr_dtsum, &mpfr_dtmini1, &mpfr_dtmini2, &mpfr_dtmaxi1, &mpfr_dtmaxi2, 1);
 #endif /*HAVE_MPFR_H*/
   } 
 
@@ -1077,17 +1116,17 @@ int main (int argc, char *argv[]){
   }
 
     /*************Normal output*************************/
-  normal_output("LIBM", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, n);
+  normal_output("LIBM", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, libm_dtmini1, libm_dtmini2, libm_dtmaxi1, libm_dtmaxi2, n, nbarg);
 #ifdef   HAVE_MPFR_H
-  normal_output("MPFR", (double(*)())testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
+  normal_output("MPFR", (double(*)())testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, mpfr_dtmini1, mpfr_dtmini2, mpfr_dtmaxi1, mpfr_dtmaxi2, n, nbarg);
 #endif /*HAVE_MPFR_H*/
 #ifdef   HAVE_MATHLIB_H
-  normal_output("IBM", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);
+  normal_output("IBM", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, libultim_dtmini1, libultim_dtmini2, libultim_dtmaxi1, libultim_dtmaxi2, n, nbarg);
 #endif /*HAVE_MATHLIB_H*/
 #ifdef   HAVE_LIBMCR_H
-  normal_output("SUN", testfun_libmcr, libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, n);
+  normal_output("SUN", testfun_libmcr, libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, libmcr_dtmini1, libmcr_dtmini2, libmcr_dtmaxi1, libmcr_dtmaxi2, n, nbarg);
 #endif /*HAVE_LIBMCR_H*/
-  normal_output("CRLIBM", testfun_crlibm, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, n);
+  normal_output("CRLIBM", testfun_crlibm, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, crlibm_dtmini1, crlibm_dtmini2, crlibm_dtmaxi1, crlibm_dtmaxi2, n, nbarg);
 
 
   /******************* Latex output ****************/
