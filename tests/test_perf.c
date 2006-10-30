@@ -176,6 +176,7 @@ static void test_without_cache(const char *name,
 			int func_type){
   double result;
   unsigned long long dt, dtmin;
+  double dtmini1, dtmini2;
   tbx_tick_t   t1, t2; 
   int j;
 #ifdef TIMING_USES_GETTIMEOFDAY
@@ -185,7 +186,6 @@ static void test_without_cache(const char *name,
   mpfr_t mp_res, mp_inpt;
   mpfr_t mp_inpt2; /* For the pow function */
   int inexact;
-  double dtmini1, dtmini2;
 
   mpfr_init2(mp_res,  53);
   mpfr_init2(mp_inpt, 53);
