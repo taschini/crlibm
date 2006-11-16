@@ -310,38 +310,39 @@ fd:=fopen(filename, WRITE, TEXT):
 fprintf(fd, "#!/bin/sh\n"):
 fprintf(fd, "# You probably need to edit the path to the gappa executable\n"):
 fprintf(fd, "GAPPA=~/local/src/gappa/src/gappa\n"):
+fprintf(fd, "CRLIBMDIR=../..\n"):
 
 fprintf(fd, "echo Accurate phase, case E=0, index=0: 1>&2\n"):
-fprintf(fd, "sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de/log-de-acc-index0-E0.gappa | $GAPPA \n"):
+fprintf(fd, "sed  -f $CRLIBMDIR/maple/TEMPLOG/polynomials.sed  -f $CRLIBMDIR/maple/TEMPLOG/log-de_0.sed $CRLIBMDIR/gappa/log-de/log-de-acc-index0-E0.gappa | $GAPPA \n"):
 
 fprintf(fd, "echo Accurate phase, case E!=0, index=0 1>&2\n"):
-fprintf(fd, "sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de/log-de-acc-index0-E1N.gappa | $GAPPA \n"):
+fprintf(fd, "sed  -f $CRLIBMDIR/maple/TEMPLOG/polynomials.sed  -f $CRLIBMDIR/maple/TEMPLOG/log-de_0.sed $CRLIBMDIR/gappa/log-de/log-de-acc-index0-E1N.gappa | $GAPPA \n"):
 
 fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo Accurate phase, case E=0, index=$num 1>&2\n"):
-fprintf(fd, "  sed -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de/log-de-acc-index1N-E0.gappa | $GAPPA \n"):
+fprintf(fd, "  sed -f $CRLIBMDIR/maple/TEMPLOG/polynomials.sed  -f $CRLIBMDIR/maple/TEMPLOG/log-de_$num.sed $CRLIBMDIR/gappa/log-de/log-de-acc-index1N-E0.gappa | $GAPPA \n"):
 fprintf(fd, "  echo 1>&2\n"):
 fprintf(fd, "done\n"):
 
 fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo Accurate phase, case E!=0, index = $num 1>&2 \n"):
-fprintf(fd, "  sed -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de/log-de-acc-index1N-E1N.gappa | $GAPPA \n"):
+fprintf(fd, "  sed -f $CRLIBMDIR/maple/TEMPLOG/polynomials.sed  -f $CRLIBMDIR/maple/TEMPLOG/log-de_$num.sed $CRLIBMDIR/gappa/log-de/log-de-acc-index1N-E1N.gappa | $GAPPA \n"):
 fprintf(fd, "  echo 1>&2\n"):
 fprintf(fd, "done\n\n"):
 
 
 fprintf(fd, "echo Quick phase, case E=0, index=0  1>&2\n"):
-fprintf(fd, "sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de/log-de-index0-E0.gappa | $GAPPA \n"):
+fprintf(fd, "sed  -f $CRLIBMDIR/maple/TEMPLOG/polynomials.sed  -f $CRLIBMDIR/maple/TEMPLOG/log-de_0.sed $CRLIBMDIR/gappa/log-de/log-de-index0-E0.gappa | $GAPPA \n"):
 fprintf(fd, "  echo 1>&2\n"):
 
 fprintf(fd, "echo Quick phase, case E!=0, index=0 1>&2 \n"):
-fprintf(fd, "sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_0.sed ../gappa/log-de/log-de-index0-E1N.gappa | $GAPPA \n"):
+fprintf(fd, "sed  -f $CRLIBMDIR/maple/TEMPLOG/polynomials.sed  -f $CRLIBMDIR/maple/TEMPLOG/log-de_0.sed $CRLIBMDIR/gappa/log-de/log-de-index0-E1N.gappa | $GAPPA \n"):
 fprintf(fd, "  echo 1>&2\n"):
 
 
 fprintf(fd, "for num in `seq 1 %d`; do\n", 2^L-1):
 fprintf(fd, "  echo Quick phase, for all E,  index=$num 1>&2\n"):
-fprintf(fd, "  sed  -f ../maple/TEMPLOG/polynomials.sed  -f ../maple/TEMPLOG/log-de_$num.sed ../gappa/log-de/log-de-index1N-E0N.gappa | $GAPPA \n"):
+fprintf(fd, "  sed  -f $CRLIBMDIR/maple/TEMPLOG/polynomials.sed  -f $CRLIBMDIR/maple/TEMPLOG/log-de_$num.sed $CRLIBMDIR/gappa/log-de/log-de-index1N-E0N.gappa | $GAPPA \n"):
 fprintf(fd, "  echo 1>&2\n"):
 fprintf(fd, "done\n"):
 
@@ -349,7 +350,7 @@ fclose(fd):
 
 printf("\n************ DONE TEMPLOG/run-log-de-proof.sh ************\n"):
 printf("Now you should run \n"):
-printf(" sh ../gappa/log-de/run-log-de-proof.sh  2> ../maple/TEMPLOG/Gappa.out\n"):
+printf(" sh ../../gappa/log-de/run-log-de-proof.sh  2> ../../maple/TEMPLOG/Gappa.out\n"):
 printf("  (You probably need to edit the path to the gappa executable within run-log-de-proof.sh)\n"):
 printf("Then look at TEMPLOG/Gappa.out. It shouldn't contain 'some enclosures were not satisfied'.\n If it does, report it !\n"):
 
