@@ -178,6 +178,7 @@ polyAccuExact[1] := truncPoly(subs(X=x^2,p(X))*x^3+x,polyAccurateDegreeLowest):
 
 polyAccurate[1] := poly_exact32(polyAccuExact[1],polyAccurateTDCoeffsLowest,polyAccurateDDCoeffsLowest):
 
+
 epsAccurate[1] := numapprox[infnorm]((polyAccurate[1]/arcsin(x))-1, x=bound[0]..bound[1]):
 epsAccurateSpecial := numapprox[infnorm]((polyAccurate[1]/arcsin(x))-1, x=bound[0]..evalf(sin(2^(-18)))):
 

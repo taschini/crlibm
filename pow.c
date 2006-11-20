@@ -7,7 +7,7 @@
 
 
 #define DEBUG 0
-
+#define DEBUG_ACCURATE 1
 
 void log2_13(double* logxh, double* logxm, double* logxl, double x) {
   int E, index;
@@ -309,6 +309,13 @@ void exp2_33(int *E, double *exp2h, double *exp2m, double *exp2l, double xh, dou
 void pow113(int *E, double *powh, double *powm, double *powl, double x, double y) {
   double logxh, logxm, logxl;
   double ylogxh, ylogxm, ylogxl;
+
+#if DEBUG_ACCURATE
+  printf("Accurate phase on:\n");
+  printHexa("x",x);
+  printHexa("y",y);
+#endif
+
 
 #if EVAL_PERF
   crlibm_second_step_taken++;
@@ -1999,7 +2006,8 @@ double pow_rn(double x, double y) {
   printHexa("x",x);
   printHexa("y",y);
 
-  return sign * res;
+  /* We return NaN for testing purposes */
+  return (x-x)/0.0;;
 }
 
 
