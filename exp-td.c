@@ -83,6 +83,7 @@ void exp_td_accurate(double *polyTblh, double *polyTblm, double *polyTbll,
   Add22(&qh,&ql,rm,rl,rmlMultPh,rmlMultPl);
 
   Add233Cond(&fullPolyh,&fullPolym,&fullPolyl,qh,ql,ph,pm,pl);
+
   Add12(polyAddOneh,t5,1,fullPolyh);
   Add12Cond(polyAddOnem,t6,t5,fullPolym);
   polyAddOnel = t6 + fullPolyl;
@@ -92,6 +93,7 @@ void exp_td_accurate(double *polyTblh, double *polyTblm, double *polyTbll,
 	polyWithTbl1h,polyWithTbl1m,polyWithTbl1l);
 
   Renormalize3(polyTblh,polyTblm,polyTbll,polyWithTablesh,polyWithTablesm,polyWithTablesl);
+
 }
 
 
