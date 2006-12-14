@@ -237,10 +237,32 @@ double rand_for_trig_perf(){
 
 }
 
+
+/* For trigpi functions there is nobody to compare to, so who cares... */ 
+#define rand_for_trigpi_soaktest rand_generic
+#define rand_for_trigpi_perf rand_generic
+
+
+
 #if 0
 #define rand_for_trig_soaktest rand_generic
 #else
 #define rand_for_trig_soaktest rand_for_trig_perf
+#endif
+
+#ifdef HAVE_MPFR_H
+int tinkered_mpfr_sinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, pix;
+  mpfr_init2(pi,  5000);
+  mpfr_init2(pix, 5000);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_mul(pix, pi, mpx, GMP_RNDN);
+  mpfr_sin(mpr, pix, rnd);
+  mpfr_clear(pi);
+  mpfr_clear(pix);
+  return 0;
+}
 #endif
 
 double rand_for_atan_perf(){
@@ -846,6 +868,75 @@ void test_init(/* pointers to returned value */
       *testfun_mpfr   = mpfr_acos;
 #endif
     }
+
+
+  else if (strcmp (func_name, "sinpi") == 0)
+    {
+      *randfun_perf     = rand_for_trigpi_perf;
+      *randfun_soaktest = rand_for_trigpi_soaktest;
+      *worst_case= 9.24898516520941904595076721307123079895973205566406e-01;
+      /* TODO */
+      *testfun_libm   = NULL;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = sinpi_ru;	break;
+      case RD:
+	*testfun_crlibm = sinpi_rd;	break;
+      case RZ:
+	*testfun_crlibm = sinpi_rz;	break;
+      default:
+	*testfun_crlibm = sinpi_rn;
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = tinkered_mpfr_sinpi;
+#endif
+      }
+    }
+
+
+
+  else if (strcmp (func_name, "cospi") == 0)
+    {
+      *randfun_perf     = rand_for_trigpi_perf;
+      *randfun_soaktest = rand_for_trigpi_soaktest;
+      *worst_case= 9.24898516520941904595076721307123079895973205566406e-01;
+      /* TODO */
+      *testfun_libm   = NULL;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = cospi_ru;	break;
+      case RD:
+	*testfun_crlibm = cospi_rd;	break;
+      case RZ:
+	*testfun_crlibm = cospi_rz;	break;
+      default:
+	*testfun_crlibm = cospi_rn;
+      }
+    }
+
+
+
+  else if (strcmp (func_name, "tanpi") == 0)
+    {
+      *randfun_perf     = rand_for_trigpi_perf;
+      *randfun_soaktest = rand_for_trigpi_soaktest;
+      *worst_case= 9.24898516520941904595076721307123079895973205566406e-01;
+      /* TODO */
+      *testfun_libm   = NULL;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = tanpi_ru;	break;
+      case RD:
+	*testfun_crlibm = tanpi_rd;	break;
+      case RZ:
+	*testfun_crlibm = tanpi_rz;	break;
+      default:
+	*testfun_crlibm = tanpi_rn;
+      }
+    }
+
+
+
+
   else if (strcmp (func_name, "pow") == 0)
     {
       *randfun_perf     = (double (*)()) rand_for_pow_perf;

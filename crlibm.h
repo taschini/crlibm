@@ -69,6 +69,26 @@ extern double tan_rd(double); /* toward -inf */
 extern double tan_ru(double); /* toward +inf */
 extern double tan_rz(double); /* toward zero */
  
+/*  cosine of pi times x  */
+extern double cospi_rn(double); /* to nearest  */
+extern double cospi_rd(double); /* toward -inf */ 
+extern double cospi_ru(double); /* toward +inf */ 
+extern double cospi_rz(double); /* toward zero */ 
+
+/*  sine  of pi times x */
+extern double sinpi_rn(double); /* to nearest  */
+extern double sinpi_rd(double); /* toward -inf */ 
+extern double sinpi_ru(double); /* toward +inf */ 
+extern double sinpi_rz(double); /* toward zero */ 
+
+/*  tangent of pi times x */
+extern double tanpi_rn(double); /* to nearest  */
+extern double tanpi_rd(double); /* toward -inf */ 
+extern double tanpi_ru(double); /* toward +inf */
+extern double tanpi_rz(double); /* toward zero */
+ 
+
+
 
 /* /\*  cotangent  *\/ */
 /* extern double cotan_rn(double); /\* to nearest  *\/ */

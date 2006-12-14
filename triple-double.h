@@ -186,11 +186,52 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
+
 #define Add33(resh, resm, resl, ah, am, al, bh, bm, bl)      \
 {                                                            \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8;           \
                                                              \
     Add12((*(resh)),_t1,(ah),(bh));                          \
+    Add12Cond(_t2,_t3,(am),(bm));                            \
+    _t6 = (al) + (bl);                                       \
+    Add12Cond(_t7,_t4,_t1,_t2);                              \
+    _t5 = _t3 + _t4;                                         \
+    _t8 = _t5 + _t6;                                         \
+    Add12Cond((*(resm)),(*(resl)),_t7,_t8);                  \
+}
+
+/* Add33
+
+   Procedure for adding two triple double numbers resulting
+   in a triple double number
+
+
+   Arguments:       two triple double numbers:
+                    ah, am, al and
+		    bh, bm, bl
+   
+   Results:         a triple double number resh, resm, resl
+
+   Preconditions:   abs(am) <= 2^(-a_o) * abs(ah)
+		    abs(al) <= 2^(-a_u) * abs(am)
+		    abs(bm) <= 2^(-b_o) * abs(bh)
+		    abs(bl) <= 2^(-b_u) * abs(bm)
+		    where
+		    b_o >= a_o >= 4
+		    b_u >= a_u >= 4
+
+		    Condition (i) may not be respected if 
+		    one can assume in this case that ah=am=al=0
+		    
+   Guarantees:      TODO
+   Details:         resh, resm and resl are considered to be pointers
+*/
+
+#define Add33Cond(resh, resm, resl, ah, am, al, bh, bm, bl)      \
+{                                                            \
+    double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8;           \
+                                                             \
+    Add12Cond((*(resh)),_t1,(ah),(bh));                          \
     Add12Cond(_t2,_t3,(am),(bm));                            \
     _t6 = (al) + (bl);                                       \
     Add12Cond(_t7,_t4,_t1,_t2);                              \
