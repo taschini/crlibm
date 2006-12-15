@@ -261,6 +261,9 @@ double tinkered_sinpi (double x) {
 double tinkered_cospi (double x) {
   return sin(PIH*x);
 }
+double tinkered_tanpi (double x) {
+  return tan(PIH*x);
+}
 
 
 #ifdef HAVE_MPFR_H
@@ -288,6 +291,19 @@ int tinkered_mpfr_cospi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
   mpfr_const_pi(pi,  GMP_RNDN);
   mpfr_mul(pix, pi, mpx, GMP_RNDN);
   mpfr_cos(mpr, pix, rnd);
+  mpfr_clear(pi);
+  mpfr_clear(pix);
+  return 0;
+}
+
+int tinkered_mpfr_tanpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, pix;
+  mpfr_init2(pi,  2000);
+  mpfr_init2(pix, 2060);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_mul(pix, pi, mpx, GMP_RNDN);
+  mpfr_tan(mpr, pix, rnd);
   mpfr_clear(pi);
   mpfr_clear(pix);
   return 0;
@@ -908,6 +924,9 @@ void test_init(/* pointers to returned value */
       *worst_case= 9.24898516520941904595076721307123079895973205566406e-01;
       /* TODO */
       *testfun_libm   = tinkered_sinpi;
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = tinkered_mpfr_sinpi;
+#endif
       switch(crlibm_rnd_mode){
       case RU:
 	*testfun_crlibm = sinpi_ru;	break;
@@ -917,9 +936,6 @@ void test_init(/* pointers to returned value */
 	*testfun_crlibm = sinpi_rz;	break;
       default:
 	*testfun_crlibm = sinpi_rn;
-#ifdef HAVE_MPFR_H
-      *testfun_mpfr   = tinkered_mpfr_sinpi;
-#endif
       }
     }
 
@@ -932,6 +948,9 @@ void test_init(/* pointers to returned value */
       *worst_case= 9.24898516520941904595076721307123079895973205566406e-01; /* TODO */ 
       /* TODO */
       *testfun_libm   = tinkered_cospi;
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = tinkered_mpfr_cospi;
+#endif
       switch(crlibm_rnd_mode){
       case RU:
 	*testfun_crlibm = cospi_ru;	break;
@@ -942,9 +961,6 @@ void test_init(/* pointers to returned value */
       default:
 	*testfun_crlibm = cospi_rn;
       }
-#ifdef HAVE_MPFR_H
-      *testfun_mpfr   = tinkered_mpfr_cospi;
-#endif
     }
 
 
@@ -955,7 +971,10 @@ void test_init(/* pointers to returned value */
       *randfun_soaktest = rand_for_trigpi_soaktest;
       *worst_case= 9.24898516520941904595076721307123079895973205566406e-01;
       /* TODO */
-      *testfun_libm   = NULL;
+      *testfun_libm   = tinkered_tanpi;
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = tinkered_mpfr_cospi;
+#endif
       switch(crlibm_rnd_mode){
       case RU:
 	*testfun_crlibm = tanpi_ru;	break;

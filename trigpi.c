@@ -181,35 +181,48 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
 
 
  double sinpi_rn(double x){
-   double xs, y,u, rh, rm, rl, absx;
-   db_number t;
-   int index, quadrant;
+   double xs, y,u, rh, rm, rl, sign,absx;
+   db_number xdb, t;
+   int32_t xh, absxh, index, quadrant;
    
-   if (x<0) absx =-x; else absx=x; 
+   if (x<0) absx = -x;   else absx = x; 
+
+   xdb.d = x;
+
    xs = x*128.0;
 
-   if(absx>=TWOTO52) /* x is an integer */
-     return 0;
-
    /* argument reduction */
-   if(absx>TWOTO42) { 
-     /* let us first subtract a large integer  
-	   to bring x back to the smaller domain */
+   if(absx>  TWOTO42 ) {  /* x is very large, let us first subtract a large integer from it */
      t.d = xs;
-     t.i[LO] =0; /* remove the low part, in which was the coma since x > 2^42. 
-		    So what remains is an FP integer */
+     t.i[LO] =0; /* remove the low part. The point is somewhere there since x > 2^42. 
+		    So what remains in t is an FP integer almost as large as x */
      xs = xs-t.d; /* we are going to throw away the int part anyway */ 
    }
 
    t.d = TWOTO5251 + xs;
    u = t.d - TWOTO5251;
    y = xs - u;
-   y = y * INV128;
    index = t.i[LO] & 0x3f;
    quadrant = (t.i[LO] & 0xff) >>6;
 
-   //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
-   
+   /* Special case tests come late because the conversion FP to int is slow */
+   xh = xdb.i[HI];
+   absxh = xh & 0x7fffffff;
+   if (xh<0)  sign=-1.;   else sign=1.; /* consider the sign bit */
+
+   if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
+
+   y = y * INV128;
+
+   /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
+   if (absxh>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxh>=0x43300000) /* 2^52, which entails that x is an integer */
+     return sign*0.0; /*signed */
+
    sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
    ReturnRoundToNearest3(rh,rm,rl);   
 
@@ -222,17 +235,155 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
 
 
  double sinpi_rd(double x){
-   printf("ERROR:  function not yet implemented \n");
-   return 0.0/0.0;
-}; /* toward -inf */ 
+   double xs, y,u, rh, rm, rl, sign,absx;
+   db_number xdb, t;
+   int32_t xh, absxh, index, quadrant;
+   
+   if (x<0) absx = -x;   else absx = x; 
+
+   xdb.d = x;
+
+   xs = x*128.0;
+
+   /* argument reduction */
+   if(absx>  TWOTO42 ) {  /* x is very large, let us first subtract a large integer from it */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part. The point is somewhere there since x > 2^42. 
+		    So what remains in t is an FP integer almost as large as x */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+   /* Special case tests come late because the conversion FP to int is slow */
+   xh = xdb.i[HI];
+   absxh = xh & 0x7fffffff;
+   if (xh<0)  sign=-1.;   else sign=1.; /* consider the sign bit */
+
+   if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
+
+   y = y * INV128;
+
+   /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
+   if (absxh>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxh>=0x43300000) /* 2^52, which entails that x is an integer */
+     return sign*0.0; /*signed */
+
+   sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
+   ReturnRoundDownwards3(rh,rm,rl);   
+}; 
+
+
+
  double sinpi_ru(double x){
-   printf("ERROR:  function not yet implemented \n");
-   return 0.0/0.0;
-}; /* toward +inf */ 
+   double xs, y,u, rh, rm, rl, sign,absx;
+   db_number xdb, t;
+   int32_t xh, absxh, index, quadrant;
+   
+   if (x<0) absx = -x;   else absx = x; 
+
+   xdb.d = x;
+
+   xs = x*128.0;
+
+   /* argument reduction */
+   if(absx>  TWOTO42 ) {  /* x is very large, let us first subtract a large integer from it */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part. The point is somewhere there since x > 2^42. 
+		    So what remains in t is an FP integer almost as large as x */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+   /* Special case tests come late because the conversion FP to int is slow */
+   xh = xdb.i[HI];
+   absxh = xh & 0x7fffffff;
+   if (xh<0)  sign=-1.;   else sign=1.; /* consider the sign bit */
+
+   if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
+
+   y = y * INV128;
+
+   /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
+   if (absxh>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxh>=0x43300000) /* 2^52, which entails that x is an integer */
+     return sign*0.0; /*signed */
+
+   sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
+   ReturnRoundUpwards3(rh,rm,rl);   
+   
+};  
+
+
+
+
  double sinpi_rz(double x){
-   printf("ERROR:  function not yet implemented \n");
-   return 0.0/0.0;
-}; /* toward zero */ 
+   double xs, y,u, rh, rm, rl, sign,absx;
+   db_number xdb, t;
+   int32_t xh, absxh, index, quadrant;
+   
+   if (x<0) absx = -x;   else absx = x; 
+
+   xdb.d = x;
+
+   xs = x*128.0;
+
+   /* argument reduction */
+   if(absx>  TWOTO42 ) {  /* x is very large, let us first subtract a large integer from it */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part. The point is somewhere there since x > 2^42. 
+		    So what remains in t is an FP integer almost as large as x */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+   /* Special case tests come late because the conversion FP to int is slow */
+   xh = xdb.i[HI];
+   absxh = xh & 0x7fffffff;
+   if (xh<0)  sign=-1.;   else sign=1.; /* consider the sign bit */
+
+   if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
+
+   y = y * INV128;
+
+   /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
+   if (absxh>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxh>=0x43300000) /* 2^52, which entails that x is an integer */
+     return sign*0.0; /*signed */
+
+   sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
+   ReturnRoundTowardsZero3(rh,rm,rl);   
+};
+
+
+
+
 
 
 
@@ -241,22 +392,21 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
  /* to nearest  */
  double cospi_rn(double x){
    double xs, y,u, rh, rm, rl, absx;
-   db_number t;
-   int index, quadrant;
+   db_number xdb, t;
+   int32_t xh, absxh, index, quadrant;
    
    if (x<0) absx =-x; else absx=x; 
+
+   xdb.d=x;
    xs = x*128.0;
 
-   if(absx>=TWOTO52) /* x is an integer */
-     return 1;
-
-   /* argument reduction */
-   if(absx>TWOTO42) { 
-     /* let us first subtract a large integer  
-	   to bring x back to the smaller domain */
+   /* argument reduction. 
+      We do it before the special case tests for performance, 
+      it might compute garbage for inf, very large inputs, etc */
+   if(absx>  TWOTO42 ) {  /* 2^42, x is very large, let us first subtract a large integer from it */
      t.d = xs;
      t.i[LO] =0; /* remove the low part, in which was the coma since x > 2^42. 
-		    So what remains is an FP integer */
+		    So what remains in t is an FP integer almost as large as x */
      xs = xs-t.d; /* we are going to throw away the int part anyway */ 
    }
 
@@ -267,8 +417,33 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    index = t.i[LO] & 0x3f;
    quadrant = (t.i[LO] & 0xff) >>6;
 
+   if(index==0 && y==0. && ((quadrant&1)==1)) return +0.; 
+   /* Always +0, inpired by LIA2; We do not have cos(x+pi) == - cos(x)
+      in this case */
+
+   /* Special case tests come late because the conversion FP to int is slow */
+   xh = xdb.i[HI];
+   absxh = xh & 0x7fffffff;
+
+   /* SPECIAL CASES: x=(Nan, Inf) cos(pi*x)=Nan */
+
+   if (absxh>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxh>=0x43400000) /* 2^53, which entails that x is an even integer */
+     return 1.0; 
+
+   if(index==0 && y==0. && quadrant==0) return 1.; 
+   if(index==0 && y==0. && quadrant==2) return -1.; 
+
+   if (xh<0x3E200000) /* 2^-29 */
+     return 1;
+
+
    //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
-   
+
    cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
    ReturnRoundToNearest3(rh,rm,rl);   
 };
@@ -278,18 +453,187 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
 
 
  double cospi_rd(double x){
-   printf("ERROR:  function not yet implemented \n");
-   return 0.0/0.0;
-}; /* toward -inf */ 
- double cospi_ru(double x){
-   printf("ERROR:  function not yet implemented \n");
-   return 0.0/0.0;
-}; /* toward +inf */ 
- double cospi_rz(double x){
-   printf("ERROR:  function not yet implemented \n");
-   return 0.0/0.0;
-}; /* toward zero */ 
+   double xs, y,u, rh, rm, rl, absx;
+   db_number xdb, t;
+   int32_t xh, absxh, index, quadrant;
+   
+   if (x<0) absx =-x; else absx=x; 
 
+   xdb.d=x;
+   xs = x*128.0;
+
+
+   /* argument reduction. 
+      We do it before the special case tests for performance, 
+      it might compute garbage for inf, very large inputs, etc */
+   if(absx>  TWOTO42 ) {  /* 2^42, x is very large, let us first subtract a large integer from it */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part, in which was the coma since x > 2^42. 
+		    So what remains in t is an FP integer almost as large as x */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   y = y * INV128;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+
+   /* Special case tests come late because the conversion FP to int is slow */
+   xh = xdb.i[HI];
+   absxh = xh & 0x7fffffff;
+
+   /* SPECIAL CASES: x=(Nan, Inf) cos(pi*x)=Nan */
+
+   if (absxh>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxh>=0x43400000) /* 2^53, which entails that x is an even integer */
+     return 1.0; /*signed */
+
+   if(index==0 && y==0. && ((quadrant&1)==1)) return +0.; 
+
+   if(index==0 && y==0. && quadrant==0) return 1.; 
+   if(index==0 && y==0. && quadrant==2) return -1.; 
+
+   if (xh<0x3E200000) /* 2^-29 */
+     return 0.9999999999999998889776975374843459576368331909179687500; /* 1-2^-53 */
+   /* Always +0, inpired by LIA2; We do not have cos(x+pi) == - cos(x)
+      in this case */
+
+   //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
+
+   cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
+   ReturnRoundDownwards3(rh,rm,rl);  
+ }; 
+
+
+
+ 
+ double cospi_ru(double x){
+   double xs, y,u, rh, rm, rl, absx;
+   db_number xdb, t;
+   int32_t xh, absxh, index, quadrant;
+   
+   if (x<0) absx =-x; else absx=x; 
+
+   xdb.d=x;
+   xs = x*128.0;
+
+
+   /* argument reduction. 
+      We do it before the special case tests for performance, 
+      it might compute garbage for inf, very large inputs, etc */
+   if(absx>  TWOTO42 ) {  /* 2^42, x is very large, let us first subtract a large integer from it */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part, in which was the coma since x > 2^42. 
+		    So what remains in t is an FP integer almost as large as x */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   y = y * INV128;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+
+   /* Special case tests come late because the conversion FP to int is slow */
+   xh = xdb.i[HI];
+   absxh = xh & 0x7fffffff;
+
+   /* SPECIAL CASES: x=(Nan, Inf) cos(pi*x)=Nan */
+   if (absxh>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxh>=0x43400000) /* 2^53, which entails that x is an even integer */
+     return 1.0; /*signed */
+
+   if(index==0 && y==0. && quadrant==0) return 1.; 
+   if(index==0 && y==0. && quadrant==2) return -1.; 
+
+   if(index==0 && y==0. && ((quadrant&1)==1)) return +0.; 
+   /* Always +0, inpired by LIA2; We do not have cos(x+pi) == - cos(x)
+      in this case */
+
+   if (xh<0x3E200000) /* 2^-29 */
+     return 1;
+
+
+   //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
+
+   cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
+   ReturnRoundUpwards3(rh,rm,rl);  
+}; 
+
+
+
+
+double cospi_rz(double x){
+   double xs, y,u, rh, rm, rl, absx;
+   db_number xdb, t;
+   int32_t xh, absxh, index, quadrant;
+   
+   if (x<0) absx =-x; else absx=x; 
+
+   xdb.d=x;
+   xs = x*128.0;
+
+
+   /* argument reduction. 
+      We do it before the special case tests for performance, 
+      it might compute garbage for inf, very large inputs, etc */
+   if(absx>  TWOTO42 ) {  /* 2^42, x is very large, let us first subtract a large integer from it */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part, in which was the coma since x > 2^42. 
+		    So what remains in t is an FP integer almost as large as x */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   y = y * INV128;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+
+   /* Special case tests come late because the conversion FP to int is slow */
+   xh = xdb.i[HI];
+   absxh = xh & 0x7fffffff;
+
+   /* SPECIAL CASES: x=(Nan, Inf) cos(pi*x)=Nan */
+
+   if (absxh>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxh>=0x43400000) /* 2^53, which entails that x is an even integer */
+     return 1.0; /*signed */
+
+   if(index==0 && y==0. && ((quadrant&1)==1)) return +0.; 
+   /* Always +0, inpired by LIA2; We do not have cos(x+pi) == - cos(x)
+      in this case */
+
+   if(index==0 && y==0. && quadrant==0) return 1.; 
+   if(index==0 && y==0. && quadrant==2) return -1.; 
+
+   if (xh<0x3E200000) /* 2^-29 */
+     return 0.9999999999999998889776975374843459576368331909179687500; /* 1-2^-53 */
+
+   //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
+
+   cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
+   ReturnRoundTowardsZero3(rh,rm,rl);
+  }; 
 
 /*  tangent of pi times x */
  double tanpi_rn(double x){

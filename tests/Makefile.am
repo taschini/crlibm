@@ -49,10 +49,21 @@ check_sinh: crlibm_blindtest
 	echo ./crlibm_blindtest sinh.testdata>check_sinh; chmod a+rx check_sinh
 check_cosh: crlibm_blindtest
 	echo ./crlibm_blindtest cosh.testdata>check_cosh; chmod a+rx check_cosh
+check_sinpi: crlibm_blindtest
+	echo ./crlibm_blindtest sinpi.testdata>check_sinpi; chmod a+rx check_sinpi
+check_cospi: crlibm_blindtest
+	echo ./crlibm_blindtest cospi.testdata>check_cospi; chmod a+rx check_cospi
+check_tanpi: crlibm_blindtest
+	echo ./crlibm_blindtest tanpi.testdata>check_tanpi; chmod a+rx check_tanpi
 
-CRLIBM_CHECKLIST = check_exp check_expm1 check_log check_log2 check_log10 check_log1p check_sin check_cos check_tan check_asin check_acos check_atan check_sinh check_cosh  
+CRLIBM_CHECKLIST = check_exp check_expm1 check_log check_log2 check_log10 check_log1p \
+check_sin check_cos check_tan check_asin check_acos check_atan check_sinh check_cosh  \
+check_sinpi check_cospi check_tanpi
+
 TESTS = $(CRLIBM_CHECKLIST)
 
-EXTRA_DIST = exp.testdata expm1.testdata log.testdata log2.testdata log10.testdata log1p.testdata sin.testdata cos.testdata tan.testdata asin.testdata acos.testdata atan.testdata sinh.testdata cosh.testdata 
+EXTRA_DIST = exp.testdata expm1.testdata log.testdata log2.testdata log10.testdata log1p.testdata  \
+sin.testdata cos.testdata tan.testdata asin.testdata acos.testdata atan.testdata sinh.testdata cosh.testdata \
+sinpi.testdata cospi.testdata tanpi.testdata
 
 CLEANFILES = $(CRLIBM_CHECKLIST)
