@@ -26,11 +26,10 @@
 #define cospiacc_coeff_8h 2.35330630358513925859398341344785876572132110595703125000000000000000000000000000e-01
 #define cospiacc_coeff_10h -2.58068327360992909313974763563237502239644527435302734375000000000000000000000000e-02
 
-void sinpiacc(double *sinpiacc_resh, double *sinpiacc_resm, double *sinpiacc_resl, double x) {
-  double sinpiacc_x_0_pow2h, sinpiacc_x_0_pow2m;
-
-  Mul12(&sinpiacc_x_0_pow2h,&sinpiacc_x_0_pow2m,x,x);  
-
+static void sincospiacc(double *sinpiacc_resh, double *sinpiacc_resm, double *sinpiacc_resl,
+		 double *cospiacc_resh, double *cospiacc_resm, double *cospiacc_resl,
+		 double x) {
+  double x2h, x2m;
   double sinpiacc_t_1_0h;
   double sinpiacc_t_2_0h;
   double sinpiacc_t_3_0h;
@@ -42,25 +41,6 @@ void sinpiacc(double *sinpiacc_resh, double *sinpiacc_resm, double *sinpiacc_res
   double sinpiacc_t_9_0h, sinpiacc_t_9_0m, sinpiacc_t_9_0l;
   double sinpiacc_t_10_0h, sinpiacc_t_10_0m, sinpiacc_t_10_0l;
  
-  sinpiacc_t_1_0h = sinpiacc_coeff_11h;
-  sinpiacc_t_2_0h = sinpiacc_t_1_0h * sinpiacc_x_0_pow2h;
-  sinpiacc_t_3_0h = sinpiacc_coeff_9h + sinpiacc_t_2_0h;
-  sinpiacc_t_4_0h = sinpiacc_t_3_0h * sinpiacc_x_0_pow2h;
-  Add12(sinpiacc_t_5_0h,sinpiacc_t_5_0m,sinpiacc_coeff_7h,sinpiacc_t_4_0h);
-  MulAdd22(&sinpiacc_t_6_0h,&sinpiacc_t_6_0m,sinpiacc_coeff_5h,sinpiacc_coeff_5m,sinpiacc_x_0_pow2h,sinpiacc_x_0_pow2m,sinpiacc_t_5_0h,sinpiacc_t_5_0m);
-  MulAdd22(&sinpiacc_t_7_0h,&sinpiacc_t_7_0m,sinpiacc_coeff_3h,sinpiacc_coeff_3m,sinpiacc_x_0_pow2h,sinpiacc_x_0_pow2m,sinpiacc_t_6_0h,sinpiacc_t_6_0m);
-  Mul22(&sinpiacc_t_8_0h,&sinpiacc_t_8_0m,sinpiacc_t_7_0h,sinpiacc_t_7_0m,sinpiacc_x_0_pow2h,sinpiacc_x_0_pow2m);
-  Add233Cond(&sinpiacc_t_9_0h,&sinpiacc_t_9_0m,&sinpiacc_t_9_0l,sinpiacc_t_8_0h,sinpiacc_t_8_0m,sinpiacc_coeff_1h,sinpiacc_coeff_1m,sinpiacc_coeff_1l);
-  Mul133(&sinpiacc_t_10_0h,&sinpiacc_t_10_0m,&sinpiacc_t_10_0l,x,sinpiacc_t_9_0h,sinpiacc_t_9_0m,sinpiacc_t_9_0l);
-  Renormalize3(sinpiacc_resh,sinpiacc_resm,sinpiacc_resl,sinpiacc_t_10_0h,sinpiacc_t_10_0m,sinpiacc_t_10_0l);
-}
-
-
-void cospiacc(double *cospiacc_resh, double *cospiacc_resm, double *cospiacc_resl, double x) {
-  double cospiacc_x_0_pow2h, cospiacc_x_0_pow2m;
-
-  Mul12(&cospiacc_x_0_pow2h,&cospiacc_x_0_pow2m,x,x);
-  
   double cospiacc_t_1_0h;
   double cospiacc_t_2_0h;
   double cospiacc_t_3_0h;
@@ -70,78 +50,45 @@ void cospiacc(double *cospiacc_resh, double *cospiacc_resm, double *cospiacc_res
   double cospiacc_t_7_0h, cospiacc_t_7_0m;
   double cospiacc_t_8_0h, cospiacc_t_8_0m;
   double cospiacc_t_9_0h, cospiacc_t_9_0m, cospiacc_t_9_0l;
+
+  Mul12(&x2h,&x2m,x,x);  
+
+  sinpiacc_t_1_0h = sinpiacc_coeff_11h;
+  sinpiacc_t_2_0h = sinpiacc_t_1_0h * x2h;
+  sinpiacc_t_3_0h = sinpiacc_coeff_9h + sinpiacc_t_2_0h;
+  sinpiacc_t_4_0h = sinpiacc_t_3_0h * x2h;
+  Add12(sinpiacc_t_5_0h,sinpiacc_t_5_0m,sinpiacc_coeff_7h,sinpiacc_t_4_0h);
+  MulAdd22(&sinpiacc_t_6_0h,&sinpiacc_t_6_0m,sinpiacc_coeff_5h,sinpiacc_coeff_5m,x2h,x2m,sinpiacc_t_5_0h,sinpiacc_t_5_0m);
+  MulAdd22(&sinpiacc_t_7_0h,&sinpiacc_t_7_0m,sinpiacc_coeff_3h,sinpiacc_coeff_3m,x2h,x2m,sinpiacc_t_6_0h,sinpiacc_t_6_0m);
+  Mul22(&sinpiacc_t_8_0h,&sinpiacc_t_8_0m,sinpiacc_t_7_0h,sinpiacc_t_7_0m,x2h,x2m);
+  Add233Cond(&sinpiacc_t_9_0h,&sinpiacc_t_9_0m,&sinpiacc_t_9_0l,sinpiacc_t_8_0h,sinpiacc_t_8_0m,sinpiacc_coeff_1h,sinpiacc_coeff_1m,sinpiacc_coeff_1l);
+  Mul133(&sinpiacc_t_10_0h,&sinpiacc_t_10_0m,&sinpiacc_t_10_0l,x,sinpiacc_t_9_0h,sinpiacc_t_9_0m,sinpiacc_t_9_0l);
+  Renormalize3(sinpiacc_resh,sinpiacc_resm,sinpiacc_resl,sinpiacc_t_10_0h,sinpiacc_t_10_0m,sinpiacc_t_10_0l);
+
   
   cospiacc_t_1_0h = cospiacc_coeff_10h;
-  cospiacc_t_2_0h = cospiacc_t_1_0h * cospiacc_x_0_pow2h;
+  cospiacc_t_2_0h = cospiacc_t_1_0h * x2h;
   cospiacc_t_3_0h = cospiacc_coeff_8h + cospiacc_t_2_0h;
-  cospiacc_t_4_0h = cospiacc_t_3_0h * cospiacc_x_0_pow2h;
+  cospiacc_t_4_0h = cospiacc_t_3_0h * x2h;
   Add12(cospiacc_t_5_0h,cospiacc_t_5_0m,cospiacc_coeff_6h,cospiacc_t_4_0h);
-  MulAdd22(&cospiacc_t_6_0h,&cospiacc_t_6_0m,cospiacc_coeff_4h,cospiacc_coeff_4m,cospiacc_x_0_pow2h,cospiacc_x_0_pow2m,cospiacc_t_5_0h,cospiacc_t_5_0m);
-  MulAdd22(&cospiacc_t_7_0h,&cospiacc_t_7_0m,cospiacc_coeff_2h,cospiacc_coeff_2m,cospiacc_x_0_pow2h,cospiacc_x_0_pow2m,cospiacc_t_6_0h,cospiacc_t_6_0m);
-  Mul22(&cospiacc_t_8_0h,&cospiacc_t_8_0m,cospiacc_t_7_0h,cospiacc_t_7_0m,cospiacc_x_0_pow2h,cospiacc_x_0_pow2m);
+  MulAdd22(&cospiacc_t_6_0h,&cospiacc_t_6_0m,cospiacc_coeff_4h,cospiacc_coeff_4m,x2h,x2m,cospiacc_t_5_0h,cospiacc_t_5_0m);
+  MulAdd22(&cospiacc_t_7_0h,&cospiacc_t_7_0m,cospiacc_coeff_2h,cospiacc_coeff_2m,x2h,x2m,cospiacc_t_6_0h,cospiacc_t_6_0m);
+  Mul22(&cospiacc_t_8_0h,&cospiacc_t_8_0m,cospiacc_t_7_0h,cospiacc_t_7_0m,x2h,x2m);
   Add123(&cospiacc_t_9_0h,&cospiacc_t_9_0m,&cospiacc_t_9_0l,cospiacc_coeff_0h,cospiacc_t_8_0h,cospiacc_t_8_0m);
   *cospiacc_resh = cospiacc_t_9_0h; *cospiacc_resm = cospiacc_t_9_0m; *cospiacc_resl = cospiacc_t_9_0l;
+
 }
 
 
 
 
 
- /* to nearest  */
-
- double sinpi_rn(double x){
-   double xs,xsign, y,u,syh, sym, syl, cyh, cym, cyl, sah, sam, sal, cah, cam, cal;
-   double t1h, t1m, t1l, t2h, t2m, t2l, rh, rm, rl;
-   db_number t;
-   int index, quadrant;
 
 
-   xs = x*128.0;
 
-   if(x>TWOTO52) /* x is an integer */
-     return 0;
-
-   /* Réduction d'argument */
-   if(x<TWOTO42){
-     t.d = TWOTO5251 + xs;
-     u = t.d - TWOTO5251;
-     y = xs - u;
-     y = y * INV128;
-   }
-
-   if(u<0) 
-     xsign = -1;
-   else 
-     xsign = 1;
-
-   index = t.i[LO] & 0x3f;
-   quadrant = (t.i[LO] & 0xff) >>6;
-
-   //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
-   
-   sinpiacc(&syh, &sym, &syl, y);
-   cospiacc(&cyh, &cym, &cyl, y);
-   
-   sah=sincosTable[index].sh;
-   cah=sincosTable[index].ch;
-   sam=sincosTable[index].sm;
-   cam=sincosTable[index].cm;
-   sal=sincosTable[index].sl;
-   cal=sincosTable[index].cl;
-
-
-   if(quadrant==0 || quadrant==2) {
-     /* compute sy*ca+sa*cy */
-     
-     /* t1 = sy*ca */
-     Mul33(&t1h,&t1m,&t1l, syh,sym,syl, cah,cam,cal);
-     
-     /* t2 =  sa*cy */
-     Mul33(&t2h,&t2m,&t2l, sah,sam,sal, cyh,cym,cyl);
-     
-     /* either index=0, then sa=0 and ca=1, therefore t2=0, and the Add33 will be exact 
-	or index !=0, and       
-	What we know is: 
+/* Comment on comparing sa, ca, sy and cy 
+   either index=0, then sa=0 and ca=1, therefore t2=0, and the Add33 will be exact 
+   or index !=0, and       
 	-eps1 < sy < eps1  (but sy may be negative)
 	sa > eps1 (sa>0)
 	1-eps2 < cy < 1
@@ -151,38 +98,127 @@ void cospiacc(double *cospiacc_resh, double *cospiacc_resm, double *cospiacc_res
 	casy = t1 may be negative
 	abs(t1) <=  abs(t2)
 	Unfortunately we need a stronger condition to use the Add33 
-     */
-     
-     Add33Cond(&rh, &rm, &rl, t2h,t2m,t2l, t1h,t1m,t1l);
-     if (quadrant==2) {
-       rh = -rh;
-       rm = -rm;
-       rl = -rl;
-     }
-     ReturnRoundToNearest3(rh,rm,rl);
+*/
+
+
+
+
+static void sinpi_accurate(double *rh, double *rm, double *rl,
+			   double y, int index, int quadrant)
+{
+   double syh, sym, syl, cyh, cym, cyl, sah, sam, sal, cah, cam, cal;
+   double t1h, t1m, t1l, t2h, t2m, t2l;
+
+   sincospiacc(&syh, &sym, &syl, &cyh, &cym, &cyl, y);
+   
+   sah=sincosTable[index].sh;
+   cah=sincosTable[index].ch;
+   sam=sincosTable[index].sm;
+   cam=sincosTable[index].cm;
+   sal=sincosTable[index].sl;
+   cal=sincosTable[index].cl;
+
+   if(quadrant==0 || quadrant==2) {
+     /* compute sy*ca+sa*cy   :    t1 = sy*ca,     t2 =  sa*cy*/
+     Mul33(&t1h,&t1m,&t1l, syh,sym,syl, cah,cam,cal);
+     Mul33(&t2h,&t2m,&t2l, sah,sam,sal, cyh,cym,cyl);
+     Add33Cond(rh, rm, rl, t2h,t2m,t2l, t1h,t1m,t1l);
+   }
+   else {
+     /* compute cy*ca - sa*sy : t1 = cy*ca,    t2 =  sa*sy */
+     Mul33(&t1h,&t1m,&t1l, cyh,cym,cyl, cah,cam,cal);
+     Mul33(&t2h,&t2m,&t2l, sah,sam,sal, syh,sym,syl);     
+     Add33Cond(rh, rm, rl, t1h,t1m,t1l, -t2h,-t2m,-t2l);
    }
 
-
-   if(quadrant==1 || quadrant==3) {
-     /* compute cy*ca - sa*sy */
-     
-     /* t1 = cy*ca */
-     Mul33(&t1h,&t1m,&t1l, cyh,cym,cyl, cah,cam,cal);
-     
-     /* t2 =  sa*sy */
-     Mul33(&t2h,&t2m,&t2l, sah,sam,sal, syh,sym,syl);     
-     
-     Add33Cond(&rh, &rm, &rl, t1h,t1m,t1l, -t2h,-t2m,-t2l);
-
-     if (quadrant==3) {
-       rh = -rh;
-       rm = -rm;
-       rl = -rl;
-     }
-     ReturnRoundToNearest3(rh,rm,rl);   
+   if (quadrant>=2) {
+     *rh = -*rh;
+     *rm = -*rm;
+     *rl = -*rl;
    }
 
 };
+
+
+static void cospi_accurate(double *rh, double *rm, double *rl,
+			   double y, int index, int quadrant)
+{
+   double syh, sym, syl, cyh, cym, cyl, sah, sam, sal, cah, cam, cal;
+   double t1h, t1m, t1l, t2h, t2m, t2l;
+
+   sincospiacc(&syh, &sym, &syl, &cyh, &cym, &cyl, y);
+   
+   sah=sincosTable[index].sh;
+   cah=sincosTable[index].ch;
+   sam=sincosTable[index].sm;
+   cam=sincosTable[index].cm;
+   sal=sincosTable[index].sl;
+   cal=sincosTable[index].cl;
+
+   if(quadrant==0 || quadrant==2) {
+     /* compute cy*ca - sa*sy : t1 = cy*ca,    t2 =  sa*sy */
+     Mul33(&t1h,&t1m,&t1l, cyh,cym,cyl, cah,cam,cal);
+     Mul33(&t2h,&t2m,&t2l, sah,sam,sal, syh,sym,syl);     
+     Add33Cond(rh, rm, rl, t1h,t1m,t1l, -t2h,-t2m,-t2l);
+   }
+   else {
+     /* compute sy*ca+sa*cy   :    t1 = sy*ca,     t2 =  sa*cy*/
+     Mul33(&t1h,&t1m,&t1l, syh,sym,syl, cah,cam,cal);
+     Mul33(&t2h,&t2m,&t2l, sah,sam,sal, cyh,cym,cyl);
+     Add33Cond(rh, rm, rl, t2h,t2m,t2l, t1h,t1m,t1l);
+   }
+
+   if (quadrant==1 || quadrant==2) {
+     *rh = -*rh;
+     *rm = -*rm;
+     *rl = -*rl;
+   }
+
+};
+
+
+
+
+
+ double sinpi_rn(double x){
+   double xs, y,u, rh, rm, rl, absx;
+   db_number t;
+   int index, quadrant;
+   
+   if (x<0) absx =-x; else absx=x; 
+   xs = x*128.0;
+
+   if(absx>=TWOTO52) /* x is an integer */
+     return 0;
+
+   /* argument reduction */
+   if(absx>TWOTO42) { 
+     /* let us first subtract a large integer  
+	   to bring x back to the smaller domain */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part, in which was the coma since x > 2^42. 
+		    So what remains is an FP integer */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   y = y * INV128;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+   //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
+   
+   sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
+   ReturnRoundToNearest3(rh,rm,rl);   
+
+ }
+
+
+
+
+
 
 
  double sinpi_rd(double x){
@@ -202,12 +238,45 @@ void cospiacc(double *cospiacc_resh, double *cospiacc_resm, double *cospiacc_res
 
 
 
-/*  cosine of pi times x  */
- double cospi_rn(double x){
-   printf("ERROR:  function not yet implemented \n");
-   return 0.0/0.0;
-};
  /* to nearest  */
+ double cospi_rn(double x){
+   double xs, y,u, rh, rm, rl, absx;
+   db_number t;
+   int index, quadrant;
+   
+   if (x<0) absx =-x; else absx=x; 
+   xs = x*128.0;
+
+   if(absx>=TWOTO52) /* x is an integer */
+     return 1;
+
+   /* argument reduction */
+   if(absx>TWOTO42) { 
+     /* let us first subtract a large integer  
+	   to bring x back to the smaller domain */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part, in which was the coma since x > 2^42. 
+		    So what remains is an FP integer */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   y = y * INV128;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+   //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
+   
+   cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
+   ReturnRoundToNearest3(rh,rm,rl);   
+};
+
+
+
+
+
  double cospi_rd(double x){
    printf("ERROR:  function not yet implemented \n");
    return 0.0/0.0;

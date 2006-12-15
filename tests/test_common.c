@@ -250,11 +250,27 @@ double rand_for_trig_perf(){
 #define rand_for_trig_soaktest rand_for_trig_perf
 #endif
 
+
+#define PIH 3.14159265358979311599796346854418516159057617187500e+00
+
+
+/* These ones are mostly inaccurate */
+double tinkered_sinpi (double x) {
+  return sin(PIH*x);
+}
+double tinkered_cospi (double x) {
+  return sin(PIH*x);
+}
+
+
 #ifdef HAVE_MPFR_H
+/* we might even attempt to prove some day that these are correct, but it is not done. 
+   Anyway we compute pi*x on enough bits to avoid any cancellation in the argument reduction */ 
+
 int tinkered_mpfr_sinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
   mpfr_t pi, pix;
-  mpfr_init2(pi,  5000);
-  mpfr_init2(pix, 5000);
+  mpfr_init2(pi,  2000);
+  mpfr_init2(pix, 2060);
 
   mpfr_const_pi(pi,  GMP_RNDN);
   mpfr_mul(pix, pi, mpx, GMP_RNDN);
@@ -263,6 +279,20 @@ int tinkered_mpfr_sinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
   mpfr_clear(pix);
   return 0;
 }
+
+int tinkered_mpfr_cospi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, pix;
+  mpfr_init2(pi,  2000);
+  mpfr_init2(pix, 2060);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_mul(pix, pi, mpx, GMP_RNDN);
+  mpfr_cos(mpr, pix, rnd);
+  mpfr_clear(pi);
+  mpfr_clear(pix);
+  return 0;
+}
+
 #endif
 
 double rand_for_atan_perf(){
@@ -872,11 +902,12 @@ void test_init(/* pointers to returned value */
 
   else if (strcmp (func_name, "sinpi") == 0)
     {
-      *randfun_perf     = rand_for_trigpi_perf;
-      *randfun_soaktest = rand_for_trigpi_soaktest;
+      *randfun_perf     = rand_for_exp_perf;
+      *randfun_soaktest = rand_for_exp_perf;
+      *randfun_soaktest = rand_for_trig_soaktest;
       *worst_case= 9.24898516520941904595076721307123079895973205566406e-01;
       /* TODO */
-      *testfun_libm   = NULL;
+      *testfun_libm   = tinkered_sinpi;
       switch(crlibm_rnd_mode){
       case RU:
 	*testfun_crlibm = sinpi_ru;	break;
@@ -896,11 +927,11 @@ void test_init(/* pointers to returned value */
 
   else if (strcmp (func_name, "cospi") == 0)
     {
-      *randfun_perf     = rand_for_trigpi_perf;
+      *randfun_perf     = rand_for_exp_perf;
       *randfun_soaktest = rand_for_trigpi_soaktest;
-      *worst_case= 9.24898516520941904595076721307123079895973205566406e-01;
+      *worst_case= 9.24898516520941904595076721307123079895973205566406e-01; /* TODO */ 
       /* TODO */
-      *testfun_libm   = NULL;
+      *testfun_libm   = tinkered_cospi;
       switch(crlibm_rnd_mode){
       case RU:
 	*testfun_crlibm = cospi_ru;	break;
@@ -911,6 +942,9 @@ void test_init(/* pointers to returned value */
       default:
 	*testfun_crlibm = cospi_rn;
       }
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = tinkered_mpfr_cospi;
+#endif
     }
 
 
