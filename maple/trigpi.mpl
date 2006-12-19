@@ -1,4 +1,4 @@
-Digits := 120:
+Digits := 200:
 interface(quiet=true):
 read "common-procedures.mpl":
 read "triple-double.mpl":
@@ -13,9 +13,7 @@ pih, pim, pil := hi_mi_lo(Pi):
 DekkerConst:=2^27+1:
 t:=nearest(pih*DekkerConst) :
 pihh:= nearest(pih-t) + t :
-
-t:=nearest((pih-pihh)*DekkerConst) :
-pihm:= nearest((pih-pihh)-t) + t :
+pihm:= pih-pihh :
 
 
 
@@ -64,6 +62,11 @@ fprintf(fd, "#define PIX_RNCST %1.50e\n", compute_rn_constant(2^(-61))):
 fprintf(fd, "\n"):
 fprintf(fd, "#define PIX_EPS   %1.50e\n", 2^(-61)):
 fprintf(fd, "\n"):
+
+# The Pi SCS constant TODO: fuse with the Pi/256 in trigo.h
+  fprintf(fd, "static const scs PiSCS=\n"):
+  WriteSCS(fd, evalf(Pi)):
+  fprintf(fd, ";\n#define PiSCS_ptr  (scs_ptr)(& PiSCS)\n\n"):
 
 # Table
 fprintf(fd, "typedef struct tPi_t_tag {double sh; double ch; double sm; double cm; double sl; double cl;} tPi_t;\n");

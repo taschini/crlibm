@@ -223,10 +223,33 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
      return sign*0.0; /*signed */
 
+   if(absxih<=0x3E000000) /*2^{-31}*/ {
+     if (absxih<0x01700000) { /* 2^{-1000} :  Get rid of possible subnormals  */
+       /* in this case, SCS computation, accurate to 2^-210 which is provably enough */
+       scs_t result;
+       scs_set_d(result, x );
+       scs_mul(result, PiSCS_ptr, result);
+       scs_get_d(&rh, result);
+       return rh;
+     }
+     /* First step for Pi*x. TODO: FMA-based optimisation */
+     const double DekkerConst  = 134217729.; /* 2^27 +1 */   
+     double tt, xh, xl;                           
+     /* Splitting of x. Both xh and xl have at least 26 consecutive LSB zeroes */
+     tt = x*DekkerConst;     
+     xh = (x-tt)+tt;
+     xl = x-xh;   
+     Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
+     if(rh == (rh + (rl * PIX_RNCST)))
+       return rh;
+   }
+   /* Fall here either if we have a large input, or if we have a small
+      input and the rounding test fails.  */
    sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
    ReturnRoundToNearest3(rh,rm,rl);   
-
  }
+
+ 
 
 
 
@@ -277,7 +300,29 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
      return sign*0.0; /*signed */
 
+    if(absxih<=0x3E000000) /*2^{-31}*/ {
+     if (absxih<0x01700000) { /* 2^{-1000} :  Get rid of possible subnormals  */
+       /* in this case, SCS computation, accurate to 2^-210 which is provably enough */
+       scs_t result;
+       scs_set_d(result, x );
+       scs_mul(result, PiSCS_ptr, result);
+       scs_get_d_minf(&rh, result);
+       return rh;
+     }
+     /* First step for Pi*x. TODO: FMA-based optimisation */
+     const double DekkerConst  = 134217729.; /* 2^27 +1 */   
+     double tt, xh, xl;                           
+     /* Splitting of x. Both xh and xl have at least 26 consecutive LSB zeroes */
+     tt = x*DekkerConst;     
+     xh = (x-tt)+tt;
+     xl = x-xh;   
+     Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
+     TEST_AND_RETURN_RD(rh,rl,PIX_EPS);
+   }
+   /* Fall here either if we have a large input, or if we have a small
+      input and the rounding test fails.  */
    sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
+
    ReturnRoundDownwards3(rh,rm,rl);   
 }; 
 
@@ -326,32 +371,28 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
      return sign*0.0; /*signed */
 
-
-   if(absxih<=0x3E000000) /*2^{-31}*/ {
-   /* Get rid of possible subnormal */
-   //     if (absxih<0x01700000) /* 2^{-1000} */{
-   //  scale= 0.933263618503218878990089544723817169617091446371e-301; /* 2^-1000 */
-   //  x *= 0.1071508607186267320948425049060001810561404811705e302; /* 2^1000 */
-   //}
-   //else
-   //  scale=1.0;
-
-     /* Evaluate Pi*x in two steps . TODO: FMA-based optimisation */
-     const double c  = 134217729.; /* 2^27 +1 */   
+    if(absxih<=0x3E000000) /*2^{-31}*/ {
+     if (absxih<0x01700000) { /* 2^{-1000} :  Get rid of possible subnormals  */
+       /* in this case, SCS computation, accurate to 2^-210 which is provably enough */
+       scs_t result;
+       scs_set_d(result, x );
+       scs_mul(result, PiSCS_ptr, result);
+       scs_get_d_pinf(&rh, result);
+       return rh;
+     }
+     /* First step for Pi*x. TODO: FMA-based optimisation */
+     const double DekkerConst  = 134217729.; /* 2^27 +1 */   
      double tt, xh, xl;                           
      /* Splitting of x. Both xh and xl have at least 26 consecutive LSB zeroes */
-     tt = x*c;     
+     tt = x*DekkerConst;     
      xh = (x-tt)+tt;
      xl = x-xh;   
-     Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIL + xl*PIHM) );               
-     //     if(rh == (rh + (rl * PIX_RNCST)))
-     //   return rh;
-     TEST_AND_RETURN_RU(rh, rl, PIX_EPS);
-     /* Otherwise: full triple-double computation of pi*x */
-     Mul133(&rh, &rm, &rl, x, PIH, PIM, PIL);
+     Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
+     TEST_AND_RETURN_RU(rh,rl,PIX_EPS);
    }
-   else
-     sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
+   /* Fall here either if we have a large input, or if we have a small
+      input and the rounding test fails.  */
+   sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
 
    ReturnRoundUpwards3(rh,rm,rl);   
    
@@ -403,7 +444,29 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
      return sign*0.0; /*signed */
 
+    if(absxih<=0x3E000000) /*2^{-31}*/ {
+     if (absxih<0x01700000) { /* 2^{-1000} :  Get rid of possible subnormals  */
+       /* in this case, SCS computation, accurate to 2^-210 which is provably enough */
+       scs_t result;
+       scs_set_d(result, x );
+       scs_mul(result, PiSCS_ptr, result);
+       scs_get_d_zero(&rh, result);
+       return rh;
+     }
+     /* First step for Pi*x. TODO: FMA-based optimisation */
+     const double DekkerConst  = 134217729.; /* 2^27 +1 */   
+     double tt, xh, xl;                           
+     /* Splitting of x. Both xh and xl have at least 26 consecutive LSB zeroes */
+     tt = x*DekkerConst;     
+     xh = (x-tt)+tt;
+     xl = x-xh;   
+     Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
+     TEST_AND_RETURN_RZ(rh,rl,PIX_EPS);
+   }
+   /* Fall here either if we have a large input, or if we have a small
+      input and the rounding test fails.  */
    sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
+
    ReturnRoundTowardsZero3(rh,rm,rl);   
 };
 

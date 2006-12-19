@@ -26,6 +26,13 @@
 
 #define PIX_EPS   4.33680868994201773602981120347976684570312500000000e-19
 
+static const scs PiSCS=
+{{0x00000003, 0x090fdaa2, 0x085a308d, 0x0c4c6628, 
+0x2e037073, 0x1129024e, 0x022299f3, 0x074020bb},
+DB_ONE,   0,   1 } 
+;
+#define PiSCS_ptr  (scs_ptr)(& PiSCS)
+
 typedef struct tPi_t_tag {double sh; double ch; double sm; double cm; double sl; double cl;} tPi_t;
 static const tPi_t sincosTable[64] =
 {
