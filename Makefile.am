@@ -82,20 +82,25 @@ EXTRA_DIST = VERSION TODO\
 	gappa/trigoTanCase2.gappa \
 	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
 	gappa/sqrt12.gappa gappa/sqrt13.gappa gappa/sqrt-proof.sh gappa/sqrt.sed \
-	gappa/log-de-acc-index0-E0.gappa    gappa/log-de-index0-E0.gappa \
-	gappa/log-de-acc-index0-E1N.gappa   gappa/log-de-index0-E1N.gappa \
-	gappa/log-de-acc-index1N-E0.gappa   gappa/log-de-index1N-E0N.gappa \
-	gappa/log-de-acc-index1N-E1N.gappa  gappa/log-de.README \
-	gappa/log-td.gappa gappa/log-td-E0.gappa gappa/log-td-E0-logir0.gappa \
-	gappa/log-td-accurate.gappa gappa/log-td-accurate-E0.gappa gappa/log-td-accurate-E0-logir0.gappa \
-	gappa/exp-td-accurate1.gappa gappa/exp-td-accurate2.gappa gappa/exp-td-accurate3.gappa gappa/exp-td-accurate4.gappa gappa/exp-td-proof.sh \
+	gappa/log-de/log-de-acc-index0-E0.gappa    gappa/log-de/log-de-index0-E0.gappa \
+	gappa/log-de/log-de-acc-index0-E1N.gappa   gappa/log-de/log-de-index0-E1N.gappa \
+	gappa/log-de/log-de-acc-index1N-E0.gappa   gappa/log-de/log-de-index1N-E0N.gappa \
+	gappa/log-de/log-de-acc-index1N-E1N.gappa  gappa/log-de/README \
+	gappa/log-td/log-td.gappa             gappa/log-td/log-td-E0.gappa \
+	gappa/log-td/log-td-E0-logir0.gappa   gappa/log-td/log-td-accurate.gappa \
+	gappa/log-td/log-td-accurate-E0.gappa gappa/log-td/log-td-accurate-E0-logir0.gappa \
+	gappa/exp-td/exp-td-accurate1.gappa gappa/exp-td/exp-td-accurate2.gappa \
+	gappa/exp-td/exp-td-accurate3.gappa gappa/exp-td/exp-td-accurate4.gappa \
+	gappa/exp-td/exp-td-proof.sh \
+	gappa/trigpi/cospi-accurate.gappa  gappa/trigpi/cospi-quick.gappa \
+	gappa/trigpi/sinpi-accurate.gappa  gappa/trigpi/sinpi-quick.gappa \
 	docs/latex/crlibm.tex \
 	docs/latex/0_intro.tex docs/latex/0_getting-started.tex\
 	docs/latex/1_common.tex docs/latex/sqrt.tex \
 	docs/latex/exp.tex docs/latex/expm1.tex \
 	docs/latex/log.tex docs/latex/log1p.tex docs/latex/log2.tex docs/latex/log10.tex\
 	docs/latex/asin.tex docs/latex/acos.tex docs/latex/atan.tex \
-	docs/latex/csh.tex docs/latex/trigo.tex \
+	docs/latex/csh.tex docs/latex/trigo.tex docs/latex/trigpi.tex \
 	docs/latex/fig_scs docs/latex/fig_exp\
 	docs/latex/elem-fun.bib\
 	scs_lib/tests/tbx_timing.h \

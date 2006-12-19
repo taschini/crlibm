@@ -107,8 +107,8 @@ extern int crlibm_second_step_taken;
 extern double scs_exp_rn(double);
 extern double scs_exp_ru(double);
 extern double scs_exp_rd(double);
-void exp13(int *exponent, double *exph, double *expm, double *expl, double x);
-void expm1_13(double *exph, double *expm, double *expl, double x);
+void exp13(int *exponent, double *exp_h, double *exp_m, double *exp_l, double x);
+void expm1_13(double *exp_h, double *exp_m, double *exp_l, double x);
 
 extern void scs_log(scs_ptr,db_number, int);
 
