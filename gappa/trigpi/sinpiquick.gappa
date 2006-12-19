@@ -1,0 +1,105 @@
+# The polynomial to implement is: x * (63719069007931157819019535590437b-104 + ((x^(1b1)) * ((-5818327337647699b-50) + ((x^(1b1)) * (717807363739183b-48 + ((x^(1b1)) * (-337355592074089b-49)))))))
+# The polynomial implemented is: x * (63719069007931157819019535590437b-104 + ((x^(1b1)) * ((-5818327337647699b-50) + ((x^(1b1)) * (717807363739183b-48 + ((x^(1b1)) * (-337355592074089b-49)))))))
+# The domain is [-1b-8;1b-8]
+# The free variable x is a double precision number, the result sinpiquick_res* is stored on a double-double number.
+# The code produces 13 intermediate and final arithmetical approximations.
+
+# Double precision rounding operator:
+@double = float<ieee_64,ne>;
+
+# Disable some annoying warnings:
+#@-Wno-dichotomy-failure
+
+# Helper definitions for decomposing the free variable
+xh = x;
+
+# Transcription of the C code
+sinpiquick_coeff_1h = double(3.14159265358979311599796346854418516159057617187500000000000000000000000000000000e+00);
+sinpiquick_coeff_1m = double(1.22464971683184787123862072310058851157814368464452070561776508839102461934089661e-16);
+sinpiquick_coeff_1hm = sinpiquick_coeff_1h + sinpiquick_coeff_1m;
+
+sinpiquick_coeff_3h = double(-5.16771278004997025590228076907806098461151123046875000000000000000000000000000000e+00);
+
+sinpiquick_coeff_5h = double(2.55016403989992213041659852024167776107788085937500000000000000000000000000000000e+00);
+
+sinpiquick_coeff_7h = double(-5.99263913290728922333983064163476228713989257812500000000000000000000000000000000e-01);
+
+sinpiquick_x_0_pow2hm = xh * xh;
+sinpiquick_x_0_pow2h = double(sinpiquick_x_0_pow2hm);
+sinpiquick_x_0_pow2m = sinpiquick_x_0_pow2hm - sinpiquick_x_0_pow2h;
+
+sinpiquick_t_1_0h = sinpiquick_coeff_7h;
+
+sinpiquick_t_2_0h = double(sinpiquick_t_1_0h * sinpiquick_x_0_pow2h);
+sinpiquick_t_3_0h = double(sinpiquick_coeff_5h + sinpiquick_t_2_0h);
+sinpiquick_t_4_0h = double(sinpiquick_t_3_0h * sinpiquick_x_0_pow2h);
+sinpiquick_t_5_0hm = sinpiquick_coeff_3h + sinpiquick_t_4_0h;
+sinpiquick_t_5_0h = double(sinpiquick_t_5_0hm);
+sinpiquick_t_5_0m = sinpiquick_t_5_0hm - sinpiquick_t_5_0h;
+
+sinpiquick_t_6_0hm = fma_rel<100>(sinpiquick_t_5_0hm,sinpiquick_x_0_pow2hm,sinpiquick_coeff_1hm);
+sinpiquick_t_6_0h = double(sinpiquick_t_6_0hm);
+sinpiquick_t_6_0m = sinpiquick_t_6_0hm - sinpiquick_t_6_0h;
+
+sinpiquick_t_7_0hm = mul_rel<102>(xh,sinpiquick_t_6_0hm);
+sinpiquick_t_7_0h = double(sinpiquick_t_7_0hm);
+sinpiquick_t_7_0m = sinpiquick_t_7_0hm - sinpiquick_t_7_0h;
+
+sinpiquick_reshm = sinpiquick_t_7_0hm;
+sinpiquick_resh = sinpiquick_t_7_0h;
+sinpiquick_resm = sinpiquick_t_7_0m;
+
+
+# Mathematical equivalents
+Mx = x;
+Msinpiquick_coeff_1 = sinpiquick_coeff_1hm;
+Msinpiquick_coeff_3 = sinpiquick_coeff_3h;
+Msinpiquick_coeff_5 = sinpiquick_coeff_5h;
+Msinpiquick_coeff_7 = sinpiquick_coeff_7h;
+Msinpiquick_x_0_pow2 = Mx * Mx;
+Msinpiquick_t_1_0 = Msinpiquick_coeff_7;
+Msinpiquick_t_2_0 = Msinpiquick_t_1_0 * Msinpiquick_x_0_pow2;
+Msinpiquick_t_3_0 = Msinpiquick_coeff_5 + Msinpiquick_t_2_0;
+Msinpiquick_t_4_0 = Msinpiquick_t_3_0 * Msinpiquick_x_0_pow2;
+Msinpiquick_t_5_0 = Msinpiquick_coeff_3 + Msinpiquick_t_4_0;
+Msinpiquick_t_6_0 = (Msinpiquick_t_5_0 * Msinpiquick_x_0_pow2) + Msinpiquick_coeff_1;
+Msinpiquick_t_7_0 = Mx * Msinpiquick_t_6_0;
+Msinpiquick_res = Msinpiquick_t_7_0;
+
+# Definition of the relative arithmetical error
+epsilon = (sinpiquick_reshm - Msinpiquick_res) / Msinpiquick_res;
+
+# Implication to prove
+{((
+   x in [-1b-8,-1b-408]
+) \/ (
+   x in [1b-408,1b-8]
+))
+->
+(
+   epsilon in ?
+)}
+
+# Hints and Meta-Hints for expansion decomposition
+
+sinpiquick_x_0_pow2h ~ sinpiquick_x_0_pow2hm;
+sinpiquick_t_5_0h ~ sinpiquick_t_5_0hm;
+sinpiquick_t_6_0h ~ sinpiquick_t_6_0hm;
+sinpiquick_t_7_0h ~ sinpiquick_t_7_0hm;
+
+# Meta-Hints for Horner scheme
+sinpiquick_x_0_pow2hm ~ Msinpiquick_x_0_pow2;
+sinpiquick_t_1_0h ~ Msinpiquick_t_1_0;
+sinpiquick_t_2_0h ~ Msinpiquick_t_2_0;
+sinpiquick_t_3_0h ~ Msinpiquick_t_3_0;
+sinpiquick_t_4_0h ~ Msinpiquick_t_4_0;
+sinpiquick_t_5_0hm ~ Msinpiquick_t_5_0;
+sinpiquick_t_6_0hm ~ Msinpiquick_t_6_0;
+sinpiquick_t_7_0hm ~ Msinpiquick_t_7_0;
+sinpiquick_reshm ~ Msinpiquick_res;
+
+# Dichotomies for triple-double decomposition
+
+# Dichotomy for the error bound
+epsilon $ xhm;
+

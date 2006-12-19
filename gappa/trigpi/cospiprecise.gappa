@@ -1,0 +1,148 @@
+# The polynomial to implement is: 1b0 + ((x^(1b1)) * ((-50044839772224400049002264095087b-103) + ((x^(1b1)) * (10290057726411619042605446323595b-101 + ((x^(1b1)) * ((-3006744454127613b-51) + ((x^(1b1)) * (4239339756765869b-54 + ((x^(1b1)) * (-7438313106810207b-58))))))))))
+# The polynomial implemented is: 1b0 + ((x^(1b1)) * ((-50044839772224400049002264095087b-103) + ((x^(1b1)) * (10290057726411619042605446323595b-101 + ((x^(1b1)) * ((-3006744454127613b-51) + ((x^(1b1)) * (4239339756765869b-54 + ((x^(1b1)) * (-7438313106810207b-58))))))))))
+# The domain is [-1b-8;1b-8]
+# The free variable x is a double precision number, the result cospiprecise_res* is stored on a triple-double number.
+# The code produces 17 intermediate and final arithmetical approximations.
+
+# Double precision rounding operator:
+@double = float<ieee_64,ne>;
+
+# Disable some annoying warnings:
+#@-Wno-dichotomy-failure
+
+# Helper definitions for decomposing the free variable
+xh = x;
+
+# Transcription of the C code
+cospiprecise_coeff_0h = double(1.00000000000000000000000000000000000000000000000000000000000000000000000000000000e+00);
+
+cospiprecise_coeff_2h = double(-4.93480220054467899615247006295248866081237792968750000000000000000000000000000000e+00);
+cospiprecise_coeff_2m = double(-3.13264775437072047133490817894057799839785556899468543790021612949203699827194214e-16);
+cospiprecise_coeff_2hm = cospiprecise_coeff_2h + cospiprecise_coeff_2m;
+
+cospiprecise_coeff_4h = double(4.05871212641676848420502210501581430435180664062500000000000000000000000000000000e+00);
+cospiprecise_coeff_4m = double(-2.66019969731660223662555032718185048048635055542576743903282476821914315223693848e-16);
+cospiprecise_coeff_4hm = cospiprecise_coeff_4h + cospiprecise_coeff_4m;
+
+cospiprecise_coeff_6h = double(-1.33526276885458949905682857206556946039199829101562500000000000000000000000000000e+00);
+
+cospiprecise_coeff_8h = double(2.35330630358513925859398341344785876572132110595703125000000000000000000000000000e-01);
+
+cospiprecise_coeff_10h = double(-2.58068327360992909313974763563237502239644527435302734375000000000000000000000000e-02);
+
+cospiprecise_x_0_pow2hm = xh * xh;
+cospiprecise_x_0_pow2h = double(cospiprecise_x_0_pow2hm);
+cospiprecise_x_0_pow2m = cospiprecise_x_0_pow2hm - cospiprecise_x_0_pow2h;
+
+cospiprecise_t_1_0h = cospiprecise_coeff_10h;
+
+cospiprecise_t_2_0h = double(cospiprecise_t_1_0h * cospiprecise_x_0_pow2h);
+cospiprecise_t_3_0h = double(cospiprecise_coeff_8h + cospiprecise_t_2_0h);
+cospiprecise_t_4_0h = double(cospiprecise_t_3_0h * cospiprecise_x_0_pow2h);
+cospiprecise_t_5_0hm = cospiprecise_coeff_6h + cospiprecise_t_4_0h;
+cospiprecise_t_5_0h = double(cospiprecise_t_5_0hm);
+cospiprecise_t_5_0m = cospiprecise_t_5_0hm - cospiprecise_t_5_0h;
+
+cospiprecise_t_6_0hm = fma_rel<100>(cospiprecise_t_5_0hm,cospiprecise_x_0_pow2hm,cospiprecise_coeff_4hm);
+cospiprecise_t_6_0h = double(cospiprecise_t_6_0hm);
+cospiprecise_t_6_0m = cospiprecise_t_6_0hm - cospiprecise_t_6_0h;
+
+cospiprecise_t_7_0hm = fma_rel<100>(cospiprecise_t_6_0hm,cospiprecise_x_0_pow2hm,cospiprecise_coeff_2hm);
+cospiprecise_t_7_0h = double(cospiprecise_t_7_0hm);
+cospiprecise_t_7_0m = cospiprecise_t_7_0hm - cospiprecise_t_7_0h;
+
+cospiprecise_t_8_0hm = mul_rel<102>(cospiprecise_t_7_0hm,cospiprecise_x_0_pow2hm);
+cospiprecise_t_8_0h = double(cospiprecise_t_8_0hm);
+cospiprecise_t_8_0m = cospiprecise_t_8_0hm - cospiprecise_t_8_0h;
+
+cospiprecise_t_9_0hml = add_rel<159>(cospiprecise_coeff_0h,cospiprecise_t_8_0hm);
+cospiprecise_t_9_0ml = cospiprecise_t_9_0hml - cospiprecise_t_9_0h;
+cospiprecise_t_9_0m = double(cospiprecise_t_9_0ml);
+cospiprecise_t_9_0l = cospiprecise_t_9_0ml - cospiprecise_t_9_0m;
+cospiprecise_t_9_0hm = cospiprecise_t_9_0h + cospiprecise_t_9_0m;
+overlap_cospiprecise_t_9_0 = cospiprecise_t_9_0m / cospiprecise_t_9_0h;
+
+cospiprecise_reshml = cospiprecise_t_9_0hml;
+cospiprecise_reshm = cospiprecise_t_9_0hm;
+cospiprecise_resml = cospiprecise_t_9_0ml;
+cospiprecise_resh = cospiprecise_t_9_0h;
+cospiprecise_resm = cospiprecise_t_9_0m;
+cospiprecise_resl = cospiprecise_t_9_0l;
+overlap_cospiprecise_res = overlap_cospiprecise_t_9_0;
+
+
+# Mathematical equivalents
+Mx = x;
+Mcospiprecise_coeff_0 = cospiprecise_coeff_0h;
+Mcospiprecise_coeff_2 = cospiprecise_coeff_2hm;
+Mcospiprecise_coeff_4 = cospiprecise_coeff_4hm;
+Mcospiprecise_coeff_6 = cospiprecise_coeff_6h;
+Mcospiprecise_coeff_8 = cospiprecise_coeff_8h;
+Mcospiprecise_coeff_10 = cospiprecise_coeff_10h;
+Mcospiprecise_x_0_pow2 = Mx * Mx;
+Mcospiprecise_t_1_0 = Mcospiprecise_coeff_10;
+Mcospiprecise_t_2_0 = Mcospiprecise_t_1_0 * Mcospiprecise_x_0_pow2;
+Mcospiprecise_t_3_0 = Mcospiprecise_coeff_8 + Mcospiprecise_t_2_0;
+Mcospiprecise_t_4_0 = Mcospiprecise_t_3_0 * Mcospiprecise_x_0_pow2;
+Mcospiprecise_t_5_0 = Mcospiprecise_coeff_6 + Mcospiprecise_t_4_0;
+Mcospiprecise_t_6_0 = (Mcospiprecise_t_5_0 * Mcospiprecise_x_0_pow2) + Mcospiprecise_coeff_4;
+Mcospiprecise_t_7_0 = (Mcospiprecise_t_6_0 * Mcospiprecise_x_0_pow2) + Mcospiprecise_coeff_2;
+Mcospiprecise_t_8_0 = Mcospiprecise_t_7_0 * Mcospiprecise_x_0_pow2;
+Mcospiprecise_t_9_0 = Mcospiprecise_coeff_0 + Mcospiprecise_t_8_0;
+Mcospiprecise_res = Mcospiprecise_t_9_0;
+
+# Definition of the relative arithmetical error
+epsilon = (cospiprecise_reshml - Mcospiprecise_res) / Mcospiprecise_res;
+
+# Implication to prove
+{((
+   x in [-1b-8,-1b-408]
+/\ |overlap_cospiprecise_t_9_0| in [1b-400,1b-52]    # Verify the lower bound
+/\ |cospiprecise_t_9_0ml| in [1b-1021,1b1023]
+) \/ (
+   x in [1b-408,1b-8]
+/\ |overlap_cospiprecise_t_9_0| in [1b-400,1b-52]    # Verify the lower bound
+/\ |cospiprecise_t_9_0ml| in [1b-1021,1b1023]
+))
+->
+(
+   epsilon in ?
+)}
+
+# Hints and Meta-Hints for expansion decomposition
+
+cospiprecise_x_0_pow2h ~ cospiprecise_x_0_pow2hm;
+cospiprecise_t_5_0h ~ cospiprecise_t_5_0hm;
+cospiprecise_t_6_0h ~ cospiprecise_t_6_0hm;
+cospiprecise_t_7_0h ~ cospiprecise_t_7_0hm;
+cospiprecise_t_8_0h ~ cospiprecise_t_8_0hm;
+cospiprecise_t_9_0hm ~ cospiprecise_t_9_0hml;
+cospiprecise_t_9_0h ~ cospiprecise_t_9_0hm;
+cospiprecise_t_9_0h ~ cospiprecise_t_9_0hml;
+cospiprecise_t_9_0m -> cospiprecise_t_9_0h * overlap_cospiprecise_t_9_0;
+cospiprecise_t_9_0l / cospiprecise_t_9_0m -> - ((cospiprecise_t_9_0m - cospiprecise_t_9_0ml) / cospiprecise_t_9_0ml) / (1 + ((cospiprecise_t_9_0m - cospiprecise_t_9_0ml) / cospiprecise_t_9_0ml));
+(cospiprecise_t_9_0hm - cospiprecise_t_9_0hml) / cospiprecise_t_9_0hml -> - (cospiprecise_t_9_0l / cospiprecise_t_9_0m) * (1 / (1 / overlap_cospiprecise_t_9_0 + 1 + (cospiprecise_t_9_0l / cospiprecise_t_9_0m)));
+cospiprecise_t_9_0ml -> cospiprecise_t_9_0hml / ((1 + ((cospiprecise_t_9_0m - cospiprecise_t_9_0ml) / cospiprecise_t_9_0ml)) / overlap_cospiprecise_t_9_0 + 1);
+(cospiprecise_t_9_0h - cospiprecise_t_9_0hm) / cospiprecise_t_9_0hm -> - 1 / (1 / overlap_cospiprecise_t_9_0 + 1);
+cospiprecise_t_9_0h -> cospiprecise_t_9_0hml / (overlap_cospiprecise_t_9_0 / (1 + ((cospiprecise_t_9_0m - cospiprecise_t_9_0ml) / cospiprecise_t_9_0ml)) + 1);
+
+# Meta-Hints for Horner scheme
+cospiprecise_x_0_pow2hm ~ Mcospiprecise_x_0_pow2;
+cospiprecise_t_1_0h ~ Mcospiprecise_t_1_0;
+cospiprecise_t_2_0h ~ Mcospiprecise_t_2_0;
+cospiprecise_t_3_0h ~ Mcospiprecise_t_3_0;
+cospiprecise_t_4_0h ~ Mcospiprecise_t_4_0;
+cospiprecise_t_5_0hm ~ Mcospiprecise_t_5_0;
+cospiprecise_t_6_0hm ~ Mcospiprecise_t_6_0;
+cospiprecise_t_7_0hm ~ Mcospiprecise_t_7_0;
+cospiprecise_t_8_0hm ~ Mcospiprecise_t_8_0;
+cospiprecise_t_9_0hml ~ Mcospiprecise_t_9_0;
+cospiprecise_reshml ~ Mcospiprecise_res;
+
+# Dichotomies for triple-double decomposition
+$ cospiprecise_t_9_0hml in (0);
+$ cospiprecise_t_9_0ml in (0);
+
+# Dichotomy for the error bound
+epsilon $ xhml;
+

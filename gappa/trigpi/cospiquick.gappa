@@ -1,0 +1,103 @@
+# The polynomial to implement is: 1b0 + ((x^(1b1)) * ((-2778046668940015b-49) + ((x^(1b1)) * (4569703604931271b-50 + ((x^(1b1)) * (-6013451953439851b-52))))))
+# The polynomial implemented is: 1b0 + ((x^(1b1)) * ((-2778046668940015b-49) + ((x^(1b1)) * (4569703604931271b-50 + ((x^(1b1)) * (-6013451953439851b-52))))))
+# The domain is [-1b-8;1b-8]
+# The free variable x is a double precision number, the result cospiquick_res* is stored on a double-double number.
+# The code produces 13 intermediate and final arithmetical approximations.
+
+# Double precision rounding operator:
+@double = float<ieee_64,ne>;
+
+# Disable some annoying warnings:
+#@-Wno-dichotomy-failure
+
+# Helper definitions for decomposing the free variable
+xh = x;
+
+# Transcription of the C code
+cospiquick_coeff_0h = double(1.00000000000000000000000000000000000000000000000000000000000000000000000000000000e+00);
+
+cospiquick_coeff_2h = double(-4.93480220054467899615247006295248866081237792968750000000000000000000000000000000e+00);
+
+cospiquick_coeff_4h = double(4.05871212632582167856298838160000741481781005859375000000000000000000000000000000e+00);
+
+cospiquick_coeff_6h = double(-1.33525456323720947970912220625905320048332214355468750000000000000000000000000000e+00);
+
+cospiquick_x_0_pow2hm = xh * xh;
+cospiquick_x_0_pow2h = double(cospiquick_x_0_pow2hm);
+cospiquick_x_0_pow2m = cospiquick_x_0_pow2hm - cospiquick_x_0_pow2h;
+
+cospiquick_t_1_0h = cospiquick_coeff_6h;
+
+cospiquick_t_2_0h = double(cospiquick_t_1_0h * cospiquick_x_0_pow2h);
+cospiquick_t_3_0h = double(cospiquick_coeff_4h + cospiquick_t_2_0h);
+cospiquick_t_4_0h = double(cospiquick_t_3_0h * cospiquick_x_0_pow2h);
+cospiquick_t_5_0hm = cospiquick_coeff_2h + cospiquick_t_4_0h;
+cospiquick_t_5_0h = double(cospiquick_t_5_0hm);
+cospiquick_t_5_0m = cospiquick_t_5_0hm - cospiquick_t_5_0h;
+
+cospiquick_t_6_0hm = mul_rel<102>(cospiquick_t_5_0hm,cospiquick_x_0_pow2hm);
+cospiquick_t_6_0h = double(cospiquick_t_6_0hm);
+cospiquick_t_6_0m = cospiquick_t_6_0hm - cospiquick_t_6_0h;
+
+cospiquick_t_7_0hm = add_rel<102>(cospiquick_coeff_0h,cospiquick_t_6_0hm);
+cospiquick_t_7_0h = double(cospiquick_t_7_0hm);
+cospiquick_t_7_0m = cospiquick_t_7_0hm - cospiquick_t_7_0h;
+
+cospiquick_reshm = cospiquick_t_7_0hm;
+cospiquick_resh = cospiquick_t_7_0h;
+cospiquick_resm = cospiquick_t_7_0m;
+
+
+# Mathematical equivalents
+Mx = x;
+Mcospiquick_coeff_0 = cospiquick_coeff_0h;
+Mcospiquick_coeff_2 = cospiquick_coeff_2h;
+Mcospiquick_coeff_4 = cospiquick_coeff_4h;
+Mcospiquick_coeff_6 = cospiquick_coeff_6h;
+Mcospiquick_x_0_pow2 = Mx * Mx;
+Mcospiquick_t_1_0 = Mcospiquick_coeff_6;
+Mcospiquick_t_2_0 = Mcospiquick_t_1_0 * Mcospiquick_x_0_pow2;
+Mcospiquick_t_3_0 = Mcospiquick_coeff_4 + Mcospiquick_t_2_0;
+Mcospiquick_t_4_0 = Mcospiquick_t_3_0 * Mcospiquick_x_0_pow2;
+Mcospiquick_t_5_0 = Mcospiquick_coeff_2 + Mcospiquick_t_4_0;
+Mcospiquick_t_6_0 = Mcospiquick_t_5_0 * Mcospiquick_x_0_pow2;
+Mcospiquick_t_7_0 = Mcospiquick_coeff_0 + Mcospiquick_t_6_0;
+Mcospiquick_res = Mcospiquick_t_7_0;
+
+# Definition of the relative arithmetical error
+epsilon = (cospiquick_reshm - Mcospiquick_res) / Mcospiquick_res;
+
+# Implication to prove
+{((
+   x in [-1b-8,-1b-408]
+) \/ (
+   x in [1b-408,1b-8]
+))
+->
+(
+   epsilon in ?
+)}
+
+# Hints and Meta-Hints for expansion decomposition
+
+cospiquick_x_0_pow2h ~ cospiquick_x_0_pow2hm;
+cospiquick_t_5_0h ~ cospiquick_t_5_0hm;
+cospiquick_t_6_0h ~ cospiquick_t_6_0hm;
+cospiquick_t_7_0h ~ cospiquick_t_7_0hm;
+
+# Meta-Hints for Horner scheme
+cospiquick_x_0_pow2hm ~ Mcospiquick_x_0_pow2;
+cospiquick_t_1_0h ~ Mcospiquick_t_1_0;
+cospiquick_t_2_0h ~ Mcospiquick_t_2_0;
+cospiquick_t_3_0h ~ Mcospiquick_t_3_0;
+cospiquick_t_4_0h ~ Mcospiquick_t_4_0;
+cospiquick_t_5_0hm ~ Mcospiquick_t_5_0;
+cospiquick_t_6_0hm ~ Mcospiquick_t_6_0;
+cospiquick_t_7_0hm ~ Mcospiquick_t_7_0;
+cospiquick_reshm ~ Mcospiquick_res;
+
+# Dichotomies for triple-double decomposition
+
+# Dichotomy for the error bound
+epsilon $ xhm;
+

@@ -1,0 +1,189 @@
+# The polynomial to implement is: x * (286965175440513682586550324983956956112624645035b-156 + ((x^(1b1)) * ((-3275427103718718266226722463013b-99) + ((x^(1b1)) * (51723471613295412653622130742483b-104 + ((x^(1b1)) * ((-2698847510945475b-52) + ((x^(1b1)) * (2959617474724135b-55 + ((x^(1b1)) * (-4248785555898559b-59)))))))))))
+# The polynomial implemented is: x * (286965175440513682586550324983956956112624645035b-156 + ((x^(1b1)) * ((-3275427103718718266226722463013b-99) + ((x^(1b1)) * (51723471613295412653622130742483b-104 + ((x^(1b1)) * ((-2698847510945475b-52) + ((x^(1b1)) * (2959617474724135b-55 + ((x^(1b1)) * (-4248785555898559b-59)))))))))))
+# The domain is [-1b-8;1b-8]
+# The free variable x is a double precision number, the result sinpiprecise_res* is stored on a triple-double number.
+# The code produces 18 intermediate and final arithmetical approximations.
+
+# Double precision rounding operator:
+@double = float<ieee_64,ne>;
+
+# Disable some annoying warnings:
+#@-Wno-dichotomy-failure
+
+# Helper definitions for decomposing the free variable
+xh = x;
+
+# Transcription of the C code
+sinpiprecise_coeff_1h = double(3.14159265358979311599796346854418516159057617187500000000000000000000000000000000e+00);
+sinpiprecise_coeff_1m = double(1.22464679914735320717376402945839660462569212467758006379625612680683843791484833e-16);
+sinpiprecise_coeff_1l = double(-2.87889731599645993207191707893463395148177292198731390393739579574603302514349608e-33);
+sinpiprecise_coeff_1hml = sinpiprecise_coeff_1h + sinpiprecise_coeff_1m + sinpiprecise_coeff_1l;
+
+sinpiprecise_coeff_3h = double(-5.16771278004997025590228076907806098461151123046875000000000000000000000000000000e+00);
+sinpiprecise_coeff_3m = double(2.26656228257550136196266687046492287115561324595258696490418515168130397796630859e-16);
+sinpiprecise_coeff_3hm = sinpiprecise_coeff_3h + sinpiprecise_coeff_3m;
+
+sinpiprecise_coeff_5h = double(2.55016403987734552316624103696085512638092041015625000000000000000000000000000000e+00);
+sinpiprecise_coeff_5m = double(-7.93098961936403945684716222915171282926664203267314023904077657789457589387893677e-17);
+sinpiprecise_coeff_5hm = sinpiprecise_coeff_5h + sinpiprecise_coeff_5m;
+
+sinpiprecise_coeff_7h = double(-5.99264529320792105338000510528218001127243041992187500000000000000000000000000000e-01);
+
+sinpiprecise_coeff_9h = double(8.21458866130424236740026344705256633460521697998046875000000000000000000000000000e-02);
+
+sinpiprecise_coeff_11h = double(-7.37046804820839888960914976223648409359157085418701171875000000000000000000000000e-03);
+
+sinpiprecise_x_0_pow2hm = xh * xh;
+sinpiprecise_x_0_pow2h = double(sinpiprecise_x_0_pow2hm);
+sinpiprecise_x_0_pow2m = sinpiprecise_x_0_pow2hm - sinpiprecise_x_0_pow2h;
+
+sinpiprecise_t_1_0h = sinpiprecise_coeff_11h;
+
+sinpiprecise_t_2_0h = double(sinpiprecise_t_1_0h * sinpiprecise_x_0_pow2h);
+sinpiprecise_t_3_0h = double(sinpiprecise_coeff_9h + sinpiprecise_t_2_0h);
+sinpiprecise_t_4_0h = double(sinpiprecise_t_3_0h * sinpiprecise_x_0_pow2h);
+sinpiprecise_t_5_0hm = sinpiprecise_coeff_7h + sinpiprecise_t_4_0h;
+sinpiprecise_t_5_0h = double(sinpiprecise_t_5_0hm);
+sinpiprecise_t_5_0m = sinpiprecise_t_5_0hm - sinpiprecise_t_5_0h;
+
+sinpiprecise_t_6_0hm = fma_rel<100>(sinpiprecise_t_5_0hm,sinpiprecise_x_0_pow2hm,sinpiprecise_coeff_5hm);
+sinpiprecise_t_6_0h = double(sinpiprecise_t_6_0hm);
+sinpiprecise_t_6_0m = sinpiprecise_t_6_0hm - sinpiprecise_t_6_0h;
+
+sinpiprecise_t_7_0hm = fma_rel<100>(sinpiprecise_t_6_0hm,sinpiprecise_x_0_pow2hm,sinpiprecise_coeff_3hm);
+sinpiprecise_t_7_0h = double(sinpiprecise_t_7_0hm);
+sinpiprecise_t_7_0m = sinpiprecise_t_7_0hm - sinpiprecise_t_7_0h;
+
+sinpiprecise_t_8_0hm = mul_rel<102>(sinpiprecise_t_7_0hm,sinpiprecise_x_0_pow2hm);
+sinpiprecise_t_8_0h = double(sinpiprecise_t_8_0hm);
+sinpiprecise_t_8_0m = sinpiprecise_t_8_0hm - sinpiprecise_t_8_0h;
+
+sinpiprecise_t_9_0hml = add_rel<152>(sinpiprecise_t_8_0hm,sinpiprecise_coeff_1hml);
+sinpiprecise_t_9_0ml = sinpiprecise_t_9_0hml - sinpiprecise_t_9_0h;
+sinpiprecise_t_9_0m = double(sinpiprecise_t_9_0ml);
+sinpiprecise_t_9_0l = sinpiprecise_t_9_0ml - sinpiprecise_t_9_0m;
+sinpiprecise_t_9_0hm = sinpiprecise_t_9_0h + sinpiprecise_t_9_0m;
+overlap_sinpiprecise_t_9_0 = sinpiprecise_t_9_0m / sinpiprecise_t_9_0h;
+
+sinpiprecise_t_10_0hml = mul_rel<145>(xh,sinpiprecise_t_9_0hml);
+sinpiprecise_t_10_0ml = sinpiprecise_t_10_0hml - sinpiprecise_t_10_0h;
+sinpiprecise_t_10_0m = double(sinpiprecise_t_10_0ml);
+sinpiprecise_t_10_0l = sinpiprecise_t_10_0ml - sinpiprecise_t_10_0m;
+sinpiprecise_t_10_0hm = sinpiprecise_t_10_0h + sinpiprecise_t_10_0m;
+overlap_sinpiprecise_t_10_0 = sinpiprecise_t_10_0m / sinpiprecise_t_10_0h;
+
+sinpiprecise_reshml = sinpiprecise_t_10_0hml;
+sinpiprecise_resml = sinpiprecise_reshml - sinpiprecise_resh;
+sinpiprecise_resm = double(sinpiprecise_resml);
+sinpiprecise_resl = sinpiprecise_resml - sinpiprecise_resm;
+sinpiprecise_reshm = sinpiprecise_resh + sinpiprecise_resm;
+overlap_sinpiprecise_res = sinpiprecise_resm / sinpiprecise_resh;
+
+
+# Mathematical equivalents
+Mx = x;
+Msinpiprecise_coeff_1 = sinpiprecise_coeff_1hml;
+Msinpiprecise_coeff_3 = sinpiprecise_coeff_3hm;
+Msinpiprecise_coeff_5 = sinpiprecise_coeff_5hm;
+Msinpiprecise_coeff_7 = sinpiprecise_coeff_7h;
+Msinpiprecise_coeff_9 = sinpiprecise_coeff_9h;
+Msinpiprecise_coeff_11 = sinpiprecise_coeff_11h;
+Msinpiprecise_x_0_pow2 = Mx * Mx;
+Msinpiprecise_t_1_0 = Msinpiprecise_coeff_11;
+Msinpiprecise_t_2_0 = Msinpiprecise_t_1_0 * Msinpiprecise_x_0_pow2;
+Msinpiprecise_t_3_0 = Msinpiprecise_coeff_9 + Msinpiprecise_t_2_0;
+Msinpiprecise_t_4_0 = Msinpiprecise_t_3_0 * Msinpiprecise_x_0_pow2;
+Msinpiprecise_t_5_0 = Msinpiprecise_coeff_7 + Msinpiprecise_t_4_0;
+Msinpiprecise_t_6_0 = (Msinpiprecise_t_5_0 * Msinpiprecise_x_0_pow2) + Msinpiprecise_coeff_5;
+Msinpiprecise_t_7_0 = (Msinpiprecise_t_6_0 * Msinpiprecise_x_0_pow2) + Msinpiprecise_coeff_3;
+Msinpiprecise_t_8_0 = Msinpiprecise_t_7_0 * Msinpiprecise_x_0_pow2;
+Msinpiprecise_t_9_0 = Msinpiprecise_t_8_0 + Msinpiprecise_coeff_1;
+Msinpiprecise_t_10_0 = Mx * Msinpiprecise_t_9_0;
+Msinpiprecise_res = Msinpiprecise_t_10_0;
+
+# Definition of the relative arithmetical error
+epsilon = (sinpiprecise_reshml - Msinpiprecise_res) / Msinpiprecise_res;
+
+# Implication to prove
+{((
+   x in [-1b-8,-1b-408]
+/\ |overlap_sinpiprecise_t_9_0| in [1b-400,1b-45]    # Verify the lower bound
+/\ |sinpiprecise_t_9_0ml| in [1b-1021,1b1023]
+/\ |overlap_sinpiprecise_t_10_0| in [1b-400,1b-40]    # Verify the lower bound
+/\ |sinpiprecise_t_10_0ml| in [1b-1021,1b1023]
+/\ |overlap_sinpiprecise_res| in [1b-400,1b-52]    # Verify the lower bound
+/\ |sinpiprecise_resml| in [1b-1021,1b1023]
+) \/ (
+   x in [1b-408,1b-8]
+/\ |overlap_sinpiprecise_t_9_0| in [1b-400,1b-45]    # Verify the lower bound
+/\ |sinpiprecise_t_9_0ml| in [1b-1021,1b1023]
+/\ |overlap_sinpiprecise_t_10_0| in [1b-400,1b-40]    # Verify the lower bound
+/\ |sinpiprecise_t_10_0ml| in [1b-1021,1b1023]
+/\ |overlap_sinpiprecise_res| in [1b-400,1b-52]    # Verify the lower bound
+/\ |sinpiprecise_resml| in [1b-1021,1b1023]
+))
+->
+(
+   epsilon in ?
+)}
+
+# Hints and Meta-Hints for expansion decomposition
+
+sinpiprecise_x_0_pow2h ~ sinpiprecise_x_0_pow2hm;
+sinpiprecise_t_5_0h ~ sinpiprecise_t_5_0hm;
+sinpiprecise_t_6_0h ~ sinpiprecise_t_6_0hm;
+sinpiprecise_t_7_0h ~ sinpiprecise_t_7_0hm;
+sinpiprecise_t_8_0h ~ sinpiprecise_t_8_0hm;
+sinpiprecise_t_9_0hm ~ sinpiprecise_t_9_0hml;
+sinpiprecise_t_9_0h ~ sinpiprecise_t_9_0hm;
+sinpiprecise_t_9_0h ~ sinpiprecise_t_9_0hml;
+sinpiprecise_t_9_0m -> sinpiprecise_t_9_0h * overlap_sinpiprecise_t_9_0;
+sinpiprecise_t_9_0l / sinpiprecise_t_9_0m -> - ((sinpiprecise_t_9_0m - sinpiprecise_t_9_0ml) / sinpiprecise_t_9_0ml) / (1 + ((sinpiprecise_t_9_0m - sinpiprecise_t_9_0ml) / sinpiprecise_t_9_0ml));
+(sinpiprecise_t_9_0hm - sinpiprecise_t_9_0hml) / sinpiprecise_t_9_0hml -> - (sinpiprecise_t_9_0l / sinpiprecise_t_9_0m) * (1 / (1 / overlap_sinpiprecise_t_9_0 + 1 + (sinpiprecise_t_9_0l / sinpiprecise_t_9_0m)));
+sinpiprecise_t_9_0ml -> sinpiprecise_t_9_0hml / ((1 + ((sinpiprecise_t_9_0m - sinpiprecise_t_9_0ml) / sinpiprecise_t_9_0ml)) / overlap_sinpiprecise_t_9_0 + 1);
+(sinpiprecise_t_9_0h - sinpiprecise_t_9_0hm) / sinpiprecise_t_9_0hm -> - 1 / (1 / overlap_sinpiprecise_t_9_0 + 1);
+sinpiprecise_t_9_0h -> sinpiprecise_t_9_0hml / (overlap_sinpiprecise_t_9_0 / (1 + ((sinpiprecise_t_9_0m - sinpiprecise_t_9_0ml) / sinpiprecise_t_9_0ml)) + 1);
+sinpiprecise_t_10_0hm ~ sinpiprecise_t_10_0hml;
+sinpiprecise_t_10_0h ~ sinpiprecise_t_10_0hm;
+sinpiprecise_t_10_0h ~ sinpiprecise_t_10_0hml;
+sinpiprecise_t_10_0m -> sinpiprecise_t_10_0h * overlap_sinpiprecise_t_10_0;
+sinpiprecise_t_10_0l / sinpiprecise_t_10_0m -> - ((sinpiprecise_t_10_0m - sinpiprecise_t_10_0ml) / sinpiprecise_t_10_0ml) / (1 + ((sinpiprecise_t_10_0m - sinpiprecise_t_10_0ml) / sinpiprecise_t_10_0ml));
+(sinpiprecise_t_10_0hm - sinpiprecise_t_10_0hml) / sinpiprecise_t_10_0hml -> - (sinpiprecise_t_10_0l / sinpiprecise_t_10_0m) * (1 / (1 / overlap_sinpiprecise_t_10_0 + 1 + (sinpiprecise_t_10_0l / sinpiprecise_t_10_0m)));
+sinpiprecise_t_10_0ml -> sinpiprecise_t_10_0hml / ((1 + ((sinpiprecise_t_10_0m - sinpiprecise_t_10_0ml) / sinpiprecise_t_10_0ml)) / overlap_sinpiprecise_t_10_0 + 1);
+(sinpiprecise_t_10_0h - sinpiprecise_t_10_0hm) / sinpiprecise_t_10_0hm -> - 1 / (1 / overlap_sinpiprecise_t_10_0 + 1);
+sinpiprecise_t_10_0h -> sinpiprecise_t_10_0hml / (overlap_sinpiprecise_t_10_0 / (1 + ((sinpiprecise_t_10_0m - sinpiprecise_t_10_0ml) / sinpiprecise_t_10_0ml)) + 1);
+sinpiprecise_reshm ~ sinpiprecise_reshml;
+sinpiprecise_resh ~ sinpiprecise_reshm;
+sinpiprecise_resh ~ sinpiprecise_reshml;
+sinpiprecise_resm -> sinpiprecise_resh * overlap_sinpiprecise_res;
+sinpiprecise_resl / sinpiprecise_resm -> - ((sinpiprecise_resm - sinpiprecise_resml) / sinpiprecise_resml) / (1 + ((sinpiprecise_resm - sinpiprecise_resml) / sinpiprecise_resml));
+(sinpiprecise_reshm - sinpiprecise_reshml) / sinpiprecise_reshml -> - (sinpiprecise_resl / sinpiprecise_resm) * (1 / (1 / overlap_sinpiprecise_res + 1 + (sinpiprecise_resl / sinpiprecise_resm)));
+sinpiprecise_resml -> sinpiprecise_reshml / ((1 + ((sinpiprecise_resm - sinpiprecise_resml) / sinpiprecise_resml)) / overlap_sinpiprecise_res + 1);
+(sinpiprecise_resh - sinpiprecise_reshm) / sinpiprecise_reshm -> - 1 / (1 / overlap_sinpiprecise_res + 1);
+sinpiprecise_resh -> sinpiprecise_reshml / (overlap_sinpiprecise_res / (1 + ((sinpiprecise_resm - sinpiprecise_resml) / sinpiprecise_resml)) + 1);
+
+# Meta-Hints for Horner scheme
+sinpiprecise_x_0_pow2hm ~ Msinpiprecise_x_0_pow2;
+sinpiprecise_t_1_0h ~ Msinpiprecise_t_1_0;
+sinpiprecise_t_2_0h ~ Msinpiprecise_t_2_0;
+sinpiprecise_t_3_0h ~ Msinpiprecise_t_3_0;
+sinpiprecise_t_4_0h ~ Msinpiprecise_t_4_0;
+sinpiprecise_t_5_0hm ~ Msinpiprecise_t_5_0;
+sinpiprecise_t_6_0hm ~ Msinpiprecise_t_6_0;
+sinpiprecise_t_7_0hm ~ Msinpiprecise_t_7_0;
+sinpiprecise_t_8_0hm ~ Msinpiprecise_t_8_0;
+sinpiprecise_t_9_0hml ~ Msinpiprecise_t_9_0;
+sinpiprecise_t_10_0hml ~ Msinpiprecise_t_10_0;
+sinpiprecise_reshml ~ Msinpiprecise_res;
+
+# Dichotomies for triple-double decomposition
+$ sinpiprecise_t_9_0hml in (0);
+$ sinpiprecise_t_9_0ml in (0);
+$ sinpiprecise_t_10_0hml in (0);
+$ sinpiprecise_t_10_0ml in (0);
+$ sinpiprecise_reshml in (0);
+$ sinpiprecise_resml in (0);
+
+# Dichotomy for the error bound
+epsilon $ xhml;
+
