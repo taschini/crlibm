@@ -923,9 +923,9 @@ void test_init(/* pointers to returned value */
   else if (strcmp (func_name, "sinpi") == 0)
     {
       *randfun_perf     = rand_for_exp_perf;
-      *randfun_soaktest = rand_for_exp_perf;
       *randfun_soaktest = rand_for_trig_soaktest;
-      *worst_case= 4.814021627225461890071402615112e-17;
+      *worst_case= 8.660177969107699326025337835166e-16;
+      /* there is a worst one for directed rounding modes actually*/
       *testfun_libm   = tinkered_sinpi;
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = tinkered_mpfr_sinpi;
@@ -947,9 +947,8 @@ void test_init(/* pointers to returned value */
   else if (strcmp (func_name, "cospi") == 0)
     {
       *randfun_perf     = rand_for_exp_perf;
-      *randfun_soaktest = rand_for_trigpi_soaktest;
-      *worst_case= 0; /* TODO */ 
-      /* TODO */
+      *randfun_soaktest = rand_for_trig_soaktest;
+      *worst_case= 4.496656279439104163951187380192e-08;
       *testfun_libm   = tinkered_cospi;
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = tinkered_mpfr_cospi;
@@ -970,10 +969,9 @@ void test_init(/* pointers to returned value */
 
   else if (strcmp (func_name, "tanpi") == 0)
     {
-      *randfun_perf     = rand_for_trigpi_perf;
-      *randfun_soaktest = rand_for_trigpi_soaktest;
-      *worst_case= 0;
-      /* TODO */
+      *randfun_perf     = rand_for_exp_perf;
+      *randfun_soaktest = rand_for_trig_soaktest;
+      *worst_case= 2.826223498647412316943112325918e-06;
       *testfun_libm   = tinkered_tanpi;
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = tinkered_mpfr_tanpi;

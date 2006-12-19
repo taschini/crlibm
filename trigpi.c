@@ -753,6 +753,7 @@ double cospi_rz(double x){
    if (xih>>31)  sign=-1.;   else sign=1.; /* consider the sign bit */
 
    if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
+   /* TODO ? No test for Pi/4. Such a value will lauch the accurate phase. */
 
    y = y * INV128;
 
