@@ -1,4 +1,4 @@
-\documentclass[a4paper]{book} 
+\documentclass[a4paper,pdftex]{book} 
 
 \usepackage{fullpage}
 %\usepackage{isolatin1} 
@@ -19,6 +19,10 @@
 \newtheorem{algorithm}{Algorithm}
 \newtheorem{propriete}{Property}
 
+\DeclareMathOperator{\sinpi}{sinpi}
+\DeclareMathOperator{\cospi}{cospi}
+\DeclareMathOperator{\tanpi}{tanpi}
+\DeclareMathOperator{\arccosh}{arccosh}
 
 
 \newcommand{\pref}[1]{$<$\ref{#1}$>$}
@@ -249,6 +253,8 @@ the Universit\'e de Perpignan.
 
 \chapter{The trigonometric functions \label{chap:trigo}}
 \input{trigo.tex}
+\chapter{The trig-of-$\pi x$ functions  \label{chap:trigpi}}
+\input{trigpi.tex}
 
 \chapter{The arcsine \label{chap:asin}}
 \input{asin.tex}

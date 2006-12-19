@@ -164,6 +164,7 @@ Note that these tests launch the accurate phase when yl=0, in
 particular in the exceptional cases when the image of a double is a
 double. See the chapter about the log for an example
 
+All this does not work for denormals, of course
 */
 
 

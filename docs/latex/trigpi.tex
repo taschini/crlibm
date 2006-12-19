@@ -1,24 +1,116 @@
+This chapter is contributed by Florent de Dinechin.
+
+
+\section{Overview}
+The trigpi functions are defined as follows:
+\begin{eqnarray}
+ \sinpi(x) &=& sin(\pi x) \\
+ \cospi(x) &=& cos(\pi x) \\
+ \tanpi(x) &=& tan(\pi x)  
+\end{eqnarray}
+
+These functions are similar to the trigonometric functions, with
+two main differences:
+\begin{itemize}
+\item Their first argument reduction is exact, and relatively easy: It
+  consists in removing the integer part of $x$, as e.g.
+  $\sinpi(x+n)=\pm \sinpi(x)$ for $n\in\N$. As an important consequence, their
+  worst-case critical accuracy is known on $\F$ as soon as it is known
+  on  the (symmetrical) interval $[-1, 1]$.
+\item Their Taylor expansion, on the other hand, has irrational
+  coefficients, which requires more careful handling around zero.
+\end{itemize}
+
+Apart from these two differences, we use the same secondary argument
+reduction as for the trigonometric functions in chapter
+\ref{chap:trigo}. Indeed, we even use the same tabulated values: first, find an integer $k$ such that
+
+\begin{equation}
+  \pi x = k\frac{\pi}{256} + \pi y\label{eq:trigoargred}
+\end{equation}
+where $k$ is an integer and  $ |y| \leq {1}/{512}$.
+
+Contrary to the usual trig functions, $y$ so defined is an exact
+double: this second argument reduction is errorless, too. Actually, it
+is performed in the same operations that compute the first.
+
+Then, noting $a=k\pi/256$, 
+we read off a table 
+
+$$sa_h+sa_m+sa_l \approx sin(a)$$
+$$ca_h+ca_m+ca_l \approx cos(a)$$
+
+Only 64 pairs of triple-doubles  are tabulated (amounting to
+$64\times 8 \times 6 = 3$ Kbytes), the rest is obtained by
+periodicity and symmetry, implemented as masks and integer operations
+on the integer $k$. For instance,  $a \mod 2\pi$ is implemented by $k \mod 512$,
+$\pi/2-a$ is implemented as $128-k$, etc.
+
+
+Then we use the reconstruction steps:
+
+\begin{equation}        
+  \sinpi(x) = \sin(a + \pi y) =  \cos(a) \sinpi(y) +  \sin(a) \cospi(y) 
+  \label{eq:sinpiapy}
+\end{equation}
+
+\begin{equation}
+  \cospi(x) = \cos(a + \pi y) = \cos(a) \cospi(y) -  \sin(a) \sinpi(y) 
+  \label{eq:cosapy}
+\end{equation}
+
+\begin{equation} 
+  tanpi(x) = \frac{\sinpi(x)}{\cospi(x)} 
+  \label{eq:tanapy}
+\end{equation}
 
 
 
+\subsection{Special cases for $\cos(\pi x)$ }
 
-\subsection{$\cos(\pi x)$ for small arguments}
+$\cospi$ should return a NaN on infinities and Nan.
 
+In all the rounding modes, we have $\cospi(x)=1$ for all the even integer
+ values of $|x|$, and $\cospi(x)=-1$ for all the odd integer values of
+ $|x|$.
+
+
+ In all the rounding modes, we have $\cospi(x)=1$ for all the even
+ integer values of $|x|$, and $\cospi(x)=-1$ for all the odd integer
+ values of $|x|$. We have $\cospi(x)=+0$ for all the half-integer
+ values of $x$. One could discuss whether having alternate $+0$ and
+ $-0$ would not be better, but there will be a conflict between
+ $\cos(\pi+x)=-\cos(x)$ and $\cos(-x)=\cos(x)$ for e.g. $x=0.5\pi$.
+ Our choice ($+0$ only) is inspired by the LIA2 standard.
+
+
+ Concerning small inputs, we have the Taylor expansion:
 
   \begin{equation}
     \cos(\pi x) = 1-(\pi x)^2/2 + O(x^4)\label{eq:cospiTaylor}
   \end{equation}
  where $O(x^4)$ is positive.
 
-  Therefore $\cos(\pi x)$ is rounded to $1$ in RN and RU mode if
-  $\pi x<\sqrt{2^{-53}}$. In RD and RZ modes, we have $\cos(0)=1$ and
-  $\cos(x)=1-2^{-53}$ for $|x|<2^{-26}$.
+ Therefore $\cos(\pi x)$ is rounded to $1$ in RN and RU mode if $(\pi
+ x)^2<{2^{-53}}$. We test with a constant $C$ which is defined as the
+ upper 32 bits of  $\sqrt(2^{-53})/4$.
+
+ In RD and RZ modes, we have $\cospi(0)=1$ and $\cospi(x)=1-2^{-53}$
+ for $|x|<C$. 
 
 
 
 
-\subsection{$\sin(\pi x)$ for small arguments}
-The Taylor expansion is
+
+\subsection{Special cases for $\sin(\pi x)$}
+$\sinpi$ should return a NaN on infinities and Nan.
+
+In all the rounding modes, we return $\sinpi(x)=+0$ for all the even
+integer values of $|x|$, and $\sinpi(x)=-0$ for all the odd integer
+values of $|x|$. We have $\sinpi(x)=\pm 1$ for  the half-integer
+values of $|x|$. 
+
+For small numbers, the Taylor expansion is
 \begin{equation}
   \sin(\pi x) = \pi x - (\pi x)^3/6 + O(x^5) = \pi x(1-(\pi
   x)^2/6) + O(x^5)\label{eq:sinpiTaylor}
@@ -30,25 +122,15 @@ trigonometrics. We chose to use a two-step approach even for the small
 arguments.  We therefore want a bound on the error of approximating
 $sin(\pi x)$ with $sin(\pi x)$ which is between $2^{-60}$ and
 $2^{-64}$.  This bound is given by (\ref{eq:sinpiTaylor}): For
-$x<2^{-31}$, we have $(\pi x)^2/6 <<2^{-61.28}$.  We may then use an
+$x<2^{-31}$, we have $(\pi x)^2/6 <2^{-61.28}$.  We may then use an
 algorithm that efficiently computes an approximation to $\pi x$ with a
 relative rounding error smaller than $2^{-74}$. The total relative
 error will be smaller than $2^{-61}$.
 
 
-\subsection{$\sin(\pi x)$ for small arguments}
-The Taylor expansion is
-\begin{equation}
-  \sin(\pi x) = \pi x - (\pi x)^3/3 + O(x^5) = \pi x(1-(\pi
-  x)^2/3) + O(x^5)\label{eq:tanpiTaylor}
-\end{equation}
-where $O(x^5)$ has the sign of $x$.
-
-The situation is therefore similar to the previous case, and we will get an
-overall relative error smaller than $2^{-60}$ for $x<2^{-31}$.
 
 
-\subsection{Computing $\pi x$}
+\subsubsection{Computing $\pi x$}
 
 There exists an algorithm, due to Brisebarre and Muller, which
 computes the correctly rounded value of $\pi x$, for any
@@ -61,9 +143,9 @@ important problem is that it is only relevant if one may prove that
 the correctly rounded value of $\pi x$ is also the correctly rounded
 value of $\sin(\pi x)$. This happens when the relative difference
 between $\pi x$ and $\sin(\pi x)$ is smaller than the worst-case
-critical accuracy, which is $2^{-100}$ (TODO mis au hasard) for
+critical accuracy, which is $2^{-110}$ for
 $x<2^{-31}$. We conclude, again from (\ref{eq:sinpiTaylor}) that this
-algorithm is useful for $x<2^{-55}$ (TODO voir le TODO precedent :).
+algorithm is useful for $x<2^{-55}$.
 As we have a two-step approach anyway, the cost of the additional test
 is difficult to justify. 
 
@@ -74,7 +156,7 @@ approximation to $\pi$.
 In the general case, we will be contented with an approximation of
 $\pi x$ accurate to anything much more than $2^{-60}$, as suggested
 before. Let us start with the straightforward double-double multiplication:\\
-\texttt{ Mul12(&rh,&rl, x,0, PIH, PIL);}\\
+\texttt{ Mul12(\&rh,\&rl, x,0, PIH, PIL);}\\
 where $x$ is completed with a zero and \texttt{PIH} and \texttt{PIL}
 form a double-double approximation of $\pi$. This would provide much
 too much accuracy, so the algorithm is adapted to the specific case as
@@ -83,8 +165,8 @@ follows:
 \item In the previous algorithm, all the multiplications by zero are of course optimised out;
 \item The previous algorithm first splits \texttt{x} into \texttt{xh}
   and \texttt{xl}, and does the same for \texttt{PIH}. An obvious
-  optimisation is to pre-split \texttt{PIH} into \texttt{PIH} and
-  \texttt{PIM}.
+  optimisation is to pre-split \texttt{PIH} into \texttt{PIHH} and
+  \texttt{PIHM}.
 \item A last optimisation is to neglect the term \texttt{xl*PIL}.
 \end{itemize}
 
@@ -92,13 +174,12 @@ The final algorithm is therefore :
 \begin{lstlisting}[caption={Multiplication by $\pi$ \label{lst:trigpi:pix}},firstnumber=1]
   const double c  = 134217729.; /* 2^27 +1 */   
   double t, xh, xl;                           
-
   /* Splitting of x. Both xh and xl have at least 26 consecutive LSB zeroes */
   t = x*c;     
   xh = (x-t)+t;
   xl = x-xh;   
 
-  Add12(rh,rl, xh*PIH, (xl*PIH + xh*PIM) + (xh*PIL + xl*PIM) );               
+  Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIL + xl*PIHM) );               
 \end{lstlisting}
 
 The splitting is exact (Dekker). In the Add12, all the multiplications
@@ -106,8 +187,4 @@ are exact except \texttt{xh*PIL}. The \texttt{Add12} itself is also
 exact. The error is therefore purely due to the three additions, and
 lead to a conservative majoration of the relative error of $2^{-53-22}
 = 2^{-75}$. 
-
-This bound could probably be refined if needed. In
-particular, it might be that the two additions \texttt{(xl*PIH +
-  xh*PIM)} and (xh*PIL + xl*PIM) are both exact if \texttt{PIH} and
-\texttt{PIM} have at least 27 LSB zeroes.
+This bound could probably be refined if needed.

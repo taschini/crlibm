@@ -183,7 +183,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
  double sinpi_rn(double x){
    double xs, y,u, rh, rm, rl, sign,absx;
    db_number xdb, t;
-   int32_t xh, absxh, index, quadrant;
+   int32_t xih, absxih, index, quadrant;
    
    if (x<0) absx = -x;   else absx = x; 
 
@@ -206,21 +206,21 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    quadrant = (t.i[LO] & 0xff) >>6;
 
    /* Special case tests come late because the conversion FP to int is slow */
-   xh = xdb.i[HI];
-   absxh = xh & 0x7fffffff;
-   if (xh<0)  sign=-1.;   else sign=1.; /* consider the sign bit */
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
+   if (xih>>31)  sign=-1.;   else sign=1.; /* consider the sign bit */
 
    if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
 
    y = y * INV128;
 
    /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
-   if (absxh>=0x7ff00000) {
+   if (absxih>=0x7ff00000) {
      xdb.l=0xfff8000000000000LL;
      return xdb.d - xdb.d; 
    }
       
-   if(absxh>=0x43300000) /* 2^52, which entails that x is an integer */
+   if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
      return sign*0.0; /*signed */
 
    sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
@@ -237,7 +237,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
  double sinpi_rd(double x){
    double xs, y,u, rh, rm, rl, sign,absx;
    db_number xdb, t;
-   int32_t xh, absxh, index, quadrant;
+   int32_t xih, absxih, index, quadrant;
    
    if (x<0) absx = -x;   else absx = x; 
 
@@ -260,21 +260,21 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    quadrant = (t.i[LO] & 0xff) >>6;
 
    /* Special case tests come late because the conversion FP to int is slow */
-   xh = xdb.i[HI];
-   absxh = xh & 0x7fffffff;
-   if (xh<0)  sign=-1.;   else sign=1.; /* consider the sign bit */
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
+   if (xih>>31)  sign=-1.;   else sign=1.; /* consider the sign bit */
 
    if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
 
    y = y * INV128;
 
    /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
-   if (absxh>=0x7ff00000) {
+   if (absxih>=0x7ff00000) {
      xdb.l=0xfff8000000000000LL;
      return xdb.d - xdb.d; 
    }
       
-   if(absxh>=0x43300000) /* 2^52, which entails that x is an integer */
+   if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
      return sign*0.0; /*signed */
 
    sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
@@ -286,7 +286,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
  double sinpi_ru(double x){
    double xs, y,u, rh, rm, rl, sign,absx;
    db_number xdb, t;
-   int32_t xh, absxh, index, quadrant;
+   int32_t xih, absxih, index, quadrant;
    
    if (x<0) absx = -x;   else absx = x; 
 
@@ -309,24 +309,50 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    quadrant = (t.i[LO] & 0xff) >>6;
 
    /* Special case tests come late because the conversion FP to int is slow */
-   xh = xdb.i[HI];
-   absxh = xh & 0x7fffffff;
-   if (xh<0)  sign=-1.;   else sign=1.; /* consider the sign bit */
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
+   if (xih>>31)  sign=-1.;   else sign=1.; /* consider the sign bit */
 
    if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
 
    y = y * INV128;
 
    /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
-   if (absxh>=0x7ff00000) {
+   if (absxih>=0x7ff00000) {
      xdb.l=0xfff8000000000000LL;
      return xdb.d - xdb.d; 
    }
       
-   if(absxh>=0x43300000) /* 2^52, which entails that x is an integer */
+   if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
      return sign*0.0; /*signed */
 
-   sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
+
+   if(absxih<=0x3E000000) /*2^{-31}*/ {
+   /* Get rid of possible subnormal */
+   //     if (absxih<0x01700000) /* 2^{-1000} */{
+   //  scale= 0.933263618503218878990089544723817169617091446371e-301; /* 2^-1000 */
+   //  x *= 0.1071508607186267320948425049060001810561404811705e302; /* 2^1000 */
+   //}
+   //else
+   //  scale=1.0;
+
+     /* Evaluate Pi*x in two steps . TODO: FMA-based optimisation */
+     const double c  = 134217729.; /* 2^27 +1 */   
+     double tt, xh, xl;                           
+     /* Splitting of x. Both xh and xl have at least 26 consecutive LSB zeroes */
+     tt = x*c;     
+     xh = (x-tt)+tt;
+     xl = x-xh;   
+     Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIL + xl*PIHM) );               
+     //     if(rh == (rh + (rl * PIX_RNCST)))
+     //   return rh;
+     TEST_AND_RETURN_RU(rh, rl, PIX_EPS);
+     /* Otherwise: full triple-double computation of pi*x */
+     Mul133(&rh, &rm, &rl, x, PIH, PIM, PIL);
+   }
+   else
+     sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
+
    ReturnRoundUpwards3(rh,rm,rl);   
    
 };  
@@ -337,7 +363,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
  double sinpi_rz(double x){
    double xs, y,u, rh, rm, rl, sign,absx;
    db_number xdb, t;
-   int32_t xh, absxh, index, quadrant;
+   int32_t xih, absxih, index, quadrant;
    
    if (x<0) absx = -x;   else absx = x; 
 
@@ -360,21 +386,21 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    quadrant = (t.i[LO] & 0xff) >>6;
 
    /* Special case tests come late because the conversion FP to int is slow */
-   xh = xdb.i[HI];
-   absxh = xh & 0x7fffffff;
-   if (xh<0)  sign=-1.;   else sign=1.; /* consider the sign bit */
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
+   if (xih>>31)  sign=-1.;   else sign=1.; /* consider the sign bit */
 
    if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
 
    y = y * INV128;
 
    /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
-   if (absxh>=0x7ff00000) {
+   if (absxih>=0x7ff00000) {
      xdb.l=0xfff8000000000000LL;
      return xdb.d - xdb.d; 
    }
       
-   if(absxh>=0x43300000) /* 2^52, which entails that x is an integer */
+   if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
      return sign*0.0; /*signed */
 
    sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
@@ -393,7 +419,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
  double cospi_rn(double x){
    double xs, y,u, rh, rm, rl, absx;
    db_number xdb, t;
-   int32_t xh, absxh, index, quadrant;
+   int32_t xih, absxih, index, quadrant;
    
    if (x<0) absx =-x; else absx=x; 
 
@@ -422,24 +448,24 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
       in this case */
 
    /* Special case tests come late because the conversion FP to int is slow */
-   xh = xdb.i[HI];
-   absxh = xh & 0x7fffffff;
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
 
    /* SPECIAL CASES: x=(Nan, Inf) cos(pi*x)=Nan */
 
-   if (absxh>=0x7ff00000) {
+   if (absxih>=0x7ff00000) {
      xdb.l=0xfff8000000000000LL;
      return xdb.d - xdb.d; 
    }
       
-   if(absxh>=0x43400000) /* 2^53, which entails that x is an even integer */
+   if(absxih>=0x43400000) /* 2^53, which entails that x is an even integer */
      return 1.0; 
 
    if(index==0 && y==0. && quadrant==0) return 1.; 
    if(index==0 && y==0. && quadrant==2) return -1.; 
 
-   if (xh<0x3E200000) /* 2^-29 */
-     return 1;
+   if (xih<0x3E26A09E) /* sqrt(2^-53)/4 */
+     return 1.0;
 
 
    //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
@@ -455,7 +481,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
  double cospi_rd(double x){
    double xs, y,u, rh, rm, rl, absx;
    db_number xdb, t;
-   int32_t xh, absxh, index, quadrant;
+   int32_t xih, absxih, index, quadrant;
    
    if (x<0) absx =-x; else absx=x; 
 
@@ -482,17 +508,17 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
 
 
    /* Special case tests come late because the conversion FP to int is slow */
-   xh = xdb.i[HI];
-   absxh = xh & 0x7fffffff;
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
 
    /* SPECIAL CASES: x=(Nan, Inf) cos(pi*x)=Nan */
 
-   if (absxh>=0x7ff00000) {
+   if (absxih>=0x7ff00000) {
      xdb.l=0xfff8000000000000LL;
      return xdb.d - xdb.d; 
    }
       
-   if(absxh>=0x43400000) /* 2^53, which entails that x is an even integer */
+   if(absxih>=0x43400000) /* 2^53, which entails that x is an even integer */
      return 1.0; /*signed */
 
    if(index==0 && y==0. && ((quadrant&1)==1)) return +0.; 
@@ -500,7 +526,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    if(index==0 && y==0. && quadrant==0) return 1.; 
    if(index==0 && y==0. && quadrant==2) return -1.; 
 
-   if (xh<0x3E200000) /* 2^-29 */
+   if (xih<0x3E200000) /* 2^-29 */
      return 0.9999999999999998889776975374843459576368331909179687500; /* 1-2^-53 */
    /* Always +0, inpired by LIA2; We do not have cos(x+pi) == - cos(x)
       in this case */
@@ -517,7 +543,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
  double cospi_ru(double x){
    double xs, y,u, rh, rm, rl, absx;
    db_number xdb, t;
-   int32_t xh, absxh, index, quadrant;
+   int32_t xih, absxih, index, quadrant;
    
    if (x<0) absx =-x; else absx=x; 
 
@@ -544,16 +570,16 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
 
 
    /* Special case tests come late because the conversion FP to int is slow */
-   xh = xdb.i[HI];
-   absxh = xh & 0x7fffffff;
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
 
    /* SPECIAL CASES: x=(Nan, Inf) cos(pi*x)=Nan */
-   if (absxh>=0x7ff00000) {
+   if (absxih>=0x7ff00000) {
      xdb.l=0xfff8000000000000LL;
      return xdb.d - xdb.d; 
    }
       
-   if(absxh>=0x43400000) /* 2^53, which entails that x is an even integer */
+   if(absxih>=0x43400000) /* 2^53, which entails that x is an even integer */
      return 1.0; /*signed */
 
    if(index==0 && y==0. && quadrant==0) return 1.; 
@@ -563,7 +589,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    /* Always +0, inpired by LIA2; We do not have cos(x+pi) == - cos(x)
       in this case */
 
-   if (xh<0x3E200000) /* 2^-29 */
+   if (xih<0x3E200000) /* 2^-29 */
      return 1;
 
 
@@ -579,7 +605,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
 double cospi_rz(double x){
    double xs, y,u, rh, rm, rl, absx;
    db_number xdb, t;
-   int32_t xh, absxh, index, quadrant;
+   int32_t xih, absxih, index, quadrant;
    
    if (x<0) absx =-x; else absx=x; 
 
@@ -606,17 +632,17 @@ double cospi_rz(double x){
 
 
    /* Special case tests come late because the conversion FP to int is slow */
-   xh = xdb.i[HI];
-   absxh = xh & 0x7fffffff;
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
 
    /* SPECIAL CASES: x=(Nan, Inf) cos(pi*x)=Nan */
 
-   if (absxh>=0x7ff00000) {
+   if (absxih>=0x7ff00000) {
      xdb.l=0xfff8000000000000LL;
      return xdb.d - xdb.d; 
    }
       
-   if(absxh>=0x43400000) /* 2^53, which entails that x is an even integer */
+   if(absxih>=0x43400000) /* 2^53, which entails that x is an even integer */
      return 1.0; /*signed */
 
    if(index==0 && y==0. && ((quadrant&1)==1)) return +0.; 
@@ -626,7 +652,7 @@ double cospi_rz(double x){
    if(index==0 && y==0. && quadrant==0) return 1.; 
    if(index==0 && y==0. && quadrant==2) return -1.; 
 
-   if (xh<0x3E200000) /* 2^-29 */
+   if (xih<0x3E200000) /* 2^-29 */
      return 0.9999999999999998889776975374843459576368331909179687500; /* 1-2^-53 */
 
    //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
