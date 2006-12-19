@@ -66,7 +66,7 @@ Then we use the reconstruction steps:
 
 
 
-\subsection{Special cases for $\cos(\pi x)$ }
+\section{Special cases for $\cos(\pi x)$ }
 
 $\cospi$ should return a NaN on infinities and Nan.
 
@@ -102,7 +102,7 @@ In all the rounding modes, we have $\cospi(x)=1$ for all the even integer
 
 
 
-\subsection{Special cases for $\sin(\pi x)$}
+\section{Special cases for $\sin(\pi x)$}
 $\sinpi$ should return a NaN on infinities and Nan.
 
 In all the rounding modes, we return $\sinpi(x)=+0$ for all the even
@@ -118,19 +118,47 @@ For small numbers, the Taylor expansion is
   where $O(x^5)$ has the sign of $x$. 
 
 The situation is therefore more complex than for the radian
-trigonometrics. We chose to use a two-step approach even for the small
+trigonometrics.
+
+\subsection{Worst case accuracy}
+
+The worst case accuracy has been computed only for $x \in [2^{-55},
+1]$, with a worst case accuracy of $2^{-110}$. For smaller arguments,
+equation (\ref{eq:sinpiTaylor}) shows that the worst case arguments
+will be the same: the worst-cases become those of $\pi x$, and are
+identical for each binade of $x<2^{-55}$.  
+
+\subsection{Subnormal numbers}
+This is no longer true for subnormals, however, as the relative error
+becomes an absolute error there. In the subnormal domain, we use the
+following argument: the worst-case search over the small normal
+binades show that $\pi x$ cannot have more than 58 identical ones or
+zero after the mantissa.  Supposing that there exist a worst case in
+the subnormal binade, it may not have more than 53 + 58 identical
+bits.
+
+As computing with denormals is tricky -- and, on some systems, very
+slow --, we chose in this case to evaluate $\pi x$ in SCS, and to use
+the SCS-to-double functions to manage the subnormal rounding. SCS
+accuracy (210 bits) is a large overkill considering the 53+58 required
+bits. If $x$ is a subnormal number, then $\pi x$ is an approximation to
+$\sinpi(x)$ accurate to $2^{-2000}$ according to
+(\ref{eq:sinpiTaylor}). 
+
+
+
+\subsection{Computing $\pi x$ for small arguments}
+As $\pi$ is transcendental, we need a two-step approach even for the small
 arguments.  We therefore want a bound on the error of approximating
 $sin(\pi x)$ with $sin(\pi x)$ which is between $2^{-60}$ and
 $2^{-64}$.  This bound is given by (\ref{eq:sinpiTaylor}): For
 $x<2^{-31}$, we have $(\pi x)^2/6 <2^{-61.28}$.  We may then use an
 algorithm that efficiently computes an approximation to $\pi x$ with a
 relative rounding error smaller than $2^{-74}$. The total relative
-error will be smaller than $2^{-61}$.
+error will be smaller than $2^{-61}$. 
 
-
-
-
-\subsubsection{Computing $\pi x$}
+If the rounding test fails, the accurate computation (of $\sinpi(x)$,
+not of $\pi\times x$) has to be launched.
 
 There exists an algorithm, due to Brisebarre and Muller, which
 computes the correctly rounded value of $\pi x$, for any
@@ -146,10 +174,10 @@ between $\pi x$ and $\sin(\pi x)$ is smaller than the worst-case
 critical accuracy, which is $2^{-110}$ for
 $x<2^{-31}$. We conclude, again from (\ref{eq:sinpiTaylor}) that this
 algorithm is useful for $x<2^{-55}$.
-As we have a two-step approach anyway, the cost of the additional test
+As we have a two-step approach anyway, the cost of an additional test
 is difficult to justify. 
 
-However, if an FMA is available, we will use the same sequence of two
+However, if an FMA is available, we will use the Brisebarre/Muller sequence of two
 FMAs to evaluate $\pi x$ using  a double-double
 approximation to $\pi$.
 
@@ -187,4 +215,27 @@ are exact except \texttt{xh*PIL}. The \texttt{Add12} itself is also
 exact. The error is therefore purely due to the three additions, and
 lead to a conservative majoration of the relative error of $2^{-53-22}
 = 2^{-75}$. 
-This bound could probably be refined if needed.
+
+
+
+\section{Special cases for $\tan(\pi x)$}
+$\tanpi$ should return a NaN on infinities and Nan.
+
+In all the rounding modes, we return $\tanpi(x)=0$ with the sign of $x$ for all
+integer values of $|x|$. We have $\tanpi(x)=\pm \infty$ for  the half-integer
+values of $|x|$. 
+
+For small numbers, the Taylor expansion is
+\begin{equation}
+  \tan(\pi x) = \pi x + (\pi x)^3/3 + O(x^5) 
+  = \pi x(1+(\pi x)^2/3) + O(x^5)\label{eq:tanpiTaylor}
+\end{equation}
+where $O(x^5)$ has the sign of $x$. 
+
+The handling of special cases is similar to those of $\sinpi$. The
+first step for small arguments now has an overall relative error
+bounded by $2^{-60}$.
+ 
+
+
+

@@ -240,7 +240,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
      xh = (x-tt)+tt;
      xl = x-xh;   
      Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
-     if(rh == (rh + (rl * PIX_RNCST)))
+     if(rh == (rh + (rl * PIX_RNCST_SIN)))
        return rh;
    }
    /* Fall here either if we have a large input, or if we have a small
@@ -317,7 +317,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
      xh = (x-tt)+tt;
      xl = x-xh;   
      Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
-     TEST_AND_RETURN_RD(rh,rl,PIX_EPS);
+     TEST_AND_RETURN_RD(rh,rl,PIX_EPS_SIN);
    }
    /* Fall here either if we have a large input, or if we have a small
       input and the rounding test fails.  */
@@ -388,7 +388,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
      xh = (x-tt)+tt;
      xl = x-xh;   
      Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
-     TEST_AND_RETURN_RU(rh,rl,PIX_EPS);
+     TEST_AND_RETURN_RU(rh,rl,PIX_EPS_SIN);
    }
    /* Fall here either if we have a large input, or if we have a small
       input and the rounding test fails.  */
@@ -461,7 +461,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
      xh = (x-tt)+tt;
      xl = x-xh;   
      Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
-     TEST_AND_RETURN_RZ(rh,rl,PIX_EPS);
+     TEST_AND_RETURN_RZ(rh,rl,PIX_EPS_SIN);
    }
    /* Fall here either if we have a large input, or if we have a small
       input and the rounding test fails.  */
@@ -527,11 +527,10 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    if(index==0 && y==0. && quadrant==0) return 1.; 
    if(index==0 && y==0. && quadrant==2) return -1.; 
 
-   if (xih<0x3E26A09E) /* sqrt(2^-53)/4 */
+   if (absxih<0x3E26A09E) /* sqrt(2^-53)/4 */
      return 1.0;
-
-
-   //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
+   /* printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
+    */
 
    cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
    ReturnRoundToNearest3(rh,rm,rl);   
@@ -589,12 +588,10 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    if(index==0 && y==0. && quadrant==0) return 1.; 
    if(index==0 && y==0. && quadrant==2) return -1.; 
 
-   if (xih<0x3E200000) /* 2^-29 */
+   if (absxih<0x3E200000) /* 2^-29 */
      return 0.9999999999999998889776975374843459576368331909179687500; /* 1-2^-53 */
    /* Always +0, inpired by LIA2; We do not have cos(x+pi) == - cos(x)
       in this case */
-
-   //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
 
    cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
    ReturnRoundDownwards3(rh,rm,rl);  
@@ -652,11 +649,8 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    /* Always +0, inpired by LIA2; We do not have cos(x+pi) == - cos(x)
       in this case */
 
-   if (xih<0x3E200000) /* 2^-29 */
+   if (absxih<0x3E200000) /* 2^-29 */
      return 1;
-
-
-   //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
 
    cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
    ReturnRoundUpwards3(rh,rm,rl);  
@@ -715,31 +709,317 @@ double cospi_rz(double x){
    if(index==0 && y==0. && quadrant==0) return 1.; 
    if(index==0 && y==0. && quadrant==2) return -1.; 
 
-   if (xih<0x3E200000) /* 2^-29 */
+   if (absxih<0x3E200000) /* 2^-29 */
      return 0.9999999999999998889776975374843459576368331909179687500; /* 1-2^-53 */
-
-   //   printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
 
    cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
    ReturnRoundTowardsZero3(rh,rm,rl);
   }; 
 
+
+
+
+
+
 /*  tangent of pi times x */
  double tanpi_rn(double x){
-   printf("ERROR:  function not yet implemented \n");
-   return 0.0/0.0;
-}; /* to nearest  */
+   double xs, y,u, rh, rm, rl, ch,cm,cl, ich,icm,icl, sh,sm,sl, sign,absx;
+   db_number xdb, t;
+   int32_t xih, absxih, index, quadrant;
+   
+   if (x<0) absx = -x;   else absx = x; 
+
+   xdb.d = x;
+
+   xs = x*128.0;
+
+   /* argument reduction */
+   if(absx>  TWOTO42 ) {  /* x is very large, let us first subtract a large integer from it */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part. The point is somewhere there since x > 2^42. 
+		    So what remains in t is an FP integer almost as large as x */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+   /* Special case tests come late because the conversion FP to int is slow */
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
+   if (xih>>31)  sign=-1.;   else sign=1.; /* consider the sign bit */
+
+   if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
+
+   y = y * INV128;
+
+   /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
+   if (absxih>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
+     return sign*0.0; /*signed */
+
+   if(absxih<=0x3E000000) /*2^{-31}*/ {
+     if (absxih<0x01700000) { /* 2^{-1000} :  Get rid of possible subnormals  */
+       /* in this case, SCS computation, accurate to 2^-210 which is provably enough */
+       scs_t result;
+       scs_set_d(result, x );
+       scs_mul(result, PiSCS_ptr, result);
+       scs_get_d(&rh, result);
+       return rh;
+     }
+     /* First step for Pi*x. TODO: FMA-based optimisation */
+     const double DekkerConst  = 134217729.; /* 2^27 +1 */   
+     double tt, xh, xl;                           
+     /* Splitting of x. Both xh and xl have at least 26 consecutive LSB zeroes */
+     tt = x*DekkerConst;     
+     xh = (x-tt)+tt;
+     xl = x-xh;   
+     Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
+     if(rh == (rh + (rl * PIX_RNCST_TAN)))
+       return rh;
+   }
+   /* Fall here either if we have a large input, or if we have a small
+      input and the rounding test fails.  */
+   cospi_accurate(&ch, &cm, &cl, y, index, quadrant);
+   recpr33(&ich, &icm, &icl, ch, cm, cl)
+   sinpi_accurate(&sh, &sm, &sl, y, index, quadrant);
+   Mul33(&rh,&rm,&rl, sh,sm,sl, ich,icm,icl);
+   ReturnRoundToNearest3(rh,rm,rl);   
+
+}; 
+
+
+
+
  double tanpi_rd(double x){
-   printf("ERROR:  function not yet implemented \n");
-   return 0.0/0.0;
-}; /* toward -inf */ 
+   double xs, y,u, rh, rm, rl, ch,cm,cl, ich,icm,icl, sh,sm,sl, sign,absx;
+   db_number xdb, t;
+   int32_t xih, absxih, index, quadrant;
+   
+   if (x<0) absx = -x;   else absx = x; 
+
+   xdb.d = x;
+
+   xs = x*128.0;
+
+   /* argument reduction */
+   if(absx>  TWOTO42 ) {  /* x is very large, let us first subtract a large integer from it */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part. The point is somewhere there since x > 2^42. 
+		    So what remains in t is an FP integer almost as large as x */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+   /* Special case tests come late because the conversion FP to int is slow */
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
+   if (xih>>31)  sign=-1.;   else sign=1.; /* consider the sign bit */
+
+   if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
+
+   y = y * INV128;
+
+   /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
+   if (absxih>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
+     return sign*0.0; /*signed */
+
+   if(absxih<=0x3E000000) /*2^{-31}*/ {
+     if (absxih<0x01700000) { /* 2^{-1000} :  Get rid of possible subnormals  */
+       /* in this case, SCS computation, accurate to 2^-210 which is provably enough */
+       scs_t result;
+       scs_set_d(result, x );
+       scs_mul(result, PiSCS_ptr, result);
+       scs_get_d_minf(&rh, result);
+       return rh;
+     }
+     /* First step for Pi*x. TODO: FMA-based optimisation */
+     const double DekkerConst  = 134217729.; /* 2^27 +1 */   
+     double tt, xh, xl;                           
+     /* Splitting of x. Both xh and xl have at least 26 consecutive LSB zeroes */
+     tt = x*DekkerConst;     
+     xh = (x-tt)+tt;
+     xl = x-xh;   
+     Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
+     TEST_AND_RETURN_RD(rh,rl,PIX_EPS_SIN);
+   }
+   /* Fall here either if we have a large input, or if we have a small
+      input and the rounding test fails.  */
+   cospi_accurate(&ch, &cm, &cl, y, index, quadrant);
+   recpr33(&ich, &icm, &icl, ch, cm, cl)
+   sinpi_accurate(&sh, &sm, &sl, y, index, quadrant);
+   Mul33(&rh,&rm,&rl, sh,sm,sl, ich,icm,icl);
+   ReturnRoundDownwards3(rh,rm,rl);   
+};
+
+
+ 
+
+
+
+
+
+
+
  double tanpi_ru(double x){
-   printf("ERROR:  function not yet implemented \n");
-   return 0.0/0.0;
-}; /* toward +inf */
+   double xs, y,u, rh, rm, rl, ch,cm,cl, ich,icm,icl, sh,sm,sl, sign,absx;
+   db_number xdb, t;
+   int32_t xih, absxih, index, quadrant;
+   
+   if (x<0) absx = -x;   else absx = x; 
+
+   xdb.d = x;
+
+   xs = x*128.0;
+
+   /* argument reduction */
+   if(absx>  TWOTO42 ) {  /* x is very large, let us first subtract a large integer from it */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part. The point is somewhere there since x > 2^42. 
+		    So what remains in t is an FP integer almost as large as x */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+   /* Special case tests come late because the conversion FP to int is slow */
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
+   if (xih>>31)  sign=-1.;   else sign=1.; /* consider the sign bit */
+
+   if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
+
+   y = y * INV128;
+
+   /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
+   if (absxih>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
+     return sign*0.0; /*signed */
+
+   if(absxih<=0x3E000000) /*2^{-31}*/ {
+     if (absxih<0x01700000) { /* 2^{-1000} :  Get rid of possible subnormals  */
+       /* in this case, SCS computation, accurate to 2^-210 which is provably enough */
+       scs_t result;
+       scs_set_d(result, x );
+       scs_mul(result, PiSCS_ptr, result);
+       scs_get_d_pinf(&rh, result);
+       return rh;
+     }
+     /* First step for Pi*x. TODO: FMA-based optimisation */
+     const double DekkerConst  = 134217729.; /* 2^27 +1 */   
+     double tt, xh, xl;                           
+     /* Splitting of x. Both xh and xl have at least 26 consecutive LSB zeroes */
+     tt = x*DekkerConst;     
+     xh = (x-tt)+tt;
+     xl = x-xh;   
+     Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
+     TEST_AND_RETURN_RU(rh,rl,PIX_EPS_TAN);
+   }
+   /* Fall here either if we have a large input, or if we have a small
+      input and the rounding test fails.  */
+   cospi_accurate(&ch, &cm, &cl, y, index, quadrant);
+   recpr33(&ich, &icm, &icl, ch, cm, cl)
+   sinpi_accurate(&sh, &sm, &sl, y, index, quadrant);
+   Mul33(&rh,&rm,&rl, sh,sm,sl, ich,icm,icl);
+   ReturnRoundUpwards3(rh,rm,rl);   
+};
+
+
+
  double tanpi_rz(double x){
-   printf("ERROR:  function not yet implemented \n");
-   return 0.0/0.0;
-}; /* toward zero */
+   double xs, y,u, rh, rm, rl, ch,cm,cl, ich,icm,icl, sh,sm,sl, sign,absx;
+   db_number xdb, t;
+   int32_t xih, absxih, index, quadrant;
+   
+   if (x<0) absx = -x;   else absx = x; 
+
+   xdb.d = x;
+
+   xs = x*128.0;
+
+   /* argument reduction */
+   if(absx>  TWOTO42 ) {  /* x is very large, let us first subtract a large integer from it */
+     t.d = xs;
+     t.i[LO] =0; /* remove the low part. The point is somewhere there since x > 2^42. 
+		    So what remains in t is an FP integer almost as large as x */
+     xs = xs-t.d; /* we are going to throw away the int part anyway */ 
+   }
+
+   t.d = TWOTO5251 + xs;
+   u = t.d - TWOTO5251;
+   y = xs - u;
+   index = t.i[LO] & 0x3f;
+   quadrant = (t.i[LO] & 0xff) >>6;
+
+   /* Special case tests come late because the conversion FP to int is slow */
+   xih = xdb.i[HI];
+   absxih = xih & 0x7fffffff;
+   if (xih>>31)  sign=-1.;   else sign=1.; /* consider the sign bit */
+
+   if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
+
+   y = y * INV128;
+
+   /* SPECIAL CASES: x=(Nan, Inf) sin(pi*x)=Nan */
+   if (absxih>=0x7ff00000) {
+     xdb.l=0xfff8000000000000LL;
+     return xdb.d - xdb.d; 
+   }
+      
+   if(absxih>=0x43300000) /* 2^52, which entails that x is an integer */
+     return sign*0.0; /*signed */
+
+   if(absxih<=0x3E000000) /*2^{-31}*/ {
+     if (absxih<0x01700000) { /* 2^{-1000} :  Get rid of possible subnormals  */
+       /* in this case, SCS computation, accurate to 2^-210 which is provably enough */
+       scs_t result;
+       scs_set_d(result, x );
+       scs_mul(result, PiSCS_ptr, result);
+       scs_get_d_zero(&rh, result);
+       return rh;
+     }
+     /* First step for Pi*x. TODO: FMA-based optimisation */
+     const double DekkerConst  = 134217729.; /* 2^27 +1 */   
+     double tt, xh, xl;                           
+     /* Splitting of x. Both xh and xl have at least 26 consecutive LSB zeroes */
+     tt = x*DekkerConst;     
+     xh = (x-tt)+tt;
+     xl = x-xh;   
+     Add12(rh,rl, xh*PIHH, (xl*PIHH + xh*PIHM) + (xh*PIM + xl*PIHM) );               
+     TEST_AND_RETURN_RZ(rh,rl,PIX_EPS_SIN);
+   }
+   /* Fall here either if we have a large input, or if we have a small
+      input and the rounding test fails.  */
+   cospi_accurate(&ch, &cm, &cl, y, index, quadrant);
+   recpr33(&ich, &icm, &icl, ch, cm, cl)
+   sinpi_accurate(&sh, &sm, &sl, y, index, quadrant);
+   Mul33(&rh,&rm,&rl, sh,sm,sl, ich,icm,icl);
+   ReturnRoundTowardsZero3(rh,rm,rl);   
+}; 
 
 

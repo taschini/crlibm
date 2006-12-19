@@ -1323,28 +1323,28 @@
 
 #define recpr33(resh, resm, resl, dh, dm, dl)                                                 \
 {                                                                                             \
-    double _r1, _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9, _t10, _t11, _t12, _t13, _t14;    \
-    double _r2h, _r2l, _t15, _t16, _t17, _t18, _t19, _t20, _t21, _t22, _t23;                  \
+    double _rec_r1, _rec_t1, _rec_t2, _rec_t3, _rec_t4, _rec_t5, _rec_t6, _rec_t7, _rec_t8, _rec_t9, _rec_t10, _rec_t11, _rec_t12, _rec_t13, _rec_t14;    \
+    double _rec_r2h, _rec_r2l, _rec_t15, _rec_t16, _rec_t17, _rec_t18, _rec_t19, _rec_t20, _rec_t21, _rec_t22, _rec_t23;                  \
                                                                                               \
-    _r1 = 1.0 / (dh);                                                                         \
-    Mul12(&_t1,&_t2,_r1,(dh));                                                                \
-    _t3 = _t1 - 1.0;                                                                          \
-    Add12Cond(_t4,_t5,_t3,_t2);                                                               \
-    Mul12(&_t6,&_t7,_r1,(dm));                                                                \
-    Add12(_t8,_t9,-1.0,_t6);                                                                  \
-    _t10 = _t9 + _t7;                                                                         \
-    Add12(_t11,_t12,_t8,_t10);                                                                \
-    _r1 = -_r1;                                                                               \
-    Add22Cond(&_t13,&_t14,_t4,_t5,_t11,_t12);                                                 \
-    Mul122(&_r2h,&_r2l,_r1,_t13,_t14);                                                        \
-    Mul233(&_t15,&_t16,&t_17,_r2h,_r2l,(dh),(dm),(dl));                                       \
-    Renormalize3(&_t18,&_t19,&_t20,_t15,_t16,_t17);                                           \
-    _t18 = -1.0;                                                                              \
-    Mul233(&_t21,&_t22,&_t23,_r2h,_r2l,_t18,_t19,_t20);                                       \
-    _t21 = -_t21; _t22 = -_t22; _t23 = -_t23;                                                 \
-    Renormalize3((resh),(resm),(resl),_t21,_t22,_t23);                                        \
+    _rec_r1 = 1.0 / (dh);                                                                         \
+    Mul12(&_rec_t1,&_rec_t2,_rec_r1,(dh));                                                                \
+    _rec_t3 = _rec_t1 - 1.0;                                                                          \
+    Add12Cond(_rec_t4,_rec_t5,_rec_t3,_rec_t2);                                                               \
+    Mul12(&_rec_t6,&_rec_t7,_rec_r1,(dm));                                                                \
+    Add12(_rec_t8,_rec_t9,-1.0,_rec_t6);                                                                  \
+    _rec_t10 = _rec_t9 + _rec_t7;                                                                         \
+    Add12(_rec_t11,_rec_t12,_rec_t8,_rec_t10);                                                                \
+    _rec_r1 = -_rec_r1;                                                                               \
+    Add22Cond(&_rec_t13,&_rec_t14,_rec_t4,_rec_t5,_rec_t11,_rec_t12);                                                 \
+    Mul122(&_rec_r2h,&_rec_r2l,_rec_r1,_rec_t13,_rec_t14);                                                        \
+    Mul233(&_rec_t15,&_rec_t16,&_rec_t17,_rec_r2h,_rec_r2l,(dh),(dm),(dl));                                       \
+    Renormalize3(&_rec_t18,&_rec_t19,&_rec_t20,_rec_t15,_rec_t16,_rec_t17);                                           \
+    _rec_t18 = -1.0;                                                                              \
+    Mul233(&_rec_t21,&_rec_t22,&_rec_t23,_rec_r2h,_rec_r2l,_rec_t18,_rec_t19,_rec_t20);                                       \
+    _rec_t21 = -_rec_t21; _rec_t22 = -_rec_t22; _rec_t23 = -_rec_t23;                                                 \
+    Renormalize3((resh),(resm),(resl),_rec_t21,_rec_t22,_rec_t23);                                        \
 }
 
 
 
-#endif /*TRIPLE_DOUBLE_H*/
+#endif /*TRIPLE_rec_DOUBLE_rec_H*/

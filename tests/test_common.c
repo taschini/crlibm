@@ -267,8 +267,12 @@ double tinkered_tanpi (double x) {
 
 
 #ifdef HAVE_MPFR_H
-/* we might even attempt to prove some day that these are correct, but it is not done. 
-   Anyway we compute pi*x on enough bits to avoid any cancellation in the argument reduction */ 
+/* we might even attempt to prove some day that these are correct for
+   RN mode. We compute pi*x on enough bits to avoid any
+   cancellation in the argument reduction 
+
+These functions are definitely wrong in directed rounding modes, though.
+*/ 
 
 int tinkered_mpfr_sinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
   mpfr_t pi, pix;
@@ -921,8 +925,7 @@ void test_init(/* pointers to returned value */
       *randfun_perf     = rand_for_exp_perf;
       *randfun_soaktest = rand_for_exp_perf;
       *randfun_soaktest = rand_for_trig_soaktest;
-      *worst_case= 9.24898516520941904595076721307123079895973205566406e-01;
-      /* TODO */
+      *worst_case= 4.814021627225461890071402615112e-17;
       *testfun_libm   = tinkered_sinpi;
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = tinkered_mpfr_sinpi;
@@ -945,7 +948,7 @@ void test_init(/* pointers to returned value */
     {
       *randfun_perf     = rand_for_exp_perf;
       *randfun_soaktest = rand_for_trigpi_soaktest;
-      *worst_case= 9.24898516520941904595076721307123079895973205566406e-01; /* TODO */ 
+      *worst_case= 0; /* TODO */ 
       /* TODO */
       *testfun_libm   = tinkered_cospi;
 #ifdef HAVE_MPFR_H
@@ -969,11 +972,11 @@ void test_init(/* pointers to returned value */
     {
       *randfun_perf     = rand_for_trigpi_perf;
       *randfun_soaktest = rand_for_trigpi_soaktest;
-      *worst_case= 9.24898516520941904595076721307123079895973205566406e-01;
+      *worst_case= 0;
       /* TODO */
       *testfun_libm   = tinkered_tanpi;
 #ifdef HAVE_MPFR_H
-      *testfun_mpfr   = tinkered_mpfr_cospi;
+      *testfun_mpfr   = tinkered_mpfr_tanpi;
 #endif
       switch(crlibm_rnd_mode){
       case RU:

@@ -58,9 +58,13 @@ fprintf(fd, "#define PIHH %1.50e\n", pihh):
 fprintf(fd, "\n"):
 fprintf(fd, "#define PIHM %1.50e\n", pihm):
 fprintf(fd, "\n"):
-fprintf(fd, "#define PIX_RNCST %1.50e\n", compute_rn_constant(2^(-61))):
+fprintf(fd, "#define PIX_RNCST_SIN %1.50e\n", compute_rn_constant(2^(-61))):
 fprintf(fd, "\n"):
-fprintf(fd, "#define PIX_EPS   %1.50e\n", 2^(-61)):
+fprintf(fd, "#define PIX_EPS_SIN   %1.50e\n", 2^(-61)):
+fprintf(fd, "\n"):
+fprintf(fd, "#define PIX_RNCST_TAN %1.50e\n", compute_rn_constant(2^(-60))):
+fprintf(fd, "\n"):
+fprintf(fd, "#define PIX_EPS_TAN   %1.50e\n", 2^(-60)):
 fprintf(fd, "\n"):
 
 # The Pi SCS constant TODO: fuse with the Pi/256 in trigo.h
