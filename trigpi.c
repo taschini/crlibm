@@ -1,9 +1,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "crlibm.h"
+/*
+ * Correctly rounded trigpi functions
+ *
+ * Authors : F. de Dinechin, S. Chevillard, C. Lauter (the latter two
+ * didn't write a line of this file, but wrote a tool that wrote a
+ * tool that wrote etc that wrote bits of code related to polynomial
+ * evaluation.)
+ *
+ * This file is part of the crlibm library developed by the Arenaire
+ * project at Ecole Normale Superieure de Lyon
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or 
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  
+*/
 #include "crlibm_private.h"
 #include "triple-double.h"
 #include "trigpi.h"
+ 
+
+
+
+/* This ugly bits of code in the beginning are polynomial evaluations
+   automagically generated and proven by Chevillard and Lauter's
+   tools 
+*/
+
 
 #define sinpiacc_coeff_1h 3.14159265358979311599796346854418516159057617187500000000000000000000000000000000e+00
 #define sinpiacc_coeff_1m 1.22464679914735320717376402945839660462569212467758006379625612680683843791484833e-16
@@ -86,6 +120,9 @@ static void sincospiacc(double *sinpiacc_resh, double *sinpiacc_resm, double *si
 
 
 
+
+
+
 /* Comment on comparing sa, ca, sy and cy 
    either index=0, then sa=0 and ca=1, therefore t2=0, and the Add33 will be exact 
    or index !=0, and       
@@ -140,6 +177,22 @@ static void sinpi_accurate(double *rh, double *rm, double *rl,
 };
 
 
+
+
+
+
+#define sinpiquick_coeff_1h 3.14159265358979311599796346854418516159057617187500000000000000000000000000000000e+00
+#define sinpiquick_coeff_1m 1.22464971683184787123862072310058851157814368464452070561776508839102461934089661e-16
+#define sinpiquick_coeff_3h -5.16771278004997025590228076907806098461151123046875000000000000000000000000000000e+00
+#define sinpiquick_coeff_5h 2.55016403989992213041659852024167776107788085937500000000000000000000000000000000e+00
+#define sinpiquick_coeff_7h -5.99263913290728922333983064163476228713989257812500000000000000000000000000000000e-01
+#define cospiquick_coeff_0h 1.00000000000000000000000000000000000000000000000000000000000000000000000000000000e+00
+#define cospiquick_coeff_2h -4.93480220054467899615247006295248866081237792968750000000000000000000000000000000e+00
+#define cospiquick_coeff_4h 4.05871212632582167856298838160000741481781005859375000000000000000000000000000000e+00
+#define cospiquick_coeff_6h -1.33525456323720947970912220625905320048332214355468750000000000000000000000000000e+00
+
+
+
 static void cospi_accurate(double *rh, double *rm, double *rl,
 			   double y, int index, int quadrant)
 {
@@ -175,6 +228,80 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    }
 
 };
+
+
+
+
+
+
+/* This one can clearly be improved. It was set up in less than two hours */
+void sinpiquick(double *rh, double *rm, double x, int index, int quadrant) {
+  double x2h, x2m;
+  double sinpiquick_t_1_0h;
+  double sinpiquick_t_2_0h;
+  double sinpiquick_t_3_0h;
+  double sinpiquick_t_4_0h;
+  double sinpiquick_t_5_0h, sinpiquick_t_5_0m;
+  double sinpiquick_t_6_0h, sinpiquick_t_6_0m;
+  double sinpiquick_t_7_0h, sinpiquick_t_7_0m;
+  double syh, sym;
+  double cospiquick_t_1_0h;
+  double cospiquick_t_2_0h;
+  double cospiquick_t_3_0h;
+  double cospiquick_t_4_0h;
+  double cospiquick_t_5_0h, cospiquick_t_5_0m;
+  double cospiquick_t_6_0h, cospiquick_t_6_0m;
+  double cospiquick_t_7_0h, cospiquick_t_7_0m;
+  double cyh, cym;
+  double t1h, t1m, t2h, t2m, sah, sam, cah,cam;
+
+  Mul12(&x2h,&x2m,x,x);
+  
+  sah=sincosTable[index].sh;
+  cah=sincosTable[index].ch;
+  sam=sincosTable[index].sm;
+  cam=sincosTable[index].cm;
+
+  sinpiquick_t_1_0h = sinpiquick_coeff_7h;
+  sinpiquick_t_2_0h = sinpiquick_t_1_0h * x2h;
+  sinpiquick_t_3_0h = sinpiquick_coeff_5h + sinpiquick_t_2_0h;
+  sinpiquick_t_4_0h = sinpiquick_t_3_0h * x2h;
+  Add12(sinpiquick_t_5_0h,sinpiquick_t_5_0m,sinpiquick_coeff_3h,sinpiquick_t_4_0h);
+  MulAdd22(&sinpiquick_t_6_0h,&sinpiquick_t_6_0m,sinpiquick_coeff_1h,sinpiquick_coeff_1m,x2h,x2m,sinpiquick_t_5_0h,sinpiquick_t_5_0m);
+  Mul122(&sinpiquick_t_7_0h,&sinpiquick_t_7_0m,x,sinpiquick_t_6_0h,sinpiquick_t_6_0m);
+  syh = sinpiquick_t_7_0h; sym = sinpiquick_t_7_0m;
+
+  cospiquick_t_1_0h = cospiquick_coeff_6h;
+  cospiquick_t_2_0h = cospiquick_t_1_0h * x2h;
+  cospiquick_t_3_0h = cospiquick_coeff_4h + cospiquick_t_2_0h;
+  cospiquick_t_4_0h = cospiquick_t_3_0h * x2h;
+  Add12(cospiquick_t_5_0h,cospiquick_t_5_0m,cospiquick_coeff_2h,cospiquick_t_4_0h);
+  Mul22(&cospiquick_t_6_0h,&cospiquick_t_6_0m,cospiquick_t_5_0h,cospiquick_t_5_0m,x2h,x2m);
+  Add122(&cospiquick_t_7_0h,&cospiquick_t_7_0m,cospiquick_coeff_0h,cospiquick_t_6_0h,cospiquick_t_6_0m);
+  cyh = cospiquick_t_7_0h; cym = cospiquick_t_7_0m;
+
+  /* Here comes the hand-written, unproven yet code */
+   if(quadrant==0 || quadrant==2) {
+     /* compute sy*ca+sa*cy   :    t1 = sy*ca,     t2 =  sa*cy*/
+     Mul22(&t1h,&t1m, syh,sym, cah,cam);
+     Mul22(&t2h,&t2m, sah,sam, cyh,cym);
+     Add22Cond(rh, rm, t2h,t2m, t1h,t1m);
+   }
+   else {
+     /* compute cy*ca - sa*sy : t1 = cy*ca,    t2 =  sa*sy */
+     Mul22(&t1h,&t1m, cyh,cym, cah,cam);
+     Mul22(&t2h,&t2m, sah,sam, syh,sym);     
+     Add22Cond(rh, rm, t1h,t1m, -t2h,-t2m);
+   }
+
+   if (quadrant>=2) {
+     *rh = -*rh;
+     *rm = -*rm;
+   }
+
+}
+
+
 
 
 
@@ -245,6 +372,9 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
    }
    /* Fall here either if we have a large input, or if we have a small
       input and the rounding test fails.  */
+   sinpiquick(&rh, &rm,  y, index, quadrant);
+   if (rh==rh+1.00001*rm)
+     return rh;
    sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
    ReturnRoundToNearest3(rh,rm,rl);   
  }
