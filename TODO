@@ -26,7 +26,9 @@ Seems OK to me. Which test procedure ?
 
 Autotest stuff
 --------------
-Add some of Vincent's worst cases to acos, expm1, log1p, log2 and log10 testdata
+You never have enough test cases. 
+More cases around the various boundaries would be welcome.
+
 Optim stuff
 -----------
 Fuse atan-pentium and atan-itanium into atan-de, and add in atanpi. 
