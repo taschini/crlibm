@@ -251,9 +251,10 @@ final multiplication by an approximation to $1/\pi$.
 \item In the first step, we use a double-double approximation to
   $1/\pi$ (accurate to $2^{-105}$) and a Dekker double-double
   multiplication (which should actually be sped up, in the absence of
-  FMA, by pre-splitting the constant).  The overall error of this
-  final multiplication is below $2^{-100}$, and practically doesn't
-  even change the rounding constants.
+  FMA, by pre-splitting the constant as exposed above for $\sinpi$ and
+  $\tanpi$).  The overall error of this final multiplication is below
+  $2^{-100}$, and practically doesn't even change the rounding
+  constants.
 
 \item In the second step (currently still SCS) we similarly multiply 
   by an SCS approximation to $1/\pi$ with an  error well below $2^{-200}$
@@ -263,7 +264,7 @@ final multiplication by an approximation to $1/\pi$.
 
 Care has to be taken of the special cases, though. To keep things
 simple, the SCS accurate phase is launched for small arguments to
-avoid problems with subnormals. This should also be improved soon.
+avoid problems with subnormals. This should also be improved.
 
 Implementations of $\asinpi$ and $\acospi$ along the same lines should
 follow soon.

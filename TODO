@@ -5,13 +5,18 @@ Serious bugs
 ------------
 No known serious bug left so far. Exception raising should be improved.
 
+New functions
+-------------
+Add asinpi and acospi.
+Document power (after all, it does return 
+   guaranteed correctly rounded values for quite a few inputs).
+
 Proof stuff
 -----------
 Write Gappa proofs for log2-td, log10-td, asin, acos, expm1, log1p
 Check all the existing .gappa against last version of Gappa
- + set the paths right in the .mpls 
-   (not done when we moved the .gappa from maple/ to gappa/) 
-Write proper proofs of the DE integer rounding tests.
+ + set the paths right (where there are paths). 
+Write proper proofs of the DE integer rounding tests, or remove DE altogether.
 
 
 Cleaning up stuff
@@ -20,9 +25,6 @@ Check .mpl with underscored variables (some versions of Maple don't like them)
 Ensure compilation on icc9 and SunStudio11
 Solution: check recent icc first. Then add FMADE macros everywhere FMA intended
 add make timings
-On x86, the test procedure might be unfair to the default libm : 
-it should put the processor back to its default state, shouldn't it?  
-Seems OK to me. Which test procedure ?
 
 Autotest stuff
 --------------
@@ -31,6 +33,8 @@ More cases around the various boundaries would be welcome.
 
 Optim stuff
 -----------
+Remove remaining SCS: in atan, in trigo.
+Minor improvements to atanpi as mentionned in the doc. 
 Fuse atan-pentium and atan-itanium into atan-de, and add in atanpi. 
 Or maybe remove all the DE stuff altogether for cleaning up.
 

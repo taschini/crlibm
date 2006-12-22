@@ -1,4 +1,4 @@
-Summary of changes between version 0.18beta1 and version 0.17beta1
+Summary of changes between version 1.0beta1 and version 0.17beta1
 ==========================================================
 <Florent de Dinechin> 
 	Added atanpi
@@ -7,6 +7,8 @@ Summary of changes between version 0.17beta1 and version 0.14beta1
 ==========================================================
 <Florent de Dinechin> 
 	Added sinpi, cospi, tanpi
+<Christoph Lauter>
+        Added power, currently unproven
 	
 Summary of changes between version 0.14beta1 and version 0.13beta1
 ==========================================================
