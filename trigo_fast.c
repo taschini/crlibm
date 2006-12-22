@@ -27,6 +27,19 @@
 #include "crlibm_private.h"
 #include "trigo_fast.h"
 
+extern double scs_sin_rn(double);
+extern double scs_sin_ru(double);
+extern double scs_sin_rd(double);
+extern double scs_sin_rz(double);
+extern double scs_cos_rn(double);
+extern double scs_cos_ru(double);
+extern double scs_cos_rd(double);
+extern double scs_cos_rz(double);
+extern double scs_tan_rn(double); 
+extern double scs_tan_rd(double);  
+extern double scs_tan_ru(double);  
+extern double scs_tan_rz(double);  
+extern int rem_pio2_scs(scs_ptr, scs_ptr);
 
 
 /* 

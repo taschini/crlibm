@@ -69,7 +69,7 @@
 
  
  
-void scs_atan(scs_ptr res_scs, scs_ptr x){
+static void scs_atan(scs_ptr res_scs, scs_ptr x){
   scs_t X_scs, denom1_scs, denom2_scs, poly_scs, X2;
   scs_t atanbhihi,atanbhilo, atanblo, atanbhi, atanb;
   scs_t bsc_ptr;
@@ -146,12 +146,17 @@ void scs_atan(scs_ptr res_scs, scs_ptr x){
       return;
     }
 }
-       
-/*************************************************************
- *************************************************************
- *               ROUNDED  TO NEAREST
- *************************************************************
- *************************************************************/
+
+
+
+static void scs_atanpi(scs_ptr res, scs_ptr x){
+  scs_t at;
+  scs_atan(at, x);
+  scs_mul(res, at, InvPiSCS_ptr);
+}
+
+
+
 
 double scs_atan_rn(double x){ 
   /* This function does NOT compute atan(x) correctly if it isn't 
@@ -177,11 +182,12 @@ double scs_atan_rn(double x){
   return res.d;
 }
 
-/*************************************************************
- *************************************************************
- *               ROUNDED  TOWARD  -INFINITY
- *************************************************************
- *************************************************************/
+
+
+
+
+
+
 
 double scs_atan_rd(double x){ 
   scs_t sc1;
@@ -209,11 +215,9 @@ double scs_atan_rd(double x){
   }
 }
 
-/*************************************************************
- *************************************************************
- *               ROUNDED  TOWARD  +INFINITY
- *************************************************************
- *************************************************************/
+
+
+
 
 double scs_atan_ru(double x){ 
   scs_t sc1;
@@ -231,6 +235,100 @@ double scs_atan_ru(double x){
  
   scs_set_d(sc1, x);
   scs_atan(res_scs, sc1);
+  if (sign == -1){
+    scs_get_d_minf(&res.d, res_scs);
+    res.d *= -1;
+    return res.d;
+  }
+  else{
+    scs_get_d_pinf(&res.d, res_scs);		
+    return res.d;
+  }
+}
+
+
+
+
+
+/************************************************************/
+/********  AtanPi *******************************************/
+
+
+
+
+double scs_atanpi_rn(double x){ 
+  /* This function does NOT compute atanpi(x) correctly if it isn't 
+   * called in atanpi_rn() 
+   */
+  scs_t sc1;
+  scs_t res_scs;
+  db_number res;
+  int sign =1;
+  
+  res.d = x;
+
+  if (x < 0){
+    sign = -1;
+    x *= -1;
+  }
+  scs_set_d(sc1, x);
+  scs_atanpi(res_scs, sc1);
+  scs_get_d(&res.d, res_scs);
+  
+  res.d *= sign;
+  
+  return res.d;
+}
+
+
+double scs_atanpi_rd(double x){ 
+  scs_t sc1;
+  scs_t res_scs;
+  db_number res;
+  int sign = 1;
+   
+  res.d = x;
+
+  /* Filter cases */
+  if (x < 0){
+    sign = -1;
+    x *= -1;
+  }
+  scs_set_d(sc1, x);
+  scs_atanpi(res_scs, sc1);
+  if (sign == -1){
+    scs_get_d_pinf(&res.d, res_scs);
+    res.d *= -1;
+    return res.d;
+  }
+  else{
+    scs_get_d_minf(&res.d, res_scs);		
+    return res.d;
+  }
+}
+
+/*************************************************************
+ *************************************************************
+ *               ROUNDED  TOWARD  +INFINITY
+ *************************************************************
+ *************************************************************/
+
+double scs_atanpi_ru(double x){ 
+  scs_t sc1;
+  scs_t res_scs;
+  db_number res;
+  int sign = 1;
+  
+  res.d = x;
+
+  /* Filter cases */
+  if (x < 0){
+    sign = -1;
+    x *= -1;
+  }
+ 
+  scs_set_d(sc1, x);
+  scs_atanpi(res_scs, sc1);
   if (sign == -1){
     scs_get_d_minf(&res.d, res_scs);
     res.d *= -1;

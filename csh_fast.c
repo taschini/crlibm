@@ -29,6 +29,8 @@
 #include "csh_fast.h"
 #include "triple-double.h"
 
+void exp13(int *exponent, double *exp_h, double *exp_m, double *exp_l, double x);
+void expm1_13(double *exp_h, double *exp_m, double *exp_l, double x);
 
 /* switches on various printfs. Default 0 */
 #define DEBUG 0

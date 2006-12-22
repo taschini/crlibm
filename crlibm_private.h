@@ -104,32 +104,10 @@ extern int crlibm_second_step_taken;
 
 /* The prototypes of the second steps */
 /* extern void exp_SC(scs_ptr res_scs, double x);*/
-extern double scs_exp_rn(double);
-extern double scs_exp_ru(double);
-extern double scs_exp_rd(double);
-void exp13(int *exponent, double *exp_h, double *exp_m, double *exp_l, double x);
-void expm1_13(double *exp_h, double *exp_m, double *exp_l, double x);
 
-extern void scs_log(scs_ptr,db_number, int);
 
-extern double scs_atan_rn(double); 
-extern double scs_atan_rd(double); 
-extern double scs_atan_ru(double); 
  
-extern double scs_sin_rn(double);
-extern double scs_sin_ru(double);
-extern double scs_sin_rd(double);
-extern double scs_sin_rz(double);
-extern double scs_cos_rn(double);
-extern double scs_cos_ru(double);
-extern double scs_cos_rd(double);
-extern double scs_cos_rz(double);
-extern double scs_tan_rn(double); 
-extern double scs_tan_rd(double);  
-extern double scs_tan_ru(double);  
-extern double scs_tan_rz(double);  
 
-extern int rem_pio2_scs(scs_ptr, scs_ptr);
 
 /*
  * i = d in rounding to nearest

@@ -27,6 +27,13 @@
 #include "crlibm_private.h"
 #include "atan_fast.h"
 
+extern double scs_atan_rn(double); 
+extern double scs_atan_rd(double); 
+extern double scs_atan_ru(double); 
+extern double scs_atanpi_rn(double); 
+extern double scs_atanpi_rd(double); 
+extern double scs_atanpi_ru(double); 
+
 
 static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x) {
 
@@ -140,11 +147,10 @@ static void atan_quick(double *atanhi,double *atanlo, int *index_of_e, double x)
 
 }
 
-/*************************************************************
- *************************************************************
- *               ROUNDED  TO NEAREST			     *
- *************************************************************
- *************************************************************/
+
+
+
+
 
 
 extern double atan_rn(double x) {
@@ -187,11 +193,12 @@ extern double atan_rn(double x) {
     }
 }
 
-/*************************************************************
- *************************************************************
- *               ROUNDED  TOWARD  -INFINITY		     *
- *************************************************************
- *************************************************************/
+
+
+
+
+
+
 extern double atan_rd(double x) {
   double atanhi,atanlo;
   int index_of_e;
@@ -248,11 +255,11 @@ extern double atan_rd(double x) {
   return scs_atan_rd(sign*x_db.d);
 }
 
-/*************************************************************
- *************************************************************
- *               ROUNDED  TOWARD  +INFINITY		     *
- *************************************************************
- *************************************************************/
+
+
+
+
+
 
 extern double atan_ru(double x) {
   double atanhi,atanlo;
@@ -310,11 +317,9 @@ extern double atan_ru(double x) {
   return scs_atan_ru(x);
 }
 
-/*************************************************************
- *************************************************************
- *               ROUNDED  TOWARD  ZERO		     *
- *************************************************************
- *************************************************************/
+
+
+
 
 extern double atan_rz(double x) {
   if (x>0)
@@ -322,3 +327,177 @@ extern double atan_rz(double x) {
   else
     return atan_ru(x);
 }
+
+
+
+
+/*************************************************************
+ *************************************************************
+ *                       AtanPi  		             *
+ *************************************************************
+ *************************************************************/
+
+
+
+#if 1
+extern double atanpi_rn(double x) {
+ 
+  double atanhi,atanlo,atanpihi,atanpilo;
+  int index_of_e;
+  double sign;
+  db_number x_db;
+  int absxhi;
+
+  x_db.d = x;
+  absxhi = x_db.i[HI] & 0x7fffffff; 
+
+  if(x_db.i[HI] & 0x80000000){
+    x_db.i[HI] = absxhi;
+    sign =-1;
+  }
+  else 
+    sign=1;
+  
+  /* Filter cases */
+  if ( absxhi >= 0x43500000)           /* x >= 2^54 */
+    {
+      if ((absxhi > 0x7ff00000) || ((absxhi == 0x7ff00000) && (x_db.i[LO] != 0)))
+        return x+x;                /* NaN */
+      else 
+        return sign*0.5;           /* atan(+/-infty) = +/- Pi/2 */
+    }
+  if ( absxhi < 0x3E400000 )
+    return sign*scs_atanpi_rn(x_db.d); /* TODO optim here */
+  
+  atan_quick(&atanhi, &atanlo,&index_of_e , x_db.d);
+  Mul22(&atanpihi,&atanpilo, INVPIH, INVPIL, atanhi,atanlo);
+
+  if (atanpihi == (atanpihi + (atanpilo*rncst[index_of_e]))) 
+    return sign*atanpihi;
+  else
+      /* more accuracy is needed , lauch accurate phase */ 
+      return sign*scs_atanpi_rn(x_db.d);
+}
+
+
+
+
+
+
+
+extern double atanpi_rd(double x) {
+  double atanhi,atanlo,atanpihi,atanpilo;
+  int index_of_e;
+  double maxepsilon;
+  db_number x_db;
+  int absxhi;
+  int sign;
+
+  x_db.d = x;
+  absxhi = x_db.i[HI] & 0x7FFFFFFF; 
+
+  if(x_db.i[HI] & 0x80000000){
+    x_db.i[HI] = absxhi;
+    sign =-1;
+  }
+  else 
+    sign=1;
+
+  /* Filter cases */
+  if ( absxhi >= 0x43500000)           /* x >= 2^54 */
+    {
+      if ((absxhi > 0x7ff00000) || ((absxhi == 0x7ff00000) && (x_db.i[LO] != 0)))
+        return x+x;                /* NaN */
+      else{
+	if (sign>0)
+	  return 0.4999999999999999444888487687421729788184165954589843750; /* nextdown(0.5) */
+	else
+	  return -0.5;           /* atan(infty) = Pi/2 */
+      }
+    }
+  else
+    if ( absxhi < 0x3E400000 )
+      return scs_atanpi_rd(sign*x_db.d); /* TODO optim here */
+
+  atan_quick(&atanhi, &atanlo,&index_of_e, x_db.d);
+  Mul22(&atanpihi,&atanpilo, INVPIH, INVPIL, atanhi,atanlo);
+  maxepsilon = epsilon[index_of_e];
+  atanpihi = sign*atanpihi;
+  atanpilo = sign*atanpilo;
+  
+  /* Rounding test to - infinity */ 
+  
+  TEST_AND_RETURN_RD(atanpihi, atanpilo, maxepsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_atanpi_rd(sign*x_db.d);
+}
+
+
+
+
+
+
+
+extern double atanpi_ru(double x) {
+  double atanhi,atanlo,atanpihi,atanpilo;
+  int index_of_e;
+  int sign;
+  double maxepsilon;
+  db_number x_db;
+  int absxhi;
+
+  x_db.d = x;
+  absxhi = x_db.i[HI] & 0x7FFFFFFF; 
+
+  if (x_db.i[HI] & 0x80000000){
+    sign = -1;
+    x_db.i[HI] = absxhi;
+  }
+  else 
+    sign = 1;
+  
+  
+  /* Filter cases */
+  if ( absxhi >= 0x43500000)           /* x >= 2^54 */
+    {
+      if ((absxhi > 0x7ff00000) || ((absxhi == 0x7ff00000) && (x_db.i[LO] != 0)))
+        return x+x;                /* NaN */
+      else
+        {
+          if (sign>0)
+            return 0.5;
+        else
+          return - 0.4999999999999999444888487687421729788184165954589843750;           
+        }
+    }
+    
+  if ( absxhi < 0x3E400000 )
+    return scs_atanpi_ru(x);
+  
+  atan_quick(&atanhi, &atanlo, &index_of_e, x_db.d);
+  Mul22(&atanpihi,&atanpilo, INVPIH, INVPIL, atanhi,atanlo);
+  maxepsilon = epsilon[index_of_e];
+  atanpihi = sign*atanpihi;
+  atanpilo = sign*atanpilo;
+  
+  TEST_AND_RETURN_RU(atanpihi, atanpilo, maxepsilon);
+
+  /* if the previous block didn't return a value, launch accurate phase */
+  return scs_atanpi_ru(x);
+}
+
+
+
+
+
+extern double atanpi_rz(double x) {
+  if (x>0)
+    return atanpi_rd(x);
+  else
+    return atanpi_ru(x);
+}
+
+
+
+#endif

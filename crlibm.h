@@ -102,6 +102,12 @@ extern double atan_rd(double); /* toward -inf */
 extern double atan_ru(double); /* toward +inf */ 
 extern double atan_rz(double); /* toward zero */ 
 
+/*  arctangentPi  */
+extern double atanpi_rn(double); /* to nearest  */
+extern double atanpi_rd(double); /* toward -inf */ 
+extern double atanpi_ru(double); /* toward +inf */ 
+extern double atanpi_rz(double); /* toward zero */ 
+
 /*  hyperbolic cosine*/
 extern double cosh_rn(double); /* to nearest */
 extern double cosh_rd(double); /* toward -inf */ 
