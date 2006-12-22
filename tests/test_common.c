@@ -264,6 +264,9 @@ double tinkered_cospi (double x) {
 double tinkered_tanpi (double x) {
   return tan(PIH*x);
 }
+double tinkered_atanpi (double x) {
+  return atan(x)/PIH;
+}
 
 
 #ifdef HAVE_MPFR_H
@@ -310,6 +313,19 @@ int tinkered_mpfr_tanpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
   mpfr_tan(mpr, pix, rnd);
   mpfr_clear(pi);
   mpfr_clear(pix);
+  return 0;
+}
+
+int tinkered_mpfr_atanpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, at;
+  mpfr_init2(pi,  2000);
+  mpfr_init2(at, 2060);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_atan(at, mpx, GMP_RNDN);
+  mpfr_div(mpr, at, pi,  rnd);
+  mpfr_clear(pi);
+  mpfr_clear(at);
   return 0;
 }
 
@@ -811,6 +827,27 @@ void test_init(/* pointers to returned value */
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_atan;
+#endif
+    }
+
+  else if (strcmp (func_name, "atanpi") == 0)
+    {
+      *randfun_perf     = rand_for_atan_perf;
+      *randfun_soaktest = rand_for_atan_soaktest;
+      *worst_case= 0 /* TODO */; 
+      *testfun_libm   = tinkered_atanpi;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = atanpi_ru;	break;
+      case RD:
+	*testfun_crlibm = atanpi_rd;	break;
+      case RZ:
+	*testfun_crlibm = atanpi_rz;	break;
+      default:
+        *testfun_crlibm = atanpi_rn ;
+      }
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = tinkered_mpfr_atanpi;
 #endif
     }
 

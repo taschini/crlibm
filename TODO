@@ -1,4 +1,4 @@
-TODO before 0.14 release (which will be 1.0)
+TODO before 1.0 release
 
 
 Serious bugs
@@ -11,25 +11,26 @@ Write Gappa proofs for log2-td, log10-td, asin, acos, expm1, log1p
 Check all the existing .gappa against last version of Gappa
  + set the paths right in the .mpls 
    (not done when we moved the .gappa from maple/ to gappa/) 
-Write proofs of the DE integer rounding tests.
+Write proper proofs of the DE integer rounding tests.
 
 
 Cleaning up stuff
 -----------------
 Check .mpl with underscored variables (some versions of Maple don't like them)
 Ensure compilation on icc9 and SunStudio11
-At the moment, on itanium/icc, log-de only compiles without -mp-std=c99, and 4 of the other ones only compile with these options.
 Solution: check recent icc first. Then add FMADE macros everywhere FMA intended
 add make timings
-On x86, the test procedure is unfair to the default libm : it should put the processor back to its default state.  ? Seems OK to me. Which test procedure ?
+On x86, the test procedure might be unfair to the default libm : 
+it should put the processor back to its default state, shouldn't it?  
+Seems OK to me. Which test procedure ?
 
 Autotest stuff
 --------------
 Add some of Vincent's worst cases to acos, expm1, log1p, log2 and log10 testdata
-
 Optim stuff
 -----------
-Fuse atan-pentium and atan-itanium into atan-de
+Fuse atan-pentium and atan-itanium into atan-de, and add in atanpi. 
+Or maybe remove all the DE stuff altogether for cleaning up.
 
 ===========================================================================
 
@@ -37,8 +38,7 @@ TODO some day
 
 New functions
 -------------
-Easy: 2^x, 10^x, trigpi
-Moderate:  inverse hyperbolic
+inverse hyperbolic
 Difficult: power
 
 Optimisation stuff

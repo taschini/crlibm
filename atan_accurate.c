@@ -133,7 +133,6 @@ static void scs_atan(scs_ptr res_scs, scs_ptr x){
   
   else 
     { /* no reduction needed */
-      
       /* Polynomial evaluation of atan(x) */
       scs_square(X2, x);
       scs_set(res_scs, constant_poly_ptr[0]);

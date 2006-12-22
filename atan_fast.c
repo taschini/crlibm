@@ -339,7 +339,6 @@ extern double atan_rz(double x) {
 
 
 
-#if 1
 extern double atanpi_rn(double x) {
  
   double atanhi,atanlo,atanpihi,atanpilo;
@@ -375,8 +374,8 @@ extern double atanpi_rn(double x) {
   if (atanpihi == (atanpihi + (atanpilo*rncst[index_of_e]))) 
     return sign*atanpihi;
   else
-      /* more accuracy is needed , lauch accurate phase */ 
-      return sign*scs_atanpi_rn(x_db.d);
+    /* more accuracy is needed , lauch accurate phase */ 
+    return sign*scs_atanpi_rn(x_db.d);
 }
 
 
@@ -410,15 +409,19 @@ extern double atanpi_rd(double x) {
         return x+x;                /* NaN */
       else{
 	if (sign>0)
-	  return 0.4999999999999999444888487687421729788184165954589843750; /* nextdown(0.5) */
+	  return 0.5; 
+	/* Or should it be 0.4999999999999999444888487687421729788184165954589843750; nextdown(0.5) */
 	else
 	  return -0.5;           /* atan(infty) = Pi/2 */
       }
     }
   else
-    if ( absxhi < 0x3E400000 )
-      return scs_atanpi_rd(sign*x_db.d); /* TODO optim here */
-
+    if ( absxhi < 0x3E400000 ) {
+      if(x==0.0) 
+	return x;  /* signed */
+      else
+	return scs_atanpi_rd(sign*x_db.d); /* TODO optim here */
+    }
   atan_quick(&atanhi, &atanlo,&index_of_e, x_db.d);
   Mul22(&atanpihi,&atanpilo, INVPIH, INVPIL, atanhi,atanlo);
   maxepsilon = epsilon[index_of_e];
@@ -468,13 +471,16 @@ extern double atanpi_ru(double x) {
           if (sign>0)
             return 0.5;
         else
-          return - 0.4999999999999999444888487687421729788184165954589843750;           
+          return - 0.5;           
         }
     }
     
-  if ( absxhi < 0x3E400000 )
-    return scs_atanpi_ru(x);
-  
+    if ( absxhi < 0x3E400000 ) {
+      if(x==0.0)
+	return x; /* signed */
+      else
+	return scs_atanpi_ru(x);
+    }  
   atan_quick(&atanhi, &atanlo, &index_of_e, x_db.d);
   Mul22(&atanpihi,&atanpilo, INVPIH, INVPIL, atanhi,atanlo);
   maxepsilon = epsilon[index_of_e];
@@ -498,6 +504,3 @@ extern double atanpi_rz(double x) {
     return atanpi_ru(x);
 }
 
-
-
-#endif
