@@ -110,6 +110,7 @@ The currently available functions are summarized in
 Table~\ref{tab:currentstate}.
 \begin{table}[t]
   \begin{center}
+\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{|c|c|c|c|c||c|c|}    \hline
  & \multicolumn{4}{c||}{\crlibm\ name} &\multicolumn{2}{c|}{State of the proof} \\ \cline{2-7}
  \raisebox{5pt}{C99} & to nearest & to $+ \infty$ & to $- \infty$ & to zero
@@ -128,6 +129,12 @@ Table~\ref{tab:currentstate}.
     atan & atan\_rn & atan\_ru & atan\_rd & atan\_rz & complete & complete (paper)\\ \hline
     sinh & sinh\_rn & sinh\_ru & sinh\_rd & sinh\_rz & complete & complete (paper)\\ \hline
     cosh & cosh\_rn & cosh\_ru & cosh\_rd & cosh\_rz & complete & complete (paper)\\ \hline
+    sinpi & sinpi\_rn & sinpi\_ru & sinpi\_rd & sinpi\_rz & complete & complete (formal)\\ \hline
+    cospi & cospi\_rn & cospi\_ru & cospi\_rd & cospi\_rz & complete & complete (formal)\\ \hline
+    tanpi & tanpi\_rn & tanpi\_ru & tanpi\_rd & tanpi\_rz & $[2^{-25},2^{-5}]$& complete (formal)\\ \hline
+%    asinpi & asinpi\_rn & asinpi\_ru & asinpi\_rd & asinpi\_rz & complete & partial \\ \hline
+%    acospi & acospi\_rn & acospi\_ru & acospi\_rd & acospi\_rz & complete & partial\\ \hline
+    atanpi & atanpi\_rn & atanpi\_ru & atanpi\_rd & atanpi\_rz & $[\tan(2^{-25}\pi),\tan(2^{-5}\pi)]$ & complete (paper)\\ \hline
 \end{tabular}
 \end{center}
   

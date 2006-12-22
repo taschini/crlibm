@@ -99,7 +99,11 @@ In all the rounding modes, we have $\cospi(x)=1$ for all the even integer
  In RD and RZ modes, we have $\cospi(0)=1$ and $\cospi(x)=1-2^{-53}$
  for $0<|x|<C$. 
 
+\subsection{Worst case accuracy}
 
+The worst case accuracy has been computed only for $x \in [2^{-24},
+1]$ (the previous discussion shows that it is enough), with a worst
+case accuracy of $2^{-110}$.
 
 
 
@@ -220,7 +224,16 @@ lead to a conservative majoration of the relative error of $2^{-53-22}
 
 
 
-\section{Special cases for $\tan(\pi x)$}
+\section{$\tan(\pi x)$}
+
+\subsection{Worst case accuracy}
+
+The worst case accuracy has been computed only for $x \in [2^{-25},
+2^{-5}]$, with a worst case accuracy of $2^{-111}$. 
+
+\subsection{Special cases}
+
+
 $\tanpi$ should return a NaN on infinities and NaN.
 
 In all the rounding modes, we return $\tanpi(x)=0$ with the sign of $x$ for all
@@ -234,13 +247,20 @@ For small numbers, the Taylor expansion is
 \end{equation}
 where $O(x^5)$ has the sign of $x$. 
 
-The handling of special cases is similar to those of $\sinpi$. The
+The handling of special cases will be similar to those of $\sinpi$. The
 first step for small arguments now has an overall relative error
 bounded by $2^{-60}$.
  
 
-\section{The inverse function $\arctan(\pi x)$}
+\section{ $\arctan(\pi x)$}
 
+\subsection{Proven correctly-rounded domain}
+
+The search for worst cases is not finished yet (work in progress).
+Correct rounding is currently proven on $[\tan(2^{-25}\pi),
+\tan(2^{-5}\pi)]$.
+
+\subsection{Implementation}
 This function is the inverse of $\tanpi$ and is thus defined as follows:
 $$\atanpi(x) = \frac{1}{\pi}\arctan(x)$$
 
@@ -265,6 +285,8 @@ final multiplication by an approximation to $1/\pi$.
 Care has to be taken of the special cases, though. To keep things
 simple, the SCS accurate phase is launched for small arguments to
 avoid problems with subnormals. This should also be improved.
+
+
 
 Implementations of $\asinpi$ and $\acospi$ along the same lines should
 follow soon.

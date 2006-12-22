@@ -726,7 +726,7 @@ void sinpiquick(double *rh, double *rm, double x, int index, int quadrant) {
    if(absxih>=0x43400000) /* 2^53, which entails that x is an even integer */
      return 1.0; /*signed */
 
-   if(index==0 && y==0. && ((quadrant&1)==1)) return +0.; 
+   if(index==0 && y==0. && ((quadrant&1)==1)) return -0.; 
 
    if(index==0 && y==0. && quadrant==0) return 1.; 
    if(index==0 && y==0. && quadrant==2) return -1.; 
