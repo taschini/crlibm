@@ -1,4 +1,4 @@
-This chapter is contributed by Florent de Dinechin.
+This chapter is contributed by F. de Dinechin.
 
 
 \section{Overview}
@@ -16,26 +16,27 @@ two main differences:
   consists in removing the integer part of $x$, as e.g.
   $\sinpi(x+n)=\pm \sinpi(x)$ for $n\in\N$. As an important consequence, their
   worst-case critical accuracy is known on $\F$ as soon as it is known
-  on  the (symmetrical) interval $[-1, 1]$.
+  on  the interval $[0 1]$.
 \item Their Taylor expansion, on the other hand, has irrational
   coefficients, which requires more careful handling around zero.
 \end{itemize}
 
 Apart from these two differences, we use the same secondary argument
 reduction as for the trigonometric functions in chapter
-\ref{chap:trigo}. Indeed, we even use the same tabulated values: first, find an integer $k$ such that
+\ref{chap:trigo}. Indeed, we even use the same tabulated values:
+first, decompose the input value as follows: 
 
 \begin{equation}
   \pi x = k\frac{\pi}{256} + \pi y\label{eq:trigpiargred}
 \end{equation}
-where $k$ is an integer and  $ |y| \leq {1}/{512}$.
+where  $k$  is an integer and  $ |y| \leq {1}/{512}$.
 
 Contrary to the usual trig functions, $y$ so defined is an exact
 double: this second argument reduction is errorless, too. Actually, it
 is performed in the same operations that compute the first.
 
-Then, noting $a=k\pi/256$, 
-we read off a table 
+Then, denoting $a=k\pi/256$, 
+we read off a table the following triple-double values: 
 
 $$sa_h+sa_m+sa_l \approx sin(a)$$
 $$ca_h+ca_m+ca_l \approx cos(a)$$
@@ -43,7 +44,7 @@ $$ca_h+ca_m+ca_l \approx cos(a)$$
 Only 64 pairs of triple-doubles  are tabulated (amounting to
 $64\times 8 \times 6 = 3$ Kbytes), the rest is obtained by
 periodicity and symmetry, implemented as masks and integer operations
-on the integer $k$. For instance,  $a \mod 2\pi$ is implemented by $k \mod 512$,
+on the integer $k$. For instance,  $a\mod 2\pi$ is implemented by $k\mod 512$,
 $\pi/2-a$ is implemented as $128-k$, etc.
 
 
@@ -68,7 +69,7 @@ Then we use the reconstruction steps:
 
 \section{Special cases for $\cos(\pi x)$ }
 
-$\cospi$ should return a NaN on infinities and Nan.
+$\cospi$ should return a NaN on infinities and NaN.
 
 In all the rounding modes, we have $\cospi(x)=1$ for all the even integer
  values of $|x|$, and $\cospi(x)=-1$ for all the odd integer values of
@@ -92,21 +93,21 @@ In all the rounding modes, we have $\cospi(x)=1$ for all the even integer
  where $O(x^4)$ is positive.
 
  Therefore $\cos(\pi x)$ is rounded to $1$ in RN and RU mode if $(\pi
- x)^2<{2^{-53}}$. We test with a constant $C$ which is defined as the
- upper 32 bits of  $\sqrt(2^{-53})/4$.
+ x)^2<{2^{-53}}$. We test this with a constant $C$ which is defined as
+ the upper 32 bits of $\sqrt(2^{-53})/4$.
 
  In RD and RZ modes, we have $\cospi(0)=1$ and $\cospi(x)=1-2^{-53}$
- for $|x|<C$. 
+ for $0<|x|<C$. 
 
 
 
 
 
 \section{Special cases for $\sin(\pi x)$}
-$\sinpi$ should return a NaN on infinities and Nan.
+$\sinpi$ should return a NaN on infinities and NaN.
 
-In all the rounding modes, we return $\sinpi(x)=+0$ for all the even
-integer values of $|x|$, and $\sinpi(x)=-0$ for all the odd integer
+In all the rounding modes, we return $\sinpi(x)=+0$ for all the positive
+integer values of $|x|$, and $\sinpi(x)=-0$ for all the negative integer
 values of $|x|$. We have $\sinpi(x)=\pm 1$ for  the half-integer
 values of $|x|$. 
 
@@ -122,11 +123,11 @@ trigonometrics.
 
 \subsection{Worst case accuracy}
 
-The worst case accuracy has been computed only for $x \in [2^{-55},
-1]$, with a worst case accuracy of $2^{-110}$. For smaller arguments,
+The worst case accuracy has been computed only for $x \in [2^{-57},
+1]$, with a worst case accuracy of $2^{-111}$. For smaller arguments,
 equation (\ref{eq:sinpiTaylor}) shows that the worst case arguments
-will be the same: the worst-cases become those of $\pi x$, and are
-identical for each binade of $x<2^{-55}$.  
+will be the same: the worst-cases (up to a certain limit) become those
+of $\pi x$, and may be deduced for each binade of $x<2^{-55}$.
 
 \subsection{Subnormal numbers}
 This is no longer true for subnormals, however, as the relative error
@@ -148,14 +149,15 @@ $\sinpi(x)$ accurate to $2^{-2000}$ according to
 
 
 \subsection{Computing $\pi x$ for small arguments}
-As $\pi$ is transcendental, we need a two-step approach even for the small
-arguments.  We therefore want a bound on the error of approximating
-$sin(\pi x)$ with $sin(\pi x)$ which is between $2^{-60}$ and
-$2^{-64}$.  This bound is given by (\ref{eq:sinpiTaylor}): For
-$x<2^{-31}$, we have $(\pi x)^2/6 <2^{-61.28}$.  We may then use an
-algorithm that efficiently computes an approximation to $\pi x$ with a
-relative rounding error smaller than $2^{-74}$. The total relative
-error will be smaller than $2^{-61}$. 
+As $\pi$ is transcendental, we need a two-step approach even for the
+small arguments.  We therefore want to ensure that the bound on the
+error of approximating $sin(\pi x)$ with $sin(\pi x)$ is between
+$2^{-60}$ and $2^{-64}$.  This bound is given by
+(\ref{eq:sinpiTaylor}): For $x<2^{-31}$, we have $(\pi x)^2/6
+<2^{-61.28}$.  We may then use an algorithm that efficiently computes
+an approximation to $\pi x$ with a relative rounding error smaller
+than $2^{-74}$. The total relative error will be smaller than
+$2^{-61}$.
 
 If the rounding test fails, the accurate computation (of $\sinpi(x)$,
 not of $\pi\times x$) has to be launched.
@@ -181,12 +183,12 @@ However, if an FMA is available, we will use the Brisebarre/Muller sequence of t
 FMAs to evaluate $\pi x$ using  a double-double
 approximation to $\pi$.
 
-In the general case, we will be contented with an approximation of
+In the general case, we will be contented with an approximation to
 $\pi x$ accurate to anything much more than $2^{-60}$, as suggested
 before. Let us start with the straightforward double-double multiplication:\\
 \texttt{ Mul12(\&rh,\&rl, x,0, PIH, PIL);}\\
 where $x$ is completed with a zero and \texttt{PIH} and \texttt{PIL}
-form a double-double approximation of $\pi$. This would provide much
+form a double-double approximation to $\pi$. This would provide much
 too much accuracy, so the algorithm is adapted to the specific case as
 follows:
 \begin{itemize}
@@ -219,7 +221,7 @@ lead to a conservative majoration of the relative error of $2^{-53-22}
 
 
 \section{Special cases for $\tan(\pi x)$}
-$\tanpi$ should return a NaN on infinities and Nan.
+$\tanpi$ should return a NaN on infinities and NaN.
 
 In all the rounding modes, we return $\tanpi(x)=0$ with the sign of $x$ for all
 integer values of $|x|$. We have $\tanpi(x)=\pm \infty$ for  the half-integer
@@ -237,5 +239,31 @@ first step for small arguments now has an overall relative error
 bounded by $2^{-60}$.
  
 
+\section{The inverse function $\arctan(\pi x)$}
 
+This function is the inverse of $\tanpi$ and is thus defined as follows:
+$$\atanpi(x) = \frac{1}{\pi}\arctan(x)$$
 
+Its implementation is very simply derived from that of $\arctan$ by a
+final multiplication by an approximation to $1/\pi$. 
+
+\begin{itemize}
+\item In the first step, we use a double-double approximation to
+  $1/\pi$ (accurate to $2^{-105}$) and a Dekker double-double
+  multiplication (which should actually be sped up, in the absence of
+  FMA, by pre-splitting the constant).  The overall error of this
+  final multiplication is below $2^{-100}$, and practically doesn't
+  even change the rounding constants.
+
+\item In the second step (currently still SCS) we similarly multiply 
+  by an SCS approximation to $1/\pi$ with an  error well below $2^{-200}$
+  which barely impacts the  overall error ($2^{-136}$, 
+  see chapter \ref{chap:atan}).
+\end{itemize}
+
+Care has to be taken of the special cases, though. To keep things
+simple, the SCS accurate phase is launched for small arguments to
+avoid problems with subnormals. This should also be improved soon.
+
+Implementations of $\asinpi$ and $\acospi$ along the same lines should
+follow soon.

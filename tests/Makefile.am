@@ -65,7 +65,7 @@ check_sinpi check_cospi check_tanpi
 TESTS = $(CRLIBM_CHECKLIST)
 
 EXTRA_DIST = exp.testdata expm1.testdata log.testdata log2.testdata log10.testdata log1p.testdata  \
-sin.testdata cos.testdata tan.testdata asin.testdata acos.testdata atan.testdata sinh.testdata cosh.testdata \
+sin.testdata cos.testdata tan.testdata asin.testdata acos.testdata atan.testdata atanpi.testdata sinh.testdata cosh.testdata \
 sinpi.testdata cospi.testdata tanpi.testdata
 
 CLEANFILES = $(CRLIBM_CHECKLIST)

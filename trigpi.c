@@ -31,6 +31,19 @@
 #include "trigpi.h"
  
 
+/*   TODO
+
+
+Use the symmetries of the tables
+
+Actually, use the tables from the standard trigo.
+
+Write decent quick steps. Or hammer Christoph and Sylvain to do so.
+
+ */
+
+
+
 
 
 /* This ugly bits of code in the beginning are polynomial evaluations
@@ -234,7 +247,7 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
 
 
 
-/* This one can clearly be improved. It was set up in less than two hours */
+/* This one can clearly be improved. It was set up in less than one hour */
 void sinpiquick(double *rh, double *rm, double x, int index, int quadrant) {
   double x2h, x2m;
   double sinpiquick_t_1_0h;
@@ -373,7 +386,7 @@ void sinpiquick(double *rh, double *rm, double x, int index, int quadrant) {
    /* Fall here either if we have a large input, or if we have a small
       input and the rounding test fails.  */
    sinpiquick(&rh, &rm,  y, index, quadrant);
-   if (rh==rh+1.00001*rm)
+   if (rh==rh+1.00001*rm) /* See trigpiquick.gappa. This first step is ridiculously too accurate */
      return rh;
    sinpi_accurate(&rh, &rm, &rl, y, index, quadrant);
    ReturnRoundToNearest3(rh,rm,rl);   
@@ -417,7 +430,7 @@ void sinpiquick(double *rh, double *rm, double x, int index, int quadrant) {
    absxih = xih & 0x7fffffff;
    if (xih>>31)  sign=-1.;   else sign=1.; /* consider the sign bit */
 
-   if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
+   if(index==0 && y==0.0 && ((quadrant&1)==0)) return -0.0; /*signed, inspired by LIA-2 */
 
    y = y * INV128;
 
@@ -488,7 +501,7 @@ void sinpiquick(double *rh, double *rm, double x, int index, int quadrant) {
    absxih = xih & 0x7fffffff;
    if (xih>>31)  sign=-1.;   else sign=1.; /* consider the sign bit */
 
-   if(index==0 && y==0.0 && ((quadrant&1)==0)) return sign*0.0; /*signed, inspired by LIA-2 */
+   if(index==0 && y==0.0 && ((quadrant&1)==0)) return +0.0; /*signed, inspired by LIA-2 */
 
    y = y * INV128;
 

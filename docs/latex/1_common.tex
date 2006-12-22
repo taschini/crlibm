@@ -124,7 +124,7 @@ exceptions for the $4$ operators ($+$, $\times$, $\div$, $\sqrt{~}$).
 Therefore, it is legitimate to require the same for elementary
 functions.
 
-In ANSI-C99, the following instructions raise exceptions and
+In ISO C99, the following instructions raise exceptions and
 flags:
 
 \begin{itemize}
@@ -1808,7 +1808,7 @@ implementation \cite{DefDin2002}, namely its memory inefficiency.
 \item In the MP multiplication, the partial products are products of
   two 32-bit digits, which are 64-bit numbers. The column sums need
   thus to be computed using 64-bit arithmetic. This can be expressed
-  in the C language in a non-ANSI-C99, but de-facto standard way, as
+  in the C language in a non-ISO-C99, but de-facto standard way, as
   follows: 32-bit numbers have the \texttt{unsigned int} type; 64-bit
   numbers have the \texttt{unsigned long long int} type. When
   multiplying two digits, one is first cast into this 64-bit type.
@@ -1832,8 +1832,8 @@ straightforwardly into one 32-bit \emph{add} followed by one 32-bit
 
 \subsubsection{Implementation considerations}
 
-For portability purposes, the implemention uses ANSI C as defined by
-the C99 standard, and tries to use a recent version of \texttt{gcc}.
+For portability purposes, the implemention uses C as defined by
+the ISO C99 standard, and tries to use a recent version of \texttt{gcc}.
 We could not exhibit a case where a native compiler from the processor
 vendor (Intel or Sun) gave significantly better results than
 \texttt{gcc}, which is probably a consequence of the simplicity of our
