@@ -26,6 +26,12 @@ halfPi:=nearest(Pi/2):
 halfPi_to_plus_infinity:=nearest(nearest(Pi/2)*(1+2^(-53))):
 
 
+# invPi, for the atanpi function
+
+invpih,invpil := hi_lo(1/Pi);       
+
+
+
 # if (xmin<xmin) : return arctan(x)=x
 
 xmin=2^(-27);
@@ -244,6 +250,9 @@ fprintf(fd,"\n"):
 fprintf(fd,"#endif\n"):
 
 fprintf(fd, "#define MIN_REDUCTION_NEEDED %1.50f\n",e):
+
+fprintf(fd, "#define INVPIH %1.50f\n", invpih):
+fprintf(fd, "#define INVPIL %1.50f\n", invpil):
 
 fprintf(fd,"#define nb_of_ai %d\n",nb_of_ai):
 fprintf(fd,"#define nb_of_bi %d\n",nb_of_bi):
