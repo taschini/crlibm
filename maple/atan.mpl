@@ -335,6 +335,12 @@ Write_SCS_poly(fd1, "constant_poly", P_scs);
 
 fprintf(fd1,"#define constant_poly_ptr (scs_ptr)&constant_poly\n");
 
+# The 1/Pi SCS constant
+  fprintf(fd, "static const scs InvPiSCS=\n"):
+  WriteSCS(fd, evalf(1/Pi)):
+  fprintf(fd, ";\n#define InvPiSCS_ptr  (scs_ptr)(& InvPiSCS)\n\n"):
+
+
 fprintf(fd1,"#ifdef WORDS_BIGENDIAN\n\n"):
 for isbig from 1 to 0 by -1 do
    if isbig = 0 then
