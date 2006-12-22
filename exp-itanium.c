@@ -2,7 +2,8 @@
 
 
    Author Florent de Dinechin, ENS-Lyon
-     Heavily inspired by code from Alexey V.Ershov and Christoph Lauter 
+     Heavily inspired by code from Alexey V.Ershov, intel
+     and Christoph Lauter, Technische Universitaet Muenchen
 
 WARNING : This code is dirty and experimental, and remains here for
 history. A cleaner, portable version of an exponential using
