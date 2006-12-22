@@ -36,6 +36,7 @@
 
 
 
+extern int rem_pio2_scs(scs_ptr, scs_ptr);
 
 
 /* Polynomial evaluation of sin(x) over [-Pi/4, +Pi/4] 	

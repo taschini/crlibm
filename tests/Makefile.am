@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-CFLAGS = -O0 -std=c99 # produces a warning, but I really need -O0 and I don't know how to get it.
+CFLAGS = -O0 -std=gnu99 # produces a warning, but I really need -O0 and I don't know how to get it.
 
 if USE_INTERVAL_FUNCTIONS
 bin_PROGRAMS =  crlibm_testval crlibm_soaktest crlibm_soaktest_interval crlibm_testperf crlibm_testperf_interval crlibm_blindtest crlibm_generate_test_vectors
