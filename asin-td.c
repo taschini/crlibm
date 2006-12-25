@@ -108,7 +108,6 @@ void asin_accurate_lower(double *asinh, double *asinm, double *asinl, double x, 
 }
 
 
-
 void  asin_accurate_middle(double *asinh, double *asinm, double *asinl, double z, int i, double sign) {
   double highPoly;
   double t1h, t1l, t2h, t2l, t3h, t3l, t4h, t4l, t5h, t5l, t6h, t6l, t7h, t7l, t8h, t8l, t9h, t9l;
@@ -312,6 +311,12 @@ void asin_accurate_higher(double *asinh, double *asinm, double *asinl, double z,
 }
 
 
+
+
+
+
+
+
 double asin_rn(double x) {
   db_number xdb;
   double sign, z, asinh, asinm, asinl;
@@ -402,10 +407,10 @@ double asin_rn(double x) {
     asinh = sign * polyh;
     asinm = sign * polyl;
 
-    /* Rounding test 
+    /* Rounding test (on polyh+polyl, equivalently to asinh+asinm)
        The RN rounding constant is at tbl[34]
     */
-    if(asinh == (asinh + (asinm * tbl[34]))) 
+    if(polyh == (polyh + (polyl * tbl[34]))) 
       return asinh;
 
     /* Launch accurate phase */
@@ -474,7 +479,7 @@ double asin_rn(double x) {
        The RN rounding constant is at tbl[TBLIDX10+54]
     */
 
-    if(asinh == (asinh + (asinm * tbl[TBLIDX10+54]))) 
+    if(allh == (allh + (alll * tbl[TBLIDX10+54]))) 
       return asinh;
 
     /* Launch accurate phase */
@@ -540,8 +545,8 @@ double asin_rn(double x) {
   /* Rounding test 
      The RN rounding constant is at tbl[i+59]
   */
-  if(asinh == (asinh + (asinm * tbl[i+59]))) 
-    return asinh;
+    if(polyh == (polyh + (polyl * tbl[i+59]))) 
+      return asinh;
 
   /* Launch accurate phase */
 
@@ -549,6 +554,11 @@ double asin_rn(double x) {
 
   ReturnRoundToNearest3(asinh,asinm,asinl); 
 }
+
+
+
+
+
 
 double asin_ru(double x) {
   db_number xdb;
@@ -1276,4 +1286,12 @@ double asin_rz(double x) {
 
   ReturnRoundTowardsZero3(asinh,asinm,asinl); 
 }
+
+
+
+
+
+
+
+
 
