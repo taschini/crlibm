@@ -240,11 +240,6 @@ static void cospi_accurate(double *rh, double *rm, double *rl,
 };
 
 
-
-
-
-
-/* This one can clearly be improved. It was set up in less than one hour */
 static inline void sinpiquick(double *rh, double *rm, double x, int index, int quadrant) {
   double syh, sym;
 
@@ -338,6 +333,100 @@ Mul122(&sinpiquick_t_8_0h,&sinpiquick_t_8_0m,x,sinpiquick_t_7_0h,sinpiquick_t_7_
 
 }
 
+static inline void cospiquick(double *rh, double *rm, double x, int index, int quadrant) {
+  double syh, sym;
+
+  double cyh, cym;
+  double t1h, t1m, t2h, t2m, sah, sam, cah,cam;
+
+
+  sah=sincosTable[index].sh;
+  cah=sincosTable[index].ch;
+  sam=sincosTable[index].sm;
+  cam=sincosTable[index].cm;
+
+
+double cospiquick_x_0_pow2h;
+
+
+cospiquick_x_0_pow2h = x * x;
+
+
+double cospiquick_t_1_0h;
+double cospiquick_t_2_0h;
+double cospiquick_t_3_0h;
+double cospiquick_t_4_0h;
+double cospiquick_t_5_0h;
+double cospiquick_t_6_0h;
+double cospiquick_t_7_0h, cospiquick_t_7_0m;
+ 
+
+
+cospiquick_t_1_0h = cospiquick_coeff_6h;
+cospiquick_t_2_0h = cospiquick_t_1_0h * cospiquick_x_0_pow2h;
+cospiquick_t_3_0h = cospiquick_coeff_4h + cospiquick_t_2_0h;
+cospiquick_t_4_0h = cospiquick_t_3_0h * cospiquick_x_0_pow2h;
+cospiquick_t_5_0h = cospiquick_coeff_2h + cospiquick_t_4_0h;
+cospiquick_t_6_0h = cospiquick_t_5_0h * cospiquick_x_0_pow2h;
+Add12(cospiquick_t_7_0h,cospiquick_t_7_0m,cospiquick_coeff_0h,cospiquick_t_6_0h);
+
+  cyh = cospiquick_t_7_0h; cym = cospiquick_t_7_0m;
+
+
+double sinpiquick_x_0_pow2h;
+
+
+
+sinpiquick_x_0_pow2h = x * x;
+
+
+double sinpiquick_t_1_0h;
+double sinpiquick_t_2_0h;
+double sinpiquick_t_3_0h;
+double sinpiquick_t_4_0h;
+double sinpiquick_t_5_0h;
+double sinpiquick_t_6_0h;
+double sinpiquick_t_7_0h, sinpiquick_t_7_0m;
+double sinpiquick_t_8_0h, sinpiquick_t_8_0m;
+ 
+
+
+sinpiquick_t_1_0h = sinpiquick_coeff_7h;
+sinpiquick_t_2_0h = sinpiquick_t_1_0h * sinpiquick_x_0_pow2h;
+sinpiquick_t_3_0h = sinpiquick_coeff_5h + sinpiquick_t_2_0h;
+sinpiquick_t_4_0h = sinpiquick_t_3_0h * sinpiquick_x_0_pow2h;
+sinpiquick_t_5_0h = sinpiquick_coeff_3h + sinpiquick_t_4_0h;
+sinpiquick_t_6_0h = sinpiquick_t_5_0h * sinpiquick_x_0_pow2h;
+Add212(&sinpiquick_t_7_0h,&sinpiquick_t_7_0m,sinpiquick_coeff_1h,sinpiquick_coeff_1m,sinpiquick_t_6_0h);
+Mul122(&sinpiquick_t_8_0h,&sinpiquick_t_8_0m,x,sinpiquick_t_7_0h,sinpiquick_t_7_0m);
+
+
+  syh = sinpiquick_t_8_0h; sym = sinpiquick_t_8_0m;
+
+
+
+  /* Here comes the hand-written, unproven yet code */
+   if(quadrant==0 || quadrant==2) {
+     /* compute cy*ca - sa*sy : t1 = cy*ca,    t2 =  sa*sy */
+     Mul22(&t1h,&t1m, cyh,cym, cah,cam);
+     Mul22(&t2h,&t2m, sah,sam, syh,sym);     
+     Add22Cond(rh, rm, t1h,t1m, -t2h,-t2m);
+   }
+   else {
+     /* compute sy*ca+sa*cy   :    t1 = sy*ca,     t2 =  sa*cy*/
+     Mul22(&t1h,&t1m, syh,sym, cah,cam);
+     Mul22(&t2h,&t2m, sah,sam, cyh,cym);
+     Add22Cond(rh, rm, t2h,t2m, t1h,t1m);
+   }
+
+   if (quadrant==1 || quadrant==2) {
+     *rh = -*rh;
+     *rm = -*rm;
+   }
+
+
+
+}
 
 
 
@@ -716,7 +805,9 @@ Mul122(&sinpiquick_t_8_0h,&sinpiquick_t_8_0m,x,sinpiquick_t_7_0h,sinpiquick_t_7_
      return 1.0;
    /* printf("\n\nint part = %f    frac part = %f     index=%d   quadrant=%d   \n", u, y, index, quadrant);
     */
-
+   cospiquick(&rh, &rm,  y, index, quadrant);
+   if (rh==rh+1.001*rm) /* See trigpiquick.gappa. This first step is ridiculously too accurate */
+     return rh;
    cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
    ReturnRoundToNearest3(rh,rm,rl);   
 };
@@ -777,9 +868,15 @@ Mul122(&sinpiquick_t_8_0h,&sinpiquick_t_8_0m,x,sinpiquick_t_7_0h,sinpiquick_t_7_
      return 0.9999999999999998889776975374843459576368331909179687500; /* 1-2^-53 */
    /* Always +0, inpired by LIA2; We do not have cos(x+pi) == - cos(x)
       in this case */
+   cospiquick(&rh, &rm,  y, index, quadrant);
+
+   /* Accuracy: about 2^(-63) */
+
+   TEST_AND_RETURN_RD(rh, rm, 0.108420217248550443400745280086994171142578125e-18 );
 
    cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
-   ReturnRoundDownwards3(rh,rm,rl);  
+
+   ReturnRoundDownwards3(rh,rm,rl);   
  }; 
 
 
@@ -837,8 +934,15 @@ Mul122(&sinpiquick_t_8_0h,&sinpiquick_t_8_0m,x,sinpiquick_t_7_0h,sinpiquick_t_7_
    if (absxih<0x3E200000) /* 2^-29 */
      return 1;
 
+   cospiquick(&rh, &rm,  y, index, quadrant);
+
+   /* Accuracy: about 2^(-63) */
+
+   TEST_AND_RETURN_RU(rh, rm, 0.108420217248550443400745280086994171142578125e-18 );
+
    cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
-   ReturnRoundUpwards3(rh,rm,rl);  
+
+   ReturnRoundUpwards3(rh,rm,rl);   
 }; 
 
 
@@ -897,9 +1001,18 @@ double cospi_rz(double x){
    if (absxih<0x3E200000) /* 2^-29 */
      return 0.9999999999999998889776975374843459576368331909179687500; /* 1-2^-53 */
 
+
+   cospiquick(&rh, &rm,  y, index, quadrant);
+
+   /* Accuracy: about 2^(-63) */
+
+   TEST_AND_RETURN_RZ(rh, rm, 0.108420217248550443400745280086994171142578125e-18 );
+
    cospi_accurate(&rh, &rm, &rl, y, index, quadrant);
-   ReturnRoundTowardsZero3(rh,rm,rl);
-  }; 
+
+   ReturnRoundTowardsZero3(rh,rm,rl);   
+
+}
 
 
 
@@ -973,6 +1086,17 @@ double cospi_rz(double x){
    }
    /* Fall here either if we have a large input, or if we have a small
       input and the rounding test fails.  */
+
+   sinpiquick(&sh, &sm,  y, index, quadrant);
+   cospiquick(&ch, &cm,  y, index, quadrant);
+
+   Div22(&rh,&rm,sh,sm,ch,cm);
+
+   /* Accuracy: about 2^(-63) */
+
+   if (rh==rh+1.001*rm) 
+     return rh;
+
    cospi_accurate(&ch, &cm, &cl, y, index, quadrant);
    recpr33(&ich, &icm, &icl, ch, cm, cl)
    sinpi_accurate(&sh, &sm, &sl, y, index, quadrant);
@@ -1048,6 +1172,16 @@ double cospi_rz(double x){
    }
    /* Fall here either if we have a large input, or if we have a small
       input and the rounding test fails.  */
+
+   sinpiquick(&sh, &sm,  y, index, quadrant);
+   cospiquick(&ch, &cm,  y, index, quadrant);
+
+   Div22(&rh,&rm,sh,sm,ch,cm);
+
+   /* Accuracy: about 2^(-63) */
+
+   TEST_AND_RETURN_RD(rh, rm, 0.108420217248550443400745280086994171142578125e-18 );
+
    cospi_accurate(&ch, &cm, &cl, y, index, quadrant);
    recpr33(&ich, &icm, &icl, ch, cm, cl)
    sinpi_accurate(&sh, &sm, &sl, y, index, quadrant);
@@ -1128,6 +1262,17 @@ double cospi_rz(double x){
    }
    /* Fall here either if we have a large input, or if we have a small
       input and the rounding test fails.  */
+
+
+   sinpiquick(&sh, &sm,  y, index, quadrant);
+   cospiquick(&ch, &cm,  y, index, quadrant);
+
+   Div22(&rh,&rm,sh,sm,ch,cm);
+
+   /* Accuracy: about 2^(-63) */
+
+   TEST_AND_RETURN_RU(rh, rm, 0.108420217248550443400745280086994171142578125e-18 );
+
    cospi_accurate(&ch, &cm, &cl, y, index, quadrant);
    recpr33(&ich, &icm, &icl, ch, cm, cl)
    sinpi_accurate(&sh, &sm, &sl, y, index, quadrant);
@@ -1201,6 +1346,16 @@ double cospi_rz(double x){
    }
    /* Fall here either if we have a large input, or if we have a small
       input and the rounding test fails.  */
+
+   sinpiquick(&sh, &sm,  y, index, quadrant);
+   cospiquick(&ch, &cm,  y, index, quadrant);
+
+   Div22(&rh,&rm,sh,sm,ch,cm);
+
+   /* Accuracy: about 2^(-63) */
+
+   TEST_AND_RETURN_RZ(rh, rm, 0.108420217248550443400745280086994171142578125e-18 );
+
    cospi_accurate(&ch, &cm, &cl, y, index, quadrant);
    recpr33(&ich, &icm, &icl, ch, cm, cl)
    sinpi_accurate(&sh, &sm, &sl, y, index, quadrant);
