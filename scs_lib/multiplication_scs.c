@@ -57,7 +57,8 @@ void pr(char* s,double d) {
 
 
 /************************************************************/
-/* We have unrolled the loops for SCS_NB_WORDS==4 or 8 
+/* We have unrolled the loops for SCS_NB_WORDS==8 
+It leads to almost x2 speedup.
 
    We just wish gcc would do it for us ! There are option switches,
    but they don't lead to any performance improvement. When they do,
@@ -66,97 +67,11 @@ void pr(char* s,double d) {
    In the meantime, feel free to unroll for other values. */
 
 
-/***************************/
-#if (SCS_NB_WORDS==4)
-/***************************/
-void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
-  uint64_t     val, tmp;
-  uint64_t     r0,r1,r2,r3,r4;
-  uint64_t     x0,x1,x2,x3;
-  int                    y0,y1,y2,y3;
-    
-  R_EXP = X_EXP * Y_EXP;
-  R_SGN = X_SGN * Y_SGN;
-  R_IND = X_IND + Y_IND;
-
-  /* Partial products computation */   
-  x3=X_HW[3];  y3=Y_HW[3];  x2=X_HW[2];  y2=Y_HW[2];
-  x1=X_HW[1];  y1=Y_HW[1];  x0=X_HW[0];  y0=Y_HW[0];
-
-  r4 = x3*y1 + x2*y2 + x1*y3;
-  r3 = x3*y0 + x2*y1 + x1*y2 + x0*y3;
-  r2 = x2*y0 + x1*y1 + x0*y2;
-  r1 = x1*y0 + x0*y1 ;
-  r0 = x0*y0;
-
-  val= 0;
-  /* Carry Propagate */
-  SCS_CARRY_PROPAGATE(r4,r3,tmp)
-  SCS_CARRY_PROPAGATE(r3,r2,tmp)
-  SCS_CARRY_PROPAGATE(r2,r1,tmp)
-  SCS_CARRY_PROPAGATE(r1,r0,tmp)      
-  SCS_CARRY_PROPAGATE(r0,val,tmp)      
- 
-  if(val != 0){
-    /* shift all the digits ! */
-    R_HW[0] = val; R_HW[1] = r0; R_HW[2] = r1;  R_HW[3] = r2;
-    R_IND += 1;
-  }
-  else {
-    R_HW[0] = r0; R_HW[1] = r1; R_HW[2] = r2; R_HW[3] = r3;
-  }
-
-}
-
-
-void scs_square(scs_ptr result, scs_ptr x){
-  uint64_t  r0,r1,r2,r3,r4;
-  uint64_t  x0,x1,x2,x3;
-  uint64_t  val, tmp;
-
-
-  R_EXP = X_EXP * X_EXP;
-  R_IND = X_IND + X_IND;
-  R_SGN = 1;
-    
-  /*
-   * Calcul des PP
-   */   
-  x3=X_HW[3];  x2=X_HW[2];  x1=X_HW[1];  x0=X_HW[0];
-
-  r0 =  x0*x0;
-  r1 = (x0*x1)* 2 ;
-  r2 =  x1*x1 + (x0*x2*2);
-  r3 = (x1*x2 +  x0*x3)* 2;
-  r4 =  x2*x2 + (x1*x3)* 2;
-
-  val= 0;
-  /* Propagation des retenues */
-  SCS_CARRY_PROPAGATE(r4,r3,tmp)
-  SCS_CARRY_PROPAGATE(r3,r2,tmp)
-  SCS_CARRY_PROPAGATE(r2,r1,tmp)
-  SCS_CARRY_PROPAGATE(r1,r0,tmp)      
-  SCS_CARRY_PROPAGATE(r0,val,tmp)      
- 
-  if(val != 0){
-    /* shift all the digits ! */
-    R_HW[0] = val; R_HW[1] = r0; R_HW[2] = r1;  R_HW[3] = r2;
-    R_IND += 1;
-  }
-  else {
-    R_HW[0] = r0; R_HW[1] = r1; R_HW[2] = r2; R_HW[3] = r3;
-  }
-  
-}
-
-
-
-
 
 
 
 /***************************/
-#elif (SCS_NB_WORDS==8)
+#if (SCS_NB_WORDS==8)
 /***************************/
 void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
   uint64_t     val, tmp;
@@ -284,37 +199,6 @@ void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
   /* Compute only the first half of the partial product. See the
      unrolled code for an example of what we compute */
 
-#ifdef CRLIBM_TYPECPU_X86
-  /* This is the only place where there is assembly code to force 64-bit
-     arithmetic. Someday gcc will catch up here, too.
-  */
-  {
-    db_number t;
-    /* i=0 */
-    for(j=0; j<(SCS_NB_WORDS); j++) {
-      __asm__ volatile("mull %3" 
-		       : "=a" (t.i[LO]), "=d" (t.i[HI])
-		       : "a" (X_HW[0]) , "g" (Y_HW[j]));
-      RES[j] += t.l;
-    }
-    /* i = 1..SCS_NB_WORDS-1 */
-    for(i=1 ; i<SCS_NB_WORDS; i++){
-      for(j=0; j<(SCS_NB_WORDS-i); j++){
-	__asm__ volatile("mull %3" 
-			 : "=a" (t.i[LO]), "=d" (t.i[HI])
-			 : "a" (X_HW[i]) , "g" (Y_HW[j]));
-	RES[i+j] += t.l;
-      }
-      __asm__ volatile("mull %3" 
-		       : "=a" (t.i[LO]), "=d" (t.i[HI])
-		       : "a" (X_HW[i]) , "g" (Y_HW[j])); 
-      /* here j==SCS_NB_WORDS-i */
-      RES[SCS_NB_WORDS] += t.l;
-    }
- }
-
-#else /* other architectures */
-
  /* i=0 */
  tmp = X_HW[0];
  for(j=0; j<(SCS_NB_WORDS); j++)
@@ -326,7 +210,6 @@ void scs_mul(scs_ptr result, scs_ptr x, scs_ptr y){
 	RES[i+j] += tmp * Y_HW[j];
       RES[SCS_NB_WORDS] += tmp * Y_HW[j]; /* here j==SCS_NB_WORDS-i */
   }
-#endif/* SCS_TYPECPU_X86 */
 
   val = 0;
 
