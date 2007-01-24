@@ -392,9 +392,10 @@ static void normal_output(const char *name,
 
   if(testfun!=NULL) { /* some functions are missing in libultim (cosh, ...  */
     if (args == 1) {
-      printf("\n%s\nTmin = %lld ticks (0x%08x%08x),\t Tmax = %lld ticks (0x%08x%08x),\t avg = %f\tT worst case = %lld\n",
+       printf("\n%s\nTmin = %lld ticks (0x%08x%08x),\t Tmax = %lld ticks (0x%08x%08x),\t avg = %f\tT worst case = %lld\n",
 	     name, lib_dtmin, dtmini1.i[HI], dtmini1.i[LO], lib_dtmax, dtmaxi1.i[HI], dtmaxi1.i[LO], 
-	     ((double)lib_dtsum) / ((double) n), lib_dtwc);
+	     ((double)lib_dtsum) / ((double) n), lib_dtwc); 
+	    
     } else {
       printf("\n%s\nTmin = %lld ticks (0x%08x%08x 0x%08x%08x),\t Tmax = %lld ticks (0x%08x%08x 0x%08x%08x),\t avg = %f\tT worst case = %lld\n",
 	     name, lib_dtmin, dtmini1.i[HI], dtmini1.i[LO], dtmini2.i[HI], dtmini2.i[LO], 
@@ -405,16 +406,22 @@ static void normal_output(const char *name,
 }
 
 static void latex_output(const char *name,
-		  double (*testfun)(),
-		  unsigned long long lib_dtmin,
-		  unsigned long long lib_dtmax,
-		  unsigned long long lib_dtsum,
-		  unsigned long long lib_dtwc,
-		  int n){
+			 double (*testfun)(),
+			 double percentsecondsteps,
+			 unsigned long long lib_dtmin,
+			 unsigned long long lib_dtmax,
+			 unsigned long long lib_dtsum,
+			 unsigned long long lib_dtwc,
+			 int n){
     if(testfun!=NULL) { /* some functions are missing in libultim (cosh, ...  */
       if (lib_dtwc > lib_dtmax) lib_dtmax=lib_dtwc;
-      printf(" %s  \t& %lld    \t& %10.0f   \t& %lld      \\\\ \n \\hline\n",  
-	     name, lib_dtmin, ((double)lib_dtsum) / ((double) n), lib_dtmax);
+      printf(" %s  \t&    %lld    \t&    %5.0f   \t&    %lld  ",  
+	     name, lib_dtmin, ((double)lib_dtsum) / ((double) n), lib_dtmax  );
+      if(percentsecondsteps==-1)
+	printf("\t&       " );
+      else
+	printf("\t&     %3.3f", percentsecondsteps );
+      printf(" \t\t\\\\  \\hline\n");
     }
 }
 
@@ -799,7 +806,7 @@ int main (int argc, char *argv[]){
   printf ("GMP version %s MPFR version %s ",
           gmp_version, mpfr_get_version ());
 #endif
-  printf("tbx_time=%llu\n", tbx_time);
+  /*  printf("tbx_time=%llu\n", tbx_time); */
 
 #if TEST_CACHE
   /************  TESTS WITH CACHES  *********************/
@@ -852,16 +859,6 @@ int main (int argc, char *argv[]){
 #endif /*HAVE_MPFR_H*/
   } 
 
-#if EVAL_PERF==1  
-#ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
-	 printf("\nCRLIBM : Second step taken %d times out of %d\n",
-		crlibm_second_step_taken/(N1 * TIMING_ITER), n );
-#else
-	 printf("\nCRLIBM : Second step taken %d times out of %d\n",
-		crlibm_second_step_taken/N1, n );
-#endif
-
-#endif
 
 
   /************  WORST CASE TESTS   *********************/
@@ -1115,6 +1112,7 @@ int main (int argc, char *argv[]){
 
   }
 
+#if 0
     /*************Normal output*************************/
   normal_output("LIBM", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, libm_dtmini1, libm_dtmini2, libm_dtmaxi1, libm_dtmaxi2, n, nbarg);
 #ifdef   HAVE_MPFR_H
@@ -1128,21 +1126,34 @@ int main (int argc, char *argv[]){
 #endif /*HAVE_LIBMCR_H*/
   normal_output("CRLIBM", testfun_crlibm, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, crlibm_dtmini1, crlibm_dtmini2, crlibm_dtmaxi1, crlibm_dtmaxi2, n, nbarg);
 
+#endif
 
   /******************* Latex output ****************/
-  printf("\\multicolumn{4}{|c|}{Processor / system / compiler}   \\\\ \n \\hline");
-  printf("\n                             & min time \t & avg time \t& max time \t  \\\\ \n \\hline\n");
-  latex_output("default \\texttt{libm}  ", testfun_libm, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, n);
+  /*  printf("\\multicolumn{4}{|c|}{Processor / system / compiler}   \\\\ \n \\hline"); */
+
+  double percentsecondsteps = -1;
+
+#if EVAL_PERF==1  
+#ifdef TIMING_USES_GETTIMEOFDAY /* use inaccurate timer, do many loops */
+	 percentsecondsteps = 100*((double)(crlibm_second_step_taken/(N1 * TIMING_ITER)))   /  ((double) n );
+#else
+	 percentsecondsteps = 100*((double)(crlibm_second_step_taken/N1))   /  ((double) n );
+#endif
+
+#endif
+  printf("\n \\hline                %%  --------------  %s -------------- \n", function_name);
+  printf("\\textbf{%s} \t\t\t&   min time \t&   avg time \t&   max time \t&   percent 2nd step \t\\\\  \\hline\n", function_name);
+  latex_output("default \\texttt{libm}  ", testfun_libm, -1, libm_dtmin, libm_dtmax, libm_dtsum, libm_dtwc, n);
 #ifdef   HAVE_MPFR_H
-  latex_output("MPFR                   ", (double(*)())testfun_mpfr, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
+  latex_output("MPFR                   ", (double(*)())testfun_mpfr, -1, mpfr_dtmin, mpfr_dtmax, mpfr_dtsum, mpfr_dtwc, n);
 #endif /*HAVE_MPFR_H*/
 #ifdef   HAVE_MATHLIB_H
-  latex_output("IBM's \\texttt{libultim}", testfun_libultim, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);
+  latex_output("IBM's \\texttt{libultim}", testfun_libultim, -1, libultim_dtmin, libultim_dtmax, libultim_dtsum, libultim_dtwc, n);
 #endif /*HAVE_MATHLIB_H*/
 #ifdef   HAVE_LIBMCR_H
-  latex_output("Sun's \\texttt{libmcr}  ", testfun_libmcr, libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, n);
+  latex_output("Sun's \\texttt{libmcr}  ", testfun_libmcr, -1, libmcr_dtmin, libmcr_dtmax, libmcr_dtsum, libmcr_dtwc, n);
 #endif /*HAVE_LIBMCR_H*/
-  latex_output("\\texttt{crlibm}        ", testfun_crlibm, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, n);
+  latex_output("\\texttt{CRLibm}        ", testfun_crlibm, percentsecondsteps, crlibm_dtmin, crlibm_dtmax, crlibm_dtsum, crlibm_dtwc, n);
 
   return 0;
 }
