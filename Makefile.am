@@ -70,11 +70,12 @@ endif
 
 tripledoubleprocedures.pdf: docs/latex/tripledoubleprocedures.tex
 	cd docs/latex; \
-	pdflatex tripledoubleprocedures; bibtex tripledoubleprocedures; pdflatex tripledoubleprocedures;\
+	pdflatex tripledoubleprocedures; bibtex tripledoubleprocedures; \
+	pdflatex tripledoubleprocedures; pdflatex tripledoubleprocedures;\
 	mv tripledoubleprocedures.pdf ..
 
 crlibm.pdf: docs/latex/crlibm.tex
-	cd docs/latex; pdflatex crlibm; bibtex crlibm; pdflatex crlibm;\
+	cd docs/latex; pdflatex crlibm; bibtex crlibm; pdflatex crlibm; pdflatex crlibm;\
 	mv crlibm.pdf .. 
 
 doc: crlibm.pdf tripledoubleprocedures.pdf
