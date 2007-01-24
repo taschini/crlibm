@@ -68,7 +68,16 @@ AM_CFLAGS =  -std=c99 -fPIC -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconver
 endif
 endif
 
+tripledoubleprocedures.pdf: docs/latex/tripledoubleprocedures.tex
+	cd docs/latex; \
+	pdflatex tripledoubleprocedures.tex; pdflatex tripledoubleprocedures.tex;\
+	mv tripledoubleprocedures.pdf ..
 
+crlibm.pdf: docs/latex/crlibm.tex
+	cd docs/latex; pdflatex crlibm.tex; pdflatex crlibm.tex;\
+	mv crlibm.pdf .. 
+
+doc: crlibm.pdf tripledoubleprocedures.pdf
 
 EXTRA_DIST = VERSION TODO\
 	docs/crlibm.pdf docs/tripledoubleprocedures.pdf\
