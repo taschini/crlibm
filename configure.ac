@@ -163,7 +163,28 @@ fi
 ]
 )
 
+
+
+
+
 dnl Command-line arguments to ./configure:
+
+
+dnl switch for compiling the interval functions
+AC_ARG_ENABLE(sse2,
+  [  --enable-sse2    forces the use of sse2 arith  [[default=no]]],
+  [case $enableval in
+    yes)
+      AC_DEFINE_UNQUOTED(HAS_SSE2,1,[Use the sse2 operators ]);;
+    no) ;;
+    *) AC_MSG_ERROR([bad value $enableval for --enable-sse2, need yes or no]) ;;
+  esac],
+  [enable_sse2=no])
+dnl Send this information to automake 
+AM_CONDITIONAL(USE_SSE2, test x$enable_sse2 = xyes  )
+
+
+
 
 dnl switch for compiling the interval functions
 AC_ARG_ENABLE(interval-functions,
