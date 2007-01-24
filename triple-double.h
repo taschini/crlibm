@@ -10,6 +10,7 @@
 
 #include "scs_lib/scs.h"
 #include "scs_lib/scs_private.h"
+
  /* undef all the variables that might have been defined in
     scs_lib/scs_private.h */
 #undef VERSION 
@@ -23,6 +24,33 @@
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
+
+ /* Set to O for larger but faster functions.
+    As it only impacts the second step, smaller is preferred */
+#define TRIPLEDOUBLE_AS_FUNCTIONS 1 
+
+
+#define  Renormalize3(resh, resm, resl, ah, am, al)     DoRenormalize3(resh, resm, resl, ah, am, al)  
+/*extern void Renormalize3(double* resh, double* resm, double* resl, double ah, double am, double al) ;*/
+
+#if TRIPLEDOUBLE_AS_FUNCTIONS
+extern void Mul23(double* resh, double* resm, double* resl, double ah, double al, double bh, double bl);
+extern void Mul233(double* resh, double* resm, double* resl, double ah, double al, double bh, double bm, double bl);
+extern void Mul33(double* resh, double* resm, double* resl, double ah, double am, double al, double bh, double bm, double bl);
+extern void Mul133(double* resh, double* resm, double* resl, double a, double bh, double bm, double bl);
+extern void Mul123(double* resh, double* resm, double* resl, double a, double bh, double bl);
+extern void Sqrt13(double* resh, double* resm, double* resl, double x);
+extern void Recpr33(double* resh, double* resm, double* resl, double dh, double dm, double dl);
+#else
+#define  Mul23(resh, resm, resl, ah, al, bh, bl)           DoMul23(resh, resm, resl, ah, al, bh, bl)
+#define  Mul233(resh, resm, resl, ah, al, bh, bm, bl)      DoMul233(resh, resm, resl, ah, al, bh, bm, bl)
+#define  Mul33(resh, resm, resl, ah, am, al, bh, bm, bl)   DoMul33(resh, resm, resl, ah, am, al, bh, bm, bl)
+#define  Mul133(resh, resm, resl, a, bh, bm, bl)           DoMul133(resh, resm, resl, a, bh, bm, bl)
+#define  Mul123(resh, resm, resl, a, bh, bl)               DoMul123(resh, resm, resl, a, bh, bl)    
+#define  Sqrt13(resh, resm, resl , x)                      DoSqrt13(resh, resm, resl , x)
+#define  Recpr33(resh, resm, resl, dh, dm, dl)             DoRecpr33(resh, resm, resl, dh, dm, dl)
+#endif
+
 
 
 /* Renormalize3
@@ -48,7 +76,7 @@
    Details:         resh, resm and resl are considered to be pointers
 
 */
-#define Renormalize3(resh, resm, resl, ah, am, al)     \
+#define  DoRenormalize3(resh, resm, resl, ah, am, al)     \
 {                                                      \
     double _t1h, _t1l, _t2l;                           \
                                                        \
@@ -86,7 +114,7 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
-#define Mul23(resh, resm, resl, ah, al, bh, bl)                \
+#define  DoMul23(resh, resm, resl, ah, al, bh, bl)                \
 {                                                              \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9, _t10;  \
                                                                \
@@ -98,6 +126,8 @@
     Add12(_t9,_t10,_t1,_t6);                                   \
     Add22Cond((resm),(resl),_t7,_t8,_t9,_t10);                 \
 }
+
+
 
 /* Mul233
 
@@ -132,7 +162,7 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
-#define Mul233(resh, resm, resl, ah, al, bh, bm, bl)            \
+#define  DoMul233(resh, resm, resl, ah, al, bh, bm, bl)            \
 {                                                               \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9, _t10;   \
     double _t11, _t12, _t13, _t14, _t15, _t16, _t17, _t18;      \
@@ -187,7 +217,7 @@
    Details:         resh, resm and resl are considered to be pointers
 */
 
-#define Add33(resh, resm, resl, ah, am, al, bh, bm, bl)      \
+#define  Add33(resh, resm, resl, ah, am, al, bh, bm, bl)      \
 {                                                            \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8;           \
                                                              \
@@ -227,7 +257,7 @@
    Details:         resh, resm and resl are considered to be pointers
 */
 
-#define Add33Cond(resh, resm, resl, ah, am, al, bh, bm, bl)      \
+#define  Add33Cond(resh, resm, resl, ah, am, al, bh, bm, bl)      \
 {                                                            \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8;           \
                                                              \
@@ -275,7 +305,7 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
-#define Add233(resh, resm, resl, ah, al, bh, bm, bl)            \
+#define  Add233(resh, resm, resl, ah, al, bh, bm, bl)            \
 {                                                               \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7;                   \
                                                                 \
@@ -313,7 +343,7 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
-#define Add123(resh, resm, resl, a, bh, bl)                     \
+#define  Add123(resh, resm, resl, a, bh, bl)                     \
 {                                                               \
     double _t1;                                                 \
                                                                 \
@@ -347,7 +377,7 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
-#define Add213(resh, resm, resl, ah, al, b)                     \
+#define  Add213(resh, resm, resl, ah, al, b)                     \
 {                                                               \
     double _t1;                                                 \
                                                                 \
@@ -377,7 +407,7 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
-#define Add23(resh, resm, resl, ah, al, bh, bl)                 \
+#define  Add23(resh, resm, resl, ah, al, bh, bl)                 \
 {                                                               \
     double _t1, _t2, _t3, _t4, _t5, _t6;                        \
                                                                 \
@@ -422,7 +452,7 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
-#define Add133(resh, resm, resl, a, bh, bm, bl)                 \
+#define  Add133(resh, resm, resl, a, bh, bm, bl)                 \
 {                                                               \
     double _t1, _t2, _t3, _t4;                                  \
                                                                 \
@@ -465,7 +495,7 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
-#define Add133Cond(resh, resm, resl, a, bh, bm, bl)             \
+#define  Add133Cond(resh, resm, resl, a, bh, bm, bl)             \
 {                                                               \
     double _t1, _t2, _t3, _t4;                                  \
                                                                 \
@@ -509,7 +539,7 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
-#define Add233Cond(resh, resm, resl, ah, al, bh, bm, bl)        \
+#define  Add233Cond(resh, resm, resl, ah, al, bh, bm, bl)        \
 {                                                               \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7;                   \
                                                                 \
@@ -559,7 +589,7 @@
    Details:         resh, resm and resl are considered to be pointers
 */
 
-#define Mul33(resh, resm, resl, ah, am, al, bh, bm, bl)      \
+#define  DoMul33(resh, resm, resl, ah, am, al, bh, bm, bl)      \
 {                                                            \
     double _t1, _t2, _t3, _t4, _t5, _t6, _t7, _t8, _t9;      \
     double _t10, _t11, _t12, _t13, _t14, _t15, _t16, _t17;   \
@@ -614,7 +644,7 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
-#define Mul133(resh, resm, resl, a, bh, bm, bl)            \
+#define  DoMul133(resh, resm, resl, a, bh, bm, bl)            \
 {                                                          \
     double _t2, _t3, _t4, _t5, _t7, _t8, _t9, _t10;        \
                                                            \
@@ -649,7 +679,7 @@
 
    Details:         resh, resm and resl are considered to be pointers
 */
-#define Mul123(resh, resm, resl, a, bh, bl)                \
+#define  DoMul123(resh, resm, resl, a, bh, bl)                \
 {                                                          \
     double _t1, _t2, _t3, _t4, _t5, _t6;                   \
                                                            \
@@ -1201,7 +1231,7 @@
 */
 
 
-#define sqrt13(resh, resm, resl , x)                                                          \
+#define  DoSqrt13(resh, resm, resl , x)                                                          \
 {                                                                                             \
   db_number _xdb;                                                                             \
   int _E;                                                                                     \
@@ -1272,10 +1302,10 @@
     Add22(&_r3h, &_r3l, _r2PHr2h, _r2PHr2l, _MHmMr2Ch, _MHmMr2Cl);                            \
                                                                                               \
     Mul22(&_r3Sqh, &_r3Sql, _r3h, _r3l, _r3h, _r3l);                                          \
-    Mul22(&_mMr3Sqh, &_mMr3Sql, _m, 0, _r3Sqh, _r3Sql);                                       \
+    Mul22(&_mMr3Sqh, &_mMr3Sql, _m, 0.0, _r3Sqh, _r3Sql);                                       \
              /* To prove: mMr3Sqh = 1.0 in each case */                                       \
                                                                                               \
-    Mul22(&_r4h, &_r4l, _r3h, _r3l, 1, (-0.5 * _mMr3Sql));                                    \
+    Mul22(&_r4h, &_r4l, _r3h, _r3l, 1.0, (-0.5 * _mMr3Sql));                                    \
                                                                                               \
     /* Iterate once on triple-double precision */                                             \
                                                                                               \
@@ -1287,7 +1317,7 @@
     _HmMr4Sqm = -0.5 * _mMr4Sqm;                                                              \
     _HmMr4Sql = -0.5 * _mMr4Sql;                                                              \
                                                                                               \
-    Mul233(&_r5h,&_r5m,&_r5l,_r4h,_r4l,1,_HmMr4Sqm,_HmMr4Sql);                                \
+    Mul233(&_r5h,&_r5m,&_r5l,_r4h,_r4l,1.0,_HmMr4Sqm,_HmMr4Sql);                                \
                                                                                               \
     /* Multiply obtained reciprocal square root by m */                                       \
                                                                                               \
@@ -1321,7 +1351,7 @@
 */
 
 
-#define recpr33(resh, resm, resl, dh, dm, dl)                                                 \
+#define  DoRecpr33(resh, resm, resl, dh, dm, dl)                                                 \
 {                                                                                             \
     double _rec_r1, _rec_t1, _rec_t2, _rec_t3, _rec_t4, _rec_t5, _rec_t6, _rec_t7, _rec_t8, _rec_t9, _rec_t10, _rec_t11, _rec_t12, _rec_t13, _rec_t14;    \
     double _rec_r2h, _rec_r2l, _rec_t15, _rec_t16, _rec_t17, _rec_t18, _rec_t19, _rec_t20, _rec_t21, _rec_t22, _rec_t23;                  \

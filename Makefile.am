@@ -10,6 +10,7 @@ lib_LIBRARIES = libcrlibm.a
 if USE_HARDWARE_DE
 libcrlibm_a_SOURCES =  \
 	crlibm.h crlibm_private.h crlibm_private.c double-extended.h\
+	triple-double.h triple-double.c\
 	exp-td.h exp-td.c exp-td-standalone.c expm1-standalone.c  \
 	expm1.h expm1.c \
 	log-de.c log-de.h \
@@ -26,7 +27,8 @@ libcrlibm_a_SOURCES =  \
 	csh_fast.h csh_fast.c
 else 
 libcrlibm_a_SOURCES =  \
-	crlibm.h crlibm_private.h crlibm_private.c triple-double.h\
+	crlibm.h crlibm_private.h crlibm_private.c \
+	triple-double.h triple-double.c\
 	exp-td.h exp-td.c exp-td-standalone.c expm1-standalone.c  \
 	expm1.h expm1.c \
 	log-td.c log-td.h \
@@ -59,7 +61,11 @@ if COMPILER_ICC
 # mp means maintain precision. Should be useless with std=c99, this is an ICC bug
 AM_CFLAGS =  -std=c99 -mp -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe
 else # default assumed to be gcc
+if USE_SSE2
+AM_CFLAGS =  -std=c99 -fPIC -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline -msse2 -mfpmath=sse 
+else
 AM_CFLAGS =  -std=c99 -fPIC -Wall -Wshadow -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline 
+endif
 endif
 
 

@@ -328,7 +328,7 @@ void acos_accurate_higher(double *acosh, double *acosm, double *acosl, double z,
   /* Compute sqrt(2*z) as a triple-double */
 
   twoZ = 2 * z;
-  sqrt13(&sqrtzh,&sqrtzm,&sqrtzl,twoZ);                                                           /* 146 - 52/53 */
+  Sqrt13(&sqrtzh,&sqrtzm,&sqrtzl,twoZ);                                                           /* 146 - 52/53 */
 
   /* Multiply p(z) by sqrt(2*z) */
 
@@ -377,6 +377,12 @@ double acos_rn(double x) {
   double pTimesSh, pTimesSl, highPoly, xCubeh, xCubel;
   double tmp1, tmp2, tmp3, tmp4, tmp5;
   double zw1h, zw1l;
+
+  /*
+#if CRLIBM_REQUIRES_ROUNDING_MODE_CHANGE
+  SAVE_STATE_AND_SET_RNDOUBLE 
+#endif
+  */
 
   /* Transform the argument into integer */
   xdb.d = x;

@@ -296,7 +296,7 @@ void asin_accurate_higher(double *asinh, double *asinm, double *asinl, double z,
   /* Compute sqrt(2*z) as a triple-double */
 
   twoZ = 2 * z;
-  sqrt13(&sqrtzh,&sqrtzm,&sqrtzl,twoZ);                                                           /* 146 - 52/53 */
+  Sqrt13(&sqrtzh,&sqrtzm,&sqrtzl,twoZ);                                                           /* 146 - 52/53 */
 
   /* Multiply p(z) by sqrt(2*z) and add Pi/2 */
 
