@@ -35,6 +35,8 @@ Copyright (C) 2002  David Defour and Florent de Dinechin
 @warning  "x" need to be normalized
   */ 
 
+/* TODO BUG scs_get_d doesn't do round-to nearest even */
+
 
 
 
@@ -49,8 +51,8 @@ Copyright (C) 2002  David Defour and Florent de Dinechin
 
 void scs_get_d(double *result, scs_ptr x){ 
   db_number nb, rndcorr;
-  uint64_t lowpart, t1;
-  int expo, expofinal;
+  uint64_t lowpart, roundbits, t1;
+  int expo, expofinal, shift;
   double res;
   
   /* convert the MSB digit into a double, and store it in nb.d */
@@ -86,14 +88,32 @@ void scs_get_d(double *result, scs_ptr x){
   /* Is our SCS number a denormal  ? */
   else if (expofinal >= -1022){		
     /* x is in the normal range */   
-
-    /* align the rest of the mantissa to nb : shift by (2*SCS_NB_BITS)-53-exp */
-    lowpart = lowpart >> (expo+(2*SCS_NB_BITS)-53);     
+    shift=expo+2*SCS_NB_BITS-53;
+    roundbits=lowpart<<(64-shift);
+    /* align the rest of the mantissa to nb : shift by (2*SCS_NB_BITS)-53+expo */
+    lowpart = lowpart >> shift;     
     /* Look at the last bit to decide rounding */
+
     if (lowpart & ULL(0000000000000001)){
-      /* need to add an half-ulp */
-      rndcorr.i[LO] = 0; 
-      rndcorr.i[HI] = (expo-52+1023)<<20;    /* 2^(exp-52) */ 
+      /* Test for the round to even case */
+      if(roundbits==0)
+	{ int i;
+	  for (i=3; i<SCS_NB_WORDS; i++)
+	    roundbits=roundbits | X_HW[i];
+	}
+      if(roundbits==0) {
+	/* round to even mantissa */
+	if (lowpart & ULL(0000000000000002)){
+	  /* mantissa odd, need to add an half-ulp */
+	  rndcorr.i[LO] = 0; 
+	  rndcorr.i[HI] = (expo-52+1023)<<20;    /* 2^(exp-52) */ 
+	}else
+	  rndcorr.d = 0.0;
+      }
+      else { /* there are round bits need to add an half-ulp */
+	rndcorr.i[LO] = 0; 
+	rndcorr.i[HI] = (expo-52+1023)<<20;    /* 2^(exp-52) */ 
+      }
     }else{
       /* need to add nothing*/
       rndcorr.d = 0.0;
