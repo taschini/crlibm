@@ -353,20 +353,29 @@ do {                                                                \
 #define TAN 2
 
 
-#define RangeReductionSCS()                                   \
-do { 								\
-  scs_t X, Y,Yh,Yl;						\
-      scs_set_d(X, rri->x); 			  		        \
-      k= rem_pio256_scs(Y, X);					\
-      index=(k&127)<<2;                                         \
-      quadrant = (k>>7)&3;                                      \
-      /* TODO an optimized procedure for the following */	\
-      scs_get_d(&yh, Y);					\
-      scs_set_d(Yh, yh);					\
-      scs_sub(Yl, Y,Yh);					\
-      scs_get_d(&yl, Yl);					\
+#define SHIFT1 ( 1. / ((double) (1<<SCS_NB_BITS))  )
+#define SHIFT2 (SHIFT1*SHIFT1)
+#define SHIFT3 (SHIFT2*SHIFT1)
+#define RangeReductionSCS()                                \
+do { 							   \
+  db_number nb;   double x0,x1,x2,x3;                      \
+  scs_t X, Y;						   \
+  scs_set_d(X, rri->x); 			  	   \
+  k= rem_pio256_scs(Y, X);				   \
+  index=(k&127)<<2;                                        \
+  quadrant = (k>>7)&3;                                     \
+  x0 = (double)(Y->h_word[0]);                             \
+  x1 = ((double)(Y->h_word[1])) * SHIFT1;                  \
+  x2 = ((double)(Y->h_word[2])) * SHIFT2;                  \
+  x3 = ((double)(Y->h_word[3])) * SHIFT3;                  \
+  nb.i[HI] = ((Y->index)*SCS_NB_BITS +1023)  << 20;  	   \
+  nb.i[LO] = 0;                                            \
+  nb.d *= Y->sign;                                         \
+  yh=(x2+x1)+x0;                                           \
+  yl=(((x0-yh)+x1)+x2) + x3;                               \
+  yh *= nb.d;     /* exact multiplication */               \
+  yl *= nb.d;     /* exact multiplication */               \  
 }while(0)
-
 
 
 /* A structure that holds all the information to be exchanged between
