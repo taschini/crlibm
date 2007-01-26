@@ -1,14 +1,25 @@
 #/bin/bash
-crlibm_testperf log RN 100000;
-crlibm_testperf exp RN 100000;
-crlibm_testperf sin RN 100000;
-crlibm_testperf cos RN 100000;
-crlibm_testperf tan RN 100000;
-crlibm_testperf asin RN 100000;
-crlibm_testperf acos RN 100000;
-crlibm_testperf atan RN 100000;
-crlibm_testperf log10 RN 100000;
-crlibm_testperf log2 RN 100000;
-crlibm_testperf sinpi RN 100000;
-crlibm_testperf cospi RN 100000;
-crlibm_testperf tanpi RN 100000;
+
+path=`echo $0 | sed 's/testperfs.sh//'`
+executab=`echo -e $path'crlibm_testperf'`
+
+if [ "$1" = "" ]; then
+    iter=100000
+else 
+    iter=$1
+fi
+
+$executab log RN $iter
+$executab exp RN $iter
+$executab sin RN $iter
+$executab cos RN $iter
+$executab tan RN $iter
+$executab asin RN $iter
+$executab acos RN $iter
+$executab atan RN $iter
+$executab log10 RN $iter
+$executab log2 RN $iter
+$executab sinpi RN $iter
+$executab cospi RN $iter
+$executab tanpi RN $iter
+
