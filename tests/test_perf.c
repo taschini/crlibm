@@ -803,7 +803,7 @@ int main (int argc, char *argv[]){
     if(dt<tbx_time) tbx_time = dt;
   }
 #if HAVE_MPFR_H
-  printf ("GMP version %s MPFR version %s ",
+  printf ("%%GMP version %s MPFR version %s ",
           gmp_version, mpfr_get_version ());
 #endif
   /*  printf("tbx_time=%llu\n", tbx_time); */
