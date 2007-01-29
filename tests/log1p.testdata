@@ -47,6 +47,8 @@ P bff00000 00000000 fff00000 00000000 # -inf
 M bff00000 00000000 fff00000 00000000 # -inf
 Z bff00000 00000000 fff00000 00000000 # -inf
 
+# Very worst case
+N 0x3CD7FFFF 0xFFFFFFFD 3cd7ffff fffffff9  # 1.332267629550187256862679085950e-15
 
 # One in five of the very worst cases computed by Lefevre and Muller.
 # Rounding these values requires evaluating the function to at least 2^(-100).

@@ -174,6 +174,8 @@ Z 3FD8BBE2 FB45C151 3fde3186 ba9d4d49
 Z 3FC4E88C 5ACCFDA5 3fc6b684 47b2f2fc
 Z 3FBE923C 188EA79B 3fc03c5a 420857cf
 
+# Very worst case. 95 identical bits, it's probably our best. It is not a random one, though.
+Z 0x3CE7FFFF 0xFFFFFFFD  0x3CE80000 0x00000005  # 2.664535259100374513725358171900e-15
 
 # One in five of the very worst cases computed by Lefevre and Muller.
 # Rounding these values requires evaluating the function to at least 2^(-100).

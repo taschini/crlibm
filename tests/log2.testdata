@@ -6,6 +6,11 @@ log2     # Name of the function to test
 #   2/ The high and low hexadecimal halves of an input
 #   3/ The high and low hexadecimal halves of the expected corresponding output
 
+
+# Very worst case
+N 0x3FFB4EBE 0x40C95A01  0x3FE8ADEA 0xC981E00E  # 1.706724408218747379706314859504e+00
+
+# undocumented values, probably by Christoph
 N 0d6cea1f 96f699f5 c089412b 93076276
 N 36e597a1 eba0d538 c0621229 6708397f
 
