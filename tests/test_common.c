@@ -933,7 +933,7 @@ void test_init(/* pointers to returned value */
     {
       *randfun_perf     = rand_for_acos_testperf;
       *randfun_soaktest = rand_for_asin_soaktest;
-      *worst_case = -0.186012665767615964496073388545482885092496871948242188; /* TODO */
+      *worst_case = 0.9999999999968665065352979581803 ;
       *testfun_libm   = acos;
       switch(crlibm_rnd_mode){
       case RU:
