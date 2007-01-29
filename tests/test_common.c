@@ -20,15 +20,15 @@
 #endif
 
 
-/* A variable equal to zero, stored here so that the compiler doesn't
-   know its value in the other functions, which allows to prevent some
-   optimizations  */
-
-
 #define RN 1
 #define RU 2
 #define RD 3
 #define RZ 4  
+
+/* A variable equal to zero, stored here so that the compiler doesn't
+   know its value in the other functions, which allows to prevent some
+   optimizations  */
+
 
 double zero ;
 
@@ -586,7 +586,7 @@ void test_init(/* pointers to returned value */
     {
       *randfun_perf     = rand_for_log;
       *randfun_soaktest = rand_for_log;
-      *worst_case=1.23; /* TODO: I dont know the worst case now */
+      *worst_case= 1.706724408218747379706314859504e+00; 
       *testfun_libm   = log2; 
       switch(crlibm_rnd_mode){
       case RU:
@@ -645,8 +645,7 @@ void test_init(/* pointers to returned value */
     {
       *randfun_perf     = rand_for_expm1_testperf;
       *randfun_soaktest = rand_for_expm1_soaktest;
-      *worst_case= 0.6300653316969685446835569564427714794874191284179687500;   
-      /* TODO: The value above is not the worst case but a difficult case for RN*/
+      *worst_case= 1.312678236466234442186232916905e-07; /* worst case for RN only, there are much worse cases for RZ */
       *testfun_libm   = expm1;
       switch(crlibm_rnd_mode){
       case RU:
@@ -673,7 +672,7 @@ void test_init(/* pointers to returned value */
     {
       *randfun_perf     = rand_for_log1p;
       *randfun_soaktest = rand_for_log1p;
-      *worst_case= 1.0;   /* TODO */
+      *worst_case= 1.332267629550187256862679085950e-15;
       *testfun_libm   = log1p;
       switch(crlibm_rnd_mode){
       case RU:
