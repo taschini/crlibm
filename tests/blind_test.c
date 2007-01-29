@@ -71,7 +71,7 @@ int main (int argc, char *argv[])
   }
 
 
-  crlibm_init();
+  // crlibm_init();
    
   fflush(stdout); /* To help debugging */
 
