@@ -1,5 +1,9 @@
 cos     # Name of the function to test
 
+# cos.testdata, copyright (C) 2005 Ch. Q. Lauter and F. de Dinechin
+# This file is part of crlibm and is distributed under the GNU Public Licence
+# See file COPYING for details
+
 # The following lines are either comments (beginning with a #)
 # or give 
 #   1/ a rounding mode : RN|RU|RD|RZ (crlibm syntax) or  N|P|M|Z (libmcr syntax)
