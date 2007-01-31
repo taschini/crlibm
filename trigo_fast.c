@@ -255,13 +255,8 @@ static int rem_pio256_scs(scs_ptr result, const scs_ptr x){
   /* Carry propagate */
   r[SCS_NB_WORDS+1] += r[SCS_NB_WORDS+2]>>30;
   for(i=(SCS_NB_WORDS+1); i>0; i--) {tmp=r[i]>>30;   r[i-1] += tmp;  r[i] -= (tmp<<30);}  
-      
   /* The integer part is in r[0] */
   N = r[0];
-#if 0
-  printf("r[0] = %d\n", N);
-#endif
-
 
 
   if (r[1] > (SCS_RADIX)/2){	/* test if the reduced part is bigger than Pi/4 */
@@ -273,17 +268,17 @@ static int rem_pio256_scs(scs_ptr result, const scs_ptr x){
     sign = 1; 
 
 
-  /* Now we get the reduce argument and check for possible
-   * cancellation By Kahan algorithm we will have at most 2 digits
-   * of cancellations r[1] and r[2] in the worst case.
+  /* Now we get the reduced argument and check for possible
+   * cancellation. By Kahan algorithm we will have at most 2 digits
+   * of cancellations, r[1] and r[2] in the worst case.
    */    
   if (r[1] == 0)
     if (r[2] == 0) i = 3;
     else           i = 2;
   else             i = 1;
 
-  for(j=0; j<SCS_NB_WORDS; j++) { R_HW[j] = r[i+j];}
-
+  for(j=0; j<SCS_NB_WORDS; j++)  
+    R_HW[j] = r[i+j];
 
   R_EXP   = 1;
   R_IND   = -i;
@@ -374,8 +369,11 @@ do { 							   \
   yh=(x2+x1)+x0;                                           \
   yl=(((x0-yh)+x1)+x2) + x3;                               \
   yh *= nb.d;     /* exact multiplication */               \
-  yl *= nb.d;     /* exact multiplication */               \  
+  yl *= nb.d;     /* exact multiplication */               \
 }while(0)
+
+
+
 
 
 /* A structure that holds all the information to be exchanged between
@@ -561,6 +559,7 @@ double sin_rn(double x){
   double ts,x2,rncst; 
   rrinfo rri;
   db_number x_split;
+  double r;
   
   x_split.d=x;
   rri.absxhi = x_split.i[HI] & 0x7fffffff;
@@ -593,20 +592,12 @@ double sin_rn(double x){
     rri.function=SIN;
     ComputeTrigWithArgred(&rri);
 
-#if 0
-    {
-      db_number t;
-      t.d = rri.rh ;
-      printf("\nrh = %08x %08x\n", t.i[HI], t.i[LO]);
-      t.d =  rri.rl;
-      printf("rl = %08x %08x\n", t.i[HI], t.i[LO]);
-    }
-#endif
-
+    /* change sign in parallel to the test */ 
+    if(rri.changesign) r= -rri.rh; else r= rri.rh;
 
     rncst= RN_CST_SINCOS_CASE3;
     if(rri.rh == (rri.rh + (rri.rl * rncst)))	
-      if(rri.changesign) return -rri.rh; else return rri.rh;
+      return r;
     else
       return scs_sin_rn(x); 
   }
