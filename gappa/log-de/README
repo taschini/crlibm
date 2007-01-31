@@ -1,0 +1,28 @@
+
+
+There are (too) many proof files for log-de. 
+
+Those with "acc" in the filename concern the accurate step (double-double-extended computation).
+
+The others concern the quick phase (double-extended computation, with Estrin polynomial evaluation).
+
+The most interesting files are the latter. There are three files:
+  log-de-index1N-E0N.gappa covers all the table index values, except 0.
+  log-de-index0-E1N.gappa covers the index 0 and all the exponents, except 0.
+  log-de-index0-E0.gappa covers the case where both the index and the exponent are zero.
+ 
+The hints given to Gappa need to be different in the three
+cases. Basically, as soon as either the exponent or the index is
+different from zero, Gappa computes the relative error by dividing an
+absolute error by the max value of the function, which is sufficiently
+large. In these cases, Estrin evaluation is just as easy as Horner to
+handle.  However, in the case where both index and exponent are zero
+(this correspond to the interval where the logarithm goes through
+zero) we have to compute directly the relative error of the Estrin
+evaluation. 
+
+The same holds for log-de-acc, but without the Estrin bravery.
+
+Note that some of these files forget the case z=0. It is easy the prove by
+hand that the Estrin evaluation, in this case, returns logir+E*log2 (with
+roundings on logir, log2, the + and the *), which is accurate enough.
