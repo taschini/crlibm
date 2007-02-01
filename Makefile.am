@@ -20,7 +20,7 @@ libcrlibm_a_SOURCES =  \
 	rem_pio2_accurate.h rem_pio2_accurate.c \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	trigpi.c trigpi.h \
-	asin-td.h asin-td.c \
+	asin.h asin.c \
 	acos-td.h acos-td.c\
 	pow.h pow.c\
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
@@ -38,7 +38,7 @@ libcrlibm_a_SOURCES =  \
 	rem_pio2_accurate.h rem_pio2_accurate.c \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	trigpi.c trigpi.h \
-	asin-td.h asin-td.c \
+	asin.h asin.c \
 	acos-td.h acos-td.c \
 	pow.h pow.c\
 	atan_fast.c atan_fast.h atan_accurate.h atan_accurate.c \
