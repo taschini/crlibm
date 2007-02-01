@@ -894,6 +894,8 @@ double asin_ru(double x) {
   crlibm_second_step_taken++;
 #endif
   
+  if (x == ASINBADCASEX) return ASINBADCASEYRU;
+
   p_accu(&asinh, &asinm, &asinl, z, index);
   
   /* Final rounding */
@@ -1113,6 +1115,8 @@ double asin_rd(double x) {
   crlibm_second_step_taken++;
 #endif
   
+  if (x == ASINBADCASEX) return ASINBADCASEYRD;
+
   p_accu(&asinh, &asinm, &asinl, z, index);
   
   /* Final rounding */
@@ -1325,6 +1329,8 @@ double asin_rz(double x) {
   crlibm_second_step_taken++;
 #endif
   
+  if (x == ASINBADCASEX) return ASINBADCASEYRD;
+
   p_accu(&asinh, &asinm, &asinl, z, index);
   
   /* Final rounding */
