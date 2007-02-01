@@ -52,18 +52,18 @@ dnl Check for compiler
 AC_PROG_CC(gcc icc cc)
 
 # Try to set compiler flags to get floating point arithmetics 
-# to work
+# to work. This is an old heritage and should become useless within 30 years
 #
 if test "${GCC}" != "yes" ; then
     case "${build}" in
         *-*-hpux* )
-	    CFLAGS="${CFLAGS} -Wp,-H30000"
+	    AM_CFLAGS="${AM_CFLAGS} -Wp,-H30000"
             ;;
         *-dec-osf* )
-            CFLAGS="${CFLAGS} -ieee"
+            AM_CFLAGS="${AM_CFLAGS} -ieee"
             ;;
 	*-apple-darwin* )
-	    CFLAGS="${CFLAGS} -fno-common"
+	    AM_CFLAGS="${AM_CFLAGS} -fno-common"
 	    ;;
 	*-sgi-irix* )
 	    ;;
@@ -71,25 +71,25 @@ if test "${GCC}" != "yes" ; then
 else
     case "${CC}" in
 	*icc* )
-	    # -Wall causes relocation errors with icc
-	    CFLAGS="${CFLAGS} -wd269"
+	    # -Wall causes relocation errors with icc. 
+	    AM_CFLAGS="${AM_CFLAGS} -wd269"
 	    ;;
         * )
             case "${build}" in
 	        *-dec-osf* )
-	            CFLAGS="${CFLAGS} -mieee -Wall"
+	            AM_CFLAGS="${AM_CFLAGS} -mieee -Wall"
 	            ;;
                 *alpha*-*-linux* )
-                    CFLAGS="${CFLAGS} -mieee -Wall"
+                    AM_CFLAGS="${AM_CFLAGS} -mieee -Wall"
                     ;;
                 *alpha*-*-freebsd* )
-                    CFLAGS="${CFLAGS} -mieee -Wall"
+                    AM_CFLAGS="${AM_CFLAGS} -mieee -Wall"
                     ;;
 	        *-apple-darwin* )
-	            CFLAGS="${CFLAGS} -fno-common -Wall"
+	            AM_CFLAGS="${AM_CFLAGS} -fno-common -Wall"
 	            ;;
 	        * )
-	            CFLAGS="${CFLAGS} -Wall"
+	            AM_CFLAGS="${AM_CFLAGS} -Wall"
 	            ;;
             esac
 	    ;;
@@ -108,12 +108,10 @@ AM_CONDITIONAL(COMPILER_ICC, test x$CC = xicc)
 dnl Checks for programs.
 AC_PROG_INSTALL
 AC_PROG_RANLIB
-AC_PROG_AWK
 AC_PROG_LN_S
 
 dnl Checks for standard C stuff.
 AC_HEADER_STDC
-AC_FUNC_MALLOC
 AC_C_CONST
 AC_C_INLINE
 
@@ -170,7 +168,7 @@ fi
 dnl Command-line arguments to ./configure:
 
 
-dnl switch for compiling the interval functions
+dnl switch for SSE2
 AC_ARG_ENABLE(sse2,
   [  --enable-sse2    forces the use of sse2 arith  [[default=no]]],
   [case $enableval in
