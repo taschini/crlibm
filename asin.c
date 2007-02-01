@@ -1,5 +1,5 @@
 /*
- * Correctly rounded arcsine
+ * Correctly rounded arcsine and arccosine
  *
  * Author : Christoph Lauter (ENS Lyon)
  *
@@ -689,13 +689,650 @@ double asin_rn(double x) {
 
 
 double asin_ru(double x) {
-  return asin_rn(x);
+  db_number xdb, zdb;
+  double sign, z, zp;
+  int index;
+  double asinh, asinm, asinl;
+  double p9h, p9m, p9l, sqrh, sqrm, sqrl;
+  double t1h, t1m, t1l;
+  double xabs;
+
+  /* Start already computations for argument reduction */
+
+  zdb.d = 1.0 + x * x;
+
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Remove sign of x in floating-point */
+  xabs = ABS(x);
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* If |x| < 2^(-28) we have
+     
+     arcsin(x) = x * ( 1 + xi ) 
+
+     with 0 <= xi < 2^(-55) 
+          
+     So we can decide the rounding without any computation 
+  */
+  if (xdb.i[HI] < SIMPLEBOUND) {
+    /* If x == 0 then we got the algebraic result arcsin(0) = 0
+       If x < 0 then the truncation rest is negative but less than 
+       1 ulp; we round upwards by returning x
+    */
+    if (x <= 0.0) return x;
+    /* Otherwise the rest is positive, less than 1 ulp and the
+       image is not algebraic 
+       We return x + 1ulp
+    */
+    xdb.l++;
+    return xdb.d;
+  }
+
+  /* asin is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if (xdb.i[HI] >= 0x3ff00000) {
+    if (x == 1.0) {
+      return PIHALFRU;
+    }
+    if (x == -1.0) {
+      return - PIHALFH;
+    }
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* Argument reduction:
+
+     We have 10 intervals and 3 paths:
+
+     - interval 0   => path 1 using p0
+     - interval 1-8 => path 2 using p
+     - interval 9   => path 3 using p9
+
+  */
+
+  index = (0x000f0000 & zdb.i[HI]) >> 16;
+
+  /* 0 <= index <= 15 
+
+     index approximates roughly x^2 
+
+     Map indexes to intervals as follows:
+
+     0  -> 0 
+     1  -> 1
+     ... 
+     8  -> 8
+     9  -> 9
+     ... 
+     15 -> 9
+
+     For this mapping, filter first the case 0 -> 0
+     In consequence, 1 <= index <= 15, i.e. 
+     0 <= index - 1 <= 14 with the mapping index - 1 -> interval as
+
+     0  -> 1
+     ... 
+     7  -> 8
+     8  -> 9
+     ...
+     15 -> 9
+
+     Thus it suffices to check the 3rd bit of index - 1 after the first filter.
+     
+  */
+
+  if (index == 0) {
+    /* Path 1 using p0 */
+
+    p0_quick(&asinh, &asinm, x, xdb.i[HI]);
+
+    /* Rounding test */
+
+    TEST_AND_RETURN_RU(asinh, asinm, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p0_accu(&asinh, &asinm, &asinl, x);
+
+    /* Final rounding */
+
+    ReturnRoundUpwards3(asinh,asinm,asinl);
+
+  } 
+
+  /* Strip off the sign of argument x */
+  sign = 1.0;
+  if (x < 0.0) sign = -sign;
+  
+  index--;
+  if ((index & 0x8) != 0) {
+    /* Path 3 using p9 */
+
+    /* Do argument reduction using a MI_9 as a midpoint value 
+       for the polynomial and compute exactly zp = 2 * (1 - x) 
+       for the asymptotical approximation using a square root.
+    */
+
+    z = xabs - MI_9;
+    zp = 2.0 * (1.0 - xabs);
+
+    /* Polynomial approximation and square root extraction */
+
+    p9_quick(&p9h, &p9m, z);
+    p9h = -p9h;
+    p9m = -p9m;
+
+    sqrt12_64_unfiltered(&sqrh,&sqrm,zp);
+
+    /* Reconstruction */
+
+    Mul22(&t1h,&t1m,sqrh,sqrm,p9h,p9m);
+    Add22(&asinh,&asinm,PIHALFH,PIHALFM,t1h,t1m);
+
+    /* Rounding test */
+
+    asinh *= sign;
+    asinm *= sign;
+
+    TEST_AND_RETURN_RU(asinh, asinm, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p9_accu(&p9h, &p9m, &p9l, z);
+    p9h = -p9h;
+    p9m = -p9m;
+    p9l = -p9l;
+
+    Sqrt13(&sqrh,&sqrm,&sqrl,zp);
+
+    /* Reconstruction */
+
+    Mul33(&t1h,&t1m,&t1l,sqrh,sqrm,sqrl,p9h,p9m,p9l);
+    Add33(&asinh,&asinm,&asinl,PIHALFH,PIHALFM,PIHALFL,t1h,t1m,t1l);
+
+    /* Final rounding */    
+
+    asinh *= sign;
+    asinm *= sign;
+    asinl *= sign;
+
+    ReturnRoundUpwards3(asinh,asinm,asinl);
+
+  }
+
+  /* Path 2 using p */
+
+  /* Do argument reduction using a table value for 
+     the midpoint value 
+  */
+
+  z = xabs - mi_i;
+
+  p_quick(&asinh, &asinm, z, index);
+
+
+  /* Rounding test */
+
+  asinh *= sign;
+  asinm *= sign;
+  
+  TEST_AND_RETURN_RU(asinh, asinm, RDROUNDCST);
+  
+  /* Rounding test failed, launch accurate phase */
+  
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+  
+  p_accu(&asinh, &asinm, &asinl, z, index);
+  
+  /* Final rounding */
+
+  asinh *= sign;
+  asinm *= sign;
+  asinl *= sign;
+  
+  ReturnRoundUpwards3(asinh,asinm,asinl);
+
 }
 
 double asin_rd(double x) {
-  return asin_rn(x);
+  db_number xdb, zdb;
+  double sign, z, zp;
+  int index;
+  double asinh, asinm, asinl;
+  double p9h, p9m, p9l, sqrh, sqrm, sqrl;
+  double t1h, t1m, t1l;
+  double xabs;
+
+  /* Start already computations for argument reduction */
+
+  zdb.d = 1.0 + x * x;
+
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Remove sign of x in floating-point */
+  xabs = ABS(x);
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* If |x| < 2^(-28) we have
+     
+     arcsin(x) = x * ( 1 + xi ) 
+
+     with 0 <= xi < 2^(-55) 
+          
+     So we can decide the rounding without any computation 
+  */
+  if (xdb.i[HI] < SIMPLEBOUND) {
+    /* If x == 0 then we got the algebraic result arcsin(0) = 0
+       If x > 0 then the truncation rest is positive but less than 
+       1 ulp; we round downwards by returning x
+    */
+    if (x >= 0) return x;
+    /* Otherwise the rest is negative, less than 1 ulp and the
+       image is not algebraic 
+       We return x - 1ulp
+       We stripped off the sign, so we add 1 ulp to -x (in xdb.d) and multiply by -1
+    */
+    xdb.l++;
+    return -1 * xdb.d;
+  }
+
+  /* asin is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if (xdb.i[HI] >= 0x3ff00000) {
+    if (x == 1.0) {
+      return PIHALFH;
+    }
+    if (x == -1.0) {
+      return - PIHALFRU;
+    }
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* Argument reduction:
+
+     We have 10 intervals and 3 paths:
+
+     - interval 0   => path 1 using p0
+     - interval 1-8 => path 2 using p
+     - interval 9   => path 3 using p9
+
+  */
+
+  index = (0x000f0000 & zdb.i[HI]) >> 16;
+
+  /* 0 <= index <= 15 
+
+     index approximates roughly x^2 
+
+     Map indexes to intervals as follows:
+
+     0  -> 0 
+     1  -> 1
+     ... 
+     8  -> 8
+     9  -> 9
+     ... 
+     15 -> 9
+
+     For this mapping, filter first the case 0 -> 0
+     In consequence, 1 <= index <= 15, i.e. 
+     0 <= index - 1 <= 14 with the mapping index - 1 -> interval as
+
+     0  -> 1
+     ... 
+     7  -> 8
+     8  -> 9
+     ...
+     15 -> 9
+
+     Thus it suffices to check the 3rd bit of index - 1 after the first filter.
+     
+  */
+
+  if (index == 0) {
+    /* Path 1 using p0 */
+
+    p0_quick(&asinh, &asinm, x, xdb.i[HI]);
+
+    /* Rounding test */
+
+    TEST_AND_RETURN_RD(asinh, asinm, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p0_accu(&asinh, &asinm, &asinl, x);
+
+    /* Final rounding */
+
+    ReturnRoundDownwards3(asinh,asinm,asinl);
+
+  } 
+
+  /* Strip off the sign of argument x */
+  sign = 1.0;
+  if (x < 0.0) sign = -sign;
+  
+  index--;
+  if ((index & 0x8) != 0) {
+    /* Path 3 using p9 */
+
+    /* Do argument reduction using a MI_9 as a midpoint value 
+       for the polynomial and compute exactly zp = 2 * (1 - x) 
+       for the asymptotical approximation using a square root.
+    */
+
+    z = xabs - MI_9;
+    zp = 2.0 * (1.0 - xabs);
+
+    /* Polynomial approximation and square root extraction */
+
+    p9_quick(&p9h, &p9m, z);
+    p9h = -p9h;
+    p9m = -p9m;
+
+    sqrt12_64_unfiltered(&sqrh,&sqrm,zp);
+
+    /* Reconstruction */
+
+    Mul22(&t1h,&t1m,sqrh,sqrm,p9h,p9m);
+    Add22(&asinh,&asinm,PIHALFH,PIHALFM,t1h,t1m);
+
+    /* Rounding test */
+
+    asinh *= sign;
+    asinm *= sign;
+
+    TEST_AND_RETURN_RD(asinh, asinm, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p9_accu(&p9h, &p9m, &p9l, z);
+    p9h = -p9h;
+    p9m = -p9m;
+    p9l = -p9l;
+
+    Sqrt13(&sqrh,&sqrm,&sqrl,zp);
+
+    /* Reconstruction */
+
+    Mul33(&t1h,&t1m,&t1l,sqrh,sqrm,sqrl,p9h,p9m,p9l);
+    Add33(&asinh,&asinm,&asinl,PIHALFH,PIHALFM,PIHALFL,t1h,t1m,t1l);
+
+    /* Final rounding */    
+
+    asinh *= sign;
+    asinm *= sign;
+    asinl *= sign;
+
+    ReturnRoundDownwards3(asinh,asinm,asinl);
+
+  }
+
+  /* Path 2 using p */
+
+  /* Do argument reduction using a table value for 
+     the midpoint value 
+  */
+
+  z = xabs - mi_i;
+
+  p_quick(&asinh, &asinm, z, index);
+
+
+  /* Rounding test */
+
+  asinh *= sign;
+  asinm *= sign;
+  
+  TEST_AND_RETURN_RD(asinh, asinm, RDROUNDCST);
+  
+  /* Rounding test failed, launch accurate phase */
+  
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+  
+  p_accu(&asinh, &asinm, &asinl, z, index);
+  
+  /* Final rounding */
+
+  asinh *= sign;
+  asinm *= sign;
+  asinl *= sign;
+  
+  ReturnRoundDownwards3(asinh,asinm,asinl);
+
 }
 
 double asin_rz(double x) {
-  return asin_rn(x);
+  db_number xdb, zdb;
+  double sign, z, zp;
+  int index;
+  double asinh, asinm, asinl;
+  double p9h, p9m, p9l, sqrh, sqrm, sqrl;
+  double t1h, t1m, t1l;
+  double xabs;
+
+  /* Start already computations for argument reduction */
+
+  zdb.d = 1.0 + x * x;
+
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Remove sign of x in floating-point */
+  xabs = ABS(x);
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* If |x| < 2^(-28) we have
+     
+     arcsin(x) = x * ( 1 + xi ) 
+
+     with 0 <= xi < 2^(-55) 
+          
+     So we can decide the rounding without any computation 
+  */
+  if (xdb.i[HI] < SIMPLEBOUND) {
+    /* If x == 0 the result is algebraic and equal to 0
+       If x < 0 the truncation rest is negative and less than 1 ulp, we return x
+       If x > 0 the truncation rest is positive and less than 1 ulp, we return x
+    */
+    return x;
+  }
+
+  /* asin is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if (xdb.i[HI] >= 0x3ff00000) {
+    if (x == 1.0) {
+      return PIHALFH;
+    }
+    if (x == -1.0) {
+      return - PIHALFH;
+    }
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* Argument reduction:
+
+     We have 10 intervals and 3 paths:
+
+     - interval 0   => path 1 using p0
+     - interval 1-8 => path 2 using p
+     - interval 9   => path 3 using p9
+
+  */
+
+  index = (0x000f0000 & zdb.i[HI]) >> 16;
+
+  /* 0 <= index <= 15 
+
+     index approximates roughly x^2 
+
+     Map indexes to intervals as follows:
+
+     0  -> 0 
+     1  -> 1
+     ... 
+     8  -> 8
+     9  -> 9
+     ... 
+     15 -> 9
+
+     For this mapping, filter first the case 0 -> 0
+     In consequence, 1 <= index <= 15, i.e. 
+     0 <= index - 1 <= 14 with the mapping index - 1 -> interval as
+
+     0  -> 1
+     ... 
+     7  -> 8
+     8  -> 9
+     ...
+     15 -> 9
+
+     Thus it suffices to check the 3rd bit of index - 1 after the first filter.
+     
+  */
+
+  if (index == 0) {
+    /* Path 1 using p0 */
+
+    p0_quick(&asinh, &asinm, x, xdb.i[HI]);
+
+    /* Rounding test */
+
+    TEST_AND_RETURN_RZ(asinh, asinm, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p0_accu(&asinh, &asinm, &asinl, x);
+
+    /* Final rounding */
+
+    ReturnRoundTowardsZero3(asinh,asinm,asinl);
+
+  } 
+
+  /* Strip off the sign of argument x */
+  sign = 1.0;
+  if (x < 0.0) sign = -sign;
+  
+  index--;
+  if ((index & 0x8) != 0) {
+    /* Path 3 using p9 */
+
+    /* Do argument reduction using a MI_9 as a midpoint value 
+       for the polynomial and compute exactly zp = 2 * (1 - x) 
+       for the asymptotical approximation using a square root.
+    */
+
+    z = xabs - MI_9;
+    zp = 2.0 * (1.0 - xabs);
+
+    /* Polynomial approximation and square root extraction */
+
+    p9_quick(&p9h, &p9m, z);
+    p9h = -p9h;
+    p9m = -p9m;
+
+    sqrt12_64_unfiltered(&sqrh,&sqrm,zp);
+
+    /* Reconstruction */
+
+    Mul22(&t1h,&t1m,sqrh,sqrm,p9h,p9m);
+    Add22(&asinh,&asinm,PIHALFH,PIHALFM,t1h,t1m);
+
+    /* Rounding test */
+
+    asinh *= sign;
+    asinm *= sign;
+
+    TEST_AND_RETURN_RZ(asinh, asinm, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p9_accu(&p9h, &p9m, &p9l, z);
+    p9h = -p9h;
+    p9m = -p9m;
+    p9l = -p9l;
+
+    Sqrt13(&sqrh,&sqrm,&sqrl,zp);
+
+    /* Reconstruction */
+
+    Mul33(&t1h,&t1m,&t1l,sqrh,sqrm,sqrl,p9h,p9m,p9l);
+    Add33(&asinh,&asinm,&asinl,PIHALFH,PIHALFM,PIHALFL,t1h,t1m,t1l);
+
+    /* Final rounding */    
+
+    asinh *= sign;
+    asinm *= sign;
+    asinl *= sign;
+
+    ReturnRoundTowardsZero3(asinh,asinm,asinl);
+
+  }
+
+  /* Path 2 using p */
+
+  /* Do argument reduction using a table value for 
+     the midpoint value 
+  */
+
+  z = xabs - mi_i;
+
+  p_quick(&asinh, &asinm, z, index);
+
+
+  /* Rounding test */
+
+  asinh *= sign;
+  asinm *= sign;
+  
+  TEST_AND_RETURN_RZ(asinh, asinm, RDROUNDCST);
+  
+  /* Rounding test failed, launch accurate phase */
+  
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+  
+  p_accu(&asinh, &asinm, &asinl, z, index);
+  
+  /* Final rounding */
+
+  asinh *= sign;
+  asinm *= sign;
+  asinl *= sign;
+  
+  ReturnRoundTowardsZero3(asinh,asinm,asinl);
+
 }
