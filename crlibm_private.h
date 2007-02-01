@@ -765,11 +765,12 @@ extern void sqrt12(double *resh, double *resl, double x);
   double _mMr2h, _mMr2l, _mMr2Ch, _mMr2Cl;                                                   \
   double _MHmMr2Ch, _MHmMr2Cl;                                                               \
   double _r3Sqh, _r3Sql, _mMr3Sqh, _mMr3Sql;                                                 \
+  double _half;                                                                              \
                                                                                              \
   /* Special case x = 0 */                                                                   \
-  if ((x) == 0) {                                                                            \
+  if ((x) == 0.0) {                                                                          \
     (*(resh)) = (x);                                                                         \
-    (*(resl)) = 0;                                                                           \
+    (*(resl)) = 0.0;                                                                         \
   } else {                                                                                   \
                                                                                              \
     _E = 0;                                                                                  \
@@ -789,10 +790,11 @@ extern void sqrt12(double *resh, double *resl, double x);
     _xdb.i[HI] = (_xdb.i[HI] & 0x000fffff) | 0x3ff00000;                                     \
     _m = _xdb.d;                                                                             \
                                                                                              \
+    _half = 0.5;                                                                             \
     /* Make exponent even */                                                                 \
     if (_E & 0x00000001) {                                                                   \
       _E++;                                                                                  \
-      _m *= 0.5;    /* Suppose now 1/2 <= m <= 2 */                                          \
+      _m *= _half;    /* Suppose now 1/2 <= m <= 2 */                                        \
     }                                                                                        \
                                                                                              \
     /* Construct sqrt(2^E) = 2^(E/2) */                                                      \
@@ -806,30 +808,30 @@ extern void sqrt12(double *resh, double *resl, double x);
                                                                                              \
     /* Iterate two times on double precision */                                              \
                                                                                              \
-    _r1 = 0.5 * _r0 * (3 - _m * (_r0 * _r0));                                                \
-    _r2 = 0.5 * _r1 * (3 - _m * (_r1 * _r1));                                                \
+    _r1 = _half * _r0 * (3.0 - _m * (_r0 * _r0));                                            \
+    _r2 = _half * _r1 * (3.0 - _m * (_r1 * _r1));                                            \
                                                                                              \
     /* Iterate two times on double-double precision */                                       \
                                                                                              \
     Mul12(&_r2Sqh, &_r2Sql, _r2, _r2);                                                       \
-    Add12(_r2PHr2h, _r2PHr2l, _r2, (0.5 * _r2));                                             \
+    Add12(_r2PHr2h, _r2PHr2l, _r2, (_half * _r2));                                           \
     Mul12(&_mMr2h, &_mMr2l, _m, _r2);                                                        \
     Mul22(&_mMr2Ch, &_mMr2Cl, _mMr2h, _mMr2l, _r2Sqh, _r2Sql);                               \
                                                                                              \
-    _MHmMr2Ch = -0.5 * _mMr2Ch;                                                              \
-    _MHmMr2Cl = -0.5 * _mMr2Cl;                                                              \
+    _MHmMr2Ch = -_half * _mMr2Ch;                                                            \
+    _MHmMr2Cl = -_half * _mMr2Cl;                                                            \
                                                                                              \
     Add22(&_r3h, &_r3l, _r2PHr2h, _r2PHr2l, _MHmMr2Ch, _MHmMr2Cl);                           \
                                                                                              \
     Mul22(&_r3Sqh, &_r3Sql, _r3h, _r3l, _r3h, _r3l);                                         \
-    Mul22(&_mMr3Sqh, &_mMr3Sql, _m, 0, _r3Sqh, _r3Sql);                                      \
+    Mul22(&_mMr3Sqh, &_mMr3Sql, _m, 0.0, _r3Sqh, _r3Sql);                                    \
     /* To prove: mMr3Sqh = 1.0 in each case */                                               \
                                                                                              \
-    Mul22(&_r4h, &_r4l, _r3h, _r3l, 1, (-0.5 * _mMr3Sql));                                   \
+    Mul22(&_r4h, &_r4l, _r3h, _r3l, 1.0, (-_half * _mMr3Sql));                               \
                                                                                              \
     /* Multiply obtained reciprocal square root by m */                                      \
                                                                                              \
-    Mul22(&_srtmh,&_srtml,_m,0,_r4h,_r4l);                                                   \
+    Mul22(&_srtmh,&_srtml,_m,0.0,_r4h,_r4l);                                                 \
                                                                                              \
     /* Multiply componentwise by sqrt(2^E) */                                                \
     /* which is an integer power of 2 that may not produce a subnormal */                    \
@@ -840,6 +842,156 @@ extern void sqrt12(double *resh, double *resl, double x);
   } /* End: special case 0 */                                                                \
 }
 
+
+#define  sqrt12_64(resh, resl, x)  {                                                         \
+  db_number _xdb;                                                                            \
+  int _E;                                                                                    \
+  double _m, _r0, _r1, _r2, _r3h, _r3l, _r4h, _r4l, _srtmh, _srtml;                          \
+  double _r2PHr2h, _r2PHr2l, _r2Sqh, _r2Sql;                                                 \
+  double _mMr2h, _mMr2l, _mMr2Ch, _mMr2Cl;                                                   \
+  double _MHmMr2Ch, _MHmMr2Cl;                                                               \
+  double _r3Sqh, _r3Sql, _mMr3Sqh, _mMr3Sql;                                                 \
+  double _half;                                                                              \
+                                                                                             \
+  /* Special case x = 0 */                                                                   \
+  if ((x) == 0.0) {                                                                          \
+    (*(resh)) = (x);                                                                         \
+    (*(resl)) = 0.0;                                                                         \
+  } else {                                                                                   \
+                                                                                             \
+    _E = 0.0;                                                                                \
+                                                                                             \
+    /* Convert to integer format */                                                          \
+    _xdb.d = (x);                                                                            \
+                                                                                             \
+    /* Handle subnormal case */                                                              \
+    if (_xdb.i[HI] < 0x00100000) {                                                           \
+      _E = -52;                                                                              \
+      _xdb.d *= ((db_number) ((double) SQRTTWO52)).d; 	                                     \
+                      /* make x a normal number */                                           \
+    }                                                                                        \
+                                                                                             \
+    /* Extract exponent E and mantissa m */                                                  \
+    _E += (_xdb.i[HI]>>20)-1023;                                                             \
+    _xdb.i[HI] = (_xdb.i[HI] & 0x000fffff) | 0x3ff00000;                                     \
+    _m = _xdb.d;                                                                             \
+                                                                                             \
+    _half = 0.5;                                                                             \
+    /* Make exponent even */                                                                 \
+    if (_E & 0x00000001) {                                                                   \
+      _E++;                                                                                  \
+      _m *= _half;    /* Suppose now 1/2 <= m <= 2 */                                        \
+    }                                                                                        \
+                                                                                             \
+    /* Construct sqrt(2^E) = 2^(E/2) */                                                      \
+    _xdb.i[HI] = (_E/2 + 1023) << 20;                                                        \
+    _xdb.i[LO] = 0;                                                                          \
+                                                                                             \
+    /* Compute initial approximation to r = 1/sqrt(m) */                                     \
+                                                                                             \
+    _r0 = SQRTPOLYC0 +                                                                       \
+         _m * (SQRTPOLYC1 + _m * (SQRTPOLYC2 + _m * (SQRTPOLYC3 + _m * SQRTPOLYC4)));        \
+                                                                                             \
+    /* Iterate two times on double precision */                                              \
+                                                                                             \
+    _r1 = _half * _r0 * (3.0 - _m * (_r0 * _r0));                                            \
+    _r2 = _half * _r1 * (3.0 - _m * (_r1 * _r1));                                            \
+                                                                                             \
+    /* Iterate once on double-double precision */                                            \
+                                                                                             \
+    Mul12(&_r2Sqh, &_r2Sql, _r2, _r2);                                                       \
+    Add12(_r2PHr2h, _r2PHr2l, _r2, (_half * _r2));                                           \
+    Mul12(&_mMr2h, &_mMr2l, _m, _r2);                                                        \
+    Mul22(&_mMr2Ch, &_mMr2Cl, _mMr2h, _mMr2l, _r2Sqh, _r2Sql);                               \
+                                                                                             \
+    _MHmMr2Ch = -_half * _mMr2Ch;                                                            \
+    _MHmMr2Cl = -_half * _mMr2Cl;                                                            \
+                                                                                             \
+    Add22(&_r3h, &_r3l, _r2PHr2h, _r2PHr2l, _MHmMr2Ch, _MHmMr2Cl);                           \
+                                                                                             \
+    /* Multiply obtained reciprocal square root by m */                                      \
+                                                                                             \
+    Mul22(&_srtmh,&_srtml,_m,0.0,_r3h,_r3l);                                                 \
+                                                                                             \
+    /* Multiply componentwise by sqrt(2^E) */                                                \
+    /* which is an integer power of 2 that may not produce a subnormal */                    \
+                                                                                             \
+    (*(resh)) = _xdb.d * _srtmh;                                                             \
+    (*(resl)) = _xdb.d * _srtml;                                                             \
+                                                                                             \
+  } /* End: special case 0 */                                                                \
+}
+
+/* 
+   sqrt12_64_unfiltered = sqrt(x) * (1 + eps) where abs(eps) <= 2^(-64) 
+   
+   if x is neither subnormal nor 0
+
+*/
+#define  sqrt12_64_unfiltered(resh, resl, x)  {                                              \
+  db_number _xdb;                                                                            \
+  int _E;                                                                                    \
+  double _m, _r0, _r1, _r2, _r3h, _r3l, _srtmh, _srtml;                                      \
+  double _r2PHr2h, _r2PHr2l, _r2Sqh, _r2Sql;                                                 \
+  double _mMr2h, _mMr2l, _mMr2Ch, _mMr2Cl;                                                   \
+  double _MHmMr2Ch, _MHmMr2Cl;                                                               \
+  double _half;                                                                              \
+                                                                                             \
+                                                                                             \
+                                                                                             \
+    /* Convert to integer format */                                                          \
+    _xdb.d = (x);                                                                            \
+                                                                                             \
+                                                                                             \
+    /* Extract exponent E and mantissa m */                                                  \
+    _E = (_xdb.i[HI]>>20)-1023;                                                              \
+    _xdb.i[HI] = (_xdb.i[HI] & 0x000fffff) | 0x3ff00000;                                     \
+    _m = _xdb.d;                                                                             \
+                                                                                             \
+    _half = 0.5;                                                                             \
+    /* Make exponent even */                                                                 \
+    if (_E & 0x00000001) {                                                                   \
+      _E++;                                                                                  \
+      _m *= _half;    /* Suppose now 1/2 <= m <= 2 */                                        \
+    }                                                                                        \
+                                                                                             \
+    /* Construct sqrt(2^E) = 2^(E/2) */                                                      \
+    _xdb.i[HI] = (_E/2 + 1023) << 20;                                                        \
+    _xdb.i[LO] = 0;                                                                          \
+                                                                                             \
+    /* Compute initial approximation to r = 1/sqrt(m) */                                     \
+                                                                                             \
+    _r0 = SQRTPOLYC0 +                                                                       \
+         _m * (SQRTPOLYC1 + _m * (SQRTPOLYC2 + _m * (SQRTPOLYC3 + _m * SQRTPOLYC4)));        \
+                                                                                             \
+    /* Iterate two times on double precision */                                              \
+                                                                                             \
+    _r1 = _half * _r0 * (3.0 - _m * (_r0 * _r0));                                            \
+    _r2 = _half * _r1 * (3.0 - _m * (_r1 * _r1));                                            \
+                                                                                             \
+    /* Iterate once on double-double precision */                                            \
+                                                                                             \
+    Mul12(&_r2Sqh, &_r2Sql, _r2, _r2);                                                       \
+    Add12(_r2PHr2h, _r2PHr2l, _r2, (_half * _r2));                                           \
+    Mul12(&_mMr2h, &_mMr2l, _m, _r2);                                                        \
+    Mul22(&_mMr2Ch, &_mMr2Cl, _mMr2h, _mMr2l, _r2Sqh, _r2Sql);                               \
+                                                                                             \
+    _MHmMr2Ch = -_half * _mMr2Ch;                                                            \
+    _MHmMr2Cl = -_half * _mMr2Cl;                                                            \
+                                                                                             \
+    Add22(&_r3h, &_r3l, _r2PHr2h, _r2PHr2l, _MHmMr2Ch, _MHmMr2Cl);                           \
+                                                                                             \
+    /* Multiply obtained reciprocal square root by m */                                      \
+                                                                                             \
+    Mul122(&_srtmh,&_srtml,_m,_r3h,_r3l);                                                    \
+                                                                                             \
+    /* Multiply componentwise by sqrt(2^E) */                                                \
+    /* which is an integer power of 2 that may not produce a subnormal */                    \
+                                                                                             \
+    (*(resh)) = _xdb.d * _srtmh;                                                             \
+    (*(resl)) = _xdb.d * _srtml;                                                             \
+                                                                                             \
+}
 
 
 
