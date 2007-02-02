@@ -42,8 +42,10 @@
 
 /* TODO proper init and exit functions 
 
-- for Itanium (set sf2 and/or sf3, one should be kept for saving the
- fpsr when speculating, study operating systems)
+- for Itanium, sf0 is set   to RNDouble, sf1 to RNdoubleExt, 
+ set sf2 and/or sf3 for
+ directed functions, one should be kept for saving the fpsr when
+ speculating, study operating systems)
 
 - for PowerPC: nothing to do usually, however if for some reason the
   CPU was not in the default state then crlibm won't work

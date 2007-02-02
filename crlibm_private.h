@@ -582,12 +582,12 @@ extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, doubl
  * computes rh and rl such that rh + rl = a * b with rh = a @* b exactly
  * under the conditions : a < 2^970 et b < 2^970 
  */
+#if 1
 #define Mul12(rh,rl,u,v)                        \
 {                                               \
   const double c  = 134217729.; /* 2^27 +1 */   \
   double up, u1, u2, vp, v1, v2;                \
-  double _u =u, _v=v;                           \
-                                                \
+  double _u=u, _v=v;                            \
   up = _u*c;        vp = _v*c;                  \
   u1 = (_u-up)+up;  v1 = (_v-vp)+vp;            \
   u2 = _u-u1;       v2 = _v-v1;                 \
@@ -595,8 +595,41 @@ extern void Mul22(double *zh, double *zl, double xh, double xl, double yh, doubl
   *rh = _u*_v;                                  \
   *rl = (((u1*v1-*rh)+(u1*v2))+(u2*v1))+(u2*v2);\
 }
+#else 
+/* This works but is much slower. Problem:
+ SSE2 instructions are two-address, and intrinsincs are 3-address  */
+#include<emmintrin.h>
+#define Mul12(rh,rl,u,v)                        \
+{                                               \
+  const double c  = 134217729.; /* 2^27 +1 */   \
+ __m128d _u_v = _mm_set_pd (u,v);           \
+ __m128d c2=_mm_set1_pd(c);                    \
+         c2 = _mm_mul_pd(c2, _u_v);          \
+ __m128d u1v1 = _mm_sub_pd(_u_v, c2);        \
+         u1v1 = _mm_add_pd(u1v1, c2);        \
+ __m128d u2v2 = _mm_sub_pd(_u_v, u1v1);        \
+ __m128d _v_u = _mm_shuffle_pd(_u_v, _u_v, _MM_SHUFFLE2 (0,1));      \
+ __m128d rhrh = _mm_mul_pd(_v_u, _u_v);        \
+ _mm_store_sd (rh, rhrh);                      \
+ __m128d v2u2 = _mm_shuffle_pd(u2v2, u2v2, _MM_SHUFFLE2 (0,1));      \
+ __m128d u1v2u2v1 = _mm_mul_pd(u1v1, v2u2);          \
+ __m128d u2v1u1v2 = _mm_shuffle_pd(u1v2u2v1, u1v2u2v1, _MM_SHUFFLE2 (0,1));      \
+ __m128d uvmed = _mm_add_pd(u1v2u2v1, u2v1u1v2);      \
+ __m128d u1u2 = _mm_shuffle_pd(u1v1, u2v2, _MM_SHUFFLE2 (1,1));      \
+ __m128d v1v2 = _mm_shuffle_pd(u1v1, u2v2, _MM_SHUFFLE2 (0,0));      \
+ __m128d u1v1u2v2 = _mm_mul_pd(u1u2, v1v2);          \
+ __m128d tmp = _mm_sub_pd(u1v1u2v2, rhrh);        \
+         tmp = _mm_add_pd(tmp,  uvmed);        \
+ __m128d u2v2u2v2 = _mm_mul_pd(u2v2, v2u2);          \
+         tmp = _mm_add_pd(tmp,  u2v2u2v2);        \
+ _mm_store_sd (rl, tmp);                      \
+}
+#endif
 
-
+/*
+  double _u =u, _v=v;                           \
+ __m128d _u_v = _mm_set_pd(_u, _v);            \
+*/                                                \
 /*
  * Computes rh and rl such that rh + rl = a * b and rh = a @* b exactly
  */
