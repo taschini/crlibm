@@ -78,6 +78,25 @@ probably only need one call to \texttt{crlibm\_init()} at the beginning
 of your program, not one call before each call to a mathematical
 function.
 
+Here is a non-exhaustive list of systems on which
+\texttt{crlibm\_init()} is NOT needed, and which can therefore use
+\crlibm\ as a transparent replacement of the standard \texttt{libm}:
+
+\begin{itemize}
+\item Most Power/PowerPC based systems, including those from Apple or from IBM;
+\item All the 64-bit Linux versions: the reason is that all
+  x86-compatible processors (by AMD and Intel) supporting 64-bit
+  addressing also feature SSE2 FP instructions, which are cleaner and
+  more efficient than the legacy x87 FPU. On such systems, SSE2 is
+  therefore used by default by \texttt{gcc} for double-precision FP
+  computing.
+\item On recent 32-bit x86 processors also featuring SSE2 extensions
+  (including pentium 4 and later, and generally most processors
+  produced after 2005), you can try to force the use of SSE2
+  instructions using \texttt{configure --enable-sse2}. Beware, the
+  code produced will not run on older hardware.
+\end{itemize}
+
 Here's an example function named \texttt{compare.c} using the cosine
 function from \texttt{crlibm} library.
 
