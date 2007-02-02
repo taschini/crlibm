@@ -230,7 +230,7 @@ extern void Recpr33(double* resh, double* resm, double* resl, double dh, double 
     Add12Cond((*(resm)),(*(resl)),_t7,_t8);                  \
 }
 
-/* Add33
+/* Add33Cond
 
    Procedure for adding two triple double numbers resulting
    in a triple double number

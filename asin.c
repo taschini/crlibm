@@ -1365,7 +1365,6 @@ double acos_rn(double x) {
   double acoshover, acosmover, acoslover;
   double p9h, p9m, p9l, sqrh, sqrm, sqrl;
   double t1h, t1m, t1l;
-  double acos;
   double xabs;
 
   /* Start already computations for argument reduction */
@@ -1491,9 +1490,8 @@ double acos_rn(double x) {
 
     /* Final rounding */
 
-    RoundToNearest3(&acos,acosh,acosm,acosl);
+    ReturnRoundToNearest3(acosh,acosm,acosl);
 
-    return acos;
   } 
   
   index--;
@@ -1565,9 +1563,7 @@ double acos_rn(double x) {
 
     /* Final rounding */    
 
-    RoundToNearest3(&acos,acosh,acosm,acosl);
-
-    return acos;
+    ReturnRoundToNearest3(acosh,acosm,acosl);
 
   }
 
@@ -1625,18 +1621,584 @@ double acos_rn(double x) {
 
   /* Final rounding */
   
-  RoundToNearest3(&acos,acosh,acosm,acosl);
+  ReturnRoundToNearest3(acosh,acosm,acosl);
   
-  return acos;
   
 }
 
 double acos_ru(double x) {
-  return 1.0;
+  db_number xdb, zdb, acoshdb;
+  double z, zp;
+  int index;
+  double asinh, asinm, asinl;
+  double acosh, acosm, acosl;
+  double acoshover, acosmover, acoslover;
+  double p9h, p9m, p9l, sqrh, sqrm, sqrl;
+  double t1h, t1m, t1l;
+  double xabs;
+
+  /* Start already computations for argument reduction */
+
+  zdb.d = 1.0 + x * x;
+
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Remove sign of x in floating-point */
+  xabs = ABS(x);
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* If |x| < 2^(-28) we have
+     
+     arccos(x) = (double-double(pi/2) - x) * ( 1 + xi ) 
+
+     with 0 <= xi < 2^(-87) 
+          
+     From 2^(-27) we have no bad rounding case longer than 5 bits 
+     more than the ulp of x, thus the approximation suffices.
+
+  */
+  if (xdb.i[HI] < ACOSSIMPLEBOUND) {
+    Add212(&acosh,&acosm,PIHALFH,PIHALFM,-x);
+    
+    /* acosh is the round-to-nearest of acos(x) in this domain
+       
+       acosm is a at least 20 bit exact correction of the
+       rounding error of this round-to-nearest rounding.
+
+       If acosh is the rounded up result of acos(x), the
+       correction is negative and vice-versa.
+
+    */
+
+    if (acosm < 0.0) 
+      return acosh;
+ 
+    /* Here the correction acosm is positive, acosh is 
+       therefore the rounded down result of acos(x).
+       We add thus one ulp.
+    */
+
+    acoshdb.d = acosh;
+    acoshdb.l++;
+
+    return acoshdb.d;
+    
+  }
+
+  /* acos is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if (xdb.i[HI] >= 0x3ff00000) {
+    if (x == 1.0) {
+      return 0.0;
+    }
+    if (x == -1.0) {
+      return PIRU;
+    }
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* Argument reduction:
+
+     We have 10 intervals and 3 paths:
+
+     - interval 0   => path 1 using p0
+     - interval 1-8 => path 2 using p
+     - interval 9   => path 3 using p9
+
+  */
+
+  index = (0x000f0000 & zdb.i[HI]) >> 16;
+
+  /* 0 <= index <= 15 
+
+     index approximates roughly x^2 
+
+     Map indexes to intervals as follows:
+
+     0  -> 0 
+     1  -> 1
+     ... 
+     8  -> 8
+     9  -> 9
+     ... 
+     15 -> 9
+
+     For this mapping, filter first the case 0 -> 0
+     In consequence, 1 <= index <= 15, i.e. 
+     0 <= index - 1 <= 14 with the mapping index - 1 -> interval as
+
+     0  -> 1
+     ... 
+     7  -> 8
+     8  -> 9
+     ...
+     15 -> 9
+
+     Thus it suffices to check the 3rd bit of index - 1 after the first filter.
+     
+  */
+
+  if (index == 0) {
+    /* Path 1 using p0 */
+
+    p0_quick(&asinh, &asinm, x, xdb.i[HI]);
+
+    /* Recompose acos 
+
+       No cancellation possible because 
+
+       |asin(x)| <= 0.264 for |x| <= 0.26
+
+    */
+
+    asinh = - asinh;
+    asinm = - asinm;
+
+    Add22(&acosh,&acosm,PIHALFH,PIHALFM,asinh,asinm);
+
+    /* Rounding test */
+
+    TEST_AND_RETURN_RU(acosh, acosm, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p0_accu(&asinh, &asinm, &asinl, x);
+
+    /* Recompose acos */
+
+    asinh = -asinh;
+    asinm = -asinm;
+    asinl = -asinl;
+
+    Add33(&acoshover,&acosmover,&acoslover,PIHALFH,PIHALFM,PIHALFL,asinh,asinm,asinl);
+    
+    Renormalize3(&acosh,&acosm,&acosl,acoshover,acosmover,acoslover);
+
+    /* Final rounding */
+
+    ReturnRoundUpwards3(acosh,acosm,acosl);
+
+  } 
+  
+  index--;
+  if ((index & 0x8) != 0) {
+    /* Path 3 using p9 */
+
+    /* Do argument reduction using a MI_9 as a midpoint value 
+       for the polynomial and compute exactly zp = 2 * (1 - x) 
+       for the asymptotical approximation using a square root.
+    */
+
+    z = xabs - MI_9;
+    zp = 2.0 * (1.0 - xabs);
+
+    /* Polynomial approximation and square root extraction */
+
+    p9_quick(&p9h, &p9m, z);
+
+    sqrt12_64_unfiltered(&sqrh,&sqrm,zp);
+
+    /* Reconstruction */
+
+    Mul22(&t1h,&t1m,sqrh,sqrm,p9h,p9m);
+    
+    if (x > 0.0) {
+      acosh = t1h;
+      acosm = t1m;
+    } else {
+      /* arccos(-x) = Pi - arccos(x) */
+      t1h = - t1h;
+      t1m = - t1m;
+
+      Add22(&acosh,&acosm,PIH,PIM,t1h,t1m);
+    }
+
+    /* Rounding test */
+
+    TEST_AND_RETURN_RU(acosh, acosm, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p9_accu(&p9h, &p9m, &p9l, z);
+
+    Sqrt13(&sqrh,&sqrm,&sqrl,zp);
+
+    /* Reconstruction */
+
+    Mul33(&t1h,&t1m,&t1l,sqrh,sqrm,sqrl,p9h,p9m,p9l);
+
+    if (x > 0.0) {
+      acosh = t1h;
+      acosm = t1m;
+      acosl = t1l;
+    } else {
+      /* arccos(-x) = Pi - arccos(x) */
+      t1h = - t1h;
+      t1m = - t1m;
+      t1l = - t1l;
+
+      Add33(&acoshover,&acosmover,&acoslover,PIH,PIM,PIL,t1h,t1m,t1l);
+
+      Renormalize3(&acosh,&acosm,&acosl,acoshover,acosmover,acoslover);
+    }
+
+    /* Final rounding */    
+
+    ReturnRoundUpwards3(acosh,acosm,acosl);
+
+  }
+
+  /* Path 2 using p */
+
+  /* Do argument reduction using a table value for 
+     the midpoint value 
+  */
+
+  z = xabs - mi_i;
+
+  p_quick(&asinh, &asinm, z, index);
+
+  /* Recompose acos(x) out of asin(abs(x)) 
+
+     In the case of a substraction, we will cancel 
+     not more than 1 bit.
+
+  */
+
+  if (x > 0.0) {
+    asinh = - asinh;
+    asinm = - asinm;
+  }
+
+  Add22Cond(&acosh,&acosm,PIHALFH,PIHALFM,asinh,asinm);
+
+  /* Rounding test */
+  
+  TEST_AND_RETURN_RU(acosh, acosm, RDROUNDCST);
+  
+  /* Rounding test failed, launch accurate phase */
+  
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+  
+  p_accu(&asinh, &asinm, &asinl, z, index);
+
+  /* Recompose acos(x) out of asin(abs(x)) 
+
+     In the case of a substraction, we will cancel 
+     not more than 1 bit.
+
+  */
+
+  if (x > 0.0) {
+    asinh = - asinh;
+    asinm = - asinm;
+    asinl = - asinl; 
+  }
+
+  Add33Cond(&acosh,&acosm,&acosl,PIHALFH,PIHALFM,PIHALFL,asinh,asinm,asinl);
+
+  /* Final rounding */
+  
+  ReturnRoundUpwards3(acosh,acosm,acosl);
+  
 }
+
 
 double acos_rd(double x) {
-  return 1.0;
+  db_number xdb, zdb, acoshdb;
+  double z, zp;
+  int index;
+  double asinh, asinm, asinl;
+  double acosh, acosm, acosl;
+  double acoshover, acosmover, acoslover;
+  double p9h, p9m, p9l, sqrh, sqrm, sqrl;
+  double t1h, t1m, t1l;
+  double xabs;
+
+  /* Start already computations for argument reduction */
+
+  zdb.d = 1.0 + x * x;
+
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Remove sign of x in floating-point */
+  xabs = ABS(x);
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* If |x| < 2^(-28) we have
+     
+     arccos(x) = (double-double(pi/2) - x) * ( 1 + xi ) 
+
+     with 0 <= xi < 2^(-87) 
+          
+     From 2^(-27) we have no bad rounding case longer than 5 bits 
+     more than the ulp of x, thus the approximation suffices.
+
+  */
+  if (xdb.i[HI] < ACOSSIMPLEBOUND) {
+    Add212(&acosh,&acosm,PIHALFH,PIHALFM,-x);
+    
+    /* acosh is the round-to-nearest of acos(x) in this domain
+       
+       acosm is a at least 20 bit exact correction of the
+       rounding error of this round-to-nearest rounding.
+
+       If acosh is the rounded up result of acos(x), the
+       correction is negative and vice-versa.
+
+    */
+
+    if (acosm > 0.0) 
+      return acosh;
+ 
+    /* Here the correction acosm is negative, acosh is 
+       therefore the rounded up result of acos(x).
+       We subtract thus one ulp.
+    */
+
+    acoshdb.d = acosh;
+    acoshdb.l--;
+
+    return acoshdb.d;
+    
+  }
+
+  /* acos is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if (xdb.i[HI] >= 0x3ff00000) {
+    if (x == 1.0) {
+      return 0.0;
+    }
+    if (x == -1.0) {
+      return PIH;
+    }
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* Argument reduction:
+
+     We have 10 intervals and 3 paths:
+
+     - interval 0   => path 1 using p0
+     - interval 1-8 => path 2 using p
+     - interval 9   => path 3 using p9
+
+  */
+
+  index = (0x000f0000 & zdb.i[HI]) >> 16;
+
+  /* 0 <= index <= 15 
+
+     index approximates roughly x^2 
+
+     Map indexes to intervals as follows:
+
+     0  -> 0 
+     1  -> 1
+     ... 
+     8  -> 8
+     9  -> 9
+     ... 
+     15 -> 9
+
+     For this mapping, filter first the case 0 -> 0
+     In consequence, 1 <= index <= 15, i.e. 
+     0 <= index - 1 <= 14 with the mapping index - 1 -> interval as
+
+     0  -> 1
+     ... 
+     7  -> 8
+     8  -> 9
+     ...
+     15 -> 9
+
+     Thus it suffices to check the 3rd bit of index - 1 after the first filter.
+     
+  */
+
+  if (index == 0) {
+    /* Path 1 using p0 */
+
+    p0_quick(&asinh, &asinm, x, xdb.i[HI]);
+
+    /* Recompose acos 
+
+       No cancellation possible because 
+
+       |asin(x)| <= 0.264 for |x| <= 0.26
+
+    */
+
+    asinh = - asinh;
+    asinm = - asinm;
+
+    Add22(&acosh,&acosm,PIHALFH,PIHALFM,asinh,asinm);
+
+    /* Rounding test */
+
+    TEST_AND_RETURN_RD(acosh, acosm, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p0_accu(&asinh, &asinm, &asinl, x);
+
+    /* Recompose acos */
+
+    asinh = -asinh;
+    asinm = -asinm;
+    asinl = -asinl;
+
+    Add33(&acoshover,&acosmover,&acoslover,PIHALFH,PIHALFM,PIHALFL,asinh,asinm,asinl);
+    
+    Renormalize3(&acosh,&acosm,&acosl,acoshover,acosmover,acoslover);
+
+    /* Final rounding */
+
+    ReturnRoundDownwards3(acosh,acosm,acosl);
+
+  } 
+  
+  index--;
+  if ((index & 0x8) != 0) {
+    /* Path 3 using p9 */
+
+    /* Do argument reduction using a MI_9 as a midpoint value 
+       for the polynomial and compute exactly zp = 2 * (1 - x) 
+       for the asymptotical approximation using a square root.
+    */
+
+    z = xabs - MI_9;
+    zp = 2.0 * (1.0 - xabs);
+
+    /* Polynomial approximation and square root extraction */
+
+    p9_quick(&p9h, &p9m, z);
+
+    sqrt12_64_unfiltered(&sqrh,&sqrm,zp);
+
+    /* Reconstruction */
+
+    Mul22(&t1h,&t1m,sqrh,sqrm,p9h,p9m);
+    
+    if (x > 0.0) {
+      acosh = t1h;
+      acosm = t1m;
+    } else {
+      /* arccos(-x) = Pi - arccos(x) */
+      t1h = - t1h;
+      t1m = - t1m;
+
+      Add22(&acosh,&acosm,PIH,PIM,t1h,t1m);
+    }
+
+    /* Rounding test */
+
+    TEST_AND_RETURN_RD(acosh, acosm, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p9_accu(&p9h, &p9m, &p9l, z);
+
+    Sqrt13(&sqrh,&sqrm,&sqrl,zp);
+
+    /* Reconstruction */
+
+    Mul33(&t1h,&t1m,&t1l,sqrh,sqrm,sqrl,p9h,p9m,p9l);
+
+    if (x > 0.0) {
+      acosh = t1h;
+      acosm = t1m;
+      acosl = t1l;
+    } else {
+      /* arccos(-x) = Pi - arccos(x) */
+      t1h = - t1h;
+      t1m = - t1m;
+      t1l = - t1l;
+
+      Add33(&acoshover,&acosmover,&acoslover,PIH,PIM,PIL,t1h,t1m,t1l);
+
+      Renormalize3(&acosh,&acosm,&acosl,acoshover,acosmover,acoslover);
+    }
+
+    /* Final rounding */    
+
+    ReturnRoundDownwards3(acosh,acosm,acosl);
+
+  }
+
+  /* Path 2 using p */
+
+  /* Do argument reduction using a table value for 
+     the midpoint value 
+  */
+
+  z = xabs - mi_i;
+
+  p_quick(&asinh, &asinm, z, index);
+
+  /* Recompose acos(x) out of asin(abs(x)) 
+
+     In the case of a substraction, we will cancel 
+     not more than 1 bit.
+
+  */
+
+  if (x > 0.0) {
+    asinh = - asinh;
+    asinm = - asinm;
+  }
+
+  Add22Cond(&acosh,&acosm,PIHALFH,PIHALFM,asinh,asinm);
+
+  /* Rounding test */
+  
+  TEST_AND_RETURN_RD(acosh, acosm, RDROUNDCST);
+  
+  /* Rounding test failed, launch accurate phase */
+  
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+  
+  p_accu(&asinh, &asinm, &asinl, z, index);
+
+  /* Recompose acos(x) out of asin(abs(x)) 
+
+     In the case of a substraction, we will cancel 
+     not more than 1 bit.
+
+  */
+
+  if (x > 0.0) {
+    asinh = - asinh;
+    asinm = - asinm;
+    asinl = - asinl; 
+  }
+
+  Add33Cond(&acosh,&acosm,&acosl,PIHALFH,PIHALFM,PIHALFL,asinh,asinm,asinl);
+
+  /* Final rounding */
+  
+  ReturnRoundDownwards3(acosh,acosm,acosl);
+  
 }
-
-
