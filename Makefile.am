@@ -60,9 +60,9 @@ if COMPILER_ICC
 AM_CFLAGS =  -std=c99 -mp -Qoption,cpp,--extended_float_types -IPF_fp_speculationsafe
 else # default assumed to be gcc
 if USE_SSE2
-AM_CFLAGS = -std=c99 -Wall -Wextra -msse2 -mfpmath=sse 
+AM_CFLAGS = -std=c99 -Wall -msse2 -mfpmath=sse 
 else
-AM_CFLAGS = -std=c99 -Wall -Wextra 
+AM_CFLAGS = -std=c99 -Wall
 endif
 endif
 
