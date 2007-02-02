@@ -1,0 +1,175 @@
+# The polynomial to implement is: 268636756605111637357595545192172111b-119 + (x * (44120131993499861117550393673295b-105 + (x * (2278907903703317b-53 + (x * (5983541037681123b-54 + (x * (2638503127167829b-53 + (x * (6622388527030519b-54 + (x * (7950889475864811b-54 + (x * (5238009708732451b-53 + (x * (3491644690235915b-52 + (x * (4815737384658755b-52 + (x * (3373487667168671b-51 + (x * (1215099289485353b-49 + (x * 6911419428626897b-51)))))))))))))))))))))))
+# The polynomial implemented is: 268636756605111637357595545192172111b-119 + (x * (44120131993499861117550393673295b-105 + (x * (2278907903703317b-53 + (x * (5983541037681123b-54 + (x * (2638503127167829b-53 + (x * (6622388527030519b-54 + (x * (7950889475864811b-54 + (x * (5238009708732451b-53 + (x * (3491644690235915b-52 + (x * (4815737384658755b-52 + (x * (3373487667168671b-51 + (x * (1215099289485353b-49 + (x * 6911419428626897b-51)))))))))))))))))))))))
+# The domain is [-715705849514187b-54;178926462378499b-52]
+# The free variable x is a double precision number, the result p_res* is stored on a double-double number.
+# The code produces 37 intermediate and final arithmetical approximations.
+
+# Double precision rounding operator:
+@double = float<ieee_64,ne>;
+
+# Disable some annoying warnings:
+#@-Wno-dichotomy-failure
+
+# Helper definitions for decomposing the free variable
+xh = x;
+
+# Transcription of the C code
+p_coeff_0h = double(4.04199666960039116769820566332782618701457977294921875000000000000000000000000000e-01);
+p_coeff_0m = double(-7.29414577305862355348006038497258990002592122212580672446953500287492033749003895e-21);
+p_coeff_0hm = p_coeff_0h + p_coeff_0m;
+
+p_coeff_1h = double(1.08764522696446319649510314775398001074790954589843750000000000000000000000000000e+00);
+p_coeff_1m = double(7.18002807945845121967809924279486007735232949667977808694274699519155547022819519e-17);
+p_coeff_1hm = p_coeff_1h + p_coeff_1m;
+
+p_coeff_2h = double(2.53009602569167157959384439891437068581581115722656250000000000000000000000000000e-01);
+
+p_coeff_3h = double(3.32153251441154206968775497443857602775096893310546875000000000000000000000000000e-01);
+
+p_coeff_4h = double(2.92932692232720115477206945797661319375038146972656250000000000000000000000000000e-01);
+
+p_coeff_5h = double(3.67616411036137902268450261544785462319850921630859375000000000000000000000000000e-01);
+
+p_coeff_6h = double(4.41363028117747802081538566199014894664287567138671875000000000000000000000000000e-01);
+
+p_coeff_7h = double(5.81535898184487698436839764326578006148338317871093750000000000000000000000000000e-01);
+
+p_coeff_8h = double(7.75300865782017067928677533927839249372482299804687500000000000000000000000000000e-01);
+
+p_coeff_9h = double(1.06930850499925678143142704357160255312919616699218750000000000000000000000000000e+00);
+
+p_coeff_10h = double(1.49812947255186612594002326659392565488815307617187500000000000000000000000000000e+00);
+
+p_coeff_11h = double(2.15844993342769164712535712169483304023742675781250000000000000000000000000000000e+00);
+
+p_coeff_12h = double(3.06928679300128992579743680835235863924026489257812500000000000000000000000000000e+00);
+
+p_t_1_0h = p_coeff_12h;
+
+p_t_2_0h = double(p_t_1_0h * xh);
+p_t_3_0h = double(p_coeff_11h + p_t_2_0h);
+p_t_4_0h = double(p_t_3_0h * xh);
+p_t_5_0h = double(p_coeff_10h + p_t_4_0h);
+p_t_6_0h = double(p_t_5_0h * xh);
+p_t_7_0h = double(p_coeff_9h + p_t_6_0h);
+p_t_8_0h = double(p_t_7_0h * xh);
+p_t_9_0h = double(p_coeff_8h + p_t_8_0h);
+p_t_10_0h = double(p_t_9_0h * xh);
+p_t_11_0h = double(p_coeff_7h + p_t_10_0h);
+p_t_12_0h = double(p_t_11_0h * xh);
+p_t_13_0h = double(p_coeff_6h + p_t_12_0h);
+p_t_14_0h = double(p_t_13_0h * xh);
+p_t_15_0h = double(p_coeff_5h + p_t_14_0h);
+p_t_16_0h = double(p_t_15_0h * xh);
+p_t_17_0h = double(p_coeff_4h + p_t_16_0h);
+p_t_18_0h = double(p_t_17_0h * xh);
+p_t_19_0h = double(p_coeff_3h + p_t_18_0h);
+p_t_20_0h = double(p_t_19_0h * xh);
+p_t_21_0hm = p_coeff_2h + p_t_20_0h;
+p_t_21_0h = double(p_t_21_0hm);
+p_t_21_0m = p_t_21_0hm - p_t_21_0h;
+
+p_t_22_0hm = fma_rel<100>(p_t_21_0hm,xh,p_coeff_1hm);
+p_t_22_0h = double(p_t_22_0hm);
+p_t_22_0m = p_t_22_0hm - p_t_22_0h;
+
+p_t_23_0hm = fma_rel<100>(p_t_22_0hm,xh,p_coeff_0hm);
+p_t_23_0h = double(p_t_23_0hm);
+p_t_23_0m = p_t_23_0hm - p_t_23_0h;
+
+p_reshm = p_t_23_0hm;
+p_resh = p_t_23_0h;
+p_resm = p_t_23_0m;
+
+
+# Mathematical equivalents
+Mx = x;
+Mp_coeff_0 = p_coeff_0hm;
+Mp_coeff_1 = p_coeff_1hm;
+Mp_coeff_2 = p_coeff_2h;
+Mp_coeff_3 = p_coeff_3h;
+Mp_coeff_4 = p_coeff_4h;
+Mp_coeff_5 = p_coeff_5h;
+Mp_coeff_6 = p_coeff_6h;
+Mp_coeff_7 = p_coeff_7h;
+Mp_coeff_8 = p_coeff_8h;
+Mp_coeff_9 = p_coeff_9h;
+Mp_coeff_10 = p_coeff_10h;
+Mp_coeff_11 = p_coeff_11h;
+Mp_coeff_12 = p_coeff_12h;
+Mp_t_1_0 = Mp_coeff_12;
+Mp_t_2_0 = Mp_t_1_0 * Mx;
+Mp_t_3_0 = Mp_coeff_11 + Mp_t_2_0;
+Mp_t_4_0 = Mp_t_3_0 * Mx;
+Mp_t_5_0 = Mp_coeff_10 + Mp_t_4_0;
+Mp_t_6_0 = Mp_t_5_0 * Mx;
+Mp_t_7_0 = Mp_coeff_9 + Mp_t_6_0;
+Mp_t_8_0 = Mp_t_7_0 * Mx;
+Mp_t_9_0 = Mp_coeff_8 + Mp_t_8_0;
+Mp_t_10_0 = Mp_t_9_0 * Mx;
+Mp_t_11_0 = Mp_coeff_7 + Mp_t_10_0;
+Mp_t_12_0 = Mp_t_11_0 * Mx;
+Mp_t_13_0 = Mp_coeff_6 + Mp_t_12_0;
+Mp_t_14_0 = Mp_t_13_0 * Mx;
+Mp_t_15_0 = Mp_coeff_5 + Mp_t_14_0;
+Mp_t_16_0 = Mp_t_15_0 * Mx;
+Mp_t_17_0 = Mp_coeff_4 + Mp_t_16_0;
+Mp_t_18_0 = Mp_t_17_0 * Mx;
+Mp_t_19_0 = Mp_coeff_3 + Mp_t_18_0;
+Mp_t_20_0 = Mp_t_19_0 * Mx;
+Mp_t_21_0 = Mp_coeff_2 + Mp_t_20_0;
+Mp_t_22_0 = (Mp_t_21_0 * Mx) + Mp_coeff_1;
+Mp_t_23_0 = (Mp_t_22_0 * Mx) + Mp_coeff_0;
+Mp_res = Mp_t_23_0;
+
+# Definition of the relative arithmetical error
+epsilon = (p_reshm - Mp_res) / Mp_res;
+
+# Implication to prove
+{((
+   x in [-715705849514187b-54,-715705849514187b-454]
+) \/ (
+   x in [178926462378499b-452,178926462378499b-52]
+))
+->
+(
+   epsilon in ?
+)}
+
+# Hints and Meta-Hints for expansion decomposition
+
+p_t_21_0h ~ p_t_21_0hm;
+p_t_22_0h ~ p_t_22_0hm;
+p_t_23_0h ~ p_t_23_0hm;
+
+# Meta-Hints for Horner scheme
+p_t_1_0h ~ Mp_t_1_0;
+p_t_2_0h ~ Mp_t_2_0;
+p_t_3_0h ~ Mp_t_3_0;
+p_t_4_0h ~ Mp_t_4_0;
+p_t_5_0h ~ Mp_t_5_0;
+p_t_6_0h ~ Mp_t_6_0;
+p_t_7_0h ~ Mp_t_7_0;
+p_t_8_0h ~ Mp_t_8_0;
+p_t_9_0h ~ Mp_t_9_0;
+p_t_10_0h ~ Mp_t_10_0;
+p_t_11_0h ~ Mp_t_11_0;
+p_t_12_0h ~ Mp_t_12_0;
+p_t_13_0h ~ Mp_t_13_0;
+p_t_14_0h ~ Mp_t_14_0;
+p_t_15_0h ~ Mp_t_15_0;
+p_t_16_0h ~ Mp_t_16_0;
+p_t_17_0h ~ Mp_t_17_0;
+p_t_18_0h ~ Mp_t_18_0;
+p_t_19_0h ~ Mp_t_19_0;
+p_t_20_0h ~ Mp_t_20_0;
+p_t_21_0hm ~ Mp_t_21_0;
+p_t_22_0hm ~ Mp_t_22_0;
+p_t_23_0hm ~ Mp_t_23_0;
+p_reshm ~ Mp_res;
+
+# Dichotomies for triple-double decomposition
+
+# Dichotomy for the error bound
+epsilon $ xhm;
+
