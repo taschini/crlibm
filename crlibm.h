@@ -145,6 +145,18 @@ extern double acos_rd(double); /* toward -inf */
 extern double acos_ru(double); /* toward +inf */
 #define acos_rz acos_rd        /* toward zero */ 
 
+/* arcsine/PI */
+extern double asinpi_rn(double); /* to nearest */
+extern double asinpi_rd(double); /* toward -inf */
+extern double asinpi_ru(double); /* toward +inf */
+extern double asinpi_rz(double); /* toward zero */
+
+/* arccosine/PI */
+extern double acospi_rn(double); /* to nearest */
+extern double acospi_rd(double); /* toward -inf */
+extern double acospi_ru(double); /* toward +inf */
+#define acospi_rz acospi_rd      /* toward zero */ 
+
 /* expm1 = e^x -1 */
 extern double expm1_rn(double); /* to nearest */
 extern double expm1_rd(double); /* toward -inf */

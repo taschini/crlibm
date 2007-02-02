@@ -267,6 +267,13 @@ double tinkered_tanpi (double x) {
 double tinkered_atanpi (double x) {
   return atan(x)/PIH;
 }
+double tinkered_asinpi (double x) {
+  return asin(x)/PIH;
+}
+double tinkered_acospi (double x) {
+  return acos(x)/PIH;
+}
+
 
 
 #ifdef HAVE_MPFR_H
@@ -326,6 +333,32 @@ int tinkered_mpfr_atanpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
   mpfr_div(mpr, at, pi,  rnd);
   mpfr_clear(pi);
   mpfr_clear(at);
+  return 0;
+}
+
+int tinkered_mpfr_acospi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, pix;
+  mpfr_init2(pi,  2000);
+  mpfr_init2(pix, 2000);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_acos(pix, mpx, GMP_RNDN);
+  mpfr_div(mpr, pix, pi, rnd);
+  mpfr_clear(pi);
+  mpfr_clear(pix);
+  return 0;
+}
+
+int tinkered_mpfr_asinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, pix;
+  mpfr_init2(pi,  2000);
+  mpfr_init2(pix, 2000);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_asin(pix, mpx, GMP_RNDN);
+  mpfr_div(mpr, pix, pi, rnd);
+  mpfr_clear(pi);
+  mpfr_clear(pix);
   return 0;
 }
 
@@ -952,6 +985,33 @@ void test_init(/* pointers to returned value */
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = mpfr_acos;
+#endif
+    }
+
+  else if (strcmp (func_name, "acospi") == 0)
+    {
+      *randfun_perf     = rand_for_acos_testperf;
+      *randfun_soaktest = rand_for_asin_soaktest;
+      *worst_case = 0.5; /* TODO */
+      *testfun_libm   = tinkered_acospi;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = acospi_ru;	break;
+      case RD:
+	*testfun_crlibm = acospi_rd;	break;
+      case RZ:
+	*testfun_crlibm = acospi_rz; 	break;
+      default:
+	*testfun_crlibm = acospi_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_libultim  = NULL;  
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = NULL;   /* TODO */
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = tinkered_mpfr_acospi;
 #endif
     }
 

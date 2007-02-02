@@ -740,6 +740,16 @@ double mh, ml;                                        \
     Add12((*(resh)),(*(resl)),_t1,_t3);              \
 }    
 
+#define Add122Cond(resh,resl,a,bh,bl)                \
+{                                                    \
+    double _t1, _t2, _t3;                            \
+                                                     \
+    Add12Cond(_t1,_t2,(a),(bh));                     \
+    _t3 = _t2 + (bl);                                \
+    Add12((*(resh)),(*(resl)),_t1,_t3);              \
+}    
+
+
 #define Add212(resh,resl,ah,al,b)                    \
 {                                                    \
     double _t1, _t2, _t3;                            \
