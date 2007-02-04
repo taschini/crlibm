@@ -990,7 +990,7 @@ void test_init(/* pointers to returned value */
 
   else if (strcmp (func_name, "acospi") == 0)
     {
-      *randfun_perf     = rand_for_acos_testperf;
+      *randfun_perf     = rand_for_asin_testperf;
       *randfun_soaktest = rand_for_asin_soaktest;
       *worst_case = 0.5; /* TODO */
       *testfun_libm   = tinkered_acospi;
@@ -1012,6 +1012,33 @@ void test_init(/* pointers to returned value */
 #endif
 #ifdef HAVE_MPFR_H
       *testfun_mpfr   = tinkered_mpfr_acospi;
+#endif
+    }
+
+  else if (strcmp (func_name, "asinpi") == 0)
+    {
+      *randfun_perf     = rand_for_asin_soaktest;
+      *randfun_soaktest = rand_for_asin_soaktest;
+      *worst_case = 0.5; /* TODO */
+      *testfun_libm   = tinkered_asinpi;
+      switch(crlibm_rnd_mode){
+      case RU:
+	*testfun_crlibm = asinpi_ru;	break;
+      case RD:
+	*testfun_crlibm = asinpi_rd;	break;
+      case RZ:
+	*testfun_crlibm = asinpi_rz; 	break;
+      default:
+	*testfun_crlibm = asinpi_rn;
+      }
+#ifdef HAVE_MATHLIB_H
+      *testfun_libultim  = NULL;  
+#endif
+#ifdef HAVE_LIBMCR_H
+      *testfun_libmcr    = NULL;   /* TODO */
+#endif
+#ifdef HAVE_MPFR_H
+      *testfun_mpfr   = tinkered_mpfr_asinpi;
 #endif
     }
 

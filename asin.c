@@ -3049,19 +3049,1442 @@ double acospi_ru(double x) {
     
 }
 
+
+
 double asinpi_rn(double x) {
-  return 1.0;
-} 
+  db_number xdb, zdb, asinhdb, tempdb;
+  double sign, z, zp;
+  int index;
+  double asinh, asinm, asinl;
+  double asinpih, asinpim, asinpil;
+  double asinpihover, asinpimover, asinpilover;
+  double p9h, p9m, p9l, sqrh, sqrm, sqrl;
+  double t1h, t1m, t1l;
+  double t2h, t2m, t2l;
+  double asinpi;
+  double xabs;
+  double xScaled;
+  double xPih, xPim, xPil;
+  double xPihover, xPimover, xPilover;
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
+  int32_t tempint32_1, tempint32_2;
+#endif
+  double deltatemp, deltah, deltal;
+  double temp1, temp2h, temp2l, temp3;
+  double miulp;
+
+  /* Start already computations for argument reduction */
+
+  zdb.d = 1.0 + x * x;
+
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Remove sign of x in floating-point */
+  xabs = ABS(x);
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* If |x| < 2^(-60) we have
+     
+     arcsin(x)/pi = x * triple-double(1/pi) * ( 1 + xi ) 
+
+     with 0 <= xi < 2^(-122)
+
+     We have no bad case worser than 
+     112 bits for asinpi(x) for |x| > 2^(-58)
+     and the order 3 term of asinpi is still more
+     far away. 
+          
+  */
+  if (xdb.i[HI] < ASINPISIMPLEBOUND) {
+    /* For a faster path for the exact case, 
+       we check first if x = 0
+    */
+
+    if (x == 0.0) 
+      return x;
+
+    /* We want a relatively fast path for values where
+       neither the input nor the output is subnormal 
+       because subnormal rounding is expensive.
+
+       Since 
+       
+       abs(double(asin(x)/pi)) <= 2^(-860) 
+       
+       for abs(x) <= 2^(-858), we filter for this (normal) value.
+
+    */
+
+    if (xdb.i[HI] >= ASINPINOSUBNORMALBOUND) {
+
+      /* Here abs(x) >= 2^(-858).
+	 The result is therefore clearly normal and
+	 the double precision numbers in the triple-double
+	 representation of TD(1/pi) * x are all normal, too.
+
+	 For speed, we use a two-step approach.
+	 We know that 
+
+	 || x*DD(1/pi)/(asin(x)/pi) - 1 ||_[-2^(-60);2^(-60)]^\infty <= 2^(-107.8) <= 2^(-80) 
+
+      */
+
+      Mul122(&xPih,&xPim,x,RECPRPIH,RECPRPIM);
+
+      if(xPih == (xPih + (xPim * RNROUNDCSTASINPI))) 
+	return xPih;
+      
+      Mul133(&xPihover,&xPimover,&xPilover,x,RECPRPIH,RECPRPIM,RECPRPIL);
+
+      Renormalize3(&xPih,&xPim,&xPil,xPihover,xPimover,xPilover);
+      
+      ReturnRoundToNearest3(xPih,xPim,xPil);
+
+    } 
+
+    /* Here abs(x) < 2^(-858)
+
+       Because of subnormals and especially because
+       of the fact that 1/pi < 1, we must scale x
+       appropriately. We compute hence:
+
+       asinpi(x) = round( ((x * 2^(1000)) * triple-double(1/pi)) * 2^(-1000))
+
+       where the rounding procedure works temporarily on the scaled 
+       intermediate.
+    */
+
+    xScaled = x * TWO1000;
+
+    Mul133(&xPihover,&xPimover,&xPilover,xScaled,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Renormalize3(&xPih,&xPim,&xPil,xPihover,xPimover,xPilover);
+
+    /* Produce a (possibly) subnormal intermediate rounding */
+
+    asinhdb.d = xPih * TWOM1000;
+
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
+    tempint32_1 = asinhdb.i[HI];
+    tempint32_2 = asinhdb.i[LO];
+    asinhdb.i[LO] = tempint32_2;
+    asinhdb.i[HI] = tempint32_1;
+#endif
+
+    /* Rescale the result */
+
+    temp1 = asinhdb.d * TWO1000;
+
+    /* Compute the scaled error, the operation is exact by Sterbenz' lemma */
+
+    deltatemp = xPih - temp1;
+
+    /* Sum up the errors, representing them on a double-double
+       
+       This is exact for the normal rounding case and the error
+       is neglectable in the subnormal rounding case.
+    */
+
+    Add12Cond(temp2h,temp2l,deltatemp,xPim);
+    temp3 = temp2l + xPil;
+    Add12(deltah,deltal,temp2h,temp3);
+
+    /* Compute now a scaled 1/2 ulp of the intermediate result 
+       in the direction of delta 
+    */
+
+    tempdb = asinhdb;
+
+    if ((x >= 0.0) ^ (deltah >= 0.0)) 
+      tempdb.l--;
+    else 
+      tempdb.l++;
+
+    miulp = TWO999 * (tempdb.d - asinhdb.d);
+
+    /* We must correct the intermediate rounding 
+       if the error on deltah + deltal is greater
+       in absolute value than miulp = 1/2 ulp in the
+       right direction.
+    */
+
+    if (ABS(deltah) < ABS(miulp)) {
+      /* deltah is less than miulp, deltal is less than 
+	 1/2 the ulp of deltah. Thus deltah + deltal is 
+	 less than miulp. We do not need to correct 
+	 the intermediate rounding.
+      */
+      return asinhdb.d;
+    }
+
+    if (ABS(deltah) > ABS(miulp)) {
+      /* deltah is greater than miulp and deltal cannot correct it.
+	 We must correct the rounding.
+
+	 tempdb.d (= asinhdb.d +/- 1 ulp) is the correct rounding.
+      */
+      return tempdb.d;
+    }
+
+    /* Here deltah and miulp are equal in absolute value 
+
+       We must correct the intermediate rounding iff the sign of deltal 
+       and deltah are the same.
+       
+    */
+
+    if ((deltah >= 0.0) ^ (deltal >= 0.0)) {
+      /* Here the sign is different, we return the 
+	 intermediate rounding asinhdb.d 
+      */
+      return asinhdb.d;
+    }
+    
+    /* Return the corrected result tempdb.d */
+
+    return tempdb.d;
+  }
+
+  /* asinpi is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if (xdb.i[HI] >= 0x3ff00000) {
+    if (x == 1.0) {
+      return 0.5;
+    }
+    if (x == -1.0) {
+      return - 0.5;
+    }
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* Argument reduction:
+
+     We have 10 intervals and 3 paths:
+
+     - interval 0   => path 1 using p0
+     - interval 1-8 => path 2 using p
+     - interval 9   => path 3 using p9
+
+  */
+
+  index = (0x000f0000 & zdb.i[HI]) >> 16;
+
+  /* 0 <= index <= 15 
+
+     index approximates roughly x^2 
+
+     Map indexes to intervals as follows:
+
+     0  -> 0 
+     1  -> 1
+     ... 
+     8  -> 8
+     9  -> 9
+     ... 
+     15 -> 9
+
+     For this mapping, filter first the case 0 -> 0
+     In consequence, 1 <= index <= 15, i.e. 
+     0 <= index - 1 <= 14 with the mapping index - 1 -> interval as
+
+     0  -> 1
+     ... 
+     7  -> 8
+     8  -> 9
+     ...
+     15 -> 9
+
+     Thus it suffices to check the 3rd bit of index - 1 after the first filter.
+     
+  */
+
+  if (index == 0) {
+    /* Path 1 using p0 */
+
+    p0_quick(&asinh, &asinm, x, xdb.i[HI]);
+
+    Mul22(&asinpih,&asinpim,asinh,asinm,RECPRPIH,RECPRPIM);
+
+    /* Rounding test */
+
+    if(asinpih == (asinpih + (asinpim * RNROUNDCST))) 
+      return asinpih;
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p0_accu(&asinh, &asinm, &asinl, x);
+
+    Mul33(&asinpihover,&asinpimover,&asinpilover,asinh,asinm,asinl,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+    /* Final rounding */
+
+    ReturnRoundToNearest3(asinpih,asinpim,asinpil);
+
+  } 
+
+  /* Strip off the sign of argument x */
+  sign = 1.0;
+  if (x < 0.0) sign = -sign;
+  
+  index--;
+  if ((index & 0x8) != 0) {
+    /* Path 3 using p9 */
+
+    /* Do argument reduction using a MI_9 as a midpoint value 
+       for the polynomial and compute exactly zp = 2 * (1 - x) 
+       for the asymptotical approximation using a square root.
+    */
+
+    z = xabs - MI_9;
+    zp = 2.0 * (1.0 - xabs);
+
+    /* Polynomial approximation and square root extraction */
+
+    p9_quick(&p9h, &p9m, z);
+    p9h = -p9h;
+    p9m = -p9m;
+
+    sqrt12_64_unfiltered(&sqrh,&sqrm,zp);
+
+    /* Reconstruction */
+
+    Mul22(&t1h,&t1m,sqrh,sqrm,p9h,p9m);
+    Mul22(&t2h,&t2m,t1h,t1m,RECPRPIH,RECPRPIM);
+
+    Add122(&asinpih,&asinpim,0.5,t2h,t2m);
+
+    /* Rounding test */
+
+    if(asinpih == (asinpih + (asinpim * RNROUNDCST))) 
+      return sign * asinpih;
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p9_accu(&p9h, &p9m, &p9l, z);
+    p9h = -p9h;
+    p9m = -p9m;
+    p9l = -p9l;
+
+    Sqrt13(&sqrh,&sqrm,&sqrl,zp);
+
+    /* Reconstruction */
+
+    Mul33(&t1h,&t1m,&t1l,sqrh,sqrm,sqrl,p9h,p9m,p9l);
+    Mul33(&t2h,&t2m,&t2l,t1h,t1m,t1l,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Add133(&asinpihover,&asinpimover,&asinpilover,0.5,t2h,t2m,t2l);
+
+    Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+    /* Final rounding */    
+
+    RoundToNearest3(&asinpi,asinpih,asinpim,asinpil);
+
+    return sign * asinpi;
+
+  }
+
+  /* Path 2 using p */
+
+  /* Do argument reduction using a table value for 
+     the midpoint value 
+  */
+
+  z = xabs - mi_i;
+
+  p_quick(&asinh, &asinm, z, index);
+
+  Mul22(&asinpih,&asinpim,asinh,asinm,RECPRPIH,RECPRPIM);
+
+  /* Rounding test */
+  
+  if(asinpih == (asinpih + (asinpim * RNROUNDCST))) 
+    return sign * asinpih;
+  
+  /* Rounding test failed, launch accurate phase */
+  
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+  
+  p_accu(&asinh, &asinm, &asinl, z, index);
+  
+  Mul33(&asinpihover,&asinpimover,&asinpilover,asinh,asinm,asinl,RECPRPIH,RECPRPIM,RECPRPIL);
+
+  Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+  /* Final rounding */
+  
+  RoundToNearest3(&asinpi,asinpih,asinpim,asinpil);
+  
+  return sign * asinpi;
+  
+}
 
 double asinpi_rd(double x) {
-  return 1.0;
-} 
+  db_number xdb, zdb, asinhdb;
+  double sign, z, zp;
+  int index;
+  double asinh, asinm, asinl;
+  double asinpih, asinpim, asinpil;
+  double asinpihover, asinpimover, asinpilover;
+  double p9h, p9m, p9l, sqrh, sqrm, sqrl;
+  double t1h, t1m, t1l;
+  double t2h, t2m, t2l;
+  double asinpi;
+  double xabs;
+  double xScaled;
+  double xPih, xPim, xPil;
+  double xPihover, xPimover, xPilover;
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
+  int32_t tempint32_1, tempint32_2;
+#endif
+  double deltatemp, deltah, deltal;
+  double temp1, temp2h, temp2l, temp3;
+
+  /* Start already computations for argument reduction */
+
+  zdb.d = 1.0 + x * x;
+
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Remove sign of x in floating-point */
+  xabs = ABS(x);
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* If |x| < 2^(-60) we have
+     
+     arcsin(x)/pi = x * triple-double(1/pi) * ( 1 + xi ) 
+
+     with 0 <= xi < 2^(-122)
+
+     We have no bad case worser than 
+     112 bits for asinpi(x) for |x| > 2^(-58)
+     and the order 3 term of asinpi is still more
+     far away. 
+          
+  */
+  if (xdb.i[HI] < ASINPISIMPLEBOUND) {
+    /* For a faster path for the exact case, 
+       we check first if x = 0
+    */
+
+    if (x == 0.0) 
+      return x;
+
+    /* We want a relatively fast path for values where
+       neither the input nor the output is subnormal 
+       because subnormal rounding is expensive.
+
+       Since 
+       
+       abs(double(asin(x)/pi)) <= 2^(-860) 
+       
+       for abs(x) <= 2^(-858), we filter for this (normal) value.
+
+    */
+
+    if (xdb.i[HI] >= ASINPINOSUBNORMALBOUND) {
+
+      /* Here abs(x) >= 2^(-858).
+	 The result is therefore clearly normal and
+	 the double precision numbers in the triple-double
+	 representation of TD(1/pi) * x are all normal, too.
+
+	 For speed, we use a two-step approach.
+	 We know that 
+
+	 || x*DD(1/pi)/(asin(x)/pi) - 1 ||_[-2^(-60);2^(-60)]^\infty <= 2^(-107.8) <= 2^(-80) 
+
+      */
+
+      Mul122(&xPih,&xPim,x,RECPRPIH,RECPRPIM);
+
+      TEST_AND_RETURN_RD(xPih, xPim, RDROUNDCSTASINPI);
+      
+      Mul133(&xPihover,&xPimover,&xPilover,x,RECPRPIH,RECPRPIM,RECPRPIL);
+
+      Renormalize3(&xPih,&xPim,&xPil,xPihover,xPimover,xPilover);
+      
+      ReturnRoundDownwards3(xPih,xPim,xPil);
+
+    } 
+
+    /* Here abs(x) < 2^(-858)
+
+       Because of subnormals and especially because
+       of the fact that 1/pi < 1, we must scale x
+       appropriately. We compute hence:
+
+       asinpi(x) = round( ((x * 2^(1000)) * triple-double(1/pi)) * 2^(-1000))
+
+       where the rounding procedure works temporarily on the scaled 
+       intermediate.
+    */
+
+    xScaled = x * TWO1000;
+
+    Mul133(&xPihover,&xPimover,&xPilover,xScaled,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Renormalize3(&xPih,&xPim,&xPil,xPihover,xPimover,xPilover);
+
+    /* Produce a (possibly) subnormal intermediate rounding */
+
+    asinhdb.d = xPih * TWOM1000;
+
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
+    tempint32_1 = asinhdb.i[HI];
+    tempint32_2 = asinhdb.i[LO];
+    asinhdb.i[LO] = tempint32_2;
+    asinhdb.i[HI] = tempint32_1;
+#endif
+
+    /* Rescale the result */
+
+    temp1 = asinhdb.d * TWO1000;
+
+    /* Compute the scaled error, the operation is exact by Sterbenz' lemma */
+
+    deltatemp = xPih - temp1;
+
+    /* Sum up the errors, representing them on a double-double
+       
+       This is exact for the normal rounding case and the error
+       is neglectable in the subnormal rounding case.
+    */
+
+    Add12Cond(temp2h,temp2l,deltatemp,xPim);
+    temp3 = temp2l + xPil;
+    Add12(deltah,deltal,temp2h,temp3);
+
+    /* We are doing directed rounding. Thus we must correct the rounding
+       if the sign of the error is not correct 
+       RD -> sign must be positive for correct rounding
+       RU -> sign must be negative for correct rounding
+       RZ -> sign must be positive for positive x and negative for negative x
+    */
+
+    if (deltah >= 0.0) {
+      /* The sign is correct, return the intermediate rounding */
+      return asinhdb.d;
+    }
+   
+    /* The sign is not correct
+
+       RD -> subtract 1 ulp
+       RU -> add 1 ulp
+       RZ -> subtract 1 ulp if x positive, add 1 ulp if x negative
+    */
+
+    if (x < 0.0) 
+      asinhdb.l++;
+    else 
+      asinhdb.l--;
+
+    return asinhdb.d;
+  }
+
+  /* asinpi is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if (xdb.i[HI] >= 0x3ff00000) {
+    if (x == 1.0) {
+      return 0.5;
+    }
+    if (x == -1.0) {
+      return - 0.5;
+    }
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* Argument reduction:
+
+     We have 10 intervals and 3 paths:
+
+     - interval 0   => path 1 using p0
+     - interval 1-8 => path 2 using p
+     - interval 9   => path 3 using p9
+
+  */
+
+  index = (0x000f0000 & zdb.i[HI]) >> 16;
+
+  /* 0 <= index <= 15 
+
+     index approximates roughly x^2 
+
+     Map indexes to intervals as follows:
+
+     0  -> 0 
+     1  -> 1
+     ... 
+     8  -> 8
+     9  -> 9
+     ... 
+     15 -> 9
+
+     For this mapping, filter first the case 0 -> 0
+     In consequence, 1 <= index <= 15, i.e. 
+     0 <= index - 1 <= 14 with the mapping index - 1 -> interval as
+
+     0  -> 1
+     ... 
+     7  -> 8
+     8  -> 9
+     ...
+     15 -> 9
+
+     Thus it suffices to check the 3rd bit of index - 1 after the first filter.
+     
+  */
+
+  if (index == 0) {
+    /* Path 1 using p0 */
+
+    p0_quick(&asinh, &asinm, x, xdb.i[HI]);
+
+    Mul22(&asinpih,&asinpim,asinh,asinm,RECPRPIH,RECPRPIM);
+
+    /* Rounding test */
+
+    TEST_AND_RETURN_RD(asinpih, asinpim, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p0_accu(&asinh, &asinm, &asinl, x);
+
+    Mul33(&asinpihover,&asinpimover,&asinpilover,asinh,asinm,asinl,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+    /* Final rounding */
+
+    ReturnRoundDownwards3(asinpih,asinpim,asinpil);
+
+  } 
+
+  /* Strip off the sign of argument x */
+  sign = 1.0;
+  if (x < 0.0) sign = -sign;
+  
+  index--;
+  if ((index & 0x8) != 0) {
+    /* Path 3 using p9 */
+
+    /* Do argument reduction using a MI_9 as a midpoint value 
+       for the polynomial and compute exactly zp = 2 * (1 - x) 
+       for the asymptotical approximation using a square root.
+    */
+
+    z = xabs - MI_9;
+    zp = 2.0 * (1.0 - xabs);
+
+    /* Polynomial approximation and square root extraction */
+
+    p9_quick(&p9h, &p9m, z);
+    p9h = -p9h;
+    p9m = -p9m;
+
+    sqrt12_64_unfiltered(&sqrh,&sqrm,zp);
+
+    /* Reconstruction */
+
+    Mul22(&t1h,&t1m,sqrh,sqrm,p9h,p9m);
+    Mul22(&t2h,&t2m,t1h,t1m,RECPRPIH,RECPRPIM);
+
+    Add122(&asinpih,&asinpim,0.5,t2h,t2m);
+
+    /* Rounding test */
+
+    asinpih *= sign;
+    asinpim *= sign;
+
+    TEST_AND_RETURN_RD(asinpih, asinpim, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p9_accu(&p9h, &p9m, &p9l, z);
+    p9h = -p9h;
+    p9m = -p9m;
+    p9l = -p9l;
+
+    Sqrt13(&sqrh,&sqrm,&sqrl,zp);
+
+    /* Reconstruction */
+
+    Mul33(&t1h,&t1m,&t1l,sqrh,sqrm,sqrl,p9h,p9m,p9l);
+    Mul33(&t2h,&t2m,&t2l,t1h,t1m,t1l,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Add133(&asinpihover,&asinpimover,&asinpilover,0.5,t2h,t2m,t2l);
+
+    Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+    /* Final rounding */    
+
+    RoundDownwards3(&asinpi,asinpih,asinpim,asinpil);
+
+    return sign * asinpi;
+
+  }
+
+  /* Path 2 using p */
+
+  /* Do argument reduction using a table value for 
+     the midpoint value 
+  */
+
+  z = xabs - mi_i;
+
+  p_quick(&asinh, &asinm, z, index);
+
+  Mul22(&asinpih,&asinpim,asinh,asinm,RECPRPIH,RECPRPIM);
+
+  /* Rounding test */
+
+  asinpih *= sign;
+  asinpim *= sign;
+  
+  TEST_AND_RETURN_RD(asinpih, asinpim, RDROUNDCST);
+  
+  /* Rounding test failed, launch accurate phase */
+  
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+  
+  p_accu(&asinh, &asinm, &asinl, z, index);
+  
+  Mul33(&asinpihover,&asinpimover,&asinpilover,asinh,asinm,asinl,RECPRPIH,RECPRPIM,RECPRPIL);
+
+  Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+  /* Final rounding */
+  
+  RoundDownwards3(&asinpi,asinpih,asinpim,asinpil);
+  
+  return sign * asinpi;
+  
+}
 
 double asinpi_ru(double x) {
-  return 1.0;
-} 
+  db_number xdb, zdb, asinhdb;
+  double sign, z, zp;
+  int index;
+  double asinh, asinm, asinl;
+  double asinpih, asinpim, asinpil;
+  double asinpihover, asinpimover, asinpilover;
+  double p9h, p9m, p9l, sqrh, sqrm, sqrl;
+  double t1h, t1m, t1l;
+  double t2h, t2m, t2l;
+  double asinpi;
+  double xabs;
+  double xScaled;
+  double xPih, xPim, xPil;
+  double xPihover, xPimover, xPilover;
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
+  int32_t tempint32_1, tempint32_2;
+#endif
+  double deltatemp, deltah, deltal;
+  double temp1, temp2h, temp2l, temp3;
+
+  /* Start already computations for argument reduction */
+
+  zdb.d = 1.0 + x * x;
+
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Remove sign of x in floating-point */
+  xabs = ABS(x);
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* If |x| < 2^(-60) we have
+     
+     arcsin(x)/pi = x * triple-double(1/pi) * ( 1 + xi ) 
+
+     with 0 <= xi < 2^(-122)
+
+     We have no bad case worser than 
+     112 bits for asinpi(x) for |x| > 2^(-58)
+     and the order 3 term of asinpi is still more
+     far away. 
+          
+  */
+  if (xdb.i[HI] < ASINPISIMPLEBOUND) {
+    /* For a faster path for the exact case, 
+       we check first if x = 0
+    */
+
+    if (x == 0.0) 
+      return x;
+
+    /* We want a relatively fast path for values where
+       neither the input nor the output is subnormal 
+       because subnormal rounding is expensive.
+
+       Since 
+       
+       abs(double(asin(x)/pi)) <= 2^(-860) 
+       
+       for abs(x) <= 2^(-858), we filter for this (normal) value.
+
+    */
+
+    if (xdb.i[HI] >= ASINPINOSUBNORMALBOUND) {
+
+      /* Here abs(x) >= 2^(-858).
+	 The result is therefore clearly normal and
+	 the double precision numbers in the triple-double
+	 representation of TD(1/pi) * x are all normal, too.
+
+	 For speed, we use a two-step approach.
+	 We know that 
+
+	 || x*DD(1/pi)/(asin(x)/pi) - 1 ||_[-2^(-60);2^(-60)]^\infty <= 2^(-107.8) <= 2^(-80) 
+
+      */
+
+      Mul122(&xPih,&xPim,x,RECPRPIH,RECPRPIM);
+
+      TEST_AND_RETURN_RU(xPih, xPim, RDROUNDCSTASINPI);
+      
+      Mul133(&xPihover,&xPimover,&xPilover,x,RECPRPIH,RECPRPIM,RECPRPIL);
+
+      Renormalize3(&xPih,&xPim,&xPil,xPihover,xPimover,xPilover);
+      
+      ReturnRoundUpwards3(xPih,xPim,xPil);
+
+    } 
+
+    /* Here abs(x) < 2^(-858)
+
+       Because of subnormals and especially because
+       of the fact that 1/pi < 1, we must scale x
+       appropriately. We compute hence:
+
+       asinpi(x) = round( ((x * 2^(1000)) * triple-double(1/pi)) * 2^(-1000))
+
+       where the rounding procedure works temporarily on the scaled 
+       intermediate.
+    */
+
+    xScaled = x * TWO1000;
+
+    Mul133(&xPihover,&xPimover,&xPilover,xScaled,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Renormalize3(&xPih,&xPim,&xPil,xPihover,xPimover,xPilover);
+
+    /* Produce a (possibly) subnormal intermediate rounding */
+
+    asinhdb.d = xPih * TWOM1000;
+
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
+    tempint32_1 = asinhdb.i[HI];
+    tempint32_2 = asinhdb.i[LO];
+    asinhdb.i[LO] = tempint32_2;
+    asinhdb.i[HI] = tempint32_1;
+#endif
+
+    /* Rescale the result */
+
+    temp1 = asinhdb.d * TWO1000;
+
+    /* Compute the scaled error, the operation is exact by Sterbenz' lemma */
+
+    deltatemp = xPih - temp1;
+
+    /* Sum up the errors, representing them on a double-double
+       
+       This is exact for the normal rounding case and the error
+       is neglectable in the subnormal rounding case.
+    */
+
+    Add12Cond(temp2h,temp2l,deltatemp,xPim);
+    temp3 = temp2l + xPil;
+    Add12(deltah,deltal,temp2h,temp3);
+
+    /* We are doing directed rounding. Thus we must correct the rounding
+       if the sign of the error is not correct 
+       RD -> sign must be positive for correct rounding
+       RU -> sign must be negative for correct rounding
+       RZ -> sign must be positive for positive x and negative for negative x
+    */
+
+    if (deltah <= 0.0) {
+      /* The sign is correct, return the intermediate rounding */
+      return asinhdb.d;
+    }
+   
+    /* The sign is not correct
+
+       RD -> subtract 1 ulp
+       RU -> add 1 ulp
+       RZ -> subtract 1 ulp if x positive, add 1 ulp if x negative
+    */
+
+    if (x < 0.0) 
+      asinhdb.l--;
+    else 
+      asinhdb.l++;
+
+    return asinhdb.d;
+  }
+
+  /* asinpi is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if (xdb.i[HI] >= 0x3ff00000) {
+    if (x == 1.0) {
+      return 0.5;
+    }
+    if (x == -1.0) {
+      return - 0.5;
+    }
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* Argument reduction:
+
+     We have 10 intervals and 3 paths:
+
+     - interval 0   => path 1 using p0
+     - interval 1-8 => path 2 using p
+     - interval 9   => path 3 using p9
+
+  */
+
+  index = (0x000f0000 & zdb.i[HI]) >> 16;
+
+  /* 0 <= index <= 15 
+
+     index approximates roughly x^2 
+
+     Map indexes to intervals as follows:
+
+     0  -> 0 
+     1  -> 1
+     ... 
+     8  -> 8
+     9  -> 9
+     ... 
+     15 -> 9
+
+     For this mapping, filter first the case 0 -> 0
+     In consequence, 1 <= index <= 15, i.e. 
+     0 <= index - 1 <= 14 with the mapping index - 1 -> interval as
+
+     0  -> 1
+     ... 
+     7  -> 8
+     8  -> 9
+     ...
+     15 -> 9
+
+     Thus it suffices to check the 3rd bit of index - 1 after the first filter.
+     
+  */
+
+  if (index == 0) {
+    /* Path 1 using p0 */
+
+    p0_quick(&asinh, &asinm, x, xdb.i[HI]);
+
+    Mul22(&asinpih,&asinpim,asinh,asinm,RECPRPIH,RECPRPIM);
+
+    /* Rounding test */
+
+    TEST_AND_RETURN_RU(asinpih, asinpim, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p0_accu(&asinh, &asinm, &asinl, x);
+
+    Mul33(&asinpihover,&asinpimover,&asinpilover,asinh,asinm,asinl,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+    /* Final rounding */
+
+    ReturnRoundUpwards3(asinpih,asinpim,asinpil);
+
+  } 
+
+  /* Strip off the sign of argument x */
+  sign = 1.0;
+  if (x < 0.0) sign = -sign;
+  
+  index--;
+  if ((index & 0x8) != 0) {
+    /* Path 3 using p9 */
+
+    /* Do argument reduction using a MI_9 as a midpoint value 
+       for the polynomial and compute exactly zp = 2 * (1 - x) 
+       for the asymptotical approximation using a square root.
+    */
+
+    z = xabs - MI_9;
+    zp = 2.0 * (1.0 - xabs);
+
+    /* Polynomial approximation and square root extraction */
+
+    p9_quick(&p9h, &p9m, z);
+    p9h = -p9h;
+    p9m = -p9m;
+
+    sqrt12_64_unfiltered(&sqrh,&sqrm,zp);
+
+    /* Reconstruction */
+
+    Mul22(&t1h,&t1m,sqrh,sqrm,p9h,p9m);
+    Mul22(&t2h,&t2m,t1h,t1m,RECPRPIH,RECPRPIM);
+
+    Add122(&asinpih,&asinpim,0.5,t2h,t2m);
+
+    /* Rounding test */
+
+    asinpih *= sign;
+    asinpim *= sign;
+
+    TEST_AND_RETURN_RU(asinpih, asinpim, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p9_accu(&p9h, &p9m, &p9l, z);
+    p9h = -p9h;
+    p9m = -p9m;
+    p9l = -p9l;
+
+    Sqrt13(&sqrh,&sqrm,&sqrl,zp);
+
+    /* Reconstruction */
+
+    Mul33(&t1h,&t1m,&t1l,sqrh,sqrm,sqrl,p9h,p9m,p9l);
+    Mul33(&t2h,&t2m,&t2l,t1h,t1m,t1l,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Add133(&asinpihover,&asinpimover,&asinpilover,0.5,t2h,t2m,t2l);
+
+    Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+    /* Final rounding */    
+
+    RoundUpwards3(&asinpi,asinpih,asinpim,asinpil);
+
+    return sign * asinpi;
+
+  }
+
+  /* Path 2 using p */
+
+  /* Do argument reduction using a table value for 
+     the midpoint value 
+  */
+
+  z = xabs - mi_i;
+
+  p_quick(&asinh, &asinm, z, index);
+
+  Mul22(&asinpih,&asinpim,asinh,asinm,RECPRPIH,RECPRPIM);
+
+  /* Rounding test */
+
+  asinpih *= sign;
+  asinpim *= sign;
+  
+  TEST_AND_RETURN_RU(asinpih, asinpim, RDROUNDCST);
+  
+  /* Rounding test failed, launch accurate phase */
+  
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+  
+  p_accu(&asinh, &asinm, &asinl, z, index);
+  
+  Mul33(&asinpihover,&asinpimover,&asinpilover,asinh,asinm,asinl,RECPRPIH,RECPRPIM,RECPRPIL);
+
+  Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+  /* Final rounding */
+  
+  RoundUpwards3(&asinpi,asinpih,asinpim,asinpil);
+  
+  return sign * asinpi;
+  
+}
 
 double asinpi_rz(double x) {
-  return 1.0;
-} 
+  db_number xdb, zdb, asinhdb;
+  double sign, z, zp;
+  int index;
+  double asinh, asinm, asinl;
+  double asinpih, asinpim, asinpil;
+  double asinpihover, asinpimover, asinpilover;
+  double p9h, p9m, p9l, sqrh, sqrm, sqrl;
+  double t1h, t1m, t1l;
+  double t2h, t2m, t2l;
+  double asinpi;
+  double xabs;
+  double xScaled;
+  double xPih, xPim, xPil;
+  double xPihover, xPimover, xPilover;
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
+  int32_t tempint32_1, tempint32_2;
+#endif
+  double deltatemp, deltah, deltal;
+  double temp1, temp2h, temp2l, temp3;
+
+  /* Start already computations for argument reduction */
+
+  zdb.d = 1.0 + x * x;
+
+  xdb.d = x;
+
+  /* Special case handling */
+  
+  /* Remove sign of x in floating-point */
+  xabs = ABS(x);
+  xdb.i[HI] &= 0x7fffffff;
+
+  /* If |x| < 2^(-60) we have
+     
+     arcsin(x)/pi = x * triple-double(1/pi) * ( 1 + xi ) 
+
+     with 0 <= xi < 2^(-122)
+
+     We have no bad case worser than 
+     112 bits for asinpi(x) for |x| > 2^(-58)
+     and the order 3 term of asinpi is still more
+     far away. 
+          
+  */
+  if (xdb.i[HI] < ASINPISIMPLEBOUND) {
+    /* For a faster path for the exact case, 
+       we check first if x = 0
+    */
+
+    if (x == 0.0) 
+      return x;
+
+    /* We want a relatively fast path for values where
+       neither the input nor the output is subnormal 
+       because subnormal rounding is expensive.
+
+       Since 
+       
+       abs(double(asin(x)/pi)) <= 2^(-860) 
+       
+       for abs(x) <= 2^(-858), we filter for this (normal) value.
+
+    */
+
+    if (xdb.i[HI] >= ASINPINOSUBNORMALBOUND) {
+
+      /* Here abs(x) >= 2^(-858).
+	 The result is therefore clearly normal and
+	 the double precision numbers in the triple-double
+	 representation of TD(1/pi) * x are all normal, too.
+
+	 For speed, we use a two-step approach.
+	 We know that 
+
+	 || x*DD(1/pi)/(asin(x)/pi) - 1 ||_[-2^(-60);2^(-60)]^\infty <= 2^(-107.8) <= 2^(-80) 
+
+      */
+
+      Mul122(&xPih,&xPim,x,RECPRPIH,RECPRPIM);
+
+      TEST_AND_RETURN_RZ(xPih, xPim, RDROUNDCSTASINPI);
+      
+      Mul133(&xPihover,&xPimover,&xPilover,x,RECPRPIH,RECPRPIM,RECPRPIL);
+
+      Renormalize3(&xPih,&xPim,&xPil,xPihover,xPimover,xPilover);
+      
+      ReturnRoundTowardsZero3(xPih,xPim,xPil);
+
+    } 
+
+    /* Here abs(x) < 2^(-858)
+
+       Because of subnormals and especially because
+       of the fact that 1/pi < 1, we must scale x
+       appropriately. We compute hence:
+
+       asinpi(x) = round( ((x * 2^(1000)) * triple-double(1/pi)) * 2^(-1000))
+
+       where the rounding procedure works temporarily on the scaled 
+       intermediate.
+    */
+
+    xScaled = x * TWO1000;
+
+    Mul133(&xPihover,&xPimover,&xPilover,xScaled,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Renormalize3(&xPih,&xPim,&xPil,xPihover,xPimover,xPilover);
+
+    /* Produce a (possibly) subnormal intermediate rounding */
+
+    asinhdb.d = xPih * TWOM1000;
+
+#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
+    tempint32_1 = asinhdb.i[HI];
+    tempint32_2 = asinhdb.i[LO];
+    asinhdb.i[LO] = tempint32_2;
+    asinhdb.i[HI] = tempint32_1;
+#endif
+
+    /* Rescale the result */
+
+    temp1 = asinhdb.d * TWO1000;
+
+    /* Compute the scaled error, the operation is exact by Sterbenz' lemma */
+
+    deltatemp = xPih - temp1;
+
+    /* Sum up the errors, representing them on a double-double
+       
+       This is exact for the normal rounding case and the error
+       is neglectable in the subnormal rounding case.
+    */
+
+    Add12Cond(temp2h,temp2l,deltatemp,xPim);
+    temp3 = temp2l + xPil;
+    Add12(deltah,deltal,temp2h,temp3);
+
+    /* We are doing directed rounding. Thus we must correct the rounding
+       if the sign of the error is not correct 
+       RD -> sign must be positive for correct rounding
+       RU -> sign must be negative for correct rounding
+       RZ -> sign must be positive for positive x and negative for negative x
+    */
+
+    if ((x > 0.0) ^ (deltah < 0.0)) {
+      /* The sign is correct, return the intermediate rounding */
+      return asinhdb.d;
+    }
+   
+    /* The sign is not correct
+
+       RD -> subtract 1 ulp
+       RU -> add 1 ulp
+       RZ -> subtract 1 ulp if x positive, add 1 ulp if x negative
+    */
+
+    asinhdb.l--;
+
+    return asinhdb.d;
+  }
+
+  /* asinpi is defined on -1 <= x <= 1, elsewhere it is NaN */
+  if (xdb.i[HI] >= 0x3ff00000) {
+    if (x == 1.0) {
+      return 0.5;
+    }
+    if (x == -1.0) {
+      return - 0.5;
+    }
+    return (x-x)/0.0;    /* return NaN */
+  }
+
+  /* Argument reduction:
+
+     We have 10 intervals and 3 paths:
+
+     - interval 0   => path 1 using p0
+     - interval 1-8 => path 2 using p
+     - interval 9   => path 3 using p9
+
+  */
+
+  index = (0x000f0000 & zdb.i[HI]) >> 16;
+
+  /* 0 <= index <= 15 
+
+     index approximates roughly x^2 
+
+     Map indexes to intervals as follows:
+
+     0  -> 0 
+     1  -> 1
+     ... 
+     8  -> 8
+     9  -> 9
+     ... 
+     15 -> 9
+
+     For this mapping, filter first the case 0 -> 0
+     In consequence, 1 <= index <= 15, i.e. 
+     0 <= index - 1 <= 14 with the mapping index - 1 -> interval as
+
+     0  -> 1
+     ... 
+     7  -> 8
+     8  -> 9
+     ...
+     15 -> 9
+
+     Thus it suffices to check the 3rd bit of index - 1 after the first filter.
+     
+  */
+
+  if (index == 0) {
+    /* Path 1 using p0 */
+
+    p0_quick(&asinh, &asinm, x, xdb.i[HI]);
+
+    Mul22(&asinpih,&asinpim,asinh,asinm,RECPRPIH,RECPRPIM);
+
+    /* Rounding test */
+
+    TEST_AND_RETURN_RZ(asinpih, asinpim, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p0_accu(&asinh, &asinm, &asinl, x);
+
+    Mul33(&asinpihover,&asinpimover,&asinpilover,asinh,asinm,asinl,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+    /* Final rounding */
+
+    ReturnRoundTowardsZero3(asinpih,asinpim,asinpil);
+
+  } 
+
+  /* Strip off the sign of argument x */
+  sign = 1.0;
+  if (x < 0.0) sign = -sign;
+  
+  index--;
+  if ((index & 0x8) != 0) {
+    /* Path 3 using p9 */
+
+    /* Do argument reduction using a MI_9 as a midpoint value 
+       for the polynomial and compute exactly zp = 2 * (1 - x) 
+       for the asymptotical approximation using a square root.
+    */
+
+    z = xabs - MI_9;
+    zp = 2.0 * (1.0 - xabs);
+
+    /* Polynomial approximation and square root extraction */
+
+    p9_quick(&p9h, &p9m, z);
+    p9h = -p9h;
+    p9m = -p9m;
+
+    sqrt12_64_unfiltered(&sqrh,&sqrm,zp);
+
+    /* Reconstruction */
+
+    Mul22(&t1h,&t1m,sqrh,sqrm,p9h,p9m);
+    Mul22(&t2h,&t2m,t1h,t1m,RECPRPIH,RECPRPIM);
+
+    Add122(&asinpih,&asinpim,0.5,t2h,t2m);
+
+    /* Rounding test */
+
+    asinpih *= sign;
+    asinpim *= sign;
+
+    TEST_AND_RETURN_RZ(asinpih, asinpim, RDROUNDCST);
+
+    /* Rounding test failed, launch accurate phase */
+
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+    
+    p9_accu(&p9h, &p9m, &p9l, z);
+    p9h = -p9h;
+    p9m = -p9m;
+    p9l = -p9l;
+
+    Sqrt13(&sqrh,&sqrm,&sqrl,zp);
+
+    /* Reconstruction */
+
+    Mul33(&t1h,&t1m,&t1l,sqrh,sqrm,sqrl,p9h,p9m,p9l);
+    Mul33(&t2h,&t2m,&t2l,t1h,t1m,t1l,RECPRPIH,RECPRPIM,RECPRPIL);
+
+    Add133(&asinpihover,&asinpimover,&asinpilover,0.5,t2h,t2m,t2l);
+
+    Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+    /* Final rounding */    
+
+    RoundTowardsZero3(&asinpi,asinpih,asinpim,asinpil);
+
+    return sign * asinpi;
+
+  }
+
+  /* Path 2 using p */
+
+  /* Do argument reduction using a table value for 
+     the midpoint value 
+  */
+
+  z = xabs - mi_i;
+
+  p_quick(&asinh, &asinm, z, index);
+
+  Mul22(&asinpih,&asinpim,asinh,asinm,RECPRPIH,RECPRPIM);
+
+  /* Rounding test */
+
+  asinpih *= sign;
+  asinpim *= sign;
+  
+  TEST_AND_RETURN_RZ(asinpih, asinpim, RDROUNDCST);
+  
+  /* Rounding test failed, launch accurate phase */
+  
+#if EVAL_PERF
+  crlibm_second_step_taken++;
+#endif
+  
+  p_accu(&asinh, &asinm, &asinl, z, index);
+  
+  Mul33(&asinpihover,&asinpimover,&asinpilover,asinh,asinm,asinl,RECPRPIH,RECPRPIM,RECPRPIL);
+
+  Renormalize3(&asinpih,&asinpim,&asinpil,asinpihover,asinpimover,asinpilover);
+
+  /* Final rounding */
+  
+  RoundTowardsZero3(&asinpi,asinpih,asinpim,asinpil);
+  
+  return sign * asinpi;
+  
+}
 
