@@ -1,8 +1,8 @@
 /*
  * Correctly rounded arcsine and arccosine
  *
- * Author : Christoph Lauter (ENS Lyon), 
- *          Sylvain Chevillard (ENS Lyon) for the polynomials
+ * Copyright (c) 2007 Christoph Lauter (ENS Lyon), 
+ *                    with Sylvain Chevillard (ENS Lyon) for the polynomials
  *
  * This file is part of the crlibm library developed by the Arenaire
  * project at Ecole Normale Superieure de Lyon
@@ -27,7 +27,7 @@
 #include "crlibm.h"
 #include "crlibm_private.h"
 #include "triple-double.h"
-#include "asin.h"
+#include "asincos.h"
 
 static inline void p0_quick(double *p_resh, double *p_resm, double x, int32_t xhi) {
 double p_x_0_pow2h, p_x_0_pow2m;
