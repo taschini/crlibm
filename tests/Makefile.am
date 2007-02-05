@@ -45,6 +45,10 @@ check_acos: crlibm_blindtest
 	echo ./crlibm_blindtest acos.testdata>check_acos; chmod a+rx check_acos
 check_atan: crlibm_blindtest
 	echo ./crlibm_blindtest atan.testdata>check_atan; chmod a+rx check_atan
+check_asinpi: crlibm_blindtest
+	echo ./crlibm_blindtest asinpi.testdata>check_asinpi; chmod a+rx check_asinpi
+check_acospi: crlibm_blindtest
+	echo ./crlibm_blindtest acospi.testdata>check_acospi; chmod a+rx check_acospi
 check_atanpi: crlibm_blindtest
 	echo ./crlibm_blindtest atanpi.testdata>check_atanpi; chmod a+rx check_atanpi
 check_sinh: crlibm_blindtest
@@ -59,8 +63,8 @@ check_tanpi: crlibm_blindtest
 	echo ./crlibm_blindtest tanpi.testdata>check_tanpi; chmod a+rx check_tanpi
 
 CRLIBM_CHECKLIST = check_exp check_expm1 check_log check_log2 check_log10 check_log1p \
-check_sin check_cos check_tan check_asin check_acos check_atan check_atanpi check_sinh check_cosh  \
-check_sinpi check_cospi check_tanpi
+check_sin check_cos check_tan check_asin check_acos check_atan  check_sinh check_cosh  \
+check_sinpi check_cospi check_tanpi check_asinpi check_acospi check_atanpi
 
 TESTS = $(CRLIBM_CHECKLIST)
 

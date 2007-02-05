@@ -32,8 +32,6 @@ M 80000000 00000001 80000000 00000001 # smallest denorm negative
 Z 00000000 00000001 00000000 00000000 # smallest denorm positive
 Z 80000000 00000001 80000000 00000000 # smallest denorm negative
 
-# We assume that people asking for directed rounding mode know what they are doing
-# and may return values larger than Pi/2 in this case. 
 
 N 7ff00000 00000000 3fe00000 00000000 # +inf
 N fff00000 00000000 bfe00000 00000000 # -inf
