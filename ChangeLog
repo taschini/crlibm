@@ -1,4 +1,9 @@
-Summary of changes between version 1.0beta1 and version 0.17beta1
+Summary of changes between version 1.0beta1 and version 0.18beta1
+==========================================================
+<Christoph Lauter>
+        Large performance improvement in asin and acos, now in asincos.c
+        Added asinpi and acospi
+Summary of changes between version 0.18beta1 and version 0.17beta1
 ==========================================================
 <Florent de Dinechin> 
 	Added atanpi
