@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 path=`echo $0 | sed 's/testperfs.sh//'`
 executab=`echo -e $path'crlibm_testperf'`
