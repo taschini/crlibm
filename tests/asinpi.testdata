@@ -1,6 +1,7 @@
 asinpi     # Name of the function to test
 
-# asinpi.testdata, copyright (C) 2007  F. de Dinechin, Ch. Q. Lauter and V. Lefevre
+# asinpi.testdata
+# copyright (C) 2007  F. de Dinechin, Ch. Q. Lauter and V. Lefevre
 # This file is part of crlibm and is distributed under the GNU Public Licence
 # See file COPYING for details
 

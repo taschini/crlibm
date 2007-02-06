@@ -1,6 +1,7 @@
 cos     # Name of the function to test
 
-# cos.testdata, copyright (C) 2005 Ch. Q. Lauter and F. de Dinechin
+# cos.testdata
+# copyright (C) 2005 Ch. Q. Lauter, F. de Dinechin and V.Lefevre
 # This file is part of crlibm and is distributed under the GNU Public Licence
 # See file COPYING for details
 

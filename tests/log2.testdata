@@ -1,6 +1,7 @@
 log2     # Name of the function to test
 
-# log2.testdata, copyright (C) 2005 Ch. Q. Lauter and F.de Dinechin
+# log2.testdata
+#  copyright (C) 2005 Ch. Q. Lauter, F.de Dinechin and V.Lefevre
 # This file is part of crlibm and is distributed under the GNU Public Licence
 # See file COPYING for details
 

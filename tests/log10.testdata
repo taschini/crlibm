@@ -1,6 +1,7 @@
 log10     # Name of the function to test
 
-# log10.testdata, copyright (C) 2005 Ch. Q. Lauter
+# log10.testdata
+#  copyright (C) 2005 Ch. Q. Lauter and V.Lefevre
 # This file is part of crlibm and is distributed under the GNU Public Licence
 # See file COPYING for details
 

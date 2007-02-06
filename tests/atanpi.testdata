@@ -1,6 +1,7 @@
 atanpi     # Name of the function to test
 
-# atanpi.testdata, copyright (C) 2006 Ch. Q. Lauter and F. de Dinechin
+# atanpi.testdata
+#  copyright (C) 2006 Ch. Q. Lauter and F. de Dinechin and V.Lefevre
 # This file is part of crlibm and is distributed under the GNU Public Licence
 # See file COPYING for details
 

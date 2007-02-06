@@ -1,6 +1,7 @@
 cosh     # Name of the function to test
 
-# cosh.testdata, copyright (C) 2005  F. de Dinechin
+# cosh.testdata
+# copyright (C) 2005  F. de Dinechin and V.Lefevre
 # This file is part of crlibm and is distributed under the GNU Public Licence
 # See file COPYING for details
 

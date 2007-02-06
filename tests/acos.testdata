@@ -1,6 +1,7 @@
 acos     # Name of the function to test
 
-# acos.testdata, copyright (C) 2007  F. de Dinechin, Ch. Q. Lauter and V. Lefevre
+# acos.testdata
+# copyright (C) 2007  F. de Dinechin, Ch. Q. Lauter and V. Lefevre
 # This file is part of crlibm and is distributed under the GNU Public Licence
 # See file COPYING for details
 

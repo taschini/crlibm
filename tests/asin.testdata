@@ -1,6 +1,7 @@
 asin     # Name of the function to test
 
-# asin.testdata, copyright (C) 2005 F. de Dinechin, Ch. Q. Lauter and V. Lefevre 
+# asin.testdata
+# copyright (C) 2005 F. de Dinechin, Ch. Q. Lauter and V. Lefevre 
 # This file is part of crlibm and is distributed under the GNU Public Licence
 # See file COPYING for details
 
