@@ -1,4 +1,4 @@
-TODO before 1.0 release
+TODO before 1.0 final release
 
 
 Serious bugs
@@ -7,13 +7,13 @@ No known serious bug left so far. Exception raising should be improved.
 
 New functions
 -------------
-Add asinpi and acospi.
-Document power (after all, it does return 
-   guaranteed correctly rounded values for quite a few inputs).
+Document the cases on which power is guaranteed correctly rounded values.
+Possibly write 2^x and 10^x (in harmonious combination with power)
 
 Proof stuff
 -----------
-Write Gappa proofs for log2-td, log10-td, asin, acos, expm1, log1p
+Update chapter asin and write chapter acos
+Write Gappa proofs for log2-td, log10-td, expm1, log1p
 Check all the existing .gappa against last version of Gappa
  + set the paths right (where there are paths). 
 Write proper proofs of the DE integer rounding tests, or remove DE altogether.
@@ -28,24 +28,27 @@ add make timings
 
 Autotest stuff
 --------------
-You never have enough test cases. 
+Add worst cases for all which are currently written TODO
+A lot of the  Lefevre worst cases are still missing
+You never have enough test cases. In particular asin and acos
 More cases around the various boundaries would be welcome.
 
 Optim stuff
 -----------
 Remove remaining SCS: in atan, in trigo.
+Replace the current test for non-IEEE subnormal (on x86) in the code
+    with a test taking into account that x86-64 is OK
 Minor improvements to atanpi as mentionned in the doc. 
 Fuse atan-pentium and atan-itanium into atan-de, and add in atanpi. 
 Or maybe remove all the DE stuff altogether for cleaning up.
 
 ===========================================================================
 
-TODO some day
+TODO some day for a later release
 
 New functions
 -------------
-inverse hyperbolic
-Difficult: power
+Write  inverse hyperbolic functions
 
 Optimisation stuff
 ------------------
