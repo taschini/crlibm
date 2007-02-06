@@ -12,7 +12,8 @@ Possibly write 2^x and 10^x (in harmonious combination with power)
 
 Proof stuff
 -----------
-Update chapter asin and write chapter acos
+Update chapter asin and write chapter acos. 
+   Add the scripts generating the polynomials.
 Write Gappa proofs for log2-td, log10-td, expm1, log1p
 Check all the existing .gappa against last version of Gappa
  + set the paths right (where there are paths). 
@@ -22,6 +23,7 @@ Write proper proofs of the DE integer rounding tests, or remove DE altogether.
 Cleaning up stuff
 -----------------
 Check .mpl with underscored variables (some versions of Maple don't like them)
+Purge obsolete .mpl
 Ensure compilation on icc9 and SunStudio11
 Solution: check recent icc first. Then add FMADE macros everywhere FMA intended
 add make timings
