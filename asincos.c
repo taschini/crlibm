@@ -3066,9 +3066,6 @@ double asinpi_rn(double x) {
   double xScaled;
   double xPih, xPim, xPil;
   double xPihover, xPimover, xPilover;
-#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-  int32_t tempint32_1, tempint32_2;
-#endif
   double deltatemp, deltah, deltal;
   double temp1, temp2h, temp2l, temp3;
   double miulp;
@@ -3167,10 +3164,12 @@ double asinpi_rn(double x) {
     asinhdb.d = xPih * TWOM1000;
 
 #if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-    tempint32_1 = asinhdb.i[HI];
-    tempint32_2 = asinhdb.i[LO];
-    asinhdb.i[LO] = tempint32_2;
-    asinhdb.i[HI] = tempint32_1;
+    tempdb.i[HI] = asinhdb.i[HI];
+    tempdb.i[LO] = asinhdb.i[LO];
+    asinhdb.i[LO] = tempdb.i[LO];
+    asinhdb.i[HI] = tempdb.i[HI];
+#else 
+    tempdb.d = asinhdb.d;
 #endif
 
     /* Rescale the result */
@@ -3194,8 +3193,6 @@ double asinpi_rn(double x) {
     /* Compute now a scaled 1/2 ulp of the intermediate result 
        in the direction of delta 
     */
-
-    tempdb = asinhdb;
 
     if ((x >= 0.0) ^ (deltah >= 0.0)) 
       tempdb.l--;
@@ -3448,7 +3445,7 @@ double asinpi_rd(double x) {
   double xPih, xPim, xPil;
   double xPihover, xPimover, xPilover;
 #if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-  int32_t tempint32_1, tempint32_2;
+  db_number tempdb;
 #endif
   double deltatemp, deltah, deltal;
   double temp1, temp2h, temp2l, temp3;
@@ -3546,11 +3543,12 @@ double asinpi_rd(double x) {
     asinhdb.d = xPih * TWOM1000;
 
 #if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-    tempint32_1 = asinhdb.i[HI];
-    tempint32_2 = asinhdb.i[LO];
-    asinhdb.i[LO] = tempint32_2;
-    asinhdb.i[HI] = tempint32_1;
+    tempdb.i[HI] = asinhdb.i[HI];
+    tempdb.i[LO] = asinhdb.i[LO];
+    asinhdb.i[LO] = tempdb.i[LO];
+    asinhdb.i[HI] = tempdb.i[HI];
 #endif
+
 
     /* Rescale the result */
 
@@ -3801,7 +3799,7 @@ double asinpi_ru(double x) {
   double xPih, xPim, xPil;
   double xPihover, xPimover, xPilover;
 #if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-  int32_t tempint32_1, tempint32_2;
+  db_number tempdb;
 #endif
   double deltatemp, deltah, deltal;
   double temp1, temp2h, temp2l, temp3;
@@ -3899,10 +3897,10 @@ double asinpi_ru(double x) {
     asinhdb.d = xPih * TWOM1000;
 
 #if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-    tempint32_1 = asinhdb.i[HI];
-    tempint32_2 = asinhdb.i[LO];
-    asinhdb.i[LO] = tempint32_2;
-    asinhdb.i[HI] = tempint32_1;
+    tempdb.i[HI] = asinhdb.i[HI];
+    tempdb.i[LO] = asinhdb.i[LO];
+    asinhdb.i[LO] = tempdb.i[LO];
+    asinhdb.i[HI] = tempdb.i[HI];
 #endif
 
     /* Rescale the result */
@@ -4154,7 +4152,7 @@ double asinpi_rz(double x) {
   double xPih, xPim, xPil;
   double xPihover, xPimover, xPilover;
 #if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-  int32_t tempint32_1, tempint32_2;
+  db_number tempdb;
 #endif
   double deltatemp, deltah, deltal;
   double temp1, temp2h, temp2l, temp3;
@@ -4252,10 +4250,10 @@ double asinpi_rz(double x) {
     asinhdb.d = xPih * TWOM1000;
 
 #if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-    tempint32_1 = asinhdb.i[HI];
-    tempint32_2 = asinhdb.i[LO];
-    asinhdb.i[LO] = tempint32_2;
-    asinhdb.i[HI] = tempint32_1;
+    tempdb.i[HI] = asinhdb.i[HI];
+    tempdb.i[LO] = asinhdb.i[LO];
+    asinhdb.i[LO] = tempdb.i[LO];
+    asinhdb.i[HI] = tempdb.i[HI];
 #endif
 
     /* Rescale the result */
