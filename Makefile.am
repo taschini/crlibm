@@ -108,6 +108,16 @@ EXTRA_DIST = VERSION TODO\
 	gappa/exp-td/exp-td-proof.sh \
 	gappa/trigpi/cospi-accurate.gappa  gappa/trigpi/cospi-quick.gappa \
 	gappa/trigpi/sinpi-accurate.gappa  gappa/trigpi/sinpi-quick.gappa \
+	gappa/asin/asinAccuR0.gappa gappa/asin/asinAccuR1.gappa  \
+	gappa/asin/asinAccuR2.gappa gappa/asin/asinAccuR3.gappa \
+	gappa/asin/asinAccuR4.gappa gappa/asin/asinAccuR5.gappa \
+	gappa/asin/asinAccuR6.gappa gappa/asin/asinAccuR7.gappa \
+	gappa/asin/asinAccuR8.gappa gappa/asin/asinAccuR9.gappa \
+	gappa/asin/asinQuickR0.gappa gappa/asin/asinQuickR1.gappa \
+	gappa/asin/asinQuickR2.gappa gappa/asin/asinQuickR3.gappa \
+	gappa/asin/asinQuickR4.gappa gappa/asin/asinQuickR5.gappa \
+	gappa/asin/asinQuickR6.gappa gappa/asin/asinQuickR7.gappa \
+	gappa/asin/asinQuickR8.gappa gappa/asin/asinQuickR9.gappa \
 	docs/latex/crlibm.tex \
 	docs/latex/0_intro.tex docs/latex/0_getting-started.tex\
 	docs/latex/1_common.tex docs/latex/sqrt.tex \
@@ -118,6 +128,7 @@ EXTRA_DIST = VERSION TODO\
 	docs/latex/fig_scs docs/latex/fig_exp\
 	docs/latex/elem-fun.bib\
 	scs_lib/tests/tbx_timing.h \
+	tests/testperfs.sh\
 	triple-double.h double-extended.h \
 	log-de.c log-de.h log-td.c log-td.h\
 	atan-pentium.c atan-itanium.c 
