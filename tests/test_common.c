@@ -221,7 +221,8 @@ double rand_for_log1p() {
 }
 
 
-/* For trigonometric functions it is difficult to tell what the test function should be */ 
+/* For trigonometric functions it is difficult to tell what the test
+   function should be. We chose an exponent between -20 and 40... */ 
 
 double rand_for_trig_perf(){
   db_number result;
@@ -240,7 +241,11 @@ double rand_for_trig_perf(){
 
 /* For trigpi functions there is nobody to compare to, so who cares... */ 
 #define rand_for_trigpi_soaktest rand_generic
+
+
 #define rand_for_trigpi_perf rand_generic
+/* Actually we might exhibit better results if we spent less time near
+   zero */ 
 
 
 
@@ -253,116 +258,6 @@ double rand_for_trig_perf(){
 
 #define PIH 3.14159265358979311599796346854418516159057617187500e+00
 
-
-/* These ones are mostly inaccurate */
-double tinkered_sinpi (double x) {
-  return sin(PIH*x);
-}
-double tinkered_cospi (double x) {
-  return sin(PIH*x);
-}
-double tinkered_tanpi (double x) {
-  return tan(PIH*x);
-}
-double tinkered_atanpi (double x) {
-  return atan(x)/PIH;
-}
-double tinkered_asinpi (double x) {
-  return asin(x)/PIH;
-}
-double tinkered_acospi (double x) {
-  return acos(x)/PIH;
-}
-
-
-
-#ifdef HAVE_MPFR_H
-/* we might even attempt to prove some day that these are correct for
-   RN mode. We compute pi*x on enough bits to avoid any
-   cancellation in the argument reduction 
-
-These functions are definitely wrong in directed rounding modes, though.
-*/ 
-
-int tinkered_mpfr_sinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
-  mpfr_t pi, pix;
-  mpfr_init2(pi,  2000);
-  mpfr_init2(pix, 2060);
-
-  mpfr_const_pi(pi,  GMP_RNDN);
-  mpfr_mul(pix, pi, mpx, GMP_RNDN);
-  mpfr_sin(mpr, pix, rnd);
-  mpfr_clear(pi);
-  mpfr_clear(pix);
-  return 0;
-}
-
-int tinkered_mpfr_cospi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
-  mpfr_t pi, pix;
-  mpfr_init2(pi,  2000);
-  mpfr_init2(pix, 2060);
-
-  mpfr_const_pi(pi,  GMP_RNDN);
-  mpfr_mul(pix, pi, mpx, GMP_RNDN);
-  mpfr_cos(mpr, pix, rnd);
-  mpfr_clear(pi);
-  mpfr_clear(pix);
-  return 0;
-}
-
-int tinkered_mpfr_tanpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
-  mpfr_t pi, pix;
-  mpfr_init2(pi,  2000);
-  mpfr_init2(pix, 2060);
-
-  mpfr_const_pi(pi,  GMP_RNDN);
-  mpfr_mul(pix, pi, mpx, GMP_RNDN);
-  mpfr_tan(mpr, pix, rnd);
-  mpfr_clear(pi);
-  mpfr_clear(pix);
-  return 0;
-}
-
-int tinkered_mpfr_atanpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
-  mpfr_t pi, at;
-  mpfr_init2(pi,  2000);
-  mpfr_init2(at, 2060);
-
-  mpfr_const_pi(pi,  GMP_RNDN);
-  mpfr_atan(at, mpx, GMP_RNDN);
-  mpfr_div(mpr, at, pi,  rnd);
-  mpfr_clear(pi);
-  mpfr_clear(at);
-  return 0;
-}
-
-int tinkered_mpfr_acospi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
-  mpfr_t pi, pix;
-  mpfr_init2(pi,  2000);
-  mpfr_init2(pix, 2000);
-
-  mpfr_const_pi(pi,  GMP_RNDN);
-  mpfr_acos(pix, mpx, GMP_RNDN);
-  mpfr_div(mpr, pix, pi, rnd);
-  mpfr_clear(pi);
-  mpfr_clear(pix);
-  return 0;
-}
-
-int tinkered_mpfr_asinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
-  mpfr_t pi, pix;
-  mpfr_init2(pi,  2000);
-  mpfr_init2(pix, 2000);
-
-  mpfr_const_pi(pi,  GMP_RNDN);
-  mpfr_asin(pix, mpx, GMP_RNDN);
-  mpfr_div(mpr, pix, pi, rnd);
-  mpfr_clear(pi);
-  mpfr_clear(pix);
-  return 0;
-}
-
-#endif
 
 double rand_for_atan_perf(){
   db_number result;
@@ -446,7 +341,16 @@ double rand_for_pow_perf(double *yr){
 
 #define rand_for_pow_soaktest rand_for_pow_perf
 
-/* Produces x with |x| in [2^(-31);1] and a random sign */
+
+
+/* This #if selects among two possible policies for perf test. 
+   Default is 0,  the less favorable to crlibm. */
+#if 0
+/* Produces x with |x| in [2^(-31);1] and a random sign This passes
+ through all the interesting parts of any implementation (for x
+ smaller than 2^-31 one returns x) but most tested numbers will be
+ very small, which is does probably not correspond to real use
+ cases. */
 double rand_for_asin_testperf(){
   db_number result;
   int e;
@@ -465,6 +369,36 @@ double rand_for_asin_testperf(){
   result.i[HI] += e<<20;
   return (result.d);
 }
+
+/* Produces x with |x| in [2^(-127);1] and a random sign. Same comment
+   as for asin */
+double rand_for_acos_testperf(){
+  db_number result;
+  int e;
+  /*first the low bits of the mantissa*/
+  result.i[LO]=rand_int();
+  /* then the high bits of the mantissa */
+  result.i[HI]=  rand_int() & 0x000fffff;
+  /* Now set the exponent */
+  e = (rand_int() & 0x0000007f) + 0x00000380;
+  if (e == 0x000003ff) {
+    result.i[HI] = 0;
+    result.i[LO] = 0;
+  }
+  /* Now set the sign */
+  e += (rand_int() & 0x00000800);
+  result.i[HI] += e<<20;
+  return (result.d);
+}
+#else
+/* normal number between -1 and 1 . This can be discussed */
+double rand_for_asin_testperf(){
+  return (rand_double_normal()-1.5) * 2.0;
+}
+#define rand_for_acos_testperf rand_for_asin_testperf
+#endif
+
+
 
 /* Produces x with |x| in [0;1] */
 double rand_for_asin_soaktest(){
@@ -486,26 +420,125 @@ double rand_for_asin_soaktest(){
   return (result.d);
 }
 
-/* Produces x with |x| in [2^(-127);1] and a random sign */
-double rand_for_acos_testperf(){
-  db_number result;
-  int e;
-  /*first the low bits of the mantissa*/
-  result.i[LO]=rand_int();
-  /* then the high bits of the mantissa */
-  result.i[HI]=  rand_int() & 0x000fffff;
-  /* Now set the exponent */
-  e = (rand_int() & 0x0000007f) + 0x00000380;
-  if (e == 0x000003ff) {
-    result.i[HI] = 0;
-    result.i[LO] = 0;
-  }
-  /* Now set the sign */
-  e += (rand_int() & 0x00000800);
-  result.i[HI] += e<<20;
-  return (result.d);
+
+
+
+/*******************************************************************/
+/*             A few tinkered functions for comparisons            */
+
+
+/* These ones are mostly inaccurate, for perf comparison only  */
+
+double tinkered_sinpi (double x) {
+  return sin(PIH*x);
+}
+double tinkered_cospi (double x) {
+  return sin(PIH*x);
+}
+double tinkered_tanpi (double x) {
+  return tan(PIH*x);
+}
+double tinkered_atanpi (double x) {
+  return atan(x)/PIH;
+}
+double tinkered_asinpi (double x) {
+  return asin(x)/PIH;
+}
+double tinkered_acospi (double x) {
+  return acos(x)/PIH;
 }
 
+
+#ifdef HAVE_MPFR_H
+/* we might even attempt to prove some day that these are correct for
+   RN mode. We compute pi*x on enough bits to avoid any
+   cancellation in the argument reduction. 
+
+   Anyway someday the mpfr team will write real ones.
+
+These functions are definitely wrong in directed rounding modes.
+Useful for soaktesting the RN trigpi functions.
+*/ 
+
+int tinkered_mpfr_sinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, pix;
+  mpfr_init2(pi,  2000);
+  mpfr_init2(pix, 2060);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_mul(pix, pi, mpx, GMP_RNDN);
+  mpfr_sin(mpr, pix, rnd);
+  mpfr_clear(pi);
+  mpfr_clear(pix);
+  return 0;
+}
+
+int tinkered_mpfr_cospi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, pix;
+  mpfr_init2(pi,  2000);
+  mpfr_init2(pix, 2060);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_mul(pix, pi, mpx, GMP_RNDN);
+  mpfr_cos(mpr, pix, rnd);
+  mpfr_clear(pi);
+  mpfr_clear(pix);
+  return 0;
+}
+
+int tinkered_mpfr_tanpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, pix;
+  mpfr_init2(pi,  2000);
+  mpfr_init2(pix, 2060);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_mul(pix, pi, mpx, GMP_RNDN);
+  mpfr_tan(mpr, pix, rnd);
+  mpfr_clear(pi);
+  mpfr_clear(pix);
+  return 0;
+}
+
+int tinkered_mpfr_atanpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, at;
+  mpfr_init2(pi,  2000);
+  mpfr_init2(at, 2060);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_atan(at, mpx, GMP_RNDN);
+  mpfr_div(mpr, at, pi,  rnd);
+  mpfr_clear(pi);
+  mpfr_clear(at);
+  return 0;
+}
+
+int tinkered_mpfr_acospi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, pix;
+  mpfr_init2(pi,  2000);
+  mpfr_init2(pix, 2000);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_acos(pix, mpx, GMP_RNDN);
+  mpfr_div(mpr, pix, pi, rnd);
+  mpfr_clear(pi);
+  mpfr_clear(pix);
+  return 0;
+}
+
+int tinkered_mpfr_asinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
+  mpfr_t pi, pix;
+  mpfr_init2(pi,  2000);
+  mpfr_init2(pix, 2000);
+
+  mpfr_const_pi(pi,  GMP_RNDN);
+  mpfr_asin(pix, mpx, GMP_RNDN);
+  mpfr_div(mpr, pix, pi, rnd);
+  mpfr_clear(pi);
+  mpfr_clear(pix);
+  return 0;
+}
+
+#endif
 
 
 
