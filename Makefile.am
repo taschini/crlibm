@@ -30,10 +30,8 @@ libcrlibm_a_SOURCES =  \
 	triple-double.h triple-double.c\
 	exp-td.h exp-td.c exp-td-standalone.c expm1-standalone.c  \
 	expm1.h expm1.c \
-	log-td.c log-td.h \
+	log.c log.h \
 	log1p.c \
-	log10-td.h log10-td.c \
-	log2-td.h  log2-td.c \
 	rem_pio2_accurate.h rem_pio2_accurate.c \
 	trigo_fast.c trigo_fast.h trigo_accurate.c trigo_accurate.h \
 	trigpi.c trigpi.h \
