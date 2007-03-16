@@ -27,7 +27,7 @@
 
  /* Set to O for larger but faster functions.
     As it only impacts the second step, smaller is preferred */
-#define TRIPLEDOUBLE_AS_FUNCTIONS 1 
+#define TRIPLEDOUBLE_AS_FUNCTIONS 0
 
 
 #define  Renormalize3(resh, resm, resl, ah, am, al)     DoRenormalize3(resh, resm, resl, ah, am, al)  

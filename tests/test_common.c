@@ -1151,7 +1151,7 @@ void test_init(/* pointers to returned value */
     {
       *randfun_perf     = (double (*)()) rand_for_pow_perf;
       *randfun_soaktest = (double (*)()) rand_for_pow_soaktest;
-      *worst_case = 0.335199265791020026156083450465412937935902416575259835e-199;
+      *worst_case = 2.0;
       *testfun_libm   = pow;
       switch(crlibm_rnd_mode){
       case RU:

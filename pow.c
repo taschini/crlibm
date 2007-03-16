@@ -6,2008 +6,1575 @@
 #include "pow.h"
 
 
-#define DEBUG 0
-#define DEBUG_ACCURATE 1
+/* Some macros for specific operations in power */
 
-void log2_13(double* logxh, double* logxm, double* logxl, double x) {
-  int E, index;
-  db_number xdb;
-  double ed, ri, logih, logil, logill, y, yrih, yril, th, zh, zl;
-  
-  double highPoly;
+#define USE_BUILTINS 0
 
-  double t11h, t11m;
-  double t12h, t12m;
-  double t13h, t13m;
-  double t14h, t14m;
-  double t15h, t15m;
-  double t16h, t16m;
-  double t17h, t17m;
-  double t18h, t18m;
-  double t19h, t19m, t19l;
-  double t20h, t20m, t20l;
-  double t21h, t21m, t21l;
-  double t22h, t22m, t22l;
-  double t23h, t23m, t23l;
-  double t24h, t24m, t24l;
-  double t25h, t25m, t25l;
-  double t26h, t26m, t26l;
-  
-  double polyh, polym, polyl;
-  double logiPpolyh, logiPpolym, logiPpolyl;
-  double loghover, logmover, loglover;
+/* decompose
 
-  
-  E=0; 
-  xdb.d=x;
-  
-  /* Filter cases */
-  if (xdb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
-    /* Subnormal number */
-    E = -52; 		
-    xdb.d *= TWO52; 	  /* make x a normal number    */ 
-  }
-  
-  /* Extract exponent and mantissa 
-     Do range reduction,
-     yielding to E holding the exponent and
-     y the mantissa between sqrt(2)/2 and sqrt(2)
-  */
-  E += (xdb.i[HI]>>20)-1023;             /* extract the exponent */
-  index = (xdb.i[HI] & 0x000fffff);
-  xdb.i[HI] =  index | 0x3ff00000;	/* do exponent = 0 */
-  index = (index + (1<<(12))) >> (13);
-  
-  /* reduce  such that sqrt(2)/2 < xdb.d < sqrt(2) */
-  if (index >= 53){ /* corresponds to xdb>sqrt(2)*/
-    xdb.i[HI] -= 0x00100000; 
-    E++;
-  }
-  y = xdb.d;
-  index = index & 0x7f;
-  /* Cast integer E into double ed for addition later */
-  ed = (double) E;
-  
-  /* 
-     Read tables:
-     Read one float for ri
-     Read the three doubles for -log(r_i) 
-     
-     Organization of the table:
-     
-     one struct entry per index, the struct entry containing 
-     r, logih, logil and logill in this order
-  */
-  
-  
-  ri = argredtable[index].ri;
-  /* 
-     Actually we don't need the logarithm entries now
-     Move the following two lines to the eventual reconstruction
-     As long as we don't have any if in the following code, we can overlap 
-     memory access with calculations 
-  */
-  logih = argredtable[index].logih;
-  logil = argredtable[index].logil;
-  logill = argredtable[index].logill;
-  
-  /* Do range reduction:
-     
-     zh + zl = y * ri - 1.0 correctly
-  
-     Correctness is assured by use of Mul12 and Add12
-     even if we don't force ri to have its' LSBs set to zero
-  
-     Discard zl for higher monome degrees
-  */
-  
-  Mul12(&yrih, &yril, y, ri);
-  th = yrih - 1.0; 
-  Add12Cond(zh, zl, th, yril); 
-  
-  /* Polynomial approximation */
- 
-#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-  highPoly = zh * FMA(FMA(FMA(FMA(log213coeff15h,zh,log213coeff14h),zh,log213coeff13h),
-                                                 zh,log213coeff12h),zh,log213coeff11h);
+   Decomposes a positive double precision 
+   variable x (normal or subnormal) such that
+
+   2^(resE) * resm = x 
+
+   where resm = 2 * k + 1 for integer k
+
+   resE is an integer variable pointer
+   resm is a double precision variable pointer
+   x is a double precision variable.
+
+*/
+
+#if USE_BUILTINS
+#define decompose(resm,resE,x)                                             \
+{                                                                          \
+   int __decompose_ex, __decompose_d;                                      \
+   int64_t __decompose_temp;                                               \
+   db_number __decompose_xdb;                                              \
+                                                                           \
+   __decompose_xdb.d = (x);                                                \
+   __decompose_ex = 0;                                                     \
+   if (!(__decompose_xdb.i[HI] & 0xfff00000)) {                            \
+     __decompose_xdb.d = (x) * 0.18014398509481984e17;                     \
+     __decompose_ex = -54;                                                 \
+   }                                                                       \
+   __decompose_ex += (__decompose_xdb.i[HI] >> 20) - 1023;                 \
+   __decompose_xdb.i[HI] &= 0x000fffff;                                    \
+   __decompose_temp = __decompose_xdb.l | 0x0010000000000000llu;           \
+   __decompose_d = __builtin_ctz(__decompose_temp);                        \
+   __decompose_xdb.i[HI] |= (1075 - __decompose_d) << 20;                  \
+   *(resE) = __decompose_d - 52 + __decompose_ex;                          \
+   *(resm) = __decompose_xdb.d;                                            \
+}
 #else
-  highPoly = zh * (log213coeff11h + zh * (log213coeff12h + zh * (log213coeff13h + 
-	     zh * (log213coeff14h + zh *  log213coeff15h ))));
+#define decompose(resm,resE,x)                                             \
+{                                                                          \
+   int __decompose_ex, __decompose_d;                                      \
+   int64_t __decompose_temp;                                               \
+   db_number __decompose_xdb, __decompose_tempdb;                          \
+                                                                           \
+   __decompose_xdb.d = (x);                                                \
+   __decompose_ex = 0;                                                     \
+   if (!(__decompose_xdb.i[HI] & 0xfff00000)) {                            \
+     __decompose_xdb.d = (x) * 0.18014398509481984e17;                     \
+     __decompose_ex = -54;                                                 \
+   }                                                                       \
+   __decompose_ex += (__decompose_xdb.i[HI] >> 20) - 1023;                 \
+   __decompose_xdb.i[HI] &= 0x000fffff;                                    \
+   __decompose_temp = __decompose_xdb.l | 0x0010000000000000llu;           \
+   __decompose_temp = (~__decompose_temp & (__decompose_temp - 1)) + 1;    \
+   __decompose_tempdb.d = (double) __decompose_temp;                       \
+   __decompose_d = (__decompose_tempdb.i[HI] >> 20) - 1023;                \
+   __decompose_xdb.i[HI] |= (1075 - __decompose_d) << 20;                  \
+   *(resE) = __decompose_d - 52 + __decompose_ex;                          \
+   *(resm) = __decompose_xdb.d;                                            \
+}
 #endif
- 
-  Add12(t11h,t11m,log213coeff10h,highPoly);
-  Mul22(&t12h,&t12m,t11h,t11m,zh,zl);
-  Add122(&t13h,&t13m,log213coeff9h,t12h,t12m);
-  MulAdd22(&t14h,&t14m,log213coeff8h,log213coeff8m,zh,zl,t13h,t13m);
-  MulAdd22(&t15h,&t15m,log213coeff7h,log213coeff7m,zh,zl,t14h,t14m);
-  MulAdd22(&t16h,&t16m,log213coeff6h,log213coeff6m,zh,zl,t15h,t15m);
-  MulAdd22(&t17h,&t17m,log213coeff5h,log213coeff5m,zh,zl,t16h,t16m);
-  Mul22(&t18h,&t18m,t17h,t17m,zh,zl);
-  Add23(&t19h,&t19m,&t19l,log213coeff4h,log213coeff4m,t18h,t18m);
-  Mul233(&t20h,&t20m,&t20l,zh,zl,t19h,t19m,t19l);
-  Add233(&t21h,&t21m,&t21l,log213coeff3h,log213coeff3m,t20h,t20m,t20l);
-  Mul233(&t22h,&t22m,&t22l,zh,zl,t21h,t21m,t21l);
-  Add33(&t23h,&t23m,&t23l,log213coeff2h,log213coeff2m,log213coeff2l,t22h,t22m,t22l);
-  Mul233(&t24h,&t24m,&t24l,zh,zl,t23h,t23m,t23l);
-  Renormalize3(&t24h,&t24m,&t24l,t24h,t24m,t24l);
-  Add33(&t25h,&t25m,&t25l,log213coeff1h,log213coeff1m,log213coeff1l,t24h,t24m,t24l);
-  Mul233(&t26h,&t26m,&t26l,zh,zl,t25h,t25m,t25l);
-  Renormalize3(&polyh,&polym,&polyl,t26h,t26m,t26l);
+
+
+/* isOddInteger 
+
+   Determines if a given double precision number x is an odd integer 
+
+*/
+
+#define isOddInteger(x) (ABS(((ABS(x) + 0.9007199254740992e16) - 0.9007199254740992e16) - ABS(x)) == 1.0)
+
+/* isInteger 
+
+   Determines if a given double precision number x is integer 
+
+*/
+
+#define isInteger(x) ((ABS(x) >= 0.4503599627370496e16) || (((ABS(x) + 0.4503599627370496e16) - 0.4503599627370496e16) == ABS(x)))
+
+
+/* log2_130
+
+   Approximates 
+
+   resh + resm + resl = (ed + log2(1 + (xh + xm)) + log2(r[index])) * (1 + eps)
+
+   where ||eps|| <= 2^(-130)
+
+*/
+static inline void log2_130(double *resh, double *resm, double *resl, 
+	                    int index, double ed, double xh, double xm) {
+
+  double p_t_1_0h;
+  double p_t_2_0h;
+  double p_t_3_0h;
+  double p_t_4_0h;
+  double p_t_5_0h;
+  double p_t_6_0h;
+  double p_t_7_0h;
+  double p_t_8_0h;
+  double p_t_9_0h, p_t_9_0m;
+  double p_t_10_0h, p_t_10_0m;
+  double p_t_11_0h, p_t_11_0m;
+  double p_t_12_0h, p_t_12_0m;
+  double p_t_13_0h, p_t_13_0m;
+  double p_t_14_0h, p_t_14_0m;
+  double p_t_15_0h, p_t_15_0m;
+  double p_t_16_0h, p_t_16_0m, p_t_16_0l;
+  double p_t_17_0h, p_t_17_0m, p_t_17_0l;
+  double p_t_18_0h, p_t_18_0m, p_t_18_0l;
+  double p_t_19_0h, p_t_19_0m, p_t_19_0l;
+  double p_t_20_0h, p_t_20_0m, p_t_20_0l;
+  double p_t_21_0h, p_t_21_0m, p_t_21_0l;
+  double p_t_21_1h, p_t_21_1m, p_t_21_1l;
+  double p_t_22_0h, p_t_22_0m, p_t_22_0l;
+  double p_t_23_0h, p_t_23_0m, p_t_23_0l;
+  double p_resh, p_resm, p_resl;
+  double log2yh, log2ym, log2yl;
+  double log2xh, log2xm, log2xl;
+  double logih, logim, logil;
+
+
+  p_t_1_0h = log2_130_p_coeff_13h;
+  p_t_2_0h = p_t_1_0h * xh;
+  p_t_3_0h = log2_130_p_coeff_12h + p_t_2_0h;
+  p_t_4_0h = p_t_3_0h * xh;
+  p_t_5_0h = log2_130_p_coeff_11h + p_t_4_0h;
+  p_t_6_0h = p_t_5_0h * xh;
+  p_t_7_0h = log2_130_p_coeff_10h + p_t_6_0h;
+  p_t_8_0h = p_t_7_0h * xh;
+  Add12(p_t_9_0h,p_t_9_0m,log2_130_p_coeff_9h,p_t_8_0h);
+  Mul22(&p_t_10_0h,&p_t_10_0m,p_t_9_0h,p_t_9_0m,xh,xm);
+  Add122(&p_t_11_0h,&p_t_11_0m,log2_130_p_coeff_8h,p_t_10_0h,p_t_10_0m);
+  MulAdd22(&p_t_12_0h,&p_t_12_0m,log2_130_p_coeff_7h,log2_130_p_coeff_7m,xh,xm,p_t_11_0h,p_t_11_0m);
+  MulAdd22(&p_t_13_0h,&p_t_13_0m,log2_130_p_coeff_6h,log2_130_p_coeff_6m,xh,xm,p_t_12_0h,p_t_12_0m);
+  MulAdd22(&p_t_14_0h,&p_t_14_0m,log2_130_p_coeff_5h,log2_130_p_coeff_5m,xh,xm,p_t_13_0h,p_t_13_0m);
+  Mul22(&p_t_15_0h,&p_t_15_0m,p_t_14_0h,p_t_14_0m,xh,xm);
+  Add23(&p_t_16_0h,&p_t_16_0m,&p_t_16_0l,log2_130_p_coeff_4h,log2_130_p_coeff_4m,p_t_15_0h,p_t_15_0m);
+  Mul233(&p_t_17_0h,&p_t_17_0m,&p_t_17_0l,xh,xm,p_t_16_0h,p_t_16_0m,p_t_16_0l);
+  Add233(&p_t_18_0h,&p_t_18_0m,&p_t_18_0l,log2_130_p_coeff_3h,log2_130_p_coeff_3m,p_t_17_0h,p_t_17_0m,p_t_17_0l);
+  Mul233(&p_t_19_0h,&p_t_19_0m,&p_t_19_0l,xh,xm,p_t_18_0h,p_t_18_0m,p_t_18_0l);
+  Add33(&p_t_20_0h,&p_t_20_0m,&p_t_20_0l,log2_130_p_coeff_2h,log2_130_p_coeff_2m,log2_130_p_coeff_2l,p_t_19_0h,p_t_19_0m,p_t_19_0l);
+  Mul233(&p_t_21_0h,&p_t_21_0m,&p_t_21_0l,xh,xm,p_t_20_0h,p_t_20_0m,p_t_20_0l);
+  Renormalize3(&p_t_21_1h,&p_t_21_1m,&p_t_21_1l,p_t_21_0h,p_t_21_0m,p_t_21_0l);
+  Add33(&p_t_22_0h,&p_t_22_0m,&p_t_22_0l,log2_130_p_coeff_1h,log2_130_p_coeff_1m,log2_130_p_coeff_1l,p_t_21_1h,p_t_21_1m,p_t_21_1l);
+  Mul233(&p_t_23_0h,&p_t_23_0m,&p_t_23_0l,xh,xm,p_t_22_0h,p_t_22_0m,p_t_22_0l);
+  p_resh = p_t_23_0h;
+  p_resm = p_t_23_0m;
+  p_resl = p_t_23_0l;
+
+  logih = argredtable[index].logih;
+  logim = argredtable[index].logim;
+  logil = argredtable[index].logil;
+
+  Add33(&log2yh,&log2ym,&log2yl,logih,logim,logil,p_resh,p_resm,p_resl);
+  Add133(&log2xh,&log2xm,&log2xl,ed,log2yh,log2ym,log2yl);
   
-  /* Reconstruction 
-
-     Compute log2(x) = E + p(z) + log(1/ri) + delta
-
-  */
-
-  Add33(&logiPpolyh,&logiPpolym,&logiPpolyl,logih,logil,logill,polyh,polym,polyl);
-  Add133(&loghover,&logmover,&loglover,ed,logiPpolyh,logiPpolym,logiPpolyl);
-
-  /* Final renormalize */
-
-  Renormalize3(logxh,logxm,logxl,loghover,logmover,loglover);
+  Renormalize3(resh,resm,resl,log2xh,log2xm,log2xl);
 
 }
 
-void exp2_33(int *E, double *exp2h, double *exp2m, double *exp2l, double xh, double xm, double xl) {
-  double scaledX, shiftedX, kd, rescaledK, z, tbl1h, tbl1m, tbl1l, tbl2h, tbl2m, tbl2l;
-  db_number shiftedXdb;
+/* exp2_120
+
+   Approximates 
+
+   2^H * (resh + resm + resl) = 2^(xh + xm + xl) * (1 + eps)
+
+   where ||eps|| <= 2^(-119.5)
+
+*/
+static inline void exp2_120(int *H, double *resh, double *resm, double *resl, 
+			    double xh, double xm, double xl) {
+  double xhMult2L, rhMult2L, r;
   int k, index1, index2;
+  db_number shiftedxhMult2Ldb;
+  double rh, rm, rl;
+  double t1h, t1m, t1l, t2, t3;
+  double p_t_1_0h;
+  double p_t_2_0h;
+  double p_t_3_0h;
+  double p_t_4_0h;
+  double p_t_5_0h, p_t_5_0m;
+  double p_t_6_0h, p_t_6_0m;
+  double p_t_7_0h, p_t_7_0m;
+  double p_t_8_0h, p_t_8_0m;
+  double p_t_9_0h, p_t_9_0m, p_t_9_0l;
+  double p_t_10_0h, p_t_10_0m, p_t_10_0l;
+  double p_t_11_0h, p_t_11_0m, p_t_11_0l;
+  double p_resh, p_resm, p_resl;
+  double tbl1h, tbl1m, tbl1l, tbl2h, tbl2m, tbl2l;
   double tablesh, tablesm, tablesl;
-  double twoXMh, twoXMl, twoXL;
-  double tXM1, tXM2h, tXM2l;
-  double twoXMXLh, twoXMXLl, fullTwoXMXLh, fullTwoXMXLm, fullTwoXMXLl;
-  double tablesAndLowh, tablesAndLowm, tablesAndLowl;
+  double exp2h, exp2m, exp2l;
 
-  double highPoly;
+  /* Argument reduction 
 
-  double t7h, t7m;
-  double t8h, t8m;
-  double t9h, t9m;
-  double t10h, t10m;
-  double t11h, t11m, t11l;
-  double t12h, t12m, t12l;
-  double t13h, t13m, t13l;
-  double t14h, t14m, t14l;
-  double t15h, t15m, t15l;
+     Produce exactly
 
-  double polyh, polym, polyl;
-
-  double exp2hover, exp2mover, exp2lover;
-
-
-  /* We compute 2^(xh + xm + xl) as
-
-     2^(xh + xm + xl) = 2^xh * 2^xm * 2^xl 
-     
-     We approximate 2^xm with abs(xm) <= 2^(-42) as 
-     
-     1 + x * ((c1h + c1l) + x * c2h) 
-
-     We approximate 2^xl with abs(wl) <= 2^(-95) as
-     
-     1 + x * c1h
-
-     We compute 2^xh as 
-
-     2^xh = 2^(E + i1/64 + i2/4096 + z) 
-          = 2^E * 2^(i1/64) * 2^(i2/4096) * 2^z 
-	  = 2^E * tbl1 * tbl2 * p(z) * (1 + eps2)
-
-     where abs(eps2) <= 2^(-67)
-          
-  */
-
-  /* Handling of small (subnormal) values on input 
-
-     For abs(xh) < 2^(-54) double(2^(xh + xm + xl)) is 1.0 (+/- 1ulp depending on the rounding mode)
-
-     We check for this bound and set exp2h = 1.0, exp2m = 0.0, exp2l = 0.0 and E = 0 in this case
+     2^H * 2^(i1/2^8) * 2^(i2/2^13) * 2^(rh + rm + rl)
 
   */
 
-  if (ABS(xh) < TWOM54) {
-    *exp2h = 1.0;
-    *exp2m = 0.0;
-    *exp2l = 0.0;
-    *E = 0;
-    return;
-  }
+  xhMult2L = xh * two13;
+  shiftedxhMult2Ldb.d = shiftConst + xhMult2L;
+  rhMult2L = xhMult2L - (shiftedxhMult2Ldb.d - shiftConst);
+  r = rhMult2L * twoM13;
+  k = shiftedxhMult2Ldb.i[LO];
+  *H = k >> 13;
+  index1 = k & INDEXMASK1;
+  index2 = (k & INDEXMASK2) >> 5;
+  Add12Cond(t1h, t2, r, xm);
+  Add12Cond(t1m, t1l, t2, xl);
+  Add12(rh, t3, t1h, t1m);
+  Add12(rm, rl, t3, t1l);
 
-  /* We start by computing a floating-point and integer representation of the 
-     integer nearest to (2^(12) * xh) 
-     Since the integer is representable on at most 23 bits, we can use the 
-     shift method 
-  */
-  
-  scaledX = SCALE * xh;
-  shiftedX = scaledX + SHIFTCONSTANT;
-  kd = shiftedX - SHIFTCONSTANT;
-  rescaledK = RESCALE * kd;
-  z = xh - rescaledK;
-  shiftedXdb.d = shiftedX;
-  k = shiftedXdb.i[LO];
-  *E = k >> 12;
-  index1 = (k & 0xfc0) >> 6;
-  index2 = k & 0x3f;
+  /* Polynomial approximation of 2^(rh + rm + rl) */
 
-  /* Table reads */
-  
+  p_t_1_0h = exp2_120_p_coeff_6h;
+  p_t_2_0h = p_t_1_0h * rh;
+  p_t_3_0h = exp2_120_p_coeff_5h + p_t_2_0h;
+  p_t_4_0h = p_t_3_0h * rh;
+  Add12(p_t_5_0h,p_t_5_0m,exp2_120_p_coeff_4h,p_t_4_0h);
+  MulAdd22(&p_t_6_0h,&p_t_6_0m,exp2_120_p_coeff_3h,exp2_120_p_coeff_3m,rh,rm,p_t_5_0h,p_t_5_0m);
+  MulAdd22(&p_t_7_0h,&p_t_7_0m,exp2_120_p_coeff_2h,exp2_120_p_coeff_2m,rh,rm,p_t_6_0h,p_t_6_0m);
+  Mul22(&p_t_8_0h,&p_t_8_0m,p_t_7_0h,p_t_7_0m,rh,rm);
+  Add23(&p_t_9_0h,&p_t_9_0m,&p_t_9_0l,exp2_120_p_coeff_1h,exp2_120_p_coeff_1m,p_t_8_0h,p_t_8_0m);
+  Mul33(&p_t_10_0h,&p_t_10_0m,&p_t_10_0l,rh,rm,rl,p_t_9_0h,p_t_9_0m,p_t_9_0l);
+  Add133(&p_t_11_0h,&p_t_11_0m,&p_t_11_0l,exp2_120_p_coeff_0h,p_t_10_0h,p_t_10_0m,p_t_10_0l);
+  Renormalize3(&p_resh,&p_resm,&p_resl,p_t_11_0h,p_t_11_0m,p_t_11_0l);
+
+  /* Table access */
+
   tbl1h = twoPowerIndex1[index1].hi;
-  tbl1m = twoPowerIndex1[index1].lo;
-  tbl1l = twoPowerIndex1[index1].lolo;
-  tbl2h = twoPowerIndex2[index2].hi;
-  tbl2m = twoPowerIndex2[index2].lo;
-  tbl2l = twoPowerIndex2[index2].lolo;
-
-  /* Polynomial approximation of 2^xm - 1 and 2^xl - 1 */
-
-  tXM1 =  exp2XMcoeff2h * xm;
-  Add212(&tXM2h,&tXM2l,exp2XMcoeff1h,exp2XMcoeff1l,tXM1);
-  Mul122(&twoXMh,&twoXMl,xm,tXM2h,tXM2l);
-
-  twoXL = xl * exp2XLcoeff1h;
-
-  /* Approximate 2^(xm + xl) - 1 as
-
-     2^(xm + xl) - 1 = ((2^xm - 1) + 1) * ((2^xl - 1) + 1) - 1
-                     = (2^xm - 1) + (2^xl - 1) + (2^xm - 1) * (2^xl - 1)
-	             = (2^xm - 1) + (2^xl - 1) + delta
-  */
-
-  Add212(&twoXMXLh,&twoXMXLl,twoXMh,twoXMl,twoXL);
-
-  /* Compute 2^(xm + xl) as 1 + (2^(xm + xl) - 1) */
-
-  Renormalize3(&fullTwoXMXLh,&fullTwoXMXLm,&fullTwoXMXLl,1.0,twoXMXLh,twoXMXLl);
-
-  /* Table reconstruction: tables = tbl1 * tbl2 + delta */
-
-  Mul33(&tablesh,&tablesm,&tablesl,tbl1h,tbl1m,tbl1l,tbl2h,tbl2m,tbl2l);
-
-  /* Produce tbl1 * tbl2 * 2^(xm + xl) */
-
-  Mul33(&tablesAndLowh,&tablesAndLowm,&tablesAndLowl,tablesh,tablesm,tablesl,fullTwoXMXLh,fullTwoXMXLm,fullTwoXMXLl);
-
-  /* Polynomial approximation of p(z) = 1 + (2^z - 1) + delta */
-
-#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-  highPoly = z * FMA(FMA(exp2XHcoeff8h,z,exp2XHcoeff7h),z,exp2XHcoeff6h);
-#else
-  highPoly = z * (exp2XHcoeff6h + z * (exp2XHcoeff7h + z * exp2XHcoeff8h));
-#endif
-
-  Add212(&t7h,&t7m,exp2XHcoeff5h,exp2XHcoeff5m,highPoly);
-  MulAdd212(&t8h,&t8m,exp2XHcoeff4h,exp2XHcoeff4m,z,t7h,t7m);
-  MulAdd212(&t9h,&t9m,exp2XHcoeff3h,exp2XHcoeff3m,z,t8h,t8m);
-  Mul122(&t10h,&t10m,z,t9h,t9m);
-  Add23(&t11h,&t11m,&t11l,exp2XHcoeff2h,exp2XHcoeff2m,t10h,t10m);
-  Mul133(&t12h,&t12m,&t12l,z,t11h,t11m,t11l);
-  Add33(&t13h,&t13m,&t13l,exp2XHcoeff1h,exp2XHcoeff1m,exp2XHcoeff1l,t12h,t12m,t12l);
-  Mul133(&t14h,&t14m,&t14l,z,t13h,t13m,t13l);
-  Renormalize3(&t15h,&t15m,&t15l,t14h,t14m,t14l);
-
-  Add133(&polyh,&polym,&polyl,1.0,t15h,t15m,t15l);
-
-  /* Final reconstruction: 
-
-     Compute 2^xh * 2^(xm + xl) as 
-
-     2^E * 2^z * (tbl1 * tbl2 * 2^(xm + xl))
-
-  */
-
-  Mul33(&exp2hover,&exp2mover,&exp2lover,tablesAndLowh,tablesAndLowm,tablesAndLowl,polyh,polym,polyl);
-
-  /* Final renormalization */
-
-  Renormalize3(exp2h,exp2m,exp2l,exp2hover,exp2mover,exp2lover);
-
-}
-
-
-void pow113(int *E, double *powh, double *powm, double *powl, double x, double y) {
-  double logxh, logxm, logxl;
-  double ylogxh, ylogxm, ylogxl;
-
-#if DEBUG_ACCURATE
-  printf("Accurate phase on:\n");
-  printHexa("x",x);
-  printHexa("y",y);
-#endif
-
-
-#if EVAL_PERF
-  crlibm_second_step_taken++;
-#endif
-
-  /* Approximate x^y as 2^E * (powh + powm + powl) by 
-
-     x^y = 2^(y * log2(x)) 
-
-  */
-
-  /* Compute log2(x) */
-  log2_13(&logxh,&logxm,&logxl,x);
-
-  /* Multiply by y */
-  Mul133(&ylogxh,&ylogxm,&ylogxl,y,logxh,logxm,logxl);
-
-  /* Compute 2^(y * log2(x)) */
-  exp2_33(E,powh,powm,powl,ylogxh,ylogxm,ylogxl);
-}
-
-
-
-void log2_12(double* logxh, double* logxl, double x) {
-  int E, index;
-  db_number xdb;
-  double ed, ri, logih, logil, y, yrih, yril, th, zh, zl;
-  double t11h, t11m, t12h, t12m, t13h, t13m, t14h, t14m;
-  double highPoly, logManth, logMantl, t15, t16, t17;
-  
-  E=0; 
-  xdb.d=x;
-  
-  /* Filter cases */
-  if (xdb.i[HI] < 0x00100000){        /* x < 2^(-1022)    */
-    /* Subnormal number */
-    E = -52; 		
-    xdb.d *= TWO52; 	  /* make x a normal number    */ 
-  }
-  
-  /* Extract exponent and mantissa 
-     Do range reduction,
-     yielding to E holding the exponent and
-     y the mantissa between sqrt(2)/2 and sqrt(2)
-  */
-  E += (xdb.i[HI]>>20)-1023;             /* extract the exponent */
-  index = (xdb.i[HI] & 0x000fffff);
-  xdb.i[HI] =  index | 0x3ff00000;	/* do exponent = 0 */
-  index = (index + (1<<(12))) >> (13);
-  
-  /* reduce  such that sqrt(2)/2 < xdb.d < sqrt(2) */
-  if (index >= 53){ /* corresponds to xdb>sqrt(2)*/
-    xdb.i[HI] -= 0x00100000; 
-    E++;
-  }
-  y = xdb.d;
-  index = index & 0x7f;
-  /* Cast integer E into double ed for addition later */
-  ed = (double) E;
-  
-  /* 
-     Read tables:
-     Read one float for ri
-     Read the first two doubles for -log(r_i) 
-     
-     Organization of the table:
-     
-     one struct entry per index, the struct entry containing 
-     r, logih and logil in this order
-  */
-  
-  
-  ri = argredtable[index].ri;
-  /* 
-     Actually we don't need the logarithm entries now
-     Move the following two lines to the eventual reconstruction
-     As long as we don't have any if in the following code, we can overlap 
-     memory access with calculations 
-  */
-  logih = argredtable[index].logih;
-  logil = argredtable[index].logil;
-  
-  /* Do range reduction:
-     
-     zh + zl = y * ri - 1.0 correctly
-  
-     Correctness is assured by use of Mul12 and Add12
-     even if we don't force ri to have its' LSBs set to zero
-  
-     Discard zl for higher monome degrees
-  */
-  
-  Mul12(&yrih, &yril, y, ri);
-  th = yrih - 1.0; 
-  Add12Cond(zh, zl, th, yril); 
-  
-  /* Polynomial approximation */
-
-
-#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-  highPoly = zh * FMA(FMA(FMA(FMA(log2coeff8,zh,log2coeff7),zh,log2coeff6),zh,log2coeff5),zh,log2coeff4);
-#else
-  highPoly = zh * (log2coeff4 + zh * (log2coeff5 + zh * (log2coeff6 + zh * (log2coeff7 + zh * log2coeff8))));
-#endif
-
-  Add12(t11h,t11m,log2coeff3,highPoly);
-  MulAdd22(&t12h,&t12m,log2coeff2h,log2coeff2l,zh,zl,t11h,t11m);
-  MulAdd22(&t13h,&t13m,log2coeff1h,log2coeff1l,zh,zl,t12h,t12m);
-  Mul22(&t14h,&t14m,t13h,t13m,zh,zl);
-  
-  /* Reconstruction 
-
-     Compute log2(x) = E + p(z) + log(1/ri) + delta
-
-  */
-
-  Add22Cond(&logManth,&logMantl,t14h,t14m,logih,logil);
-  Add12Cond(t15,t16,ed,logManth);
-  t17 = t16 + logMantl;
-  Add12(*logxh,*logxl,t15,t17);
-
-}
-
-void exp2_22(int *E, double* exp2h, double* exp2l, double xh, double xl) {
-  double scaledX, shiftedX, kd, rescaledK, z, tbl1h, tbl1l, tbl2h, tbl2l, q;
-  double log2MultXl, qPlusLog2MultXl, qMultLog2MultXl, highPoly, polyh, polyl;
-  double tablesh, tablesl;
-  db_number shiftedXdb;
-  int k, index1, index2;
-
-  /* We compute 2^(xh + xl) as
-
-     2^(xh + xl) = 2^xh * 2^xl = 2^xh * (1 + double(log(2)) * xl) * (1 + eps1) 
-     
-     where abs(eps1) < 2^(-86) because 
-
-     abs(xh + xl) <= 2^(10) thus abs(xl) <= 2^(-42) 
-
-     We compute 2^xh as 
-
-     2^xh = 2^(E + i1/64 + i2/4096 + z) 
-          = 2^E * 2^(i1/64) * 2^(i2/4096) * 2^z 
-	  = 2^E * tbl1 * tbl2 * p(z) * (1 + eps2)
-
-     where abs(eps2) <= 2^(-67)
-          
-     We have p(z) = 1 + q(z) 
-     where q(z) = z * (c1 + z * (c2 + z * (c3 + z * c4)))
-
-     Thus
-
-     2^(xh + xl) = 2^E * tbl1 * tbl2 * (1 + q(z) + double(log(2)) * xl + q(z) * double(log(2)) * xl) * (1 + eps)
-     
-
-  */
-
-  /* Overflow and underflow handling 
-
-     Detailed analysis shows that 2^(xh + xl) surely overflows for xh >= 1024 and 
-     that it does surely not overflow for xh + xl = 1024 - 1 * ulp(1023) + 1/2 * ulp(1023)
-     Thus it suffices to check that xh <= 1024 - 1 * ulp(1023), i.e. xh < 1024
-
-     Analysis shows further that 2^(xh + xl) rounds (in RN mode) to 0 for xh <= -1075 and
-     that it does round to the least subnormal for xh + xl = -1075 + 1 * ulp(1075) - 1/2 * ulp(1075)
-     Thus it suffices to check that xh >= -1075 + 1 * ulp(1075), i.e. xh > -1075
-    
-     On overflow, we set exp2h = 1, exp2l = 0 and E = 1025
-     On underflow, we set exp2h = 0, exp2l = 0 and E = -1076
-
-     Remark: we do not handle special cases like Inf and NaN in input.
-
-  */
-
-  if (xh > 1024.0) {
-    *exp2h = 1.0;
-    *exp2l = 0.0;
-    *E = 1025;
-    return;
-  }
-
-  if (xh < -1075.0) {
-    *exp2h = 0.0;
-    *exp2l = 0.0;
-    *E = -1076;
-    return;
-  }
-
-  /* Handling of small (subnormal) values on input 
-
-     For abs(xh) < 2^(-54) 2^(xh + xl) is 1.0 (+/- 1ulp depending on the rounding mode)
-
-     We check for this bound and set exp2h = 1.0, exp2l = 0.0 and E = 0 in this case
-
-  */
-
-  if (ABS(xh) < TWOM54) {
-    *exp2h = 1.0;
-    *exp2l = 0.0;
-    *E = 0;
-    return;
-  }
-
-
-  /* We start by computing a floating-point and integer representation of the 
-     integer nearest to (2^(12) * xh) 
-     Since the integer is representable on at most 23 bits, we can use the 
-     shift method 
-  */
-
-  scaledX = SCALE * xh;
-  shiftedX = scaledX + SHIFTCONSTANT;
-  kd = shiftedX - SHIFTCONSTANT;
-  rescaledK = RESCALE * kd;
-  z = xh - rescaledK;
-  shiftedXdb.d = shiftedX;
-  k = shiftedXdb.i[LO];
-  *E = k >> 12;
-  index1 = (k & 0xfc0) >> 6;
-  index2 = k & 0x3f;
-
-  /* Table reads */
-  
-  tbl1h = twoPowerIndex1[index1].hi;
+  tbl1m = twoPowerIndex1[index1].mi;
   tbl1l = twoPowerIndex1[index1].lo;
   tbl2h = twoPowerIndex2[index2].hi;
+  tbl2m = twoPowerIndex2[index2].mi;
   tbl2l = twoPowerIndex2[index2].lo;
-
-  /* Polynomial approximation */
-
-#if defined(PROCESSOR_HAS_FMA) && !defined(AVOID_FMA)
-  q = z * FMA(FMA(FMA(exp2coeff4,z,exp2coeff3),z,exp2coeff2),z,exp2coeff1);
-#else
-  q = z * (exp2coeff1 + z * (exp2coeff2 + z * (exp2coeff3 + z * exp2coeff4)));
-#endif
-  
-  log2MultXl = LOG2 * xl;
-
-  qPlusLog2MultXl = q + log2MultXl;
-  qMultLog2MultXl = q * log2MultXl;
-  highPoly = qPlusLog2MultXl + qMultLog2MultXl;
-
-  Add12(polyh,polyl,1.0,highPoly);
 
   /* Reconstruction */
 
-  Mul22(&tablesh,&tablesl,tbl1h,tbl1l,tbl2h,tbl2l);
-  Mul22(exp2h,exp2l,tablesh,tablesl,polyh,polyl);
+  Mul33(&tablesh,&tablesm,&tablesl,tbl1h,tbl1m,tbl1l,tbl2h,tbl2m,tbl2l);
+  Mul33(&exp2h,&exp2m,&exp2l,tablesh,tablesm,tablesl,p_resh,p_resm,p_resl);
 
+  Renormalize3(resh,resm,resl,exp2h,exp2m,exp2l);
+  
+}
+
+/* exp2_82
+
+   Approximates 
+
+   resh + resl = 2^(xh + xl) * (1 + eps)
+
+   where ||eps|| <= 2^(-82.5)
+
+*/
+static inline void exp2_82(double *resh, double *resl, 
+			   double xh, double xl) {
+  double xhMult2L, rhMult2L, r;
+  int k, index1, index2, H;
+  db_number shiftedxhMult2Ldb, scaledb;
+  double rh, rm;
+  double p_t_1_0h;
+  double p_t_2_0h;
+  double p_t_3_0h;
+  double p_t_4_0h;
+  double p_t_5_0h, p_t_5_0m;
+  double p_t_6_0h, p_t_6_0m;
+  double p_t_7_0h, p_t_7_0m;
+  double p_t_8_0h, p_t_8_0m;
+  double p_resh, p_resm;
+  double tbl1h, tbl1m, tbl2h, tbl2m;
+  double tablesh, tablesm;
+  double exp2h, exp2m;
+
+  /* Argument reduction 
+
+     Produce exactly
+
+     2^H * 2^(i1/2^8) * 2^(i2/2^13) * 2^(rh + rl)
+
+  */
+
+  xhMult2L = xh * two13;
+  shiftedxhMult2Ldb.d = shiftConst + xhMult2L;
+  rhMult2L = xhMult2L - (shiftedxhMult2Ldb.d - shiftConst);
+  r = rhMult2L * twoM13;
+  k = shiftedxhMult2Ldb.i[LO];
+  H = k >> 13;
+  index1 = k & INDEXMASK1;
+  index2 = (k & INDEXMASK2) >> 5;
+  Add12Cond(rh,rm,r,xl);
+
+  /* Polynomial approximation */
+  p_t_1_0h = exp2_82_coeff_4h;
+  p_t_2_0h = p_t_1_0h * rh;
+  p_t_3_0h = exp2_82_coeff_3h + p_t_2_0h;
+  p_t_4_0h = p_t_3_0h * rh;
+  Add12(p_t_5_0h,p_t_5_0m,exp2_82_coeff_2h,p_t_4_0h);
+  MulAdd22(&p_t_6_0h,&p_t_6_0m,exp2_82_coeff_1h,exp2_82_coeff_1m,rh,rm,p_t_5_0h,p_t_5_0m);
+  Mul22(&p_t_7_0h,&p_t_7_0m,p_t_6_0h,p_t_6_0m,rh,rm);
+  Add122(&p_t_8_0h,&p_t_8_0m,exp2_82_coeff_0h,p_t_7_0h,p_t_7_0m);
+  p_resh = p_t_8_0h; p_resm = p_t_8_0m;
+
+  /* Table access */
+
+  tbl1h = twoPowerIndex1[index1].hi;
+  tbl1m = twoPowerIndex1[index1].mi;
+  tbl2h = twoPowerIndex2[index2].hi;
+  tbl2m = twoPowerIndex2[index2].mi;
+  
+  /* Reconstruction */
+  Mul22(&tablesh,&tablesm,tbl1h,tbl1m,tbl2h,tbl2m);
+  Mul22(&exp2h,&exp2m,tablesh,tablesm,p_resh,p_resm);  
+
+  scaledb.i[HI] = (H + 1023) << 20;
+  scaledb.i[LO] = 0;
+  
+  *resh = scaledb.d * exp2h;
+  *resl = scaledb.d * exp2m;
 }
 
 
-double exp2_30bits(double x) {
-  double nd, z;
-  db_number shiftedXdb, twoPowNdb;
-  int n;
-  double p67, p45, p23, p01, p47, p03, p, zSq, zFour;
-  double exp2res;
+/* pow_120
 
-  /* Compute 2^x * (1 + eps) with abs(eps) <= 2^(-30) 
+   Approximates 
+
+   2^H * (resh + resm + resl) = 2^(y * (ed + log2(1 + (zh + zm)) + log2(r[index]))) * (1 + eps)
+
+   where ||eps|| <= 2^(-118.5) if -1075 <= y * (ed + log2(1 + (zh + zm)) + log2(r[index])) <= 1024
+
+   Approximates further
+
+   log2xh + log2xm + logxm = (ed + log2(1 + (zh + zm)) + log2(r[index])) * (1 + eps2) 
+
+   where ||eps2|| <= 2^(-130)
+
+*/
+void pow_120(int *H, double *resh, double *resm, double *resl, 
+	     double *log2xh, double *log2xm, double *log2xl,
+	     double y, int index, double ed, double zh, double zm) {
+  double ylog2xh, ylog2xm, ylog2xl;
+
+  /* Compute log2(x) */
+  log2_130(log2xh,log2xm,log2xl,index,ed,zh,zm); 
+
+  /* Compute y * log2(x) */
+  Mul133(&ylog2xh,&ylog2xm,&ylog2xl,y,*log2xh,*log2xm,*log2xl);
+
+  /* Compute 2^(y * log2(x)) */
+  exp2_120(H,resh,resm,resl,ylog2xh,ylog2xm,ylog2xl);
+  
+}
+
+/* pow_round_and_check_rn 
+
+   Checks whether 
+
+   2^H * (powh + powm + powl) 
+
+   which is an approximate to x^y with a relative error or less than 2^(-118.5),
+   can be rounded correctly to double precision in round-to-nearest-ties-to-even 
+   mode or whether the Table Maker's Dilemma occurs or the case is exact.
+
+   Returns 1 if rounding is possible and affects pow with the rounding
+   Returns 0 if rounding is not possible or if the case is exact
+
+   If the returned value is 0, it affects
+
+   G, kh, kl 
+
+   such that 
+
+   2^G * (kh + kl) 
+   
+   is an approximate to x^y with an relative error of 2^(-118) 
+
+   and such that rounding 
+
+   2^G * kh 
+
+   to double precision is an exact operation.
+
+*/
+
+static inline int pow_round_and_check_rn(double *pow, 
+					 int H, double powh, double powm, double powl,
+					 int *G, double *kh, double *kl) {
+  double th, tm, tl;
+  int K, K1, K2;
+  db_number twodb, two2db;
+  double twoH1074powh, twoH1074powm, shiftedpowh, delta;
+  double scaledth;
+  double t1m, t1l;
+  
+  /* We start by bringing H and powh + powm + powl 
+     to a form such that
+
+     1 <= powh + powm + powl < 2
+  */
+  if ((powh < 1.0) ||
+      ((powh == 1.0) && (powm < 0.0))) {
+    powh *= 2.0;
+    powm *= 2.0;
+    powl *= 2.0;
+    H--;
+  }
+  if ((powh > 2.0) ||
+      ((powh == 2.0) && (powm >= 0.0))) {
+    powh *= 0.5;
+    powm *= 0.5;
+    powl *= 0.5;
+    H++;
+  }
+  
+  /* Check now whether we have normal or subnormal rounding 
+
+     The rounding is subnormal iff H <= -1023
+
+     In both cases, we bring H, powh + powm + powl to a form
+
+     2^K * (th + tm + tl) = 2^H * (powh + powm + powm) * (1 + eps)
+
+     where 
      
-     x is supposed to be in the range 2^(-53) <= x <= 32
+     (i)   |eps| <= 2^(-118 - 53) = 2^(-171)
+     (ii)  2^(-K) * ulp(2^K * th) = 1
+     (iii) the rounding of 2^K * th to double precision is exact
+           (or produces +inf)
 
-     We do no special case handling for NaN etc.
+  */
+  if (H <= -1023) {
+    /* Subnormal rounding 
 
-     Compute 
+       In this case, we can neglect powl
+       because the rounding bit of the RN rounding 
+       is in powh
 
-     2^x = 2^(n + z) = 2^n * 2^z = 2^n * p(z) * (1 + eps) 
+    */
+    twodb.i[HI] = (H + (1074 + 1023)) << 20;
+    twodb.i[LO] = 0;
+    
+    twoH1074powh = twodb.d * powh;
+    twoH1074powm = twodb.d * powm;
+    
+    shiftedpowh = two52 + twoH1074powh;
+    th = shiftedpowh - two52;
+    delta = twoH1074powh - th;
+    
+    Add12Cond(tm,tl,delta,twoH1074powm);
 
-     with n the integer nearest to x
+    K = -1074;
+  } else {
+    /* Normal rounding 
+       
+       In this case, we have exactly:
 
-     p(z) is of degree 7, we perform an Estrin evaluation
+       2^K * (th + tm + tl) = 2^H * (powh + powm + powm)
 
-     First compute n and z 
-     Compute n with the shift method as a double and as an int.
-     z = x - nd is exact by Sterbenz' lemma.
+    */
+    th = powh * two52;
+    tm = powm * two52;
+    tl = powl * two52;
+    K = H - 52;
+  }
+
+  /* Return results for exactness case test */
+  *G = K;
+  *kh = th;
+  *kl = tm;
+
+  /* Compute now 
+
+     delta = ABS(0.5 - ABS(tm + tl)) * (1 + eps)
+
+     where |eps| <= 2^(-53)
+
+     The addition 0.5 + (-ABS(tm)) is exact by Sterbenz' lemma
+
+  */
+  if (tm > 0.0) {
+    t1m = - tm;
+    t1l = - tl;
+  } else {
+    t1m = tm;
+    t1l = tl;
+  }
+  delta = ABS((0.5 + t1m) - t1l);
+ 
+  /* We cannot decide the rounding or have an exact case 
+     iff 
+     
+     delta <= 2^(-118) * th
+     
+     We can see this in the following drawing:
+
+     result = round(
+
+            +-----------------+------+----------...----+------------
+     2^K *  | th              | +/-1 | 0               | delta        )
+            +-----------------+------+----------...----+------------
+            | <------------- 118 bits -------------> |
 
   */
 
-  shiftedXdb.d = x + SHIFTCONSTANT;
-  nd = shiftedXdb.d - SHIFTCONSTANT;
-  n = shiftedXdb.i[LO] & 0x3ff;
-  z = x - nd;
+  scaledth = th * PRECISEROUNDCST;
 
-  /* Perform Estrin */
-  
-  p01 = exp2InaccuCoeff0 + exp2InaccuCoeff1 * z;
-  p23 = exp2InaccuCoeff2 + exp2InaccuCoeff3 * z;
-  p45 = exp2InaccuCoeff4 + exp2InaccuCoeff5 * z;
-  p67 = exp2InaccuCoeff6 + exp2InaccuCoeff7 * z;
-  zSq = z * z;
+  if (delta > scaledth) {
+    /* We can round exactly to nearest 
+       
+       We must correct th to the rounding of 
+       th + tm + tl iff tm is greater in 
+       absolute value than 0.5 
+       or if tm is equal to 0.5 in absolute value and 
+       the sign of tm and tl 
+       is equal:
 
-  p47 = p45 + zSq * p67;
-  p03 = p01 + zSq * p23;
-  zFour = zSq * zSq;
+                |                 |
+       ...------|--------|--------|------...
+                |------->-->      |
+                ^   tm    tl      ^
+                th                round(th + tm + tl)
 
-  p = p03 + zFour * p47;
+       If tm is negative, we must correct th by decreasing it
+       otherwise we must correct th by increasing it.
 
-  /* Compute 2^n */
-  twoPowNdb.i[HI] = (n + 1023) << 20;
-  twoPowNdb.i[LO] = 0;
-  
-  /* Reconstruct */
+    */
+    if (ABS(tm) >= 0.5) {
+      if (ABS(tm) == 0.5) {
+	if (tm < 0.0) {
+	  if (tl < 0.0) {
+	    /* The same sign of tm and tl, tm is negative */
+	    th -= 1.0;
+	  }
+	} else {
+	  if (tl > 0.0) {
+	    /* The same sign of tm and tl, tm is positive */
+	    th += 1.0;
+	  }
+	}
+      } else {
+	/* tm > 0.5 */
+	if (tm < 0.0) {
+	  th -= 1.0;
+	} else {
+	  th += 1.0;
+	}
+      }
+    }
 
-  exp2res = twoPowNdb.d * p;
- 
-  return exp2res;
+    /* Perform now the multiplication 2^K * th 
+       
+       Note that we must be able to produce 
+      
+       (i)   0 if we have total underflow
+       (ii)  a subnormal result 
+       (iii) a normal result
+       (iv)  +inf if we have overflow in a TMD case
+
+       We produce K1 + K2 = K with K1 = floor(K/2)
+       and multiply in two steps.
+
+    */
+    K1 = K >> 1;
+    K2 = K - K1;
+
+    twodb.i[HI] = (K1 + 1023) << 20;
+    twodb.i[LO] = 0;
+    two2db.i[HI] = (K2 + 1023) << 20;
+    two2db.i[LO] = 0;
+    
+    *pow = two2db.d * (twodb.d * th);
+    
+    return 1;
+  } 
+  /* Otherwise we return 0 because we cannot round */
+
+  return 0;
 }
 
 
-int checkForExactCase(double x, double y, int H, double kh, double kl, double logx) {
-  int32_t E, F, G;
-  db_number xdb, ydb, tmpdb, khdb, tempdb;
-  int d, i;
-  int32_t tempInt;
-  double m, n, r;
-  double Ed, Gd, eMyh, eMyl;
-  double khn, kln;
-  double j, z, ph, pl, zh, zl, qh, ql;
-  int tt;
-  double yEdh, yEdl;
-  double delt, delt2;
-  double logm, tFMlm, jp, shiftedJp, s, th, tl;
-  double shiftedyEdh, yEdhI;
-  double h, twoPowFMultn;
+/* pow_exact_case 
 
-  /* Preconditions: 
+   Checks whether x^y is an exact or half-ulp case for rounding 
+   into double precision.
 
-     (i)   x is positive and different from 0
-     (ii)  y is different from 0
-     (iii) y is different from 1
-     (iv)  y is not subnormal
-     (v)   x^y does not overflow nor is flushed to 0
-     (vi)  kh + kl can be written on at most 54 bits
-     (vii) kh is not subnormal
-  
+   This means the procedure checks whether x^y can be written on
+   not more than 54 bits.
+
+   The tests are made using x, y and the approximates
+
+   log2xh + log2xm + log2xl = log2(x) * (1 + eps1) 
+
+   where ||eps1|| <= 2^(-130)
+
+   and
+
+   2^G * (kh + kl) = x^y * (1 + eps2)
+
+   where ||eps2|| <= 2^(-118.5),
+   where rounding 2^G * kh to double precision is exact,
+   where the evaluated sum kh + kl holds on at most 54 bits and
+   where 2^(-2) <= kh + kl <= 2^(54).
+
+   Returns 1 if the case is exact or half-ulp
+   Returns 0 otherwise
+
+   If returning 1, affects pow with 2^G * (kh + kl) rounded to double precision
+
+*/
+int pow_exact_case(double *pow,
+		   double x, double y,
+		   double log2xh, double log2xm, double log2xl,
+		   int G, double kh, double kl) {
+  db_number xdb, ydb, shiftedEydb, scaledb, tempdb;
+  int E, F, EyInt;
+  double n, ed, yh, yl, m, Eyh, Eyl, nearestintEy, Ey;
+  double sh, sl;
+  double log2mh, log2ml; 
+  double t1h, t1l, t2; 
+  double Flog2mh, Flog2ml;
+  double delta;
+  double japproxh, japproxl;
+  double nearestintj;
+
+  /* For testing whether x^y is an exact or half-ulp case,
+     we have two main cases: 
+
+     (i)  x is an integer power of 2
+     (ii) x is not an integer power of 2
+
+     We start by testing if x is an integer power of 2.
+
   */
 
-  /* Copy x and y to db_numbers for bit manipulations */
+  xdb.d = x;
+  if ((xdb.i[HI] & 0xfff00000) == 0) {
+    /* x is subnormal, scale by 2^52 */
+    xdb.d *= 0.4503599627370496e16;
+  }
+  if (((xdb.i[HI] & 0x000fffff) | xdb.i[LO]) == 0) {
+    /* x is an integer power of 2 
+
+       x^y is exact or midpoint iff log2(x) * y is integer
+
+       Since we know that x is an integer power of 2, 
+       log2xh is equal to this integer. Since the exponent
+       of the double precision number is bounded by the
+       exponent range, we know that log2xh is integer and
+       bounded by 2^11. It is therefore possible to
+       split y into two parts of 21 and 32 bits, to perform
+       the multiplication componentwise. Since the result
+       is bounded by 2^11, it suffices to compute the 
+       nearest integer to the higher word product, and to
+       compare the rounding difference to the low word product.
+       This splitting is faster than the usual Dekker splitting.
+
+    */
+    ydb.d = y;
+    ydb.i[LO] = 0;
+    yh = ydb.d;
+    yl = y - yh;
+    Eyh = log2xh * yh;
+    Eyl = log2xh * yl;
+    delta = ((0.6755399441055744e16 + Eyh) - 0.6755399441055744e16) - Eyh; /* addition rounds, subtractions exact */
+    
+    if (delta != Eyl) return 0;
+
+    /* The case is exact, affect pow with 2^G * (kh + kl) 
+       rounded to nearest in double precision
+
+       Since kh + kl holds on at most 54 bits, 2^G * kh produces
+       never any rounding error and kh and kl are not overlapping, 
+       2^G * kh is equal to the rounding if 
+       (i)  kl is equal to 0
+       (ii) kl is not equal to 0 and the mantissa of 2^G * kh is even
+
+       If in condition (ii), kl is not equal to 0 and the mantissa of 
+       2^G * kh is not even, we correct it depending on the sign of kl.
+       
+    */
+    tempdb.i[HI] = (G + 1023) << 20;
+    tempdb.i[LO] = 0;
+    tempdb.d *= kh;
+    if ((kl != 0.0) && ((tempdb.i[LO] & 1) != 0)) {
+      /* We must correct the rounding to the rounding to nearest ties to even */
+      if (kl > 0.0) {
+	tempdb.l++;
+      } else {
+	tempdb.l++;
+      }
+    }
+    *pow = tempdb.d;
+    return 1;
+  }
+
+  /* x is not an integer power of 2 
+     
+     We have clearly an inexact case if y is negative
+     or if y is greater than 35
+
+  */
+  
+  if ((y < 0.0) || (y > 35.0)) return 0;
+
+  /* Decompose now y into 
+
+     y = 2^F * n 
+
+     Checking F and n, we can then already decide
+     some cases using the fact that the worst-case
+     accuracy for x^n, n in [|0;35|], is less (in bits) 
+     than the accuracy of the approximation of x^y we have
+     already in 2^G * (kh + kl).
+
+  */
+  decompose(&n,&F,y);
+
+  if ((n > 35.0) || (F < -5)) return 0;
+  if (F >= 0) {
+    /* Here, F >= 0 and 2^F * n = y <= 35. 
+       Thus y is integer and less than or equal to 35.
+       Using the worst-case search argument, we have 
+       an exact or half-ulp case.
+    */
+
+    /* The case is exact, affect pow with 2^G * (kh + kl) 
+       rounded to nearest in double precision
+
+       Since kh + kl holds on at most 54 bits, 2^G * kh produces
+       never any rounding error and kh and kl are not overlapping, 
+       2^G * kh is equal to the rounding if 
+       (i)  kl is equal to 0
+       (ii) kl is not equal to 0 and the mantissa of 2^G * kh is even
+
+       If in condition (ii), kl is not equal to 0 and the mantissa of 
+       2^G * kh is not even, we correct it depending on the sign of kl.
+       
+    */
+    tempdb.i[HI] = (G + 1023) << 20;
+    tempdb.i[LO] = 0;
+    tempdb.d *= kh;
+    if ((kl != 0.0) && ((tempdb.i[LO] & 1) != 0)) {
+      /* We must correct the rounding to the rounding to nearest ties to even */
+      if (kl > 0.0) {
+	tempdb.l++;
+      } else {
+	tempdb.l++;
+      }
+    }
+    *pow = tempdb.d;
+
+    return 1;
+  }
+
+  /* Here, F < 0, 3 <= n < 35
+
+     In order to show that x^y = x^(2^F * n) 
+     is exact or half-ulp, we decompose 
+     also x and 2^G * (kh + kl) into
+
+     x = 2^E * m, E in Z, m in 2 N + 1
+     2^G * (kh + kl) = 2^H * (sh + sl), H in Z, sh + sl in 2 N + 1
+
+     and check two conditions:
+
+     (i)  2^(E * y) = 2^H
+     (ii) (m^(2^F))^n = sh + sl 
+     
+     Since m, n and sh + sl are odd integers, condition (ii)
+     can be reduced to checking whether
+
+     (a) j = m^(2^F) is integer
+     (b) j^n = sh + sl
+
+     Since n is integer and less than or equal to 35, j is representable
+     in double precision and sh + sl is in any case a 118 bit approximation to 
+     j^n if (i) and (a) are satisfied, the worst-case argument allows to 
+     consider the condition (b) be fulfilled in any case.
+
+     Since m is an odd integer and a double precision number and F <= -1, 
+     nearestint(m^(2^F)) holds on at most 27 bits. The worst case delta of the
+     rounding delta = nearestint(m^(2^F)) - m^(2^F) is greater than 2^(-54) if 
+     not equal to 0. So by approximating m^(2^F) with at least 27 + 54 + 1 = 82 bits, 
+     and comparing the nearestint of the approximation to the approximation, one
+     can decide if m^(2^F) is integer or not.
+
+     Approximating m^(2^F) can be performed as follows:
+
+     m^(2^F) = 2^(2^F * log2(m)) = 2^(2^F * (log2(x) - E))
+
+     We have already an approximation of log2(x) with an accuracy of 130 bits.
+     Since E holds on at most 11 bits, log2(x) - E can be obtained easily with an
+     accuracy of at least 100 bits. Let be Flog2mh + Flog2ml the 100 bit approximation
+     of 2^F * (log2(x) - E). Computing 2^(Flog2mh + Flog2ml) is done by standard
+     techniques in an external function with an accuracy of at least 82.5 bits. 
+
+     We start by decomposing x into E and m, computing E * y, checking if it is integer,
+     computing G - E * y, scaling kh + kl for obtaining sh + sl and checking that it is 
+     an odd integer. 
+
+     E holds on at most 11 bits. n is integer and less than 64. y = 2^F * n holds thus 
+     on at most 6 bits. E * y holds thus on at most 17 bits; the double precision
+     multiplication is thus exact. 
+
+  */  
+  decompose(&m,&E,x);
+  ed = (double) E;
+  Ey = ed * y;
+  shiftedEydb.d = Ey + 0.6755399441055744e16;
+  nearestintEy = shiftedEydb.d - 0.6755399441055744e16;
+
+  if (nearestintEy != Ey) return 0;
+
+  EyInt = shiftedEydb.i[LO];
+
+  scaledb.i[HI] = ((G - EyInt) + 1023) << 20;
+  scaledb.i[LO] = 0;
+
+  Add12(sh,sl,scaledb.d * kh,scaledb.d * kl);
+
+  /* Check now whether sh + sl, which holds on 54 bits, is an odd
+     integer. Several cases must be considered:
+
+     (i)   sl = +/- 1: since sh and sl are not overlapping, sh + sl is an odd integer 
+     (ii)  sl = 0: sh + sl = sh is an odd integer iff sh is an odd integer
+     (iii) abs(sl) > 1: 
+           (a) sl = 2: since sh + sl are non overlapping sh + sl is an integer but is odd
+	   (b) sl >= 3: since sh + sl are non overlapping, sh + sl does not hold on 54 bits
+     (iv)  abs(sl) < 1: sh + sl is not integer because sh and sl are not overlapping
+
+     In consequence, sh + sl is an odd integer iff sl = +/- 1 or sl = 0 and sh is an odd integer
+
+     We return false if sh + sl is not an odd integer.
+
+  */
+  if ((ABS(sl) != 1.0) && ((sl != 0) || (!isOddInteger(sh)))) return 0;
+
+  /* Here sh + sl is an odd integer and E * y = H 
+     Further F <= -1 and if m^(2^F) is an integer j that holds on double precision, sh + sl is
+     an approximation to (m^(2^F))^n better than the worst case of j^n. 
+
+     Thus x^y is exact or half-ulp iff m^(2^F) is integer.
+
+     Compute now a 83 bit accurate approximation to m^(2^F) by computing first 
+     2^F * (log2(x) - E) and than calculating 2^(2^F * (log2(x) - E)).
+
+     The double-double log2xh + log2xm is accurate to at least 2^(-105) in relative error.
+     Since E holds on at most 11 bits, (log2xh + log2xm) - E is accurate to at least 2^(-94)
+     in relative error. 2^(2^F(log2xh + logxm - E)), because bounded by 2^27 (< 2^(2^5)), is thus 
+     affected by a relative error of 2^(-94 + 6) = 2^(-88). We can thus perform the computations
+     completeley in double-double only.
+
+  */
+  Add12Cond(t1h,t1l,log2xh,-ed);
+  t2 = t1l + log2xm;
+  Add12(log2mh,log2ml,t1h,t2);
+
+  scaledb.i[HI] = (F + 1023) << 20;
+  scaledb.i[LO] = 0;
+
+  Flog2mh = scaledb.d * log2mh;
+  Flog2ml = scaledb.d * log2ml;
+  
+  exp2_82(&japproxh, &japproxl, Flog2mh, Flog2ml);
+
+  /* Compute now the nearestint(japproxh + japproxl)
+
+     Since japproxh and japproxl are not overlapping
+     and japproxh + japproxl is less than 2^27,
+     computing nearestint(japproxh) is sufficient.
+     
+     Since we can upper-bound our test bound, it suffices
+     to compute the rounding error on a single double
+     precision number.
+  
+  */
+  nearestintj = (0.6755399441055744e16 + japproxh) - 0.6755399441055744e16;
+  delta = (japproxh - nearestintj) + japproxl;
+
+  /* Check now if we have an exact case by testing the magnitude of delta 
+     If delta is less than 2^54 in magnitude, the case must be exact because
+     there is no combination of m and F which are not an exact case giving a 
+     lower value.
+  */
+  if (ABS(delta) <= 0.55511151231257827021181583404541015625e-16) {
+    /* Here m^(2^F) is integer because the error delta is less than
+       the worst case of the rounding to the nearest integer. The case
+       is exact since sh + sl is an approximation better than the worst case
+       of the rounding problem j^n where j is a double precision number
+       and the integer n is less than or equal to 35.
+    */
+       
+    /* The case is exact, affect pow with 2^G * (kh + kl) 
+       rounded to nearest in double precision
+       
+       Since kh + kl holds on at most 54 bits, 2^G * kh produces
+       never any rounding error and kh and kl are not overlapping, 
+       2^G * kh is equal to the rounding if 
+       (i)  kl is equal to 0
+       (ii) kl is not equal to 0 and the mantissa of 2^G * kh is even
+
+       If in condition (ii), kl is not equal to 0 and the mantissa of 
+       2^G * kh is not even, we correct it depending on the sign of kl.
+       
+    */
+    tempdb.i[HI] = (G + 1023) << 20;
+    tempdb.i[LO] = 0;
+    tempdb.d *= kh;
+    if ((kl != 0.0) && ((tempdb.i[LO] & 1) != 0)) {
+      /* We must correct the rounding to the rounding to nearest ties to even */
+      if (kl > 0.0) {
+	tempdb.l++;
+      } else {
+	tempdb.l++;
+      }
+    }
+    *pow = tempdb.d;
+
+    return 1;
+  }
+
+  /* Here the error delta is greater than 2^54 in magnitude, so m^(2^F) is 
+     not an integer and the case is not exact */
+
+  return 0;
+}
+
+
+double pow_exact_rn(double x, double y, double sign, 
+		    int index, double ed, double zh, double zm) {
+  int H, G;
+  double powh, powm, powl;
+  double log2xh, log2xm, log2xl;
+  double pow;
+  double kh, kl;
+
+  pow_120(&H, &powh, &powm, &powl, &log2xh, &log2xm, &log2xl, y, index, ed, zh, zm);
+
+  if (pow_round_and_check_rn(&pow,H,powh,powm,powl,&G,&kh,&kl)) 
+    return sign * pow;
+
+  if (pow_exact_case(&pow,x,y,log2xh,log2xm,log2xl,G,kh,kl)) 
+    return sign * pow;
+
+  //  printf("Could not decide the rounding to nearest of power.\n");
+
+  return -5.0;
+}
+
+
+double pow_rn(double x, double y) {
+  db_number xdb, ydb, yhdb, shiftedylog2xhMult2Ldb, powdb, twodb;
+  double sign;
+  int E, index;
+  double log2FastApprox, ed, ylog2xFast, f;
+  double yh, yl, ri, logih, logim, yrih, yril, th, zh, zm;
+  double p_t_1_0h;
+  double p_t_2_0h;
+  double p_t_3_0h;
+  double p_t_4_0h;
+  double p_t_5_0h;
+  double p_t_9_0h;
+  double p_t_10_0h;
+  double p_t_11_0h, p_t_11_0m;
+  double p_t_12_0h, p_t_12_0m;
+  double log2zh, log2zm;
+  double log2yh, log2ym;
+  double log2xh, log2xm;
+  double ylog2xh, ylog2xm;
+  double rh, r;
+  int k, index1, index2, H;
+  double tbl1, tbl2h, tbl2m;
+  double ph;
+  double powh, powm;
+  double twoH1074powh, twoH1074powm;
+  double shiftedpowh, nearestintpowh, delta, deltaint;
+  double rest;
+  double lowerTerms;
+  double temp1;
+  double zhSq, zhFour, p35, p46, p36, p7;
+  
+  /* Fast rejection of special cases */
   xdb.d = x;
   ydb.d = y;
 
-  /* If y is negative, x^y can be exact only if x is
-     a integer power of 2 and y is integer.
-     We start by checking this.
-  */
+  if (((((xdb.i[HI] >> 20) + 1) & 0x3ff) <= 1) ||
+      ((((ydb.i[HI] >> 20) + 1) & 0x3ff) <= 1)) {
 
-  if ((ydb.i[HI] & 0x80000000) == 0x80000000) {
-    /* y is negative */
+    /* Handle special cases before handling NaNs and Infinities */
+    if (x == 1.0)  return 1.0;
+    if (y == 0.0)  return 1.0;
+    if (y == 1.0)  return x;
+    if (y == 2.0)  return x * x;
+    if (y == -1.0) return 1 / x;
     
-    /* Start by checking if x is an integer power of two 
-
-       The check is simple if x is normal. For subnormal x
-       we multiply by 2^1000 and check on the resulting normal.
-       
-       We extract the exponent of x at the same time.
-
-    */
-    if ((xdb.i[HI] & 0xfff00000) == 0) {
-      /* x is subnormal */
-      tmpdb.d = x * TWO1000;
-      E = (tmpdb.i[HI] >> 20) - 2023;
-    } else {
-      tmpdb.d = xdb.d;
-      E = (xdb.i[HI] >> 20) - 1023;
-    }
-
-    if (((tmpdb.i[HI] & 0x000fffff) | tmpdb.i[LO]) != 0) {
-      /* x is not an integer power of 2 */
-      /* x^y can thus not be an exact case */
-      return 0;
-    }
-
-    /* If we are here, x is an integer power of 2.
-       Compute E, the exponent of x.
-       Check then if E * y is integer and less that 2^11 in magnitude.
-       This covers the whole exponent range, also in the subnormals.
-
-       Check the magnitude first.
-
-       Check first if E * y is less than 1.0 in magnitude.
-       If yes, check if E * y is zero and return.
-    
-       Otherwise, we compute the integer
-       nearest to E * y and compare the difference with 0.
-
-       E * y must be written on a double-double. Since it must be less
-       than 2^11, we check that the low order word is zero and compute
-       than the difference with the integer nearest to the high order word.
-       Since the integer must be less than 2^11 in magnitude, we can use the
-       shift method. 
-       
-       The Dekker sequence is always exact because is y is always 
-       less than 2^64 and E is always less than 2^10.
-
-    */
-
-    Ed = E;
-
-    Mul12(&yEdh,&yEdl,y,Ed);
-
-    /* If the low order word is not equal to 0, we are not integer 
-       or the magnitude of the whole yEdh + yEdl is too great.
-       If yEd h is greater than 2^11 in magnitude, return false, too.
-    */
-    if ((yEdl != 0.0) || (ABS(yEdh) > TWO11)) return 0;
-
-    /* Compute the integer nearest to yEdh */
-    shiftedyEdh = yEdh + SHIFTCONSTANT;
-    yEdhI = shiftedyEdh - SHIFTCONSTANT;
-
-    /* If yEdh and yEdhI are equal, their difference is 0, E * y is an integer and 
-       the case is exact. Otherwise the case is not exact.
-       In the case we return "yes, exact case", we do not check 
-       that actually x^y = 2^H * (kh + kl) but rely on the fact that 
-       the value kh + kl = x^y * (1 + eps) is exact enough for correct rounding
-       without occurence of the Table Maker's dilemma. 
-    */
-    return (yEdh == yEdhI);
-  }
-
-  /* Here y is always positive */
-
-  /* We compute now E, F, G as well as m, n, r such that
-
-     x = 2^E * m, E integer, m odd integer
-     y = 2^F * n, F integer, n odd integer 
-     2^H * (kh + kl) = 2^G * (2 * r + 1), G integer, r integer
-
-     We represent E, F and G on integer variables and m, n and r on 
-     floating point variables. This is possible also for r since
-     kh + kl has maximally 54 bits set to one and we represent 1
-     of this ones implicitely.
-
-  */
-
-  /* Start with x */
-
-  /* Extract the exponent and remove it form x 
-     Compute the exponent E so that the corresponding mantissa is integer 
-
-     We have a special case for exponent extraction if the number is subnormal
-  */
-  E = 0;
-  if ((xdb.i[HI] & 0xfff00000) == 0) {
-    /* The number is subnormal */
-    xdb.d = x * TWO1000;
-    E = -1000;
-  }
-
-  E += (xdb.i[HI] >> 20) - 1023 - 52;
-  xdb.i[HI] = xdb.i[HI] & 0x000fffff;
-
-  /* Check how often x * 2^(-E) can be divided by 2 in integer */
-
-  if (xdb.i[LO] == 0) {
-    d = 32;
-    tempInt = xdb.i[HI] | 0x00100000;
-  } else {
-    d = 0;
-    tempInt = xdb.i[LO];
-  }
-
-  while ((tempInt & 0x1) == 0) {
-    tempInt >>= 1;
-    d++;
-  }
-
-  /* Correct now E and set the appropriate exponent in xdb which becomes m */
-  
-  xdb.i[HI] |= (52 + 1023 - d) << 20;
-  m = xdb.d;
-  E += d;
-
-  /* Compute now r such that      
-     
-     2^H * (kh + kl) = 2^G * (2 * r + 1), G integer, r integer
-
-     We have two main cases: 
-     Main cases:
-     (i)  kl = 0: 
-          We compute first G and k an odd integer such that 
-          2^H = 2^G * k
-	  r is then (k - 1) / 2 
-	  This last operation can be done exactly in FP because 
-	  k has maximally 53 bits and is an odd integer.
-     (ii) kl = +/- 1/2 * ulp(kh)
-          Let be R such that 
-	  2^R * (kh + kl) is an odd integer
-	  Thus 2^R * kl = +/- 1 and 2^R * kh = 2 * r', i.e. r' = 2^(R-1) * kh
-	  r is then equal to r' if kl is positive and r' - 1 otherwise
-  */
-
-  /* kh and kl might be not normalized, we normalize by a Add12Cond */
-
-  Add12Cond(khn,kln,kh,kl);
-  
-  khdb.d = khn;
-
-  if (kln == 0.0) {
-    /* Extract the exponent and remove it from kh
-       Compute the exponent G so that the corresponding mantissa is integer 
-       
-       Here, khdb.d cannot be subnormal any longer; 2^G scales it if necessary
-       and reflects the subnormality of khn this way.
-    */
-    G = (khdb.i[HI] >> 20) - 1023 - 52;
-    khdb.i[HI] = khdb.i[HI] & 0x000fffff;
-    
-    /* Check how often y * 2^(-G) can be divided by 2 in integer */
-    
-    if (khdb.i[LO] == 0) {
-      d = 32;
-      tempInt = khdb.i[HI] | 0x00100000;
-    } else {
-      d = 0;
-      tempInt = khdb.i[LO];
-    }
-    
-    while ((tempInt & 0x1) == 0) {
-      tempInt >>= 1;
-      d++;
-    }
-    
-    /* Correct now G and set the appropriate exponent in khdb which yields to r */
-    
-    khdb.i[HI] |= (52 + 1023 - d) << 20;
-    G += d;
-
-    r = (khdb.d - 1.0) * 0.5;    
-  } else {
-    /* Extract the exponent and remove it from kh
-       Compute the exponent G so that the corresponding mantissa is integer 
-    */
-    G = (khdb.i[HI] >> 20) - 1023 - 52 - 1;
-    khdb.i[HI] = (khdb.i[HI] & 0x000fffff) | ((52 + 1023) << 20);
-    if (kl < 0.0) r = khdb.d - 1.0; else r = khdb.d;
-  }
-  /* Take into account the scaling 2^H */
-  G += H;
-
-  /* In order to show that a case is exact (or midway) 
-     we have to show 
-     
-     x^y = 2^H * (kh + kl) 
-
-     Using the equalities
-
-     x = 2^E * m
-     y = 2^F * n
-     2^H * (kh + kl) = 2^G * (2 * r + 1) 
-
-     this yields to
-
-     (2^E * m)^(2^F * n) = 2^G * (2 * r + 1)
-
-     which is equal to
-
-     2^(E * 2^F * n) * m^(2^F * n) = 2^G * (2 * r + 1)
-
-     One can show that for 
-
-     E,F,G integer and m,n odd integers and r integer
-
-     this implies that 
-
-     (i)  E * 2^F * n = G
-     (ii) m^(2^F * n) = 2 * r + 1
-
-     In the following, we first check (i). If this 
-     check fails, the case cannot be exact or midway.
-
-     Since 2^F * n = y and E can be written on at most 11 bits,
-     we can compute E * 2^F * n as E * y on a double-double 
-     E * 2^F * n = eMyh + eMyl. Since G can be written on at most 11 bits,
-     we can checking equality by checking that eMyl is equal to 0 and
-     eMyh is equal to G.
-     
-     E and G are stored on integer variables. We have to convert them
-     first to doubles Ed and Gd.
-     The value y is bounded by 2^(70) since x^y does not overflow,
-     so the unconditional Dekker sequence is always correct.
-
-  */
-
-  Ed = E;
-  Gd = G;
-
-  Mul12(&eMyh,&eMyl,Ed,y);
-  
-  if ((eMyl != 0.0) || (eMyh != Gd)) {
-    /* eMyl is not equal to 0 or eMyh is different from G, thus eMyh + eMyl is different
-       from G. Hence the case is not exact nor midway.
-    */
-    
-    return 0;
-  }
-
-  /* Check already for the special case m = 1. 
-     The case is exact iff r = 0.
-  */
-
-  if (m == 1.0) {
-    /* Special case: m = 1 */
-    if (r == 0.0) {
-      /* We know now that 
-
-         m = 1 and r = 0
-
-	 Thus, for all F and n 
-
-	 m^(2^F * n) = 2 * r + 1
-
-	 Further, we have
-       
-	 E * 2^F * n = G
-
-	 Hence
-
-	 2^(E * 2^F * n) * m^(2^F * n) = 2^G * (2 * r + 1)
-
-	 i.e. the case is exact
+    if ((x == 0.0) && ((ydb.i[HI] & 0x7ff00000) != 0x7ff00000)) {
+      /* x = +/-0 and y is neither NaN nor Infinity
+	 
+      We have four cases 
+      (i)  y < 0:
+      (a) y odd integer: return +/- Inf and raise divide-by-zero 
+      (b) y not odd integer: return + Ind and raise divide-by-zero
+      (ii) (a) y odd integer: return +/- 0
+      (b) y not odd integer: return +0
+      
+      Note that y = 0.0 has already been filtered out.
       */
-      return 1;
-    } else {
-      /* We know now that 
-	 m = 1 and r != 0
-
-	 Thus, there exists no F and no n such that
-
-	 1 = m^(2^F * n) = 2 * r + 1 != 1
-
-	 Hence the case is inexact.
-      */
-      return 0;
+      if (y < 0.0) {
+	if (isOddInteger(y)) 
+	  return 1/x;
+	else 
+	  return 1/(x * x);
+      } else {
+	if (isOddInteger(y))
+	  return x;
+	else 
+	  return x * x;
+      }
     }
-  }
-
-  /* Finish by the decomposition of y */
-
-  /* Extract the exponent and remove it form y 
-     Compute the exponent F so that the corresponding mantissa is integer 
-
-     Remark that y cannot be subnormal, so we can extract its exponent easily.
-
-  */
-  F = (ydb.i[HI] >> 20) - 1023 - 52;
-  ydb.i[HI] = ydb.i[HI] & 0x000fffff;
-
-  /* Check how often y * 2^(-F) can be divided by 2 in integer */
-
-  if (ydb.i[LO] == 0) {
-    if ((ydb.i[HI] & 0x0003ffff) == 0) {
-      d = 46;
-      tempInt = (ydb.i[HI] >> 14) | 0x00000040;
-    } else {
-      d = 32;
-      tempInt = ydb.i[HI] | 0x00100000;
-    }
-  } else {
-    d = 0;
-    tempInt = ydb.i[LO];
-  }
-
-  while ((tempInt & 0x1) == 0) {
-    tempInt >>= 1;
-    d++;
-  }
-
-  /* Correct now F and set the appropriate exponent in ydb which becomes n */
-  
-  ydb.i[HI] |= (52 + 1023 - d) << 20;
-  n = ydb.d;
-  F += d;
-
-#if DEBUG
-  printf("E = %d\nF = %d\nG= %d\n",E,F,G);
-  printHexa("m",m);
-  printHexa("n",n);
-  printHexa("r",r);
-#endif
-
-
-  /* If we are here, we know that 
-     
-     (i)  E * 2^F * n = G
-
-     We have to check now that 
-
-     (ii) m^(2^F * n) = 2 * r + 1
-
-     We have already eliminated the special case m = 1.0 
-
-  */
-  
-  /* In the moment, twoPowFMultn = 2^F * n = y */
-  twoPowFMultn = y;
-
-  /* If we are here, m >= 3 since m != 0, m != 1 and m is odd 
-
-     We still want to check 
-
-     m^(2^F * n) = (2 * r + 1) 
-
-     We have two main cases: 
-     (i)  F is positive or zero 
-          Since m is at least 3 and (2 * r + 1) is bounded by 2^54, the
-          integer 2^F * n must be less or equal to 35.  Since y is
-          different from 1 and y = 2^F * n, 2^F * n is at least 2.  We
-          can therefore perform (2^F * n - 2) exact multiplications by
-          m (starting with m in an accumulator) which must produce all
-          results that are representable on at most 53
-          bits. Effectively, there is no m such that an intermediate
-          product t = m^l which contains more than 53 bits multiplied
-          by m can be written on less or equal 53 bits.  A last
-          multiplication by m produces then m^(2^F * n) in a double-double
-	  which must be equal to 2 * r + 1.
-     (ii) F is negative
-          Let us first show that -F is bounded by 5.
-	  Let be p_i, q_i prime numbers and a_i, b_i integers (valuations) such that 
-
-	  m = product((p_i)^(a_i),i=1..) and (2 * r + 1) = product((q_i)^(b_i),i=1..) 
-
-	  In order to have 
-	  
-	  m^(2^F * n) = (2 * r + 1)
-	  
-	  we must have
-
-	  product((p_i)^(a_i * n),i=1..) = product((q_i)^(2^(-F) * b_i),i=1..) 
-
-	  So, there exists a permutation s such that 
-
-	  p_i = q_(s(i))
-
-	  and
-
-	  a_i * n = b_(s(i)) * 2^(-F) 
-
-	  Since m is an odd integer and greater or equal to 3, its least 
-	  prime factor must be 3, i.e. for all i, p_i >= 3. Since m is
-	  less or equal to 2^(53), each valuation a_i must thus be bounded by
-	  
-	  a_i <= 53 * ln(2)/ln(3) <= 34
-
-	  The valuation a_i is an integer. Let be g the valuation of the 
-	  prime factor 2 of a_i (i.e. let u be an odd integer and g an intger 
-	  such that a_i = 2^g * u). Since a_i <= 34, g is bounded by 
-
-	  g <= ln(34)/ln(2) < 5
-
-	  Since n is odd, -F is bounded by g and therefore bounded by 5.
-
-	  Since n is odd, in order to have 
-
-	  m^(2^F * n) = (2 * r + 1) with F < 0
-
-	  there must be an odd integer j such that 
-
-	  j^(2^(-F)) = m 
-
-	  and 
-
-	  j^n = (2 * r + 1)
-
-	  This can be proven as follows: 
-
-	  Assume that there does not exist any integer j such that j^(2^(-F)) = m
-	  but there exists an odd integer n such that m^(2^F * n) = k. 
-	  The fact that there is no such j such that j^(2^(-F)) = m implies that there 
-	  exists an i such that the valuation a_i of a prime factor p_i of m is not 
-	  dividable by 2^(-F). Since n is odd, n * a_i is not dividable by 2^(-F) and yet 
-	  since there is k such that (m^n)^(2^F) = k, all valuations of prime factors of 
-	  m^n, hence also n * a_i, are dividable by 2^(-F). Thus contradiction.
-	  
-	  Testing j^n = (2 * r + 1) reduces to testing m^(2^F * n) = (2 * r + 1) 
-	  with F positive or zero.
-
-	  So we must test for F < 0 if there is a j such that j^(2^(-F)) = m 
-	  
-	  We factorize this code in the function isPowerSquare which checks if
-	  there is such a j and returns it as the case may be.
-
-	  We replace then m by j and F by 0 and check the case 
-
-	  m^(2^F * n) = (2 * r + 1) 
-
-	  for F >= 0 as explained above. 
-
-	  Since m is equal or greater to 3, j^(2^(-F)) is equal or greater to 3
-	  and j is therefore different from 1. Since m is odd, j is odd. 
-	  Therefore j is lower bounded by 3. Trivially, j is upper bounded by 2^(53).
-	  
-	  So, after the replacement, we can do the check for F >= 0 as explained above.
-
-
-  */
-
-  if (F < 0) {
-    if (F < -5) {
-      /* F is less than -5 
-	 By the above proof, if the case is exact, F must be greater or equal to -5
-	 The case is thus inexact.
-      */
-      return 0;
-    }
-
-    /* We have to check whether there exists an integer j such that 
+    
+    /* Handle NaNs and Infinities
        
-       j^(2^(-F)) = m      i.e.    j = m^(2^F);
-
-       We perform this as follows:
-     
-       (i)   We compute an approximation jp to m^(2^F). This approximation
-             is exact to at least 30 bits. 
-       (ii)  We round jp to the nearest integer j. This rounding is 
-             subject to the Table Maker's Dilemma iff m is such that m^(2^F) is not integer.
-	     Thus if there exists an integer j' such that j'^(2^(-F)) = m, the computed j is
-	     equal to the exact j'.
-       (iii) We compute j^(2^(-F)) exactly by repeated squaring. 
-             Since m is written on at most 53 bits, and j is an integer, 
-	     if one of the square operations must be written on more than 
-	     53 bits, there exists no integer j' such that j'^(2^(-F)) = m. 
-       (iv)  If all squarings produce results that can be hold on 53 bits, the final result
-             j^(2^(-F)) must be equal to m. Otherwise, there exists no integer j' such that 
-	     j'^(2^(-F)) is equal to m.
-  
-
-       We start by computing the approximation jp = m^(2^F) * (1 + eps) as
-
-       jp = 2^(2^F * log2(m)) * (1 + eps) 
-
-       At the beginning, we compute log2(m) out of log2(x):
-
-       We have x = 2^E * m, i.e. m = 2^(-E) * x
-       Thus
-    
-        log2(m) = -E + log2(x)
-
-       Since E is an integer on at most 11 bits, we cancel out at most 11 bits
-       so logm obtained by this method has at least 52 - 11 = 41 bits.
-     
-       Since m^(2^F) is bounded by 2^27, 2^F * log2(m) is bounded by 27 < 32 = 2^5
-       Thus the amplification of the relative error in logm w.r.t log2(m) 
-       will not be greater than 2^6 which leaves at least 
-       35 correct bits in 2^(2^F * logm)
-   
-    */
-
-    logm = logx - E;
-  
-
-    /* Represent 2^F */
-    tempdb.i[HI] = (F + 1023) << 20;
-    tempdb.i[LO] = 0;
-    
-    /* Multiply log2(m) by 2^F */
-    tFMlm = tempdb.d * logm;
-    
-    /* Compute 2^(2^F * log2(m)) */
-    
-    jp = exp2_30bits(tFMlm);
-    
-    /* Round now jp to the nearest integer 
-       
-       Since jp = m^(2^F) is bounded by 2^(27), we can use the 
-       shift method.
+    Note: the cases (x,y) = (1,NaN) and (x,y) = (NaN,0) have already been handled.
     
     */
-    shiftedJp = jp + SHIFTCONSTANT;
-    j = shiftedJp - SHIFTCONSTANT;
-
-    /* Compute now j^(2^(-F)) by repeated squaring.
-       As explained above, each intermediate must be able to be written on 
-       at most 53 bits. 
-
-       Since m is bounded by 2^(53), none of the Dekker sequences will overflow.
-
-       If tl is not equal to zero, it is at least 1 because integer and 
-       bounded by 2^53 - 1. Further 5 * 2^106 <= 2^110.
-
-    */
-    i = -F;
-    s = j;
-    delt = 0.0;
-    while (i > 0) {
-      Mul12(&th,&tl,s,s);
-      delt = delt + tl * tl;
-      s = th;
-      i--;
-    }
-
-    /* Check if all immediate steps have been exact */
-    if (delt > 0.0) {
-      /* An intermediate squaring could not be written on 53 bits. 
-	 Since j is equal to m^(2^F) if there exists an integer j' 
-	 such that j'^(2^(-F)) = m, there does not exist any such integer j'.
+    if ((ydb.i[HI] & 0x7ff00000) == 0x7ff00000) {
+      /* Here y is NaN or Inf */
+      if (((ydb.i[HI] & 0x000fffff) | ydb.i[LO]) != 0) {
+	/* Here y is NaN, we return NaN */
+	return y;
+      } 
+      /* Here y is +/- Inf 
+	 
+      There are three main cases:
+      (i)   x = -1: return 1
+      (ii)  abs(x) > 1: 
+      (a) y = +Inf: return +Inf
+      (b) y = -Inf: return +0
+      (iii) abs(x) < 1: 
+      (a) y = +Inf: return +0
+      (b) y = -Inf: return +Inf
+      
+      Note: the case x = 1 has already been filtered out 
       */
-
-      return 0;
+      if (x == -1.0) 
+	return 1.0;
+      
+      /* Here x != 1, x != -1 */
+      if ((ABS(x) > 1.0) ^ ((ydb.i[HI] & 0x80000000) == 0)) {
+	/* abs(x) > 1 and y = -Inf or abs(x) < 1 and y = +Inf */
+	return 0.0;
+      } else {
+	/* abs(x) > 1 and y = +Inf or abs(x) < 1 and y = -Inf */
+	return ABS(y);
+      }
     }
-
-    /* Check now whether s = j^(2^(-F)) is equal to m. */
     
-    if (s != m) {
-      /* s = j^(2^(-F)) is not equal to m. Since j is equal to m^(2^F) if
-	 there exists an integer j' such that j'^(2^(-F)) = m, there does
-	 not exist any such integer j'.
-      */    
-
-      return 0;
-    }
-
-    /* Here, we have j such that j^(2^(-F)) = m 
-
-       So, for checking 
-
-       m^(2^F * n) = 2 * r + 1
-
-       we replace
-
-       m' = j 
-       F' = 0
-
-       and check 
-
-       m'^(2^F' * n) = 2 * r + 1
-
-    */
-
-    m = j;
-    twoPowFMultn = n;
+    /* Here y is neither Inf nor NaN */
+    
+    if ((xdb.i[HI] & 0x7ff00000) == 0x7ff00000) {
+      /* Here x is NaN or Inf */
+      if (((xdb.i[HI] & 0x000fffff) | xdb.i[LO]) != 0) {
+	/* Here x is NaN, we return NaN */
+	return x;
+      } 
+      /* Here x is +/- Inf 
+	 
+      There are two main cases:
+      
+      (i)  x is +Inf 
+      (ii) x is -Inf
+      */
+      if ((xdb.i[HI] & 0x80000000) == 0) {
+	/* x is +Inf 
+	   
+	(a) y > 0: return +Inf
+	(b) y < 0: return +0
+	
+	Note: y = 0 has already been filtered out
+	*/
+	if (y > 0.0) {
+	  return x;
+	} else {
+	  return 0.0;
+	}
+      } else {
+	/* x is -Inf 
+	   
+	There are four cases:
+	
+	(a) y > 0: 
+	(*)  y is an odd integer: return -Inf
+	(**) y is not an odd integer: return +Inf 
+	(b) y < 0:
+	(*)  y is an odd integer: return -0
+	(**) y is not an odd integer: return +0
+	
+	Note: y = 0 has already been filtered out
+	*/
+	if (y > 0.0) {
+	  if (isOddInteger(y)) {
+	    return x;
+	  } else {
+	    return -x;
+	  }
+	} else {
+	  if (isOddInteger(y)) {
+	    return -0.0;
+	  } else {
+	    return 0.0;
+	  }
+	}
+      }
+    } 
   }
-
-  /* If we are here, we have 
+  /* Here both x and y are finite numbers */
   
-     F >= 0 
-     m odd, m >= 3
+  /* Test now whether we have the case 
 
-     We must check 
+     (-x)^y = (-1)^y * x^y 
 
-     m^(2^F * n) = 2 * r + 1
-
-     We check first that 2^F * n <= 35. 
-     
-     Then we apply the algorithm given above. All the Dekker operations
-     are exact because all checks before bound the results by 2^(53) << 2^(1024)
+     where x is positive
 
   */
 
-  if (twoPowFMultn > 35.0) {
-    /* 2^F * n is greater than 35 
-       There can therefore not be any exact case as per the explications above.
-    */
-    return 0;
-  }
-
-  /* If we are here, tdb.d = 2^F * n is less or equal to 35 and integer 
-     by construction. We convert it to an integer variable.
-  */
-
-  tt = twoPowFMultn;
-
-  /* The loop will go to tt-1 */
-  tt -= 1;
-
-  /* Initialize z with 1 */
-  z = 1.0;
-
-  delt = 0.0;
-  delt2 = 0.0;
-  /* Loop for multiplying 
-     
-     Since m is integer, pl will be 0 or an integer.
-     So no underflow in pl * pl is possible if pl != 0
-  
-  */
-
-  h = m;
-  while (tt > 1) {
-    if ((tt & 1) != 0) {
-      Mul12(&ph,&pl,z,h);
-      delt2 = delt2 + pl * pl;
-      z = ph;
-    }
-    tt >>= 1;
-    Mul12(&ph,&pl,h,h);
-    delt = delt + pl * pl;
-    h = ph;
-  }
-  if ((tt & 1) != 0) {
-    Mul12(&ph,&pl,z,h);
-    delt2 = delt2 + pl * pl;
-    z = ph;
-  }
-  delt = delt + delt2;
-
-  /* Check if each intermediate result was exact. */
-  if (delt > 0.0) {
-    /* At least one intermediate result could not be represented on at most 53 bits.
-       Therefore, as per the arguments given above, the case is 
-       not exact.
-    */
-    return 0;
-  }
-  
-  /* If we are here, we have 
-
-     z = m^(2^F * n - 1) 
-  
-     We multiply once again exactly by m in order to obtain
-
-     zh + zl = m^(2^F * n)
-
-  */
-
-  Mul12(&zh,&zl,z,m);
-  
-  /* We have to check now:
-
-     zh + zl = 2 * r + 1
-
-     We produce the double-double 
-
-     qh + ql = 2 * r + 1
-
-     Since the representation of numbers as normalized double-doubles
-     is unique, we can can lexicographically compare zh + zl and qh + ql.
-     
-     Since r is integer and less than 2^(53), the arithmetical
-     multiplication 2.0 * r is exact. For r >= 1, 2 * r is greater than 1.
-     So the Add12 can be used in this case. For r = 0, 2 * r is 0 and 
-     the Add12 is exact, too.
-
-  */
-
-  Add12(qh,ql,2.0 * r,1.0);
-
-  if ((zh != qh) || (zl != ql)) {
-    /* One of the words of of zh + zl and qh + ql is different.
-       The value zh + zl is therefore different from qh + ql. 
-       The case is thus inexact.
-    */
-    return 0;
-  }
-
-  /* If we are here, zh + zl = qh + ql and therefore
-
-     m^(2^F * n) = 2 * r + 1
-
-     and 
-
-     E * 2^F * n = G
-     
-     Hence
-     
-     2^(E * 2^F * n) * m^(2^F * n) = 2^G * (2 * r + 1)
-     
-     i.e. the case is exact
-
-  */
-
-  return 1;
-}
-
-
-
-/*************************************************************
- *************************************************************
- *               ROUNDED  TO NEAREST			     *
- *************************************************************
- *************************************************************/
-
-double pow_rn(double x, double y) {
-  double sign, absy, t1, t3, t4, r;
-  double logxh, logxl, ylogxh, ylogxl, powh, powl;
-  int E;
-  db_number absydb, t2db, tempdb, temp2db;
-  double res, delta, miulp, resScaled;
-  double tt1, tt2, tt3, tt4, tt5, tt6, tt7, tt8;
-  double roundingBound, tmp1, correctedRes;
-  int exactCase;
-  double powm;
-  double deltah, deltal;
-
-#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-  db_number t2pdb;
-#endif
-
-  /* Handle known special cases */
-  if (x == 1.0) return 1.0;
-  if (y == 0.0) return 1.0;
-  if (x == 0.0) return 0.0;
-  if (y == 1.0) return x;
-  if (y == 2.0) return x * x;
-  if (y == -1.0) return 1 / x;
-
-
-  /* WE DO NOT HANDLE INF, NAN, OVERFLOW AND UNDERFLOW BY NOW (OR NOT COMPLETELY) */
-
-  absy = ABS(y);
-
-  /* Handle the sign of x */
   sign = 1.0;
   if (x < 0.0) {
     /* x is negative
-       Return (-1)^abs(y) * (-x)^y if abs(y) is integer, NaN otherwise
-       We can always strip off the sign of x 
+       x^y is defined only if y is integer
     */
-    x = -x;
-    
-    /* If abs(y) is less than 1.0, it cannot be integer; 0.0 has been filtered out */
-    if (absy < 1.0) {
-      /* return NaN */
-      return (x-x)/0.0;
+    if (!isInteger(y)) {
+      /* y is not integer 
+
+         return NaN and raise invalid exception
+      */
+      return 0.0/0.0;
     }
-    
-    /* If abs(y) is greater or equal to 2^52, abs(y) is always integer */
+    /* Here y is integer 
+       
+       Remove the sign of x and put (-1)^y in sign
 
-    if (absy >= TWO52) {
-      /* Here we are always integer 
-	 So we set sign to -1.0 if abs(y) is odd and to 1.0 if abs(y) is even (default)
-      */
-      
-      /* If abs(y) is greater or equal to 2^53, abs(y) is always even */
-      if (absy < TWO53) {
-	/* In this case, the exponent of abs(y) is fixed to 52
-	   abs(y) is even if its last mantissa bit is 0 
-	*/
-	absydb.d = absy;
-	if ((absydb.i[LO] & 0x1) == 1) {
-	  /* abs(y) is integer and odd */
-	  sign = -1.0;
-	}
-      }
-    } else {
-      /* Here, we have to check whether abs(y) is integer 
-	 We compute the integer nearest to abs(y) and 
-	 subtract using Sterbenz' lemma for obtaining the rest 
-      */
-
-      /* Multiply abs(y) by 2^(-1074) in two steps
-	 for obtaining a subnormal (nearest to 2^(-1074) * absy)
-	 Multiply than by 2^(1074) in two steps for
-	 obtaining the integer nearest to abs(y)
-      */
-      
-      t1 = TWOM53 * absy;
-      t2db.d = TWOM1021 * t1;
-      
-      /* If we are on x86, we must force the compile to go through memory in order to have 
-	 correct double subnormals 
-      */
-#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-      t2pdb.i[HI] = t2db.i[HI];
-      t2pdb.i[LO] = t2db.i[LO];
-      t2db.d = t2pdb.d;
-#endif
-
-      t3 = TWO1021 * t2db.d;
-      t4 = TWO53 * t3;
-
-      /* Compute now the rest */
-      r = absy - t4;
-
-      if (r == 0.0) {
-	/* abs(y) is integer 
-	   It is odd if the last bit of the subnormal t2db.d is 1
-	   If it is even, sign must be 1.0 which is the default
-	*/
-	if ((t2db.i[LO] & 0x1) == 1) {
-	  /* abs(y) is integer and odd */
-	  sign = -1.0;
-	}
-      } else {
-	/* abs(y) is not integer, return NaN */
-	return (x-x)/0.0;
-      }
+    */
+    x = -x; xdb.i[HI] &= 0x7fffffff;
+    if (isOddInteger(y)) {
+      sign = -sign;
     }
   }
 
-  /* x is now always positive */
+  /* Here x is strictly positive and finite */
 
-  /* Check if y is in the correct range 
+  /* Test now if abs(y) is in a range giving finite, non-trivial results x^y 
 
-     For abs(y) < 2^(-64), x^y clearly rounds to 1
-     For abs(y) > 2^(+64), x^y clearly under- or overflows
+     We have 
 
+     x^y = 2^(y * log2(x)) = 2^(y * log2(2^E * m)) = 2^(y * (E + log2(1 + f)))
+
+     We have overflow iff x^y >= 2^(1024), i.e. y * (E + log2(1 + f)) >= 1024
+     We have underflow (flush to zero) iff x^y <= 2^(-1076), i.e. y * (E + log2(1 + f)) <= - 1076
+     We round to 1.0 iff abs(y * (E + log2(1 + f))) <= 2^(-54) 
+
+     We approximate log2(1 + f) as
+
+     log2(1 + f) = c * f * alpha(f)  
+
+     where c is a constant and  0.853 < alpha(f) < 1.21
+
+     So we have surely 
+     (i)  overflow or underflow if abs(y * (E + c * f)) >= ceil(1076/0.853) = 1261
+     (ii) trivial rounding to 1.0 if abs(y * (E + c * f)) <= 2^(-55) <= 2^(-54)/1.21 
 
   */
 
-  if (absy <= TWOM64) {
-    /* abs(y) < 2^(-64), x^y rounds to sign * 1.0 in each case 
-       The formula is for setting the inexact bit.
+  /* We start the computation of the logarithm of x */
+
+  E = 0;
+  if ((xdb.i[HI] & 0xfff00000) == 0) {
+    /* x is subnormal, make it normal */
+    xdb.d *= two52;
+    E = -52;
+  }
+
+  E += (xdb.i[HI]>>20)-1023;             /* extract the exponent */
+  index = (xdb.i[HI] & 0x000fffff);
+  xdb.i[HI] =  index | 0x3ff00000;	/* do exponent = 0 */
+  index = (index + (1<<(20-L-1))) >> (20-L);
+ 
+  /* reduce  such that sqrt(2)/2 < xdb.d < sqrt(2) */
+  if (index >= MAXINDEX) { /* corresponds to xdb>sqrt(2)*/
+    xdb.i[HI] -= 0x00100000; 
+    E++;
+  }
+
+  ed = (double) E;
+
+  /* Continue with the exact range reduction of the logarithm of x */
+
+  yhdb.i[HI] = xdb.i[HI];
+  yhdb.i[LO] = 0;
+  yh = yhdb.d;
+  yl = xdb.d - yh;
+  
+  index = index & INDEXMASK;
+
+  /* Now we have 
+
+     log2(x) = E + log2(xdb.d)
+
+     with sqrt(2)/2 < xdb.d < sqrt(2)
+
+     Compute now f such that 1 + f = xdb.d and 
+     approximate 
+
+     log2(1 + f) = logFastCoeff * f
+
+  */
+
+  f = xdb.d - 1.0;
+  log2FastApprox = ed + logFastCoeff * f;
+  ylog2xFast = y * log2FastApprox;
+
+  if (ABS(ylog2xFast) >= 1261.0) {
+    if (ylog2xFast > 0.0) {
+      /* y * log2(x) is positive, i.e. we overflow */
+      return (sign * LARGEST) * LARGEST;
+    } else {
+      /* y * log2(x) is negative, i.e. we underflow */
+      return (sign * SMALLEST) * SMALLEST;
+    }    
+  }
+
+  if (ABS(ylog2xFast) <= twoM55) {
+    /* abs(y * log2(x)) <= 2^(-55), 
+       we return 1.0 and set the inexact flag 
     */
     return sign * (1.0 + SMALLEST);
   }
 
+  /* Now, we may still overflow or underflow but on some inputs only */
+  
+  /* 
+     Read tables:
+     Read one float for ri
+     Read the first two doubles for -log(r_i) (out of three)
+     
+     Organization of the table:
+     
+     one struct entry per index, the struct entry containing 
+     r, logih, logim and logil in this order
+  */
+ 
+  ri = argredtable[index].ri;
+  /* 
+     Actually we don't need the logarithm entries now
+     Move the following two lines to the eventual reconstruction
+     As long as we don't have any if in the following code, we can overlap 
+     memory access with calculations 
+  */
+  logih = argredtable[index].logih;
+  logim = argredtable[index].logim;
+  
+  /* Do range reduction:
+     
+     zh + zm = y * ri - 1.0 correctly
+  
+     Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+  
+     Discard zl for higher monome degrees
+  */
+  
+  yrih = yh * ri;
+  yril = yl * ri;
+  th = yrih - 1.0; 
+  Add12Cond(zh, zm, th, yril); 
+  
+  /* Polynomial approximation of log2(1 + (zh + zm)) */
 
-  if (absy >= TWO64) {
-    /* abs(y) > 2^(+64) */
-    
-    /* If y is positive, we have overflow for x > 1 and underflow for x < 1 
-       If y is negative, we have underflow for x > 1 and overflow for x < 1
-    */
-    
-    if (y > 0.0) {
-      /* y is positive */
-      if (x > 1.0) {
-	/* x^y overflows */
-	return (sign * LARGEST) * LARGEST;
-      } else {
-	/* x^y underflows */
-	return (sign * SMALLEST) * SMALLEST;
-      }
-    } else {
-      /* y is negative */
-      if (x > 1.0) {
-	/* x^y underflows */
-	return (sign * SMALLEST) * SMALLEST;
-      } else {
-	/* x^y overflows */
-	return (sign * LARGEST) * LARGEST;
-      }    
-    }
-  } 
+  zhSq = zh * zh;
 
-  /* Compute log2(x) as a double-double */
+  p35 = log2_70_p_coeff_3h + zhSq * log2_70_p_coeff_5h; 
+  p46 = log2_70_p_coeff_4h + zhSq * log2_70_p_coeff_6h;
+  zhFour = zhSq * zhSq;
 
-  log2_12(&logxh, &logxl, x);
+  p36 = p35 + zh * p46;
+  p7 = log2_70_p_coeff_7h * zhFour;
 
-  /* Compute y * log2(x) as a double-double */
+  p_t_9_0h = p36 + p7;
 
-  Mul122(&ylogxh,&ylogxl,y,logxh,logxl); 
+  p_t_10_0h = p_t_9_0h * zh;
+  Add212(&p_t_11_0h,&p_t_11_0m,log2_70_p_coeff_2h,log2_70_p_coeff_2m,p_t_10_0h);
+  MulAdd22(&p_t_12_0h,&p_t_12_0m,log2_70_p_coeff_1h,log2_70_p_coeff_1m,zh,zm,p_t_11_0h,p_t_11_0m);
+  Mul22(&log2zh,&log2zm,p_t_12_0h,p_t_12_0m,zh,zm);
 
-  /* Compute 2^(y * log2(x)) as a double-double and an exponent */
+  /* Reconstruction */
 
-  exp2_22(&E,&powh,&powl,ylogxh,ylogxl);
+  Add122(&log2yh,&log2ym,ed,logih,logim);
+  Add22(&log2xh,&log2xm,log2yh,log2ym,log2zh,log2zm);
 
-  /* Final overflow and underflow handling
-     Rounding test
-     Rounding to subnormals
-     Filter for exact result values
+  /* Produce ylog2xh + ylog2xm approximating y * log2(x) 
+
+     Note: neither y nor y * log2(x) may not be subnormal and non-zero 
+     because of the fast overflow/underflow/trivial rounding test.
+
   */
 
-  if (E >= 1025) {
-    /* Overflow, return sign * Inf 
-       The formula is for setting the inexact flag
+  Mul12(&ylog2xh,&temp1,y,log2xh);
+  ylog2xm = temp1 + y * log2xm;
+ 
+  /* Approximate now 2^(y * log2(x)) 
+
+     We have
+
+     2^(ylog2xh + ylog2xm) 
+          = 2^ylog2xh * 2^ylog2xm
+          = 2^H * 2^(ylog2xh - H) * 2^ylog2xm
+	  = 2^H * 2^(i2/2^8) * 2^(i1/2^13) * 2^(ylog2xh - H - i2/2^8 - i1/2^13) * 2^ylog2xm
+	  = 2^H * tbl2[i2] * (1 + tbl1[i1]) * (1 + p(rh)) + delta
+	  where rh \approx ylog2xh - H - i1/2^7 - i2/2^13 + ylog2xm
+  */
+
+  shiftedylog2xhMult2Ldb.d = shiftConstTwoM13 + ylog2xh;
+  r = ylog2xh - (shiftedylog2xhMult2Ldb.d - shiftConstTwoM13);
+  k = shiftedylog2xhMult2Ldb.i[LO];
+  H = k >> 13;
+  index1 = k & INDEXMASK1;
+  index2 = (k & INDEXMASK2) >> 5;
+
+  /* Renormalize reduced argument 
+
+     This operation produces an error 
+     
+     2^(z * (1 + eps)) = 2^z * (1 + eps') 
+
+     where |eps| <= 2^(-53) and |eps'| <= 2^(-65)
+
+  */
+  rh = r + ylog2xm;
+
+  /* Table reads */
+  tbl1 = twoPowerIndex1[index1].hiM1;
+  tbl2h = twoPowerIndex2[index2].hi;
+  tbl2m = twoPowerIndex2[index2].mi;
+
+  /* Polynomial approximation */
+  p_t_1_0h = exp2_p_coeff_3h;
+  p_t_2_0h = p_t_1_0h * rh;
+  p_t_3_0h = exp2_p_coeff_2h + p_t_2_0h;
+  p_t_4_0h = p_t_3_0h * rh;
+  p_t_5_0h = exp2_p_coeff_1h + p_t_4_0h;
+  ph = p_t_5_0h * rh;
+
+  /* Reconstruction */
+  
+  lowerTerms = tbl1 + (ph + tbl1 * ph);
+
+  Add212(&powh,&powm,tbl2h,tbl2m,tbl2h * lowerTerms);
+
+  /* Here we have 
+
+     2^H * (powh + powm) = x^y * (1 + eps) 
+
+     with ||eps|| <= 2^(-60)
+
+     Check first if we overflow or underflow.
+
+     Check then if we can perform normal rounding or 
+     if we must perhaps perform subnormal rounding.
+     We are sure that
+
+     0.5 <= powh + powm <= 4.0
+
+  */
+
+  if (H >= 1025) {
+    /* Here, we surely overflow 
+       Return sign * inf
     */
     return (sign * LARGEST) * LARGEST;
   }
-  
-  if (E <= -1076) {
-    /* Surely flushed to zero 
-       The formula is for setting the inexact flag
+
+  if (H <= -1077) {
+    /* Here, we surely underflow 
+       Return sign * 0 and set inexact flag
     */
     return (sign * SMALLEST) * SMALLEST;
-  }
+  } 
 
-  /* Tentative final rounding
-     We round the intermediate result correctly to a double 
-     We compute further the rounding rest and an half-ulp
-     on the side of the rest. These values will allow then 
-     to validate or invalidate the tentative result.
-
-     If no subnormal rounding occurs, the procedure is 
-     simpler. The sequence for subnormal rounding is
-     capable of handling also the case where no subnormal 
-     is produced. We can therefore branch on a fuzzy bound
-     for performance reasons.
-  */
-
-  if (E < -1021) {
-    /* Possible subnormal rounding 
-
-       We multiply powh by 2^E using two real multiplications This
-       result may produce a subnormal so a rounding may occur.  We
-       remultiply then the value obtained by 2^(-E) using two real
-       multiplications. We compute then the rounding error of the
-       first multiplication series producing possibly a subnormal.
-       The value delta will be the absolute value of the arithmetic
-       sum of this error and powl.  We compute miulp by computing the
-       ulp of the produced subnormal (or normal) in the direction 
-       of powl. We rescale this ulp by 2^(-E-1) similar to the way
-       of the rounding error in order to obtain miulp.
-
-       On x86 architectures we must force each operation producing
-       subnormals to really do so.
+  if (H > -1022) {
+    /* We are sure to be able to perform normal rounding 
+       We must still be aware of the fact that the final
+       result may overflow 
     */
-
-    tt1 = powh * TWOM1000;
-    
-    tempdb.i[HI] = (E + 2023) << 20;
-    tempdb.i[LO] = 0;
-    tempdb.d *= tt1;
-#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-    temp2db.i[HI] = tempdb.i[HI];
-    temp2db.i[LO] = tempdb.i[LO];
-    tempdb.d = temp2db.d;
-#endif
-    
-    res = tempdb.d;
-    temp2db.i[HI] = (-E + 23) << 20;
-    temp2db.i[LO] = 0;    
-    tt3 = temp2db.d * res;
-    resScaled = tt3 * TWO1000;
-
-    tt5 = powh - resScaled;
-    delta = tt5 + powl;
-
-    /* We must simulate a correct rounding of 2^E * (powh + powl) 
-
-       The hard case occurs if the rounding error of 2^E * powh 
-       is exactly the miulp of the result. 
-       We must correct the rounding if the whole rounding error of 2^E * (powh + powl)
-       is greater in absolute value than the miulp of the result.
-    */
-
-    if ((delta >= 0.0) || (tempdb.d == 0.0)) 
-      tempdb.l++;
-    else 
-      tempdb.l--;
-
-    tt2 = tempdb.d - res;
-    tt4 = temp2db.d * tt2;
-    miulp = ABS(tt4 * TWO999);
-    
-    if (ABS(delta) > miulp) {
-      /* We must correct res in order to have abs(delta) <= abs(miulp) 
-	 If delta is positive, we take the successor of res, otherwise 
-	 we take the predecessor. 
-	 tempdb.d is already equal to this value.
-	 We recalculate the other values since the binary may change.
-      */
-      res = tempdb.d;
-      tt3 = temp2db.d * res;
-      resScaled = tt3 * TWO1000;
-      
-      tt5 = powh - resScaled;
-      delta = tt5 + powl;
-
-      if ((delta >= 0.0) || (tempdb.d == 0.0)) 
-	tempdb.l++;
-      else 
-	tempdb.l--;
-      
-      tt2 = tempdb.d - res;
-      tt4 = temp2db.d * tt2;
-      miulp = ABS(tt4 * TWO999);
+    if(powh == (powh + (powm * RNROUNDCST))) {
+      powdb.d = powh;
+      if (H < 1023) {
+	powdb.i[HI] += H << 20;
+	return sign * powdb.d;
+      } else {
+	/* May overflow: multiply by 2^H in two steps */
+	powdb.i[HI] += (H - 3) << 20;
+	return sign * powdb.d * 8.0;
+      }
     }
-    
   } else {
-    /* Normal rounding, no overflow, no underflow 
-     
-       res = 2^E * powh
+    /* We must perhaps perform subnormal rounding 
 
-       It is possible that E = 1024 and the multiplicand is less than 1
-       So we will do the multiplication by the power of 2 by bit
-       manipulation.
+       We start by renormalizing the double-double
+       powh + powm such that 
 
-       delta = abs(powl)
-       miulp = 1/2*ulp+/-(powh)
+       1 <= powh + powm < 2
 
     */
-    tempdb.d = powh;
-    tempdb.i[HI] += E << 20;
-    res = tempdb.d;
 
-    delta = powl;
-    resScaled = powh;
+    if ((powh < 1.0) || ((powh == 1.0) && (powm < 0.0))) {
+      powh *= 2.0;
+      powm *= 2.0;
+      H--;
+    }
+    if ((powh > 2.0) || ((powh == 2.0) && (powm >= 0.0))) {
+      powh *= 0.5;
+      powm *= 0.5;
+      H++;
+    }
 
-    tempdb.d = powh;
-    if (powl < 0.0) tempdb.l--; else tempdb.l++;
-    miulp = ABS(0.5 * (tempdb.d - powh));
-  }
+    /* Here we know that 1 <= powh + powm < 2 
 
-  /* Rounding test and checking for possible exact cases 
+       2^H * (powh + powm) is subnormal or equal to the least normal
+       iff H <= -1023
 
-     We have mainly two cases to check
-
-     (i)  The rounding rest delta is nearer to 1/2*ulp(res) 
-          than the static accuracy bound for the approximation.
-	  In this case, we have two possibilities:
-	  (a) The case is an exact half-way case and we can round
-	  (b) The case is not exact and we must launch a more accurate phase
-     (ii) The rounding rest delta is less than the static accuracy bound 
-          for the approximation. We have the following possibilities
-	  (a) The case is an exact case and we can round and not set the inexact flag
-	  (b) The case is not an exact case and we can round and set the inexact flag
-
-     We prepare first roundingBound, a value reflecting the static
-     bound for the approximation error.  If we have b correct bits, we
-     multiply miulp by 2^(-(b - 54)). This constant APPROXBOUNDFACTOR
-     is produced by a Maple script.
-     
-     We check then case (ii) by subtracting miulp from delta and comparing to roundingBound.
-     We check then case (i) by comparing delta directly to roundingBound.
-
-     Before launching the exact case test, we have to round the result for x^y to 54 bits,
-     i.e. bring delta to a standard form (0.11111... -> 1.00000...; 0.000101... -> 0.00000...).
-
-  */
-
-  roundingBound = APPROXBOUNDFACTOR * miulp;
-
-  if (ABS(delta) <= roundingBound) {
-    /* Case (ii) detected, bring delta to a standard form by ignoring it 
-       The double-double resScaled + 0.0 stays normalized.
-       
-       The exactCase check may need a 52 bit approximation to log(x)
     */
-    
-#if DEBUG
-    printf("Check for exact case\n");
-#endif
-    
-    exactCase = checkForExactCase(x,y,E,resScaled,0.0,logxh);
-    
-    if (exactCase) {
-      
-#if DEBUG
-      printf("Exact case detected on ");
-      printHexa("x",x);
-      printHexa("y",y);
-#endif
-      
-      /* Exact case
-	 TODO: restore the inexact flag to the status it had when entering the function 
-      */
-      return sign * res;
+    if (H > -1023) {
+      /* We have nevertheless normal rounding */
+      if(powh == (powh + (powm * RNROUNDCST))) {
+	powdb.d = powh;
+	powdb.i[HI] += H << 20;
+	return sign * powdb.d;
+      }
+      /* Here we have normal rounding but could not decide the rounding */
     } else {
-      /* Inexact but roundable case 
-	 TODO: correct handling of the inexact flag
-      */
-      return sign * res;
-    }
-  } else {
-    
-    /* Case (ii) not detected, check now for case (i) */
+      /* We have surely denormal rounding
 
-    tmp1 = ABS(miulp - ABS(delta));
-    if (tmp1 <= roundingBound) {
-      /* Case (i) detected 
+         This means
+
+	 round(2^H * (powh + powm)) = 2^(-1074) * nearestint(2^(+1074) * 2^H * (powh + powm))
+
+	 We compute the rounding (and test its TMD) of 
 	 
-         Bring delta to a standard form, i.e. set it to sgn(delta) * miulp;
-	 Attention: the double-double resScaled + delta is not normalized w.r.t. even rounding
-      
-	 The exactCase check may need a 52 bit approximation to log(x)
+	 nearestint(2^(H + 1074) * (powh + powm))
+
+	 by computing first 
+
+	 nearestint(2^(H + 1074) * powh) 
+	 
+	 and then the absolute error
+
+	 delta = 2^(H + 1074) * powh - nearestint(2^(H + 1074) * powh) + 2^(H + 1074) * powl
+
+	 We can then refute or correct the rounding by tests on delta.
+
+	 We know that 2^(H + 1074) <= 2^(51) and powh <= 2.0. Thus 2^(H + 1074) * powh <= 2^(52)
+	 We can hence compute nearestint using the shift trick.
+	 
+	 We start by constructing 2^(H + 1074)
       */
-
-#if DEBUG
-    printf("Check for midway case\n");
-#endif
-
-        
-      if (delta < 0.0) delta = -miulp; else delta = miulp;
-      exactCase = checkForExactCase(x,y,E,resScaled,delta,logxh);
       
-      if (exactCase) {
-	/* If we are here, we know that x^y = 2^E * (resScaled + delta) exactly 
-	   
-           Since the double-double resScaled + delta is not normalized
-	   w.r.t. even rounding, we must reperform the final
-	   rounding. We first add resScaled and delta arithmetically to
-	   obtain correctedRes. This operation rounds correctly
-	   resScaled to the nearest even if we have a final normal
-	   result and is exact (TODO: paper proof) if the final result
-	   is subnormal.  We multiply then by 2^E by two different
-	   methods depending on E like above. This operation is exact if
-	   the final result is a normal or rounds correctly if the
-	   result is a subnormal.
-	   
+      twodb.i[HI] = (H + (1074 + 1023)) << 20;
+      twodb.i[LO] = 0;
+
+      twoH1074powh = twodb.d * powh;
+      twoH1074powm = twodb.d * powm;
+
+      shiftedpowh = two52 + twoH1074powh;
+      nearestintpowh = shiftedpowh - two52;
+      deltaint = twoH1074powh - nearestintpowh;
+
+      /* The next addition produces a very small 
+	 rounding error we must account for in the rounding test.
+      */
+      delta = deltaint + twoH1074powm;
+
+      /* Correct now the rounding */
+
+      if (ABS(delta) > 0.5) {
+	/* ABS(delta) > 0.5 */
+	if (delta > 0.0) {
+	  /* nearestintpowh is too small by 1.0 */
+	  nearestintpowh += 1.0; /* exact */
+	  delta -= 1.0; /* exact */
+	} else {
+	  /* nearestintpowh is too great by 1.0 */
+	  nearestintpowh -= 1.0; /* exact */
+	  delta += 1.0; /* exact */
+	}
+      }
+
+      /* Perform now the rounding test 
+
+         This test filters out also half-ulp exact cases.
+	 Exact cases are not filtered out because C99 allows
+	 setting the underflow and/or inexact flags also
+	 for exact cases.
+
+         Compute first 
+
+	 rest = abs(0.5 - abs(delta)) * (1 + eps) 
+
+	 where abs(eps) <= 2^(-53)
+
+	 We cannot decide the rounding if 
+
+	 rest <= 2^(H + 1074) * epsmax * 2
+
+	 where epsmax is the bound for the approximating polynomials,
+	 
+	 here epsmax = 2^(-60)
+
+	 as follows by the following drawing
+
+	 2^52                2^(H + 1074)     2^0            2^(H + 1074) * epsmax
+	 +-------------------+----------------+---+------... |
+	 | 0 ...           0 | nearestintpowh | 1 |          rest
+         +-------------------+----------------+---+------... |
+                             | <---- 60 bits approx. ------->|
+
+	 This means that we cannot decide the rounding if 
+	 
+	 rest * 1/epsmax * 0.5 <= 2^(H + 1074)
+
+	 We store 1/epsmax * 0.5 on SUBNORMROUNDCST
+      */
+      
+      rest = ABS(0.5 - ABS(delta));
+
+      if (rest * SUBNORMROUNDCST > twodb.d) {
+	/* Here we could decide the rounding 
+
+	   The result to return is
+
+	   sign * 2^(-1074) * nearestintpowh 
+
+	   which is either subnormal or equal to the 
+	   least normal.
+
+	   Since we know that the multiplication
+	   does not imply any rounding error, we can
+	   perform it using the shift trick and a mask.
+
+	   This trick yields to a 200 cycle speed-up on Athlon.
+
 	*/
 
-#if DEBUG
-	printf("Midway case detected on ");
-	printHexa("x",x);
-	printHexa("y",y);
-#endif
+	twodb.d = nearestintpowh + two52;
+	twodb.i[HI] = (twodb.i[HI] + (1 << 20)) & 0x001fffff;
 
-	correctedRes = resScaled + delta;
-	
-	if (E < -1021) {
-	  /* Possible subnormal rounding */
-	  
-	  tt1 = correctedRes * TWOM1000;
-	  
-	  tempdb.i[HI] = (E + 2023) << 20;
-	  tempdb.i[LO] = 0;
-	  tempdb.d *= tt1;
-#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-	  temp2db.i[HI] = tempdb.i[HI];
-	  temp2db.i[LO] = tempdb.i[LO];
-	  tempdb.d = temp2db.d;
-#endif
-	
-	  res = tempdb.d;
-	  
-	} else {
-	  /* Normal rounding */
-	  tempdb.d = correctedRes;
-	  tempdb.i[HI] += E << 20;
-	  res = tempdb.d;
-	}
-	return sign * res;
+	return sign * twodb.d;	
       }
-    } else {
-      /* Neither case (i) nor case (ii) could be detected
-	 We can decide the rounding and are inexact.
-	 
-	 TODO: correct handling of the inexact flag
-       
-      */
-      return sign * res;
     }
   }
-
-  /* If we are here, we could not decide the rounding in the first phase */
-
-  pow113(&E, &powh, &powm, &powl, x, y);
-
-  /* We have to perform the final rounding (including subnormals) and to do
-     a rounding test for a relative intermediate accuracy of 2^(-120)
-
-     We produce a faithful rounding res, the rescaled rounding error delta and 
-     the rescaled miulp of the faithful rounding in the direction of delta.
-
-     The value delta is represented on a double-double. This work also
-     for subnormal rounding because the double-double becomes gapped.
-  */
-
-  if (E < -1021) {    
-    /* Possible subnormal rounding 
-
-       The result of the speculative rounding may be 
-       subnormal or normal because the bound is not sharp.
-       The result may clearly not be overflow.
-
-    */
-
-    tt1 = powh * TWOM1000;
-    
-    tempdb.i[HI] = (E + 2023) << 20;
-    tempdb.i[LO] = 0;
-    tempdb.d *= tt1;
-#if defined(CRLIBM_TYPECPU_AMD64) || defined(CRLIBM_TYPECPU_X86) 
-    temp2db.i[HI] = tempdb.i[HI];
-    temp2db.i[LO] = tempdb.i[LO];
-    tempdb.d = temp2db.d;
-#endif
-
-    res = tempdb.d;
-
-    if (powm < 0.0) tempdb.l--; else tempdb.l++;
-
-    tt2 = tempdb.d - res;
-
-    tempdb.i[HI] = (-E + 23) << 20;
-    tempdb.i[LO] = 0;
-    
-    tt3 = tempdb.d * res;
-    tt4 = tempdb.d * tt2;
-
-    resScaled = tt3 * TWO1000;
-    miulp = ABS(tt4 * TWO999);
-    
-    tt5 = powh - resScaled;
-
-    Add12(tt6,tt7,tt5,powm);
-    tt8 = tt7 + powl;
-    Add12(deltah,deltal,tt6,tt8);
-
-  } else {
-    /* Normal rounding, the result may overflow under very rare conditions */
-    
-    tempdb.d = powh;
-    temp2db.d = powh;
-    
-    /* Check first for possible overflow */
-    if (E > 1022) {
-      tempdb.i[HI] += (E - 11) << 20;
-      tempdb.d = tempdb.d * TWO11;
-
-      /* The value tempdb.d may now be infinity but the final rounded result may still be 
-	 representable if delta is negative 
-
-	 We check for this condition and return infinity immediately if it is not fullfilled.
-      */
-      if ((tempdb.i[HI] == 0x7ff00000) && (powm > 0.0)) {
-	/* The result is infinity because the rounding error is positive */
-	return sign * (tempdb.d);
-      }
-      /* Here, tempdb.d is infinity implies delta is negative */
-    } else {
-      tempdb.i[HI] += E << 20;
-    }
-
-    res = tempdb.d;
-    deltah = powm;
-    deltal = powl;
   
-    if (deltah > 0.0) 
-      temp2db.l++;
-    else
-      temp2db.l--;
-    miulp = ABS(0.5 * (temp2db.d - powh));
+  /* If we are here, we could not decide the rounding or are half-ulp 
 
-  }
-
-  /* Here, res is a speculative rounding, 
-     deltah + deltal is the rescaled rounding error and 
-     miulp the rescaled 1/2ulp 
-
-     We have an intermediate accuracy of at least 2^(-120) 
-     We can thus round all TMD cases not worse than 119 - 54 = 65 consecutive bits.
-     All cases worse than 65 consecutive bits build up (unrenormalized)
-     triple-doubles 
-
-     res + deltah + deltal = xxxxxxxxxxx + 1000000000000000 ..... + 1xxxxxxxxxx
-     miulp                 =               1000000000000000
-
-     where xxxx are bits and .... is a gap
-
-     if the middle and the low part of the triple-double form a normalized
-     double-double.
-
-     So we can round all cases where abs(deltah) is not equal to miulp or 
-     where abs(deltah) is equal to miulp and abs(deltal) is not less than 2^(-65) * miulp.
-
-     Since abs(deltah + deltal) may be greater than miulp in roundable cases, 
-     we must perhaps correct the speculative result res.
-
+     Launch now exacter phases and exact and half-ulp testing
+  
   */
 
-  if (ABS(deltah) < miulp) {
-    /* abs(deltah) != miulp and abs(deltah + deltal) < miulp 
+  return pow_exact_rn(x,y,sign,index,ed,zh,zm);
 
-       We can round and have no correction to do.
-    */
-
-    return sign * res;
-  }
-
-  if (ABS(deltah) > miulp) {
-    /* abs(deltah) != miulp and abs(deltah + deltal) > miulp 
-
-       We can round but must perform a correction.
-    */
-
-    tempdb.d = res;
-    if ((deltah > 0.0) || (res == 0.0)) 
-      tempdb.l++;
-    else 
-      tempdb.l--;
-
-    res = tempdb.d;
-
-    return sign * res;
-  }
-
-  /* If we are here, abs(deltah) is not less than miulp and abs(deltah) is not greater than miulp.
-     The value abs(deltah) is thus equal to miulp.
-     We check first if we can round by checking if abs(deltal) > 2^(-65) * miulp. 
-     If we can round, we check if deltal has the same sign as deltah. In this case, we must 
-     perform a correction, otherwise we don't.
-  */
-
-  roundingBound = APPROXBOUNDFACTORACCURATE * miulp;
-
-  if (ABS(deltal) > roundingBound) {
-    /* We can round correctly */
-    if (deltah * deltal > 0.0) {
-      /* deltah and deltal have the same sign 
-	 We must perform a correction.
-      */
-      tempdb.d = res;
-      if ((deltah > 0.0) || (res == 0.0)) 
-	tempdb.l++;
-      else 
-	tempdb.l--;
-      
-      res = tempdb.d;
-    }
-    
-    return sign * res;
-  }
-
-  printf("The rounding of the power function could not be decided on:\n");
-  printHexa("x",x);
-  printHexa("y",y);
-
-  /* We return NaN for testing purposes */
-  return (x-x)/0.0;;
 }
-
 
