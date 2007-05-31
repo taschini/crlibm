@@ -1,0 +1,190 @@
+# test with   gappa -Munconstrained < sin.gappa
+# The proof is not complete, as it doesn't work without -Munconstrained.
+# What it means is that Gappa is unable to prove that some denominators are not null.
+# It's OK to me but it takes some more work to get a formal proof.
+
+@IEEEdouble = float<ieee_64,ne>;
+# Convention 1: uncapitalized variables match the variables in the C code. Other variables begin with a capital letter
+# Convention 2: variables beginning with "M" are mathematical ideal
+
+# yh+yl is a double-double (call it Yhl)
+
+
+yh = IEEEdouble(Yhl);
+yl = Yhl-yh;
+
+
+# The following, along with one hypothesis, ensures that yl is a double, too.
+dummyZero = IEEEdouble(yl)-yl;
+
+
+#--------------- Transcription of the C code --------------------------
+
+s3 = IEEEdouble(-1.6666666666666665741480812812369549646974e-01); 
+s5 = IEEEdouble(8.3333333333333332176851016015461937058717e-03); 
+s7 = IEEEdouble(-1.9841269841269841252631711547849135968136e-04);
+
+yh2 IEEEdouble=  yh * yh;
+ts  IEEEdouble=  yh2 * (s3 + yh2*(s5 + yh2*s7));
+r   IEEEdouble=  yl + yh*ts;
+s             =  yh + r;   # no rounding, it is the Fast2Sum 
+
+#-------- Mathematical definition of what we are approximating --------
+
+
+My2 = My*My;
+Mts = My2 * (s3 + My2*(s5 + My2*s7));
+PolySinY = My + My*Mts;
+
+
+
+
+
+ 
+
+epsargred = (Yhl - My)/My;
+epstotal = (s - SinY)/SinY;
+epsapprox = (PolySinY - SinY)/SinY;
+epsround = (s - PolySinY)/PolySinY;
+
+
+
+# Layers of approximation on s
+S1 = yh + (yl + IEEEdouble(yh*ts));   # remove last round
+S2 = yh + (yl + yh*ts);               # remove penultimate round
+S3 = (yh+yl) + (yh+yl)*ts;            # put yl back in
+
+eps1 = (s-S1)/S1;
+eps2 = (S1-S2)/S2;
+eps3 = (S2-S3)/S3;
+eps4 = (S3-PolySinY)/PolySinY;
+
+
+yhts = IEEEdouble(yh*ts);             # just to make the hints lighter
+p3 IEEEdouble=  s3 + yh2*(s5 + yh2*s7);  # idem
+
+
+tsNoRound = yh2 * (s3 + yh2*(s5 + yh2*s7));
+
+epsy2 = (yh2-My2)/My2;
+epsy2_argred = (Yhl*Yhl-My2)/My2;
+epsy2_negl_yl = (yh*yh-Yhl*Yhl)/(Yhl*Yhl);
+epsy2_rnd = (yh2-yh*yh)/(yh*yh);
+
+
+#----------------------  The theorem to prove --------------------------
+{
+  # Hypotheses 
+    (Yhl in [1b-200, 6.29e-03] \/  Yhl in [ -6.29e-03, -1b-200])
+         # lower bound guaranteed by Kahan-Douglas algorithm
+ /\ epsargred in [-2.53e-23, 2.53e-23] 
+ /\ epsapprox in [-2.26e-24, 2.26e-24] 
+ /\ (yl in [1b-200, 6.29e-03] \/ yl in [-6.29e-03, -1b-200])
+ /\ dummyZero in [0, 0]
+
+-> 
+
+#goal to prove
+   epstotal in ?# [-1b-67, 1b-67]
+#/\ |s| in ? # At the moment it contains zero
+}
+
+
+# Yes, it takes one definition, one hypothesis and one hint to manage a double-double input.
+yl -> IEEEdouble(yl) - dummyZero;
+
+
+# First, some hints for epsy2
+
+# Combination of three relative errors 
+epsy2 -> epsy2_negl_yl + epsy2_rnd + epsy2_argred 
+	+ epsy2_negl_yl*epsy2_rnd + epsy2_negl_yl*epsy2_argred + epsy2_rnd*epsy2_argred
+	+ epsy2_negl_yl*epsy2_rnd*epsy2_argred;
+
+# Rewriting hint to remove decorrelation 
+epsy2_argred ->  #  (epsargred+1)*(epsargred+1) - 1;
+                    epsargred*(epsargred + 2);
+
+# Another one
+epsy2_negl_yl ->  # (yh*yh-(Yhl*Yhl))/(Yhl*Yhl);
+                  # (yh*yh-((yh+yl)*(yh+yl))) / ((yh+yl)*(yh+yl));
+                  # (-2*yh*yl -yl*yl) / (yh*yh + 2*yh*yl + yl*yl);
+                    (-2*yl -yl*yl/yh) / (yh + 2*yl + yl*yl/yh) ;
+
+
+
+# Now the hints for epsround
+
+s~S1;
+S1~S2;
+S2~S3;
+S3~PolySinY;
+
+eps4 -> #  (S3-PolySinY)/PolySinY;
+#   S3/PolySinY - 1;
+#   ((yh+yl) + (yh+yl)*ts) / (My + My*Mts)  - 1;
+#   ((yh+yl)/My) * (1+ts)/(1+Mts)  - 1;
+#   (epsargred+1) * (1+ts)/(1+Mts)  - 1;
+#    epsargred * (1+ts)/(1+Mts)   +  1 * (1+ts)/(1+Mts)  - 1;
+#    epsargred * (1+ts)/(1+Mts)   +  (ts-Mts)/(1+Mts);
+   epsargred * (1+ts)/(1+Mts)   +  Mts*((ts-Mts)/Mts) / (1+Mts);
+
+# Now we just need to bound ts-Mts: 
+ts ~ tsNoRound;
+(tsNoRound - Mts)/Mts -> 
+#     yh2/My2  * (s3 + yh2*(s5 + yh2*s7)) / (s3 + My2*(s5 + My2*s7))  - 1 ;
+      (1+epsy2)  * (s3 + yh2*(s5 + yh2*s7)) / (s3 + My2*(s5 + My2*s7)) -1;
+# Now we just need to express My2 in terms of yh2 and epsy2
+My2 -> yh2/(1+epsy2);
+
+
+
+eps3 -> #(S2-S3)/S3 
+#  S2/S3 - 1; 
+#   (yh + (yl + yh*ts)) / ((yh+yl) + (yh+yl)*ts)   - 1 ;
+#   ((yh+yl) + (yh+yl)*ts - yl*ts) / ((yh+yl) + (yh+yl)*ts)   - 1 ;
+#    - yl*ts / ((yh+yl) + (yh+yl)*ts)   ;
+#    - (yl/Yhl)  * (ts / (1+ts))   ;
+     ((yh-Yhl)/Yhl)  * (ts / (1+ts))   ; # change sign to have the expression of a rounding error
+
+
+eps2 -> # (S1-S2)/S2; 
+#   (yh + (yl + IEEEdouble(yh*ts))) / (yh + (yl + yh*ts))   -1 ;
+#   (IEEEdouble(yh*ts) - yh*ts) / (yh + yl + yh*ts) ;
+#   ((IEEEdouble(yh*ts) - yh*ts)/(yh*ts)) / ( (yh+yl)/(yh*ts) + 1 ) ;
+#    ts * ((IEEEdouble(yh*ts) - yh*ts)/(yh*ts)) / ( 1 + yl/yh + ts ) ; # Almost OK, just the denominator is poorly bounded
+    ts * ((IEEEdouble(yh*ts) - yh*ts)/(yh*ts)) / ( 1/(1+(yh-Yhl)/Yhl) + ts ) ; 
+
+
+yl/yh -> - ((yh-Yhl)/Yhl) / (1+(yh-Yhl)/Yhl);
+
+yhts/yh -> ts*((yhts-yh*ts)/(yh*ts) + 1);
+
+
+# !here the most difficult bit. 
+#eps1 -> #(s-S1)/S1;
+#   (IEEEdouble(yl+yhts) - (yl+yhts)) / (yh + yl + yhts);
+# First make a rounding error appear at the numerator, and factor yh in the denominator, using the hints for  yh/yl and yhts/yh below
+#    ((IEEEdouble(yl+yhts) - (yl+yhts))/((yl+yhts)) )  * (yl/yh + yhts/yh) / (1 + yl/yh + yhts/yh);
+# Now denominator is OK, problem is that numerator needs a proof that yl+yhts is not equal to zero. 
+
+
+(yl+yhts)/yh -> yl/yh + yhts/yh;
+
+
+ 
+
+#Hints for epstotal
+
+epstotal  -> epsapprox + epsround + epsapprox*epsround;
+
+
+
+
+# The following are hints added to remove the -Munconstrained
+
+PolySinY -> My*(1+Mts);
+
+# To show that s doesn't go through zero, we have to make a correlation appear between yl and yh in the sum below:
+#s ->   yh +  IEEEdouble(yl + IEEEdouble(yh*ts));
+s ->   yh * (1+  IEEEdouble(yl + IEEEdouble(yh*ts) )/yh );
