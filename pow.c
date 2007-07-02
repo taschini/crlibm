@@ -97,6 +97,7 @@
 
    where ||eps|| <= 2^(-130)
 
+
 */
 static inline void log2_130(double *resh, double *resm, double *resl, 
 	                    int index, double ed, double xh, double xm) {
@@ -256,80 +257,6 @@ static inline void exp2_120(int *H, double *resh, double *resm, double *resl,
   
 }
 
-/* exp2_82
-
-   Approximates 
-
-   resh + resl = 2^(xh + xl) * (1 + eps)
-
-   where ||eps|| <= 2^(-82.5)
-
-*/
-static inline void exp2_82(double *resh, double *resl, 
-			   double xh, double xl) {
-  double xhMult2L, rhMult2L, r;
-  int k, index1, index2, H;
-  db_number shiftedxhMult2Ldb, scaledb;
-  double rh, rm;
-  double p_t_1_0h;
-  double p_t_2_0h;
-  double p_t_3_0h;
-  double p_t_4_0h;
-  double p_t_5_0h, p_t_5_0m;
-  double p_t_6_0h, p_t_6_0m;
-  double p_t_7_0h, p_t_7_0m;
-  double p_t_8_0h, p_t_8_0m;
-  double p_resh, p_resm;
-  double tbl1h, tbl1m, tbl2h, tbl2m;
-  double tablesh, tablesm;
-  double exp2h, exp2m;
-
-  /* Argument reduction 
-
-     Produce exactly
-
-     2^H * 2^(i1/2^8) * 2^(i2/2^13) * 2^(rh + rl)
-
-  */
-
-  xhMult2L = xh * two13;
-  shiftedxhMult2Ldb.d = shiftConst + xhMult2L;
-  rhMult2L = xhMult2L - (shiftedxhMult2Ldb.d - shiftConst);
-  r = rhMult2L * twoM13;
-  k = shiftedxhMult2Ldb.i[LO];
-  H = k >> 13;
-  index1 = k & INDEXMASK1;
-  index2 = (k & INDEXMASK2) >> 5;
-  Add12Cond(rh,rm,r,xl);
-
-  /* Polynomial approximation */
-  p_t_1_0h = exp2_82_coeff_4h;
-  p_t_2_0h = p_t_1_0h * rh;
-  p_t_3_0h = exp2_82_coeff_3h + p_t_2_0h;
-  p_t_4_0h = p_t_3_0h * rh;
-  Add12(p_t_5_0h,p_t_5_0m,exp2_82_coeff_2h,p_t_4_0h);
-  MulAdd22(&p_t_6_0h,&p_t_6_0m,exp2_82_coeff_1h,exp2_82_coeff_1m,rh,rm,p_t_5_0h,p_t_5_0m);
-  Mul22(&p_t_7_0h,&p_t_7_0m,p_t_6_0h,p_t_6_0m,rh,rm);
-  Add122(&p_t_8_0h,&p_t_8_0m,exp2_82_coeff_0h,p_t_7_0h,p_t_7_0m);
-  p_resh = p_t_8_0h; p_resm = p_t_8_0m;
-
-  /* Table access */
-
-  tbl1h = twoPowerIndex1[index1].hi;
-  tbl1m = twoPowerIndex1[index1].mi;
-  tbl2h = twoPowerIndex2[index2].hi;
-  tbl2m = twoPowerIndex2[index2].mi;
-  
-  /* Reconstruction */
-  Mul22(&tablesh,&tablesm,tbl1h,tbl1m,tbl2h,tbl2m);
-  Mul22(&exp2h,&exp2m,tablesh,tablesm,p_resh,p_resm);  
-
-  scaledb.i[HI] = (H + 1023) << 20;
-  scaledb.i[LO] = 0;
-  
-  *resh = scaledb.d * exp2h;
-  *resl = scaledb.d * exp2m;
-}
 
 
 /* pow_120
@@ -340,23 +267,25 @@ static inline void exp2_82(double *resh, double *resl,
 
    where ||eps|| <= 2^(-118.5) if -1075 <= y * (ed + log2(1 + (zh + zm)) + log2(r[index])) <= 1024
 
-   Approximates further
+   Approximates further (ed + log2(1 + (zh + zm)) + log2(r[index))) by log2xh
+   where 
 
-   log2xh + log2xm + logxm = (ed + log2(1 + (zh + zm)) + log2(r[index])) * (1 + eps2) 
+   log2xh = (ed + log2(1 + (zh + zm)) + log2(r[index))) * (1 + eps2) 
 
-   where ||eps2|| <= 2^(-130)
+   where |eps2| <= 2^(-52) 
+   and log2xh is exact if 2^ed * ((1 + (zh + zm)) * r[index]) is an integer power of 2.
 
 */
-void pow_120(int *H, double *resh, double *resm, double *resl, 
-	     double *log2xh, double *log2xm, double *log2xl,
+void pow_120(int *H, double *resh, double *resm, double *resl, double *log2xh,
 	     double y, int index, double ed, double zh, double zm) {
   double ylog2xh, ylog2xm, ylog2xl;
+  double log2xm, log2xl;
 
   /* Compute log2(x) */
-  log2_130(log2xh,log2xm,log2xl,index,ed,zh,zm); 
+  log2_130(log2xh,&log2xm,&log2xl,index,ed,zh,zm); 
 
   /* Compute y * log2(x) */
-  Mul133(&ylog2xh,&ylog2xm,&ylog2xl,y,*log2xh,*log2xm,*log2xl);
+  Mul133(&ylog2xh,&ylog2xm,&ylog2xl,y,*log2xh,log2xm,log2xl);
 
   /* Compute 2^(y * log2(x)) */
   exp2_120(H,resh,resm,resl,ylog2xh,ylog2xm,ylog2xl);
@@ -384,7 +313,7 @@ void pow_120(int *H, double *resh, double *resm, double *resl,
 
    2^G * (kh + kl) 
    
-   is an approximate to x^y with an relative error of 2^(-118) 
+   is an approximate to x^y with an relative error of 2^(-117) 
 
    and such that rounding 
 
@@ -598,20 +527,16 @@ static inline int pow_round_and_check_rn(double *pow,
    This means the procedure checks whether x^y can be written on
    not more than 54 bits.
 
-   The tests are made using x, y and the approximates
+   The procedure uses 2^G * (kh + kl) supposing the following properties:
 
-   log2xh + log2xm + log2xl = log2(x) * (1 + eps1) 
-
-   where ||eps1|| <= 2^(-130)
-
-   and
-
-   2^G * (kh + kl) = x^y * (1 + eps2)
-
-   where ||eps2|| <= 2^(-118.5),
-   where rounding 2^G * kh to double precision is exact,
-   where the evaluated sum kh + kl holds on at most 54 bits and
-   where 2^(-2) <= kh + kl <= 2^(54).
+   * kh + kl holds on at most 54 bits
+   * 2^G * kh is representable in double precision (even in the subnormal range)
+   * 2^G * (kh + kl) approximates x^y with an error eps less than 2^(-117), i.e. 
+   
+     2^G * (kh + kl) = x^y * (1 + eps) where |eps| <= 2^(-117)
+     
+   * log2xh approximates log2(x) with an accuracy equivalent to at least 52 bits
+     In particular log2xh is exact if x is an integer power of 2
 
    Returns 1 if the case is exact or half-ulp
    Returns 0 otherwise
@@ -621,18 +546,13 @@ static inline int pow_round_and_check_rn(double *pow,
 */
 int pow_exact_case(double *pow,
 		   double x, double y,
-		   double log2xh, double log2xm, double log2xl,
-		   int G, double kh, double kl) {
-  db_number xdb, ydb, shiftedEydb, scaledb, tempdb;
-  int E, F, EyInt;
-  double n, ed, yh, yl, m, Eyh, Eyl, nearestintEy, Ey;
-  double sh, sl;
-  double log2mh, log2ml; 
-  double t1h, t1l, t2; 
-  double Flog2mh, Flog2ml;
+		   int G, double kh, double kl, double log2xh) {
+  db_number xdb, ydb, tempdb, shiftedEydb, temp2db;
+  int E, F, G1, G2;
+  double m, n, yh, yl, Eyh, Eyl, ed, Ey;
   double delta;
-  double japproxh, japproxl;
-  double nearestintj;
+  double nearestEy;
+  double value;
 
   /* For testing whether x^y is an exact or half-ulp case,
      we have two main cases: 
@@ -677,264 +597,148 @@ int pow_exact_case(double *pow,
     
     if (delta != Eyl) return 0;
 
-    /* The case is exact, affect pow with 2^G * (kh + kl) 
-       rounded to nearest in double precision
+  } else {
 
-       Since kh + kl holds on at most 54 bits, 2^G * kh produces
-       never any rounding error and kh and kl are not overlapping, 
-       2^G * kh is equal to the rounding if 
-       (i)  kl is equal to 0
-       (ii) kl is not equal to 0 and the mantissa of 2^G * kh is even
-
-       If in condition (ii), kl is not equal to 0 and the mantissa of 
-       2^G * kh is not even, we correct it depending on the sign of kl.
+    /* x is not an integer power of 2 
        
+       We have clearly an inexact case if y is negative
+       or if y is greater than 35
+    
     */
-    tempdb.i[HI] = (G + 1023) << 20;
-    tempdb.i[LO] = 0;
-    tempdb.d *= kh;
-    if ((kl != 0.0) && ((tempdb.i[LO] & 1) != 0)) {
-      /* We must correct the rounding to the rounding to nearest ties to even */
-      if (kl > 0.0) {
-	tempdb.l++;
-      } else {
-	tempdb.l++;
-      }
+  
+    if ((y < 0.0) || (y > 35.0)) return 0;
+    
+    /* Decompose now y into 
+       
+       y = 2^F * n 
+
+       Checking F and n, we can then already decide
+       some cases using the fact that the worst-case
+       accuracy for x^n, n in [|0;35|], is less (in bits) 
+       than the accuracy of the approximation of x^y we have
+       already in 2^G * (kh + kl).
+
+    */
+    decompose(&n,&F,y);
+    
+    if ((n > 35.0) || (F < -5)) return 0;
+  
+    if (F < 0) {
+      /* Here, -5 <= F <= -1, 3 <= n <= 35, n an odd integer
+	 
+         We decompose x into 2^E * m where m is an odd integer 
+
+	 Let H, sh and sl such that 2^H * (sh + sl) = 2^G * (kh + kl) and
+	 sh + sl is an odd integer.
+
+	 If we have E * 2^F * n = H, we can apply the worst case argument 
+	 because we know the worst case for 
+    
+	 m^(2^F * n) with m odd integer, -5 <= F <= -1, 3 <= n <= 35
+    
+	 when rounding to 53 bits in both rounding modes.
+    
+	 E is bounded in magnitude by 2^11. 2^F * n is equal to y by 
+	 construction. Since n <= 35, y contains at most 6 significant bits. 
+	 The arithmetical multiplication E * y is therefore exact and less 
+	 than or equal to 2^17.
+
+	 We check first whether E * y is an integer. If this is the case,
+	 we compute sh + sl = 2^(G - E * y) * (kh + kl). Finally, 
+	 we check whether sh + sl is an odd integer.
+
+      */
+
+      decompose(&m,&E,x);
+    
+      ed = (double) E;
+    
+      Ey = ed * y; /* Exact */
+    
+
+      /* Check whether Ey is an integer using the simple shift technique
+	 The addition rounds, the substraction is exact by Sterbenz' lemma.
+	 If Ey is an integer, the low order word of shiftedEydb is equal to this
+	 integer.
+      */
+      shiftedEydb.d = 0.6755399441055744e16 + Ey;
+      nearestEy = shiftedEydb.d - 0.6755399441055744e16;
+
+      if (nearestEy != Ey) return 0; 
+      
+      /* Here E * y is integer. 
+	 Produce now 2^(G - E * y).
+      */
+      tempdb.i[HI] = (((G - shiftedEydb.i[LO]) + 1023) << 20);
+      tempdb.i[LO] = 0;
+
+      /* Check now if sh + sl = tempdb.d * (kh + kl) is an odd
+	 integer.
+       
+	 Since kh and kl are not overlapped, we have two cases:
+
+	 (i)  kl is equal to 0, in which case tempdb.d * kh must be an odd integer
+	 (ii) kl is not equal to 0, in which case tempdb.d * kl must be an odd integer
+
+      */
+      if (kl == 0.0) value = kh; else value = kl;
+    
+      value *= tempdb.d; /* Exact because multiplication by positive integer power of 2 */
+
+      if (!isOddInteger(value)) return 0;
+    
+      /* Here the case is exact by the worst-case argument */   
     }
-    *pow = tempdb.d;
-    return 1;
+  
+    /* Here, we have either F >= 0 or an exact case 
+       
+       If F >= 0, we also have an exact case because
+       2^F * n = y <= 35, y therefore integer and because
+       we can apply the worst case argument.
+
+    */       
   }
 
-  /* x is not an integer power of 2 
-     
-     We have clearly an inexact case if y is negative
-     or if y is greater than 35
-
-  */
-  
-  if ((y < 0.0) || (y > 35.0)) return 0;
-
-  /* Decompose now y into 
-
-     y = 2^F * n 
-
-     Checking F and n, we can then already decide
-     some cases using the fact that the worst-case
-     accuracy for x^n, n in [|0;35|], is less (in bits) 
-     than the accuracy of the approximation of x^y we have
-     already in 2^G * (kh + kl).
-
-  */
-  decompose(&n,&F,y);
-
-  if ((n > 35.0) || (F < -5)) return 0;
-  if (F >= 0) {
-    /* Here, F >= 0 and 2^F * n = y <= 35. 
-       Thus y is integer and less than or equal to 35.
-       Using the worst-case search argument, we have 
-       an exact or half-ulp case.
-    */
-
-    /* The case is exact, affect pow with 2^G * (kh + kl) 
-       rounded to nearest in double precision
-
-       Since kh + kl holds on at most 54 bits, 2^G * kh produces
-       never any rounding error and kh and kl are not overlapping, 
-       2^G * kh is equal to the rounding if 
-       (i)  kl is equal to 0
-       (ii) kl is not equal to 0 and the mantissa of 2^G * kh is even
-
-       If in condition (ii), kl is not equal to 0 and the mantissa of 
-       2^G * kh is not even, we correct it depending on the sign of kl.
-       
-    */
-    tempdb.i[HI] = (G + 1023) << 20;
-    tempdb.i[LO] = 0;
-    tempdb.d *= kh;
-    if ((kl != 0.0) && ((tempdb.i[LO] & 1) != 0)) {
-      /* We must correct the rounding to the rounding to nearest ties to even */
-      if (kl > 0.0) {
-	tempdb.l++;
-      } else {
-	tempdb.l++;
-      }
-    }
-    *pow = tempdb.d;
-
-    return 1;
-  }
-
-  /* Here, F < 0, 3 <= n < 35
-
-     In order to show that x^y = x^(2^F * n) 
-     is exact or half-ulp, we decompose 
-     also x and 2^G * (kh + kl) into
-
-     x = 2^E * m, E in Z, m in 2 N + 1
-     2^G * (kh + kl) = 2^H * (sh + sl), H in Z, sh + sl in 2 N + 1
-
-     and check two conditions:
-
-     (i)  2^(E * y) = 2^H
-     (ii) (m^(2^F))^n = sh + sl 
-     
-     Since m, n and sh + sl are odd integers, condition (ii)
-     can be reduced to checking whether
-
-     (a) j = m^(2^F) is integer
-     (b) j^n = sh + sl
-
-     Since n is integer and less than or equal to 35, j is representable
-     in double precision and sh + sl is in any case a 118 bit approximation to 
-     j^n if (i) and (a) are satisfied, the worst-case argument allows to 
-     consider the condition (b) be fulfilled in any case.
-
-     Since m is an odd integer and a double precision number and F <= -1, 
-     nearestint(m^(2^F)) holds on at most 27 bits. The worst case delta of the
-     rounding delta = nearestint(m^(2^F)) - m^(2^F) is greater than 2^(-54) if 
-     not equal to 0. So by approximating m^(2^F) with at least 27 + 54 + 1 = 82 bits, 
-     and comparing the nearestint of the approximation to the approximation, one
-     can decide if m^(2^F) is integer or not.
-
-     Approximating m^(2^F) can be performed as follows:
-
-     m^(2^F) = 2^(2^F * log2(m)) = 2^(2^F * (log2(x) - E))
-
-     We have already an approximation of log2(x) with an accuracy of 130 bits.
-     Since E holds on at most 11 bits, log2(x) - E can be obtained easily with an
-     accuracy of at least 100 bits. Let be Flog2mh + Flog2ml the 100 bit approximation
-     of 2^F * (log2(x) - E). Computing 2^(Flog2mh + Flog2ml) is done by standard
-     techniques in an external function with an accuracy of at least 82.5 bits. 
-
-     We start by decomposing x into E and m, computing E * y, checking if it is integer,
-     computing G - E * y, scaling kh + kl for obtaining sh + sl and checking that it is 
-     an odd integer. 
-
-     E holds on at most 11 bits. n is integer and less than 64. y = 2^F * n holds thus 
-     on at most 6 bits. E * y holds thus on at most 17 bits; the double precision
-     multiplication is thus exact. 
-
-  */  
-  decompose(&m,&E,x);
-  ed = (double) E;
-  Ey = ed * y;
-  shiftedEydb.d = Ey + 0.6755399441055744e16;
-  nearestintEy = shiftedEydb.d - 0.6755399441055744e16;
-
-  if (nearestintEy != Ey) return 0;
-
-  EyInt = shiftedEydb.i[LO];
-
-  scaledb.i[HI] = ((G - EyInt) + 1023) << 20;
-  scaledb.i[LO] = 0;
-
-  Add12(sh,sl,scaledb.d * kh,scaledb.d * kl);
-
-  /* Check now whether sh + sl, which holds on 54 bits, is an odd
-     integer. Several cases must be considered:
-
-     (i)   sl = +/- 1: since sh and sl are not overlapping, sh + sl is an odd integer 
-     (ii)  sl = 0: sh + sl = sh is an odd integer iff sh is an odd integer
-     (iii) abs(sl) > 1: 
-           (a) sl = 2: since sh + sl are non overlapping sh + sl is an integer but is odd
-	   (b) sl >= 3: since sh + sl are non overlapping, sh + sl does not hold on 54 bits
-     (iv)  abs(sl) < 1: sh + sl is not integer because sh and sl are not overlapping
-
-     In consequence, sh + sl is an odd integer iff sl = +/- 1 or sl = 0 and sh is an odd integer
-
-     We return false if sh + sl is not an odd integer.
-
-  */
-  if ((ABS(sl) != 1.0) && ((sl != 0) || (!isOddInteger(sh)))) return 0;
-
-  /* Here sh + sl is an odd integer and E * y = H 
-     Further F <= -1 and if m^(2^F) is an integer j that holds on double precision, sh + sl is
-     an approximation to (m^(2^F))^n better than the worst case of j^n. 
-
-     Thus x^y is exact or half-ulp iff m^(2^F) is integer.
-
-     Compute now a 83 bit accurate approximation to m^(2^F) by computing first 
-     2^F * (log2(x) - E) and than calculating 2^(2^F * (log2(x) - E)).
-
-     The double-double log2xh + log2xm is accurate to at least 2^(-105) in relative error.
-     Since E holds on at most 11 bits, (log2xh + log2xm) - E is accurate to at least 2^(-94)
-     in relative error. 2^(2^F(log2xh + logxm - E)), because bounded by 2^27 (< 2^(2^5)), is thus 
-     affected by a relative error of 2^(-94 + 6) = 2^(-88). We can thus perform the computations
-     completeley in double-double only.
-
-  */
-  Add12Cond(t1h,t1l,log2xh,-ed);
-  t2 = t1l + log2xm;
-  Add12(log2mh,log2ml,t1h,t2);
-
-  scaledb.i[HI] = (F + 1023) << 20;
-  scaledb.i[LO] = 0;
-
-  Flog2mh = scaledb.d * log2mh;
-  Flog2ml = scaledb.d * log2ml;
-  
-  exp2_82(&japproxh, &japproxl, Flog2mh, Flog2ml);
-
-  /* Compute now the nearestint(japproxh + japproxl)
-
-     Since japproxh and japproxl are not overlapping
-     and japproxh + japproxl is less than 2^27,
-     computing nearestint(japproxh) is sufficient.
-     
-     Since we can upper-bound our test bound, it suffices
-     to compute the rounding error on a single double
-     precision number.
-  
-  */
-  nearestintj = (0.6755399441055744e16 + japproxh) - 0.6755399441055744e16;
-  delta = (japproxh - nearestintj) + japproxl;
-
-  /* Check now if we have an exact case by testing the magnitude of delta 
-     If delta is less than 2^54 in magnitude, the case must be exact because
-     there is no combination of m and F which are not an exact case giving a 
-     lower value.
-  */
-  if (ABS(delta) <= 0.55511151231257827021181583404541015625e-16) {
-    /* Here m^(2^F) is integer because the error delta is less than
-       the worst case of the rounding to the nearest integer. The case
-       is exact since sh + sl is an approximation better than the worst case
-       of the rounding problem j^n where j is a double precision number
-       and the integer n is less than or equal to 35.
-    */
-       
-    /* The case is exact, affect pow with 2^G * (kh + kl) 
-       rounded to nearest in double precision
+  /*
+       Here, the case is exact, affect pow with 2^G * (kh + kl) rounded to
+       nearest in double precision
        
        Since kh + kl holds on at most 54 bits, 2^G * kh produces
        never any rounding error and kh and kl are not overlapping, 
        2^G * kh is equal to the rounding if 
        (i)  kl is equal to 0
        (ii) kl is not equal to 0 and the mantissa of 2^G * kh is even
-
+       
        If in condition (ii), kl is not equal to 0 and the mantissa of 
        2^G * kh is not even, we correct it depending on the sign of kl.
        
-    */
-    tempdb.i[HI] = (G + 1023) << 20;
-    tempdb.i[LO] = 0;
-    tempdb.d *= kh;
-    if ((kl != 0.0) && ((tempdb.i[LO] & 1) != 0)) {
-      /* We must correct the rounding to the rounding to nearest ties to even */
-      if (kl > 0.0) {
-	tempdb.l++;
-      } else {
-	tempdb.l++;
-      }
+       Remark that G can be such that 2^G is no longer a normal.
+       Produce therefore 2^(floor(G/2)) and 2^(G - floor(G/2)) and
+       multiply in two steps.
+
+  */
+
+  G1 = G >> 1;
+  G2 = G - G1;
+  
+  tempdb.i[HI] = (G1 + 1023) << 20;
+  tempdb.i[LO] = 0;
+  temp2db.i[HI] = (G2 + 1023) << 20;
+  temp2db.i[LO] = 0;
+  
+  tempdb.d *= (kh * temp2db.d);
+  
+  if ((kl != 0.0) && ((tempdb.i[LO] & 1) != 0)) {
+    /* We must correct the rounding to the rounding to nearest ties to even */
+    if (kl > 0.0) {
+      tempdb.l++;
+    } else {
+      tempdb.l++;
     }
-    *pow = tempdb.d;
-
-    return 1;
   }
-
-  /* Here the error delta is greater than 2^54 in magnitude, so m^(2^F) is 
-     not an integer and the case is not exact */
-
-  return 0;
+  *pow = tempdb.d;
+  
+  return 1;
 }
 
 
@@ -942,16 +746,16 @@ double pow_exact_rn(double x, double y, double sign,
 		    int index, double ed, double zh, double zm) {
   int H, G;
   double powh, powm, powl;
-  double log2xh, log2xm, log2xl;
   double pow;
   double kh, kl;
+  double log2xh;
 
-  pow_120(&H, &powh, &powm, &powl, &log2xh, &log2xm, &log2xl, y, index, ed, zh, zm);
+  pow_120(&H, &powh, &powm, &powl, &log2xh, y, index, ed, zh, zm);
 
   if (pow_round_and_check_rn(&pow,H,powh,powm,powl,&G,&kh,&kl)) 
     return sign * pow;
 
-  if (pow_exact_case(&pow,x,y,log2xh,log2xm,log2xl,G,kh,kl)) 
+  if (pow_exact_case(&pow,x,y,G,kh,kl,log2xh)) 
     return sign * pow;
 
   //  printf("Could not decide the rounding to nearest of power.\n");
