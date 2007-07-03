@@ -60,7 +60,7 @@ else # default assumed to be gcc
 if USE_SSE2
 AM_CFLAGS = -std=c99 -Wall -msse2 -mfpmath=sse 
 else
-AM_CFLAGS = -std=c99 -Wall
+AM_CFLAGS = -std=c99 -Wall -O3
 endif
 endif
 

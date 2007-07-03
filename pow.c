@@ -794,6 +794,7 @@ double pow_rn(double x, double y) {
   double lowerTerms;
   double temp1;
   double zhSq, zhFour, p35, p46, p36, p7;
+  double xSq;
   
   /* Fast rejection of special cases */
   xdb.d = x;
@@ -806,7 +807,7 @@ double pow_rn(double x, double y) {
     if (x == 1.0)  return 1.0;
     if (y == 0.0)  return 1.0;
     if (y == 1.0)  return x;
-    if (y == 2.0)  return x * x;
+    if (y == 2.0)  return x * x; /* Remark: may yield uncorrect rounding on x86 for subnormal results */
     if (y == -1.0) return 1 / x;
     
     if ((x == 0.0) && ((ydb.i[HI] & 0x7ff00000) != 0x7ff00000)) {
@@ -1014,7 +1015,18 @@ double pow_rn(double x, double y) {
   yhdb.i[LO] = 0;
   yh = yhdb.d;
   yl = xdb.d - yh;
+
   
+  /* Special handling for y = 3 or y = 4 and x on not more than 21 bits (without subnormals) */
+  if ((yl == 0) && ((y == 3.0) || (y == 4.0)) && (E > -255)) {
+    if (y == 3.0) 
+      return sign * (x * (x * x));
+    else {
+      xSq = x * x;
+      return sign * (xSq * xSq);
+    }
+  }
+
   index = index & INDEXMASK;
 
   /* Now we have 
