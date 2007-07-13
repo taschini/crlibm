@@ -433,7 +433,7 @@ double tinkered_sinpi (double x) {
   return sin(PIH*x);
 }
 double tinkered_cospi (double x) {
-  return sin(PIH*x);
+  return cos(PIH*x);
 }
 double tinkered_tanpi (double x) {
   return tan(PIH*x);
@@ -456,8 +456,12 @@ double tinkered_acospi (double x) {
 
    Anyway someday the mpfr team will write real ones.
 
-These functions are definitely wrong in directed rounding modes.
-Useful for soaktesting the RN trigpi functions.
+   These functions are probably wrong sometimes in directed rounding
+   modes, although this has improved thanks to Rob Clark and Guillaume
+   Hanrot.  
+
+   Useful mostly for soaktesting the RN trigpi functions.
+
 */ 
 
 int tinkered_mpfr_sinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
@@ -465,6 +469,19 @@ int tinkered_mpfr_sinpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
   mpfr_init2(pi,  2000);
   mpfr_init2(pix, 2060);
 
+  /* Test for exact cases */
+  mpfr_mul_2exp(mpr, mpx, 1, GMP_RNDN); 
+  if(mpfr_integer_p(mpr)) { /* Exact cases */ 
+    mpfr_div_2exp(mpr, mpx, 1, GMP_RNDN); 
+    mpfr_frac(mpr, mpr, GMP_RNDN);
+    double d = mpfr_get_d(mpr, GMP_RNDN); /* -1/4, 0, 1/2, 3/4 */
+    if (d == 0.0)       { mpfr_set_si(mpr, 0, rnd); }
+    else if (d == 0.25) { mpfr_set_si(mpr, 1, rnd); }
+    else if (d == 0.5)  { mpfr_set_si(mpr, 0, rnd); }
+    else                { mpfr_set_si(mpr, -1, rnd); } 
+    return 0; 
+  }
+  
   mpfr_const_pi(pi,  GMP_RNDN);
   mpfr_mul(pix, pi, mpx, GMP_RNDN);
   mpfr_sin(mpr, pix, rnd);
@@ -477,6 +494,19 @@ int tinkered_mpfr_cospi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
   mpfr_t pi, pix;
   mpfr_init2(pi,  2000);
   mpfr_init2(pix, 2060);
+
+  /* Test for exact cases */
+  mpfr_mul_2exp(mpr, mpx, 1, GMP_RNDN); 
+  if(mpfr_integer_p(mpr)) { /* Exact cases */ 
+    mpfr_div_2exp(mpr, mpx, 1, GMP_RNDN); 
+    mpfr_frac(mpr, mpr, GMP_RNDN);
+    double d = mpfr_get_d(mpr, GMP_RNDN); /* -1/4, 0, 1/2, 3/4 */
+    if (d == 0.0)       { mpfr_set_si(mpr, 1, rnd); }
+    else if (d == 0.25) { mpfr_set_si(mpr, 0, rnd); }
+    else if (d == 0.5)  { mpfr_set_si(mpr, -1, rnd); }
+    else                { mpfr_set_si(mpr, 0, rnd); } 
+    return 0; 
+  }
 
   mpfr_const_pi(pi,  GMP_RNDN);
   mpfr_mul(pix, pi, mpx, GMP_RNDN);
@@ -491,6 +521,19 @@ int tinkered_mpfr_tanpi (mpfr_t mpr, mpfr_t mpx, mp_rnd_t rnd) {
   mpfr_init2(pi,  2000);
   mpfr_init2(pix, 2060);
 
+  /* Test for exact cases */
+  mpfr_mul_2exp(mpr, mpx, 2, GMP_RNDN); 
+  if(mpfr_integer_p(mpr)) { /* Exact cases */ 
+    mpfr_frac(mpr, mpx, GMP_RNDN); 
+    double d = mpfr_get_d(mpr, GMP_RNDN); /* -1/4, 0, 1/4, 1/2 */
+    if (d == 0.0)       { mpfr_set_ui(mpr, 0, rnd); }
+    else if (d == 0.25) { mpfr_set_ui(mpr, 1, rnd); }
+    else if (d == 0.5)  { mpfr_set_nan(mpr); }
+    else                { mpfr_set_si(mpr, -1, rnd); } 
+    return 0; 
+  }
+  
+  /* Otherwise */
   mpfr_const_pi(pi,  GMP_RNDN);
   mpfr_mul(pix, pi, mpx, GMP_RNDN);
   mpfr_tan(mpr, pix, rnd);
