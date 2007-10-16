@@ -160,9 +160,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -202,7 +202,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
    
    /* 
       We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
-      Multiplication of ed (double E) and log2h is thus correct
+      Multiplication of ed (double E) and log2h is thus exact
       The overall accuracy of log2h + log2m + log2l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
       The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
@@ -223,7 +223,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    Add22(&logh, &logm, log2edh, log2edl, logTabPolyh, logTabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function */
+   /* Rounding test and possible return or call to the accurate function */
 
    if(logh == (logh + (logm * RNROUNDCST)))
      return logh;
@@ -340,9 +340,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -382,7 +382,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
    
    /* 
       We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
-      Multiplication of ed (double E) and log2h is thus correct
+      Multiplication of ed (double E) and log2h is thus exact
       The overall accuracy of log2h + log2m + log2l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
       The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
@@ -403,7 +403,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    Add22(&logh, &logm, log2edh, log2edl, logTabPolyh, logTabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function */
+   /* Rounding test and possible return or call to the accurate function */
 
    TEST_AND_RETURN_RU(logh, logm, RDROUNDCST);
 
@@ -519,9 +519,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -561,7 +561,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
    
    /* 
       We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
-      Multiplication of ed (double E) and log2h is thus correct
+      Multiplication of ed (double E) and log2h is thus exact
       The overall accuracy of log2h + log2m + log2l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
       The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
@@ -582,7 +582,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    Add22(&logh, &logm, log2edh, log2edl, logTabPolyh, logTabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function */
+   /* Rounding test and possible return or call to the accurate function */
 
    TEST_AND_RETURN_RD(logh, logm, RDROUNDCST);
 
@@ -698,9 +698,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -740,7 +740,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
    
    /* 
       We store log2 as log2h + log2m + log2l where log2h and log2m have 12 trailing zeros
-      Multiplication of ed (double E) and log2h is thus correct
+      Multiplication of ed (double E) and log2h is thus exact
       The overall accuracy of log2h + log2m + log2l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
       The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
@@ -761,7 +761,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    Add22(&logh, &logm, log2edh, log2edl, logTabPolyh, logTabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function */
+   /* Rounding test and possible return or call to the accurate function */
 
    TEST_AND_RETURN_RZ(logh, logm, RDROUNDCST);
 
@@ -876,9 +876,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -928,7 +928,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
    
    Add122(&logh, &logm, ed, log2TabPolyh, log2TabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function */
+   /* Rounding test and possible return or call to the accurate function */
 
    if(logh == (logh + (logm * RNROUNDCST)))
      return logh;
@@ -1060,9 +1060,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -1242,9 +1242,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -1424,9 +1424,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -1476,7 +1476,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
    
    Add122(&logh, &logm, ed, log2TabPolyh, log2TabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function */
+   /* Rounding test and possible return or call to the accurate function */
 
    TEST_AND_RETURN_RZ(logh, logm, RDROUNDCST);
      {
@@ -1589,9 +1589,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -1631,7 +1631,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
    
    /* 
       We store log_10(2) as log210h + log210m + log210l where log210h and log210m have 10 trailing zeros
-      Multiplication of ed (double E) and log210h and m is thus correct
+      Multiplication of ed (double E) and log210h and m is thus exact
       The overall accuracy of log10h + log10m + log10l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
       The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
@@ -1656,7 +1656,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    Add22(&logh, &logm, log2edh, log2edl, log10TabPolyh, log10TabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function */
+   /* Rounding test and possible return or call to the accurate function */
 
    if(logh == (logh + (logm * RNROUNDCST)))
      return logh;
@@ -1776,9 +1776,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -1818,7 +1818,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
    
    /* 
       We store log_10(2) as log210h + log210m + log210l where log210h and log210m have 10 trailing zeros
-      Multiplication of ed (double E) and log210h and m is thus correct
+      Multiplication of ed (double E) and log210h and m is thus exact
       The overall accuracy of log10h + log10m + log10l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
       The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
@@ -1843,7 +1843,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    Add22(&logh, &logm, log2edh, log2edl, log10TabPolyh, log10TabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function */
+   /* Rounding test and possible return or call to the accurate function */
 
 
    TEST_AND_RETURN_RU(logh, logm, RDROUNDCST);
@@ -1963,9 +1963,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -2005,7 +2005,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
    
    /* 
       We store log_10(2) as log210h + log210m + log210l where log210h and log210m have 10 trailing zeros
-      Multiplication of ed (double E) and log210h and m is thus correct
+      Multiplication of ed (double E) and log210h and m is thus exact
       The overall accuracy of log10h + log10m + log10l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
       The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
@@ -2030,7 +2030,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    Add22(&logh, &logm, log2edh, log2edl, log10TabPolyh, log10TabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function */
+   /* Rounding test and possible return or call to the accurate function */
 
 
    TEST_AND_RETURN_RD(logh, logm, RDROUNDCST);
@@ -2149,9 +2149,9 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    /* Do range reduction:
 
-      zh + zl = y * ri - 1.0 correctly
+      zh + zl = y * ri - 1.0 exactly
 
-      Correctness is assured by use of two part yh + yl and 21 bit ri and Add12
+      Exactness is assured by use of two part yh + yl and 21 bit ri and Add12
 
       Discard zl for higher monome degrees
    */
@@ -2191,7 +2191,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
    
    /* 
       We store log_10(2) as log210h + log210m + log210l where log210h and log210m have 10 trailing zeros
-      Multiplication of ed (double E) and log210h and m is thus correct
+      Multiplication of ed (double E) and log210h and m is thus exact
       The overall accuracy of log10h + log10m + log10l is 53 * 3 - 24 = 135 which
       is enough for the accurate phase
       The accuracy suffices also for the quick phase: 53 * 2 - 24 = 82
@@ -2216,7 +2216,7 @@ Renormalize3(p_resh,p_resm,p_resl,p_t_21_0h,p_t_21_0m,p_t_21_0l);
 
    Add22(&logh, &logm, log2edh, log2edl, log10TabPolyh, log10TabPolyl);
 
-   /* Rounding test and eventual return or call to the accurate function */
+   /* Rounding test and possible return or call to the accurate function */
 
 
    TEST_AND_RETURN_RZ(logh, logm, RDROUNDCST);
