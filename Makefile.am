@@ -77,7 +77,6 @@ crlibm.pdf: docs/latex/crlibm.tex
 doc: crlibm.pdf tripledoubleprocedures.pdf
 
 EXTRA_DIST = VERSION TODO\
-	docs/crlibm.pdf docs/tripledoubleprocedures.pdf\
 	maple/common-procedures.mpl \
 	maple/double-extended.mpl maple/triple-double.mpl\
 	maple/exp-td.mpl maple/csh.mpl \
@@ -90,9 +89,9 @@ EXTRA_DIST = VERSION TODO\
 	maple/gal.mpl \
 	maple/pow.mpl \
 	maple/atan-itanium.mpl \
-	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
-	gappa/trigoTanCase2.gappa \
-	gappa/trigoSinCosCase3.gappa gappa/trigoTanCase2.gappa \
+	gappa/trigos/SinCosCase3.gappa gappa/trigos/TanCase2.gappa \
+	gappa/trigos/TanCase2.gappa \
+	gappa/trigos/SinCosCase3.gappa gappa/trigos/TanCase2.gappa \
 	gappa/sqrt12.gappa gappa/sqrt13.gappa gappa/sqrt-proof.sh gappa/sqrt.sed \
 	gappa/log-de/log-de-acc-index0-E0.gappa    gappa/log-de/log-de-index0-E0.gappa \
 	gappa/log-de/log-de-acc-index0-E1N.gappa   gappa/log-de/log-de-index0-E1N.gappa \

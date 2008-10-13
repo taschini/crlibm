@@ -11,6 +11,9 @@ void usage(char *fct_name){
 }
 
 
+/* indicate the number of argument taken by the function */
+int nbarg;          
+
 
 char* skip_comments(FILE* f, char* line) {
   char* r; 
@@ -41,10 +44,10 @@ int main (int argc, char *argv[])
   char* r;
   int count=0;
   double worstcase;
-  db_number input, output, expected;
+  db_number input, input2, output, expected;
 #ifdef HAVE_MPFR_H  
   db_number res_mpfr;
-  mpfr_t mp_res, mp_inpt; 
+  mpfr_t mp_res, mp_inpt, mp_inpt2; 
   mp_rnd_t mpfr_rnd_mode;
 #endif
   int (*mpfr_fun)() = NULL;
@@ -77,14 +80,26 @@ int main (int argc, char *argv[])
   skip_comments(f, line);
   sscanf(line, "%s", function_name);
 
+  if (strcmp(function_name,"pow")==0) nbarg=2;
+  else nbarg=1;
+
   if(verbose)  printf("Testing function: %s\n", function_name);
 
   r=skip_comments(f, line);
+
   while(r!=0) { 
+    if (nbarg==2)
+    sscanf(line, "%s %x %x%x %x %x %x\n", 
+	   rounding_mode, 
+	   &input.i[HI], &input.i[LO],
+	   &input2.i[HI], &input2.i[LO],
+	   &expected.i[HI], &expected.i[LO] );
+    else
     sscanf(line, "%s %x %x %x %x\n", 
 	   rounding_mode, 
 	   &input.i[HI], &input.i[LO],
 	   &expected.i[HI], &expected.i[LO] );
+
       /* Centralized test initialization function */
     test_init(
 	      &unused, &unused, 
@@ -93,11 +108,20 @@ int main (int argc, char *argv[])
 	      function_name,
 	      rounding_mode ) ;
     
-    output.d = testfun_crlibm(input.d);
+    if (nbarg==2)
+      output.d = testfun_crlibm(input.d, input2.d);
+    else
+        output.d = testfun_crlibm(input.d);
+
     count++;
 
     if(verbose){
-      printf("Input:      %08x %08x  (%0.50e)\n", input.i[HI], input.i[LO], input.d ); 
+      if (nbarg==2)
+        printf("Input1: %08x %08x  (%0.50e),       Input2: %08x %08x  (%0.50e)\n", 
+               input.i[HI], input.i[LO], input.d,
+               input2.i[HI], input2.i[LO], input2.d ); 
+      else
+        printf("Input:      %08x %08x  (%0.50e)\n", input.i[HI], input.i[LO], input.d ); 
       printf("    Output: %08x %08x  (%0.50e)", output.i[HI], output.i[LO], output.d ); 
       if( output.l==expected.l)
 	printf("   ...  OK \n");
@@ -110,7 +134,12 @@ int main (int argc, char *argv[])
         || ((expected.d == expected.d) && (output.l != expected.l))    ) { /* or expected non-NaN, got something different */
       failures ++;
       printf("ERROR for %s with rounding %s\n", function_name, rounding_mode);
-      printf("       Input: %08x %08x  (%0.50e)\n", input.i[HI], input.i[LO], input.d ); 
+      if (nbarg==2)
+        printf("       Input1: %08x %08x  (%0.50e),       Input2: %08x %08x  (%0.50e)\n", 
+               input.i[HI], input.i[LO], input.d,
+               input2.i[HI], input2.i[LO], input2.d ); 
+      else
+        printf("       Input:      %08x %08x  (%0.50e)\n", input.i[HI], input.i[LO], input.d ); 
       printf("      Output: %08x %08x  (%0.50e)\n", output.i[HI], output.i[LO], output.d ); 
       printf("    Expected: %08x %08x  (%0.50e)\n", expected.i[HI], expected.i[LO], expected.d ); 
 
@@ -126,8 +155,15 @@ int main (int argc, char *argv[])
 
       mpfr_init2(mp_res,  160);
       mpfr_init2(mp_inpt, 53);
-      mpfr_set_d(mp_inpt, input.d, GMP_RNDN);
-      mpfr_fun(mp_res, mp_inpt, mpfr_rnd_mode);
+      mpfr_set_d(mp_inpt2, input.d, GMP_RNDN);
+      if (nbarg==1) 
+        mpfr_fun(mp_res, mp_inpt, mpfr_rnd_mode);
+      else {
+        mpfr_init2(mp_inpt2, 53);
+        mpfr_set_d(mp_inpt2, input2.d, GMP_RNDN);
+        mpfr_fun(mp_res, mp_inpt, mp_inpt2, mpfr_rnd_mode);
+      }
+
       res_mpfr.d = mpfr_get_d(mp_res, mpfr_rnd_mode);
 
       printf(" MPFR result: %08x %08x  (%0.50e)\n", res_mpfr.i[HI], res_mpfr.i[LO], res_mpfr.d ); 

@@ -180,7 +180,10 @@ extern double exp2_ru(double); /* toward +inf */
 
 /*  pow */
 /* ATTENTION: THIS FUNCTION IS UNDER DEVELOPMENT 
-   AND CURRENTLY NOT CORRECTLY ROUNDED 
+   AND CURRENTLY NOT PROVEN CORRECTLY ROUNDED FOR ALL CASES
+
+   See the documentation
+
 */
 extern double pow_rn(double, double); 
 
