@@ -61,15 +61,17 @@ check_cospi: crlibm_blindtest
 	echo ./crlibm_blindtest cospi.testdata>check_cospi; chmod a+rx check_cospi
 check_tanpi: crlibm_blindtest
 	echo ./crlibm_blindtest tanpi.testdata>check_tanpi; chmod a+rx check_tanpi
+check_pow: crlibm_blindtest
+	echo ./crlibm_blindtest pow.testdata>check_pow; chmod a+rx check_pow
 
 CRLIBM_CHECKLIST = check_exp check_expm1 check_log check_log2 check_log10 check_log1p \
 check_sin check_cos check_tan check_asin check_acos check_atan  check_sinh check_cosh  \
-check_sinpi check_cospi check_tanpi check_asinpi check_acospi check_atanpi
+check_sinpi check_cospi check_tanpi check_asinpi check_acospi check_atanpi check_pow
 
 TESTS = $(CRLIBM_CHECKLIST)
 
 EXTRA_DIST = exp.testdata expm1.testdata log.testdata log2.testdata log10.testdata log1p.testdata  \
 sin.testdata cos.testdata tan.testdata asin.testdata acos.testdata atan.testdata sinh.testdata cosh.testdata \
-sinpi.testdata cospi.testdata tanpi.testdata asinpi.testdata acospi.testdata atanpi.testdata
+sinpi.testdata cospi.testdata tanpi.testdata asinpi.testdata acospi.testdata atanpi.testdata pow_testdata
 
 CLEANFILES = $(CRLIBM_CHECKLIST)
