@@ -1201,7 +1201,7 @@ Let $y$ be a real number, and  $\maxeps$, $e$, $y_h$ and $y_l$ be
   \begin{itemize}
   \item $y_h=y_h\oplus y_l$
   \item none of $y_h$ and $y_l$ is a  NaN or $\pm \infty$,
-  \item $|y_h|\ge 2^{-1022+52}$ (i.e. $\frac{1}{4}\ulp(y_h)$ is not subnormal), 
+  \item $|y_h|\ge 2^{-1022+54}$ (i.e. $\frac{1}{4}\ulp(y_h)$ is not subnormal), 
   \item $|y_h+y_l - y| <\maxeps.|y|$ (i.e. the total relative error of
     $y_h+y_l$ with respect to $y$ is bounded by $\maxeps$),
   \item $0<\maxeps \le 2^{-53-k}$ with $ k \ge 3$ integer,
@@ -1227,7 +1227,7 @@ else /* more accuracy is needed, launch accurate phase */
 
 %  \paragraph{Sketch of the proof} 
 
-  Remark that the condition $|y_h|\ge 2^{-1022+53}$ implies that $y_h$
+  Remark that the condition $|y_h|\ge 2^{-1022+54}$ implies that $y_h$
   is a normal number. 
 
   The implication we need to prove is: if the test is true, then $y_h
