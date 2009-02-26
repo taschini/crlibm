@@ -125,6 +125,7 @@ EXTRA_DIST = VERSION TODO\
 	docs/latex/pow.tex \
 	docs/latex/fig_scs docs/latex/fig_exp\
 	docs/latex/elem-fun.bib\
+	docs/latex/tripledoubleprocedures.tex \
 	scs_lib/tests/tbx_timing.h \
 	tests/testperfs.sh\
 	triple-double.h double-extended.h \
