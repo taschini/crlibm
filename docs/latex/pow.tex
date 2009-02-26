@@ -1,0 +1,68 @@
+This chapter is contributed by Ch. Q. Lauter and F. de Dinechin.
+
+
+
+
+\section{Work in progress}
+
+Here is the status of the current implementation of pow in CRLibm:
+
+\begin{itemize}
+\item Exact and mid-point cases are handled properly
+  \cite{LauterLefevre2007}. This is especially important because an
+  exact case would mean an infinite Ziv iteration.
+
+\item Worst cases are not known for the full input range. This is a
+  deep theoretical issue. Recent research has focussed on $x^n$ for
+  integer $n$. At the time of release, it has been proved
+  computationally that that an intermediate precision of $2^{-118}$ is
+  enough to round correctly $x^n$ for all integer $n$ between -180 and
+  +1338. In addition, specific algorithms have been studied for the
+  computation of $x^n$ \cite{KorLauLefLouvMul2008}.
+
+\item Due to lack of time, only round-to-nearest is
+  implemented. Directed rounding requires additional work, in
+  particular in subnormal handling and in exact case management. There
+  are more exact cases in directed rounding modes, therefore the
+  performance should also be inferior.
+
+\item The current implementation computes two Ziv iterations, to
+  $2^{-61}$ then to $2^{-120}$. With current technology, there is
+  little hope to find all the worst cases for the full range of the
+  power function. Should an input require more than $2^{-120}$ happen
+  (to our knowledge none has been exhibited so far), current
+  implementation will not necessarily return the correctly rounded
+  result. Options are:
+  \begin{itemize}
+  \item Ignore silently the problem (this is the current option).
+  \item perform a second rounding test at the end of the accurate
+    step. If the test fails (with a  probability
+      smaller that $2^{-120}$),
+    \begin{itemize}
+    \item an arbitrary precision computation could be launched, for
+      example MPFR. This requires adding a dependency to MPFR only for
+      this highly improbable case.
+    \item launch a high, but not arbitrary precision third step (say,
+      accurate to $2^{-3000}$. Variations of the SLZ algorithm
+      \cite{Stehle-thesis} could provide, at an acceptable
+      computational cost, a certificate that there is no worst case
+      requiring a larger precision. This is the only fully satisfactory solution that seems at reach, but this idea remains to be explored.
+    \item (in addition to the previous) a message on the standard error could be written, including
+      the corresponding inputs, and inviting anyone who reads it to
+      send us a mail. Considering the probability, we might wait
+      several centuries before getting the first mail.
+    \end{itemize}
+
+  \end{itemize}
+
+
+
+\end{itemize}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "crlibm"
+%%% End: 
+
