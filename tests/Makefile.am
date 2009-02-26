@@ -16,7 +16,8 @@ INCLUDES=-I$(top_srcdir)
 crlibm_testval_SOURCES = test_val.c test_common.c test_common.h
 crlibm_soaktest_SOURCES = soak_test.c test_common.c test_common.h
 crlibm_soaktest_interval_SOURCES = soak_test-interval.c test_common.c test_common.h
-crlibm_testperf_SOURCES = test_perf.c test_common.c test_common.h
+crlibm_testperf_SOURCES = test_perf.c test_common.c test_common.h  powmidpoint.h
+
 crlibm_testperf_interval_SOURCES = test_perf-interval.c test_common.c test_common.h
 crlibm_blindtest_SOURCES = blind_test.c test_common.c test_common.h
 crlibm_generate_test_vectors_SOURCES = generate_test_vectors.c test_common.c test_common.h

@@ -122,6 +122,7 @@ EXTRA_DIST = VERSION TODO\
 	docs/latex/log.tex docs/latex/log1p.tex docs/latex/log2.tex docs/latex/log10.tex\
 	docs/latex/asin.tex docs/latex/acos.tex docs/latex/atan.tex \
 	docs/latex/csh.tex docs/latex/trigo.tex docs/latex/trigpi.tex \
+	docs/latex/pow.tex \
 	docs/latex/fig_scs docs/latex/fig_exp\
 	docs/latex/elem-fun.bib\
 	scs_lib/tests/tbx_timing.h \
