@@ -649,10 +649,6 @@ void sinpiquick(double *rh, double *rm, double x, int index, int quadrant) {
    index = t.i[LO] & 0x3f;
    quadrant = (t.i[LO] & 0xff) >>6;
 
-   if(index==0 && y==0. && ((quadrant&1)==1)) return +0.; 
-   /* Always +0, inpired by LIA2; We do not have cos(x+pi) == - cos(x)
-      in this case */
-
    /* Special case tests come late because the conversion FP to int is slow */
    xih = xdb.i[HI];
    absxih = xih & 0x7fffffff;
@@ -663,9 +659,13 @@ void sinpiquick(double *rh, double *rm, double x, int index, int quadrant) {
      xdb.l=0xfff8000000000000LL;
      return xdb.d - xdb.d; 
    }
-      
+
    if(absxih>=0x43400000) /* 2^53, which entails that x is an even integer */
      return 1.0; 
+
+   if(index==0 && y==0. && ((quadrant&1)==1)) return +0.; 
+   /* Always +0, inpired by LIA2; We do not have cos(x+pi) == - cos(x)
+      in this case */
 
    if(index==0 && y==0. && quadrant==0) return 1.; 
    if(index==0 && y==0. && quadrant==2) return -1.; 
