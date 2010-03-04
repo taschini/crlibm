@@ -57,7 +57,7 @@
 /* An init function which sets FPU flags when needed */
 unsigned long long crlibm_init() {
 #ifndef CRLIBM_TYPEOS_BSD
-#if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
+#if defined(CRLIBM_HAS_FPU_CONTROL) && (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
   unsigned short oldcw, cw;
 
 #if 1 /* gcc */

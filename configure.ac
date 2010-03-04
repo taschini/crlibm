@@ -20,7 +20,7 @@ hpux*)
 	AC_DEFINE_UNQUOTED(CRLIBM_TYPEOS_HPUX,1,[OS type]);;
 *cygwin* | *mingw* | *uwin* | *djgpp | *emx*)
 	AC_DEFINE_UNQUOTED(CRLIBM_TYPEOS_CYGWIN,1,[OS type]);;
-freebsd*|netbsd*)
+freebsd*|netbsd*|darwin*)
 	AC_DEFINE_UNQUOTED(CRLIBM_TYPEOS_BSD,1,[OS type]);;
 esac;
 
@@ -119,6 +119,14 @@ AC_C_INLINE
 AC_CHECK_FUNCS([sqrt])
 AC_CHECK_HEADERS([fenv.h])
 AC_CHECK_HEADERS([float.h])
+AC_CHECK_HEADER(fpu_control.h, has_fpu_control=yes, has_fpu_control=no)
+
+dnl Send this information to automake
+AM_CONDITIONAL(HAS_FPU_CONTROL, 	test x$has_fpu_control = xyes)
+
+if test x$has_fpu_control = xyes ; then
+AC_DEFINE_UNQUOTED(CRLIBM_HAS_FPU_CONTROL,1,[architecture- and system-specific FPU control header file])
+fi
 
 dnl adds -lm
 AC_CHECK_LIB([m], [log])
@@ -209,9 +217,9 @@ AC_ARG_ENABLE(double-extended,
   [enable_double_extended=yes])
 
 dnl following line needs a little bit more work on log-de.c and double-extended.h
-dnl AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_ia32_de = xtrue -a x$enable_double_extended = xyes   -o  x$has_ia64_de = xtrue -a x$CC = xicc -a x$enable_double_extended = xyes  )
+dnl AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_ia32_de = xtrue -a x$enable_double_extended = xyes -a x$has_fpu_control=xyes   -o  x$has_ia64_de = xtrue -a x$CC = xicc -a x$enable_double_extended = xyes  )
 
-AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_ia32_de = xtrue -a x$enable_double_extended = xyes -a x$enable_interval_functions = xno    )
+AM_CONDITIONAL(USE_HARDWARE_DE, test x$has_ia32_de = xtrue  -a x$has_fpu_control = xyes  -a x$enable_double_extended = xyes -a x$enable_interval_functions = xno    )
 dnl  Note that at the moment, enabling intervals disables double-extended
 
 

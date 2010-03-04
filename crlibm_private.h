@@ -23,7 +23,7 @@
 
 
 #if (defined(CRLIBM_TYPECPU_X86) || defined(CRLIBM_TYPECPU_AMD64))
-# ifndef CRLIBM_TYPEOS_BSD
+# ifdef CRLIBM_HAS_FPU_CONTROL
 #  include <fpu_control.h>
 #  ifndef _FPU_SETCW
 #   define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
@@ -34,7 +34,7 @@
 # endif
 #endif
 
-/* 64 bit arithmetic may be standardised, but people still do want they want */
+/* 64 bit arithmetic may be standardised, but people still do what they want */
 #ifdef HAVE_INTTYPES_H
 #define ULL(bits) 0x##bits##uLL
 #elif defined(_WIN32) 
