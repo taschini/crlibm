@@ -2,6 +2,7 @@
  * Correctly rounded expm1 = e^x - 1
  *
  * Author : Christoph Lauter (ENS Lyon)
+ * One bug fix by Florent de Dinechin
  *
  * This file is part of the crlibm library developed by the Arenaire
  * project at Ecole Normale Superieure de Lyon
@@ -230,7 +231,7 @@ void expm1_common_td(double *expm1h, double *expm1m, double *expm1l,
   expm = polyWithTablesmdb.d;
   expl = polyWithTablesldb.d;
 
-  /* Substraction of -1 
+  /* Subtraction of -1 
      
      We use a conditional Add133 
   */
@@ -245,7 +246,7 @@ void expm1_common_td(double *expm1h, double *expm1m, double *expm1l,
 
 
 double expm1_rn(double x) {
-	db_number xdb, shiftedXMultdb, twoToM;
+  db_number xdb, shiftedXMultdb, polyTblhdb, polyTblmdb;
   int xIntHi, expoX, k, M, index1, index2;
   double highPoly, tt1h, t1h, t1l, xSqh, xSql, xSqHalfh, xSqHalfl, xCubeh, xCubel, t2h, t2l, templ, tt3h, tt3l;
   double polyh, polyl, expm1h, expm1m, expm1l;
@@ -499,36 +500,23 @@ double expm1_rn(double x) {
   
   Add12(t11,t12,tablesh,t10);
   t13 = t12 + tablesl;
-  Add12(exph,expm, t11,t13);
+  Add12(polyTblhdb.d,polyTblmdb.d,t11,t13);
   
   /* Reconstruction: multiplication by 2^M */
 
+  /* Implement the multiplication by addition to overcome the
+     problem of the non-representability of 2^1024 (M = 1024)
+     This case is possible if polyTblhdb.d < 1
+  */
   
-  /* Bug found by Morten Welinder, tanks to him: 
-	  The multiplication was implemented as 
-
-	  polyTblhdb.i[HI] += M << 20;   
+  polyTblhdb.i[HI] += M << 20;
+  if(polyTblmdb.d!=0.0) /* predicted true, but it happens for x=-4.1588039009762204, thanks Morten */
 	  polyTblmdb.i[HI] += M << 20;
 
-	  (where polyTblh/l were dbnumber versions of exph and expm)
+  exph = polyTblhdb.d;
+  expm = polyTblmdb.d;
 
-	  polyTblh is under control, but he found one case where  polyTblm is zero
-	  (for x=-4.1588039009762204 and a few neighbouring values)
-	  In this case M=-6, and adding -6 to the 0 exponent gives a very large value.
-
-	  Anyway the version fixed here is barely slower. 
-
-  */
-
-  /* build 2^M  -- let's hope the compiler schedules it early enough */
-
-  twoToM.i[HI] = 0x3FF00000 + (M << 20);
-  twoToM.i[LO] = 0;
-
-  exph *= twoToM.d;
-  expm *= twoToM.d;
-
-  /* Substraction of 1 
+  /* Subtraction of 1 
 
      Testing if the operation is necessary is more expensive than 
      performing it in any case.
@@ -537,7 +525,7 @@ double expm1_rn(double x) {
      arguments 1/4 <= x <= ln(2) (0.25 <= x <= 0.69) 
      We must therefore use conditional Add12s
 
-     Since we perform a substraction, we may not have addition overflow towards +inf
+     Since we perform a subtraction, we may not have addition overflow towards +inf
 
   */
 
@@ -836,18 +824,19 @@ double expm1_rd(double x) {
   
   /* Reconstruction: multiplication by 2^M */
 
-  /* Implement the multiplication by multiplication to overcome the
+  /* Implement the multiplication by addition to overcome the
      problem of the non-representability of 2^1024 (M = 1024)
      This case is possible if polyTblhdb.d < 1
   */
   
   polyTblhdb.i[HI] += M << 20;
-  polyTblmdb.i[HI] += M << 20;
+  if(polyTblmdb.d!=0.0) /* predicted true, but it happens for x=-4.1588039009762204, thanks Morten */
+	  polyTblmdb.i[HI] += M << 20;
 
   exph = polyTblhdb.d;
   expm = polyTblmdb.d;
 
-  /* Substraction of 1 
+  /* Subtraction of 1 
 
      Testing if the operation is necessary is more expensive than 
      performing it in any case.
@@ -856,7 +845,7 @@ double expm1_rd(double x) {
      arguments 1/4 <= x <= ln(2) (0.25 <= x <= 0.69) 
      We must therefore use conditional Add12s
 
-     Since we perform a substraction, we may not have addition overflow towards +inf
+     Since we perform a subtraction, we may not have addition overflow towards +inf
 
   */
 
@@ -1160,18 +1149,19 @@ double expm1_ru(double x) {
   
   /* Reconstruction: multiplication by 2^M */
 
-  /* Implement the multiplication by multiplication to overcome the
+  /* Implement the multiplication by addition to overcome the
      problem of the non-representability of 2^1024 (M = 1024)
      This case is possible if polyTblhdb.d < 1
   */
   
   polyTblhdb.i[HI] += M << 20;
-  polyTblmdb.i[HI] += M << 20;
+  if(polyTblmdb.d!=0.0) /* predicted true, but it happens for x=-4.1588039009762204, thanks Morten */
+	  polyTblmdb.i[HI] += M << 20;
 
   exph = polyTblhdb.d;
   expm = polyTblmdb.d;
 
-  /* Substraction of 1 
+  /* Subtraction of 1 
 
      Testing if the operation is necessary is more expensive than 
      performing it in any case.
@@ -1180,7 +1170,7 @@ double expm1_ru(double x) {
      arguments 1/4 <= x <= ln(2) (0.25 <= x <= 0.69) 
      We must therefore use conditional Add12s
 
-     Since we perform a substraction, we may not have addition overflow towards +inf
+     Since we perform a subtraction, we may not have addition overflow towards +inf
 
   */
 
@@ -1492,18 +1482,19 @@ double expm1_rz(double x) {
   
   /* Reconstruction: multiplication by 2^M */
 
-  /* Implement the multiplication by multiplication to overcome the
+  /* Implement the multiplication by addition to overcome the
      problem of the non-representability of 2^1024 (M = 1024)
      This case is possible if polyTblhdb.d < 1
   */
   
-  polyTblhdb.i[HI] += M << 20;
-  polyTblmdb.i[HI] += M << 20;
+  polyTblhdb.i[HI] += M << 20; 
+  if(polyTblmdb.d!=0.0) /* predicted true, but it happens for x=-4.1588039009762204, thanks Morten */
+	  polyTblmdb.i[HI] += M << 20;
 
   exph = polyTblhdb.d;
   expm = polyTblmdb.d;
 
-  /* Substraction of 1 
+  /* Subtraction of 1 
 
      Testing if the operation is necessary is more expensive than 
      performing it in any case.
@@ -1512,7 +1503,7 @@ double expm1_rz(double x) {
      arguments 1/4 <= x <= ln(2) (0.25 <= x <= 0.69) 
      We must therefore use conditional Add12s
 
-     Since we perform a substraction, we may not have addition overflow towards +inf
+     Since we perform a subtraction, we may not have addition overflow towards +inf
 
   */
 
@@ -2207,22 +2198,24 @@ interval j_expm1(interval x)
 
     /* Reconstruction: multiplication by 2^M */
 
-    /* Implement the multiplication by multiplication to overcome the
+    /* Implement the multiplication by addition to overcome the
        problem of the non-representability of 2^1024 (M = 1024)
        This case is possible if polyTblhdb.d < 1
     */
   
     polyTblhdb_inf.i[HI] += M_inf << 20;
     polyTblhdb_sup.i[HI] += M_sup << 20;
-    polyTblmdb_inf.i[HI] += M_inf << 20;
-    polyTblmdb_sup.i[HI] += M_sup << 20;
+	 if(polyTblmdb_inf.d!=0.0) /* predicted true, but it happens for x=-4.1588039009762204, thanks Morten */
+		 polyTblmdb_inf.i[HI] += M_inf << 20;
+	 if(polyTblmdb_sup.d!=0.0) /* predicted true, but it happens for x=-4.1588039009762204, thanks Morten */
+		 polyTblmdb_sup.i[HI] += M_sup << 20;
 
     exph_inf = polyTblhdb_inf.d;
     exph_sup = polyTblhdb_sup.d;
     expm_inf = polyTblmdb_inf.d;
     expm_sup = polyTblmdb_sup.d;
 
-    /* Substraction of 1 
+    /* Subtraction of 1 
 
        Testing if the operation is necessary is more expensive than 
        performing it in any case.
@@ -2231,7 +2224,7 @@ interval j_expm1(interval x)
        arguments 1/4 <= x <= ln(2) (0.25 <= x <= 0.69) 
        We must therefore use conditional Add12s
 
-       Since we perform a substraction, we may not have addition overflow towards +inf
+       Since we perform a subtraction, we may not have addition overflow towards +inf
 
     */
 
@@ -2348,18 +2341,19 @@ interval j_expm1(interval x)
 
     /* Reconstruction: multiplication by 2^M */
 
-    /* Implement the multiplication by multiplication to overcome the
+    /* Implement the multiplication by addition to overcome the
        problem of the non-representability of 2^1024 (M = 1024)
        This case is possible if polyTblhdb.d < 1
     */
   
     polyTblhdb_inf.i[HI] += M_inf << 20;
-    polyTblmdb_inf.i[HI] += M_inf << 20;
+	 if(polyTblmdb_inf.d!=0.0) /* predicted true, but it happens for x=-4.1588039009762204, thanks Morten */
+		 polyTblmdb_inf.i[HI] += M_inf << 20;
 
     exph_inf = polyTblhdb_inf.d;
     expm_inf = polyTblmdb_inf.d;
 
-    /* Substraction of 1 
+    /* Subtraction of 1 
 
        Testing if the operation is necessary is more expensive than 
        performing it in any case.
@@ -2368,7 +2362,7 @@ interval j_expm1(interval x)
        arguments 1/4 <= x <= ln(2) (0.25 <= x <= 0.69) 
        We must therefore use conditional Add12s
 
-       Since we perform a substraction, we may not have addition overflow towards +inf
+       Since we perform a subtraction, we may not have addition overflow towards +inf
 
     */
 
@@ -2460,18 +2454,19 @@ interval j_expm1(interval x)
 
     /* Reconstruction: multiplication by 2^M */
 
-    /* Implement the multiplication by multiplication to overcome the
+    /* Implement the multiplication by addition to overcome the
        problem of the non-representability of 2^1024 (M = 1024)
        This case is possible if polyTblhdb.d < 1
     */
   
     polyTblhdb_sup.i[HI] += M_sup << 20;
-    polyTblmdb_sup.i[HI] += M_sup << 20;
+	 if(polyTblmdb_sup.d!=0.0) /* predicted true, but it happens for x=-4.1588039009762204, thanks Morten */
+		 polyTblmdb_sup.i[HI] += M_sup << 20;
 
     exph_sup = polyTblhdb_sup.d;
     expm_sup = polyTblmdb_sup.d;
 
-    /* Substraction of 1 
+    /* Subtraction of 1 
 
        Testing if the operation is necessary is more expensive than 
        performing it in any case.
@@ -2480,7 +2475,7 @@ interval j_expm1(interval x)
        arguments 1/4 <= x <= ln(2) (0.25 <= x <= 0.69) 
        We must therefore use conditional Add12s
 
-       Since we perform a substraction, we may not have addition overflow towards +inf
+       Since we perform a subtraction, we may not have addition overflow towards +inf
 
     */
 
