@@ -153,6 +153,9 @@ Z bc900000 00000001 bc900000 00000000
 Z bc900000 00000002 bc900000 00000001
 
 
+# Regression test: the bug found by Morten
+N c010a29d 7d64ae2c  bfef7ffd 67be64da
+
 # Some difficult cases 
 
 N 3FE4297E C53F6B7F 3fec1664 0ad39959			    

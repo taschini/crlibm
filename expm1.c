@@ -245,7 +245,7 @@ void expm1_common_td(double *expm1h, double *expm1m, double *expm1l,
 
 
 double expm1_rn(double x) {
-  db_number xdb, shiftedXMultdb, polyTblhdb, polyTblmdb;
+	db_number xdb, shiftedXMultdb, twoToM;
   int xIntHi, expoX, k, M, index1, index2;
   double highPoly, tt1h, t1h, t1l, xSqh, xSql, xSqHalfh, xSqHalfl, xCubeh, xCubel, t2h, t2l, templ, tt3h, tt3l;
   double polyh, polyl, expm1h, expm1m, expm1l;
@@ -499,20 +499,34 @@ double expm1_rn(double x) {
   
   Add12(t11,t12,tablesh,t10);
   t13 = t12 + tablesl;
-  Add12(polyTblhdb.d,polyTblmdb.d,t11,t13);
+  Add12(exph,expm, t11,t13);
   
   /* Reconstruction: multiplication by 2^M */
 
-  /* Implement the multiplication by multiplication to overcome the
-     problem of the non-representability of 2^1024 (M = 1024)
-     This case is possible if polyTblhdb.d < 1
-  */
   
-  polyTblhdb.i[HI] += M << 20;
-  polyTblmdb.i[HI] += M << 20;
+  /* Bug found by Morten Welinder, tanks to him: 
+	  The multiplication was implemented as 
 
-  exph = polyTblhdb.d;
-  expm = polyTblmdb.d;
+	  polyTblhdb.i[HI] += M << 20;   
+	  polyTblmdb.i[HI] += M << 20;
+
+	  (where polyTblh/l were dbnumber versions of exph and expm)
+
+	  polyTblh is under control, but he found one case where  polyTblm is zero
+	  (for x=-4.1588039009762204 and a few neighbouring values)
+	  In this case M=-6, and adding -6 to the 0 exponent gives a very large value.
+
+	  Anyway the version fixed here is barely slower. 
+
+  */
+
+  /* build 2^M  -- let's hope the compiler schedules it early enough */
+
+  twoToM.i[HI] = 0x3FF00000 + (M << 20);
+  twoToM.i[LO] = 0;
+
+  exph *= twoToM.d;
+  expm *= twoToM.d;
 
   /* Substraction of 1 
 
