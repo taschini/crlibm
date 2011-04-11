@@ -137,6 +137,7 @@ but different polynomials (which compute sin(2Pi*y) and cos(2Pi*y).
 #define DEBUG 0
 /* TODO: 
 
+ - in the Cody and Waite, the kd=double(k) should be replaced with a single substraction of the magic number of Double2Int
 
  - In some Cody and Waite there are Mul12 involving k, CH and CM. They
 	 can be improved by pre-splitting CH, CM (tabulated values)
@@ -400,8 +401,18 @@ static void ComputeTrigWithArgred(rrinfo *rri){
 
   if  (rri->absxhi < XMAX_CODY_WAITE_3) {
     /* Compute k, deduce the table index and the quadrant */
+#if 0
     DOUBLE2INT(k, rri->x * INV_PIO256);
     kd = (double) k;
+#else
+		{db_number _t;
+			double _d = rri->x * INV_PIO256;
+			_t.d = (_d+6755399441055744.0);
+			k = _t.i[LO];
+			kd=_t.d-6755399441055744.0;
+		}
+
+#endif
     quadrant = (k>>7)&3;      
     index=(k&127)<<2;
     if((index == 0)) { 

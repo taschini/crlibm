@@ -192,11 +192,21 @@ double exp_rn(double x){
      We continue the argument reduction for the quick phase and table reads for both phases
   */
 
+#if 0
   Mul12(&s1,&s2,msLog2Div2Lh,kd);
   s3 = kd * msLog2Div2Lm;
   s4 = s2 + s3; 
   s5 = x + s1;
   Add12Cond(rh,rm,s5,s4);
+#else 
+
+	/* Cody and Waite like, accurate to 2^-84 */
+	double Log2h= 0xb.17217f8p-16 ;
+	double Log2l= -0x2.e308654361c4cp-48 ;
+ Add12Cond(rh,rm, x-kd*Log2h, -kd*Log2l);
+
+#endif
+
 
   k = shiftedXMultdb.i[LO];
   M = k >> L;
@@ -489,11 +499,20 @@ double exp_ru(double x) {
      We continue the argument reduction for the quick phase and table reads for both phases
   */
 
+#if 0
   Mul12(&s1,&s2,msLog2Div2Lh,kd);
   s3 = kd * msLog2Div2Lm;
   s4 = s2 + s3; 
   s5 = x + s1;
   Add12Cond(rh,rm,s5,s4);
+#else 
+
+	/* Cody and Waite like, accurate to 2^-84 */
+	double Log2h= 0xb.17217f8p-16 ;
+	double Log2l= -0x2.e308654361c4cp-48 ;
+ Add12Cond(rh,rm, x-kd*Log2h, -kd*Log2l);
+
+#endif
 
   k = shiftedXMultdb.i[LO];
   M = k >> L;
@@ -786,11 +805,21 @@ double exp_rd(double x) {
      We continue the argument reduction for the quick phase and table reads for both phases
   */
 
+
+#if 0
   Mul12(&s1,&s2,msLog2Div2Lh,kd);
   s3 = kd * msLog2Div2Lm;
   s4 = s2 + s3; 
   s5 = x + s1;
   Add12Cond(rh,rm,s5,s4);
+#else 
+
+	/* Cody and Waite like, accurate to 2^-84 */
+	double Log2h= 0xb.17217f8p-16 ;
+	double Log2l= -0x2.e308654361c4cp-48 ;
+ Add12Cond(rh,rm, x-kd*Log2h, -kd*Log2l);
+
+#endif
 
   k = shiftedXMultdb.i[LO];
   M = k >> L;
